@@ -1550,3 +1550,28 @@ callback diagnostic text. Both original 1-/2-hop proof engines remain
 authoritative; a semantic prefilter is only a necessary condition, never
 an attestation. The provider-neutral runnable example additionally prints
 the actual one-hop dependency binding without any source execution.
+
+## 2026-10-27 — #1777 bounded model-assisted Understand(q) core entrypoint
+
+`SchemaFieldRoutingSession.acompile_query()` adds a previously research-only
+model callback to the provider-neutral field-routing session. The application
+supplies a sync/async model callable, explicitly disclosed reviewed intent
+and concept IDs, and up to five optional tool keys. The callback receives only
+concepts with currently principal-proven field coverage, eligible intents,
+and explicitly allowed read-only scoped tool names; no raw endpoint JSON
+schemas or provider data. When no eligible intent remains, the compiler
+abstains before invoking a model.
+
+Strict bounded JSON decoding rejects duplicate keys, nonfinite values,
+unreviewed identities, and oversized payloads. A policy/registry witness,
+availability identity, source catalog and principal are rechecked after the
+await and the schema-only compilation. Model exceptions are sanitized.
+`parameter_hints` from the model cannot become `host_source_arguments`.
+Output always reuses the source-proven direct/one-/two-hop K5 graph proof,
+with no provider data access, no answer synthesis and no execution authority.
+
+Regression tests cover EN/KO/JA paraphrase callback wiring, one-hop binding,
+host-owned argument separation, missing-policy abstention without model
+invocation, hidden identities, malformed JSON, changed source permission,
+model exception privacy and byte budgets. This is E0 mechanism integration,
+not qualified model understanding accuracy or independent E2 evidence.

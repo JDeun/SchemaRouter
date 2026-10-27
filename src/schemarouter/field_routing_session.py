@@ -14,6 +14,7 @@ from .errors import PolicyViolationError
 from .native_graph_index import NativeSchemaGraphIndex
 from .native_semantic_index import NativeSchemaPostingIndex
 from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
+from .paper_query_understanding import PaperFieldModel, compile_model_query
 from .paper_typed_tool_plan import PaperTypedToolPlan, compile_paper_typed_tool_plan
 from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
 from .paper_understood_graph_plan import compile_paper_understood_graph_plan
@@ -137,4 +138,36 @@ class SchemaFieldRoutingSession:
             catalog=self._catalog, intent_registry=intent_registry,
             index=self._index, host_source_arguments=host_source_arguments,
             k=k, max_hops=max_hops,
+        )
+
+    async def acompile_query(
+        self,
+        query: str,
+        *,
+        principal: PrincipalContext,
+        model: PaperFieldModel,
+        intent_registry: PaperIntentRegistry,
+        model_visible_intent_ids: tuple[str, ...],
+        model_visible_concept_ids: tuple[str, ...],
+        model_visible_tool_keys: tuple[str, ...] = (),
+        host_source_arguments: dict[str, dict[str, Any]] | None = None,
+        k: int = 5,
+        max_hops: int = 2,
+        max_model_input_bytes: int = 32768,
+        max_model_output_bytes: int = 4096,
+    ) -> PaperTypedToolPlan:
+        """Use a caller-owned model to suggest IDs, then prove source fields.
+
+        No provider data is fetched. The model cannot authorize a route,
+        expand source scope, or bind its proposed argument values.
+        """
+        return await compile_model_query(
+            self, query, principal=principal, model=model,
+            intent_registry=intent_registry,
+            model_visible_intent_ids=model_visible_intent_ids,
+            model_visible_concept_ids=model_visible_concept_ids,
+            model_visible_tool_keys=model_visible_tool_keys,
+            host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+            max_model_input_bytes=max_model_input_bytes,
+            max_model_output_bytes=max_model_output_bytes,
         )

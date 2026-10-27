@@ -2,6 +2,8 @@
 
 Run from an editable checkout: python examples/schema_only_field_routing.py
 """
+import asyncio
+
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
@@ -142,6 +144,32 @@ def main() -> None:
     print("one-hop schema-only graph:", graph_plan.status,
           tuple(call.route_id for call in graph_plan.calls))
     print("typed dependency bindings:", graph_plan.bindings)
+
+    # Natural-language Understand(q) through the APPLICATION's own model.
+    # This deterministic callback emulates the JSON contract. Swap the
+    # callback for an actual host-controlled model; the router stays offline.
+    async def owner_model(payload):
+        assert "output_fields" not in payload  # no raw provider schemas
+        return {
+            "intent_id": "customer.lookup",
+            "concept_ids": ["customer.overview"],
+            "named_tools": ["directory"],
+            "parameter_hints": {"customer_id": "MODEL_VALUE_IS_NOT_USED"},
+        }
+
+    natural_plan = asyncio.run(graph_session.acompile_query(
+        "この顧客の担当者とステータスは？",
+        principal=principal,
+        model=owner_model,
+        intent_registry=reviewed_intents,
+        model_visible_intent_ids=("customer.lookup",),
+        model_visible_concept_ids=("customer.overview",),
+        model_visible_tool_keys=("directory",),
+    ))
+    print("model-assisted schema-only path:", natural_plan.status,
+          tuple(call.route_id for call in natural_plan.calls))
+    print("model-derived values bound:",
+          any(call.call.arguments for call in natural_plan.calls))
 
 
 if __name__ == "__main__":

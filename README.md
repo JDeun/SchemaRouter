@@ -152,8 +152,18 @@ If your application already has structured `Understand(q)` hints, use
 intent_registry=reviewed_intents)` to reuse the same prepared index and the
 original source-proven direct/one-/two-hop graph compiler. The host must
 review intent→concept contracts; model-proposed `parameter_hints` are never
-used as call arguments. This API does **not** call an LLM or any provider, and
-an independent model-understanding benchmark is still required.
+used as call arguments. `compile_understood` does **not** call an LLM or any
+provider. For natural-language paraphrases, the separate opt-in async method
+`await session.acompile_query(query, principal=reader, model=host_callback,
+intent_registry=reviewed_intents, model_visible_intent_ids=(...),
+model_visible_concept_ids=(...), model_visible_tool_keys=(...))` invokes
+**one host-owned model callback** with only explicitly disclosed, currently
+field-proven intent/concept IDs and scoped tool keys. It strictly validates
+the returned IDs, and delegates to that same source-proven direct/one-/two-hop
+compiler. The caller is responsible for model privacy and deciding what to
+disclose; the router never fetches provider rows, promotes model suggestions
+to source authority, or binds model-proposed parameter values. An independent
+model-understanding benchmark is still required.
 The caller supplies an explicit authorization
 policy and reviewed semantic concept catalog. Undeclared or conflicting
 concept aliases raise `ValueError` (no guessed mapping). Schema changes
