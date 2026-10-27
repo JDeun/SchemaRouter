@@ -1703,3 +1703,20 @@ ranking are unchanged. See issue #1791 and
 `research/autoresearch/core-parameter-review-20261027-{design,plan}.md`.
 This is B1 mechanism wiring, not independent A6/A7/A8/E2 qualification,
 catalog-wide proven ranking, a release, or any provider data execution.
+
+### #1791 protected-CI continuation — inherited review-only model guard
+
+Draft #1792 was created on #1790 at exact remote tree
+`6a4871283fb0329b438844358a6bdf6674e2d9ab`, matching the locally tested
+commit tree. Initial CI identified three Pyright `reportOptionalMemberAccess`
+errors at `paper_query_understanding.py:122/127/170`, also present in the
+parent #1790 CI. Review-first `catalog=None` had made the session attribute
+optional, while standalone `compile_model_query` still read it without using
+the existing approved-catalog gate. Its existing exception normalization
+rejected the request but yielded only a generic owner declaration error.
+The new direct compiler regression reproduced that unexpected refusal RED;
+using `session._require_catalog()` before any model-visible path made it
+GREEN and provided an explicit fail-closed review-only contract. **177**
+adjacent tests passed locally, repository Ruff clean, both changed modules
+Pyright 0 errors/0 warnings. Updated exact-head GitHub CI and full-source
+typecheck remain separate gates. This is not E2 or release qualification.

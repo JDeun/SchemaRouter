@@ -48,3 +48,22 @@ tuple[PaperPlanParameterMeta, ...]`; public
 - [ ] Step 5: Update README, runnable example and canonical handoff; commit
   the verified issue-sized change, publish a stacked Draft PR and track
   exact-head protected CI without claiming release qualification.
+
+### Task 2: Resolve inherited review-only model typecheck gate from protected CI
+
+**Files:** `src/schemarouter/paper_query_understanding.py`,
+`tests/test_schema_field_routing_session.py`, canonical handoff.
+
+**Interfaces:** the standalone `compile_model_query(session, ...)` now consumes
+`session._require_catalog() -> NativeConceptCatalog`, not the optional
+`session._catalog`; existing `session.acompile_query()` behavior stays intact.
+
+- [x] Step 1: RED test for direct compiler on review-only session, requiring
+  a catalog-specific fail-closed refusal before the model is invoked.
+- [x] Step 2: Confirm RED from the inherited generic `owner declarations
+  invalid` error and the three Pyright optional-member errors in exact-head
+  PR #1792 typecheck CI (also present in ancestor #1790).
+- [x] Step 3: Call `_require_catalog()` and verify the new behavior GREEN;
+  177 adjacent tests, Ruff and focused Pyright 0 errors/0 warnings.
+- [ ] Step 4: Publish and qualify new exact-head CI; retain all release and
+  independent E2 gates.

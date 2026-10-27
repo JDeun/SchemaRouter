@@ -25,6 +25,7 @@ from schemarouter import (
     retrieve_paper_field_coverage,
 )
 from schemarouter.errors import PolicyViolationError
+from schemarouter.paper_query_understanding import compile_model_query
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -105,6 +106,30 @@ async def test_review_only_session_rejects_model_calls_before_owner_approval():
     with pytest.raises(PolicyViolationError, match="catalog|review"):
         await session.acompile_query(
             "customer owner", principal=ACTOR,
+            model=forbidden_model,
+            intent_registry=PaperIntentRegistry(intents=(
+                PaperIntentDeclaration(
+                    intent_id="crm.review", required_concept_ids=(
+                        "crm.customer_fields",
+                    ),
+                ),
+            )),
+            model_visible_intent_ids=("crm.review",),
+            model_visible_concept_ids=("crm.customer_fields",),
+        )
+
+
+@pytest.mark.asyncio
+async def test_direct_model_compiler_requires_approved_catalog_before_model():
+    """The standalone compiler must enforce the same review-only gate."""
+    review_only = build_fixture(500).prepare_field_routing()
+
+    async def forbidden_model(_payload):
+        pytest.fail("unapproved session must never expose a model menu")
+
+    with pytest.raises(PolicyViolationError, match="catalog"):
+        await compile_model_query(
+            review_only, "customer owner", principal=ACTOR,
             model=forbidden_model,
             intent_registry=PaperIntentRegistry(intents=(
                 PaperIntentDeclaration(

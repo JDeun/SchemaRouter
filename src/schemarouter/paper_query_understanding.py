@@ -116,7 +116,10 @@ async def compile_model_query(
     ):
         raise ValueError("invalid paper model byte budget")
 
-    catalog = session._catalog
+    # Review-only sessions have no approved concept authority. The public
+    # session entrypoint already enforces this; the standalone compiler must
+    # enforce it too before producing any model-visible disclosure.
+    catalog = session._require_catalog()
     try:
         reviewed = NativeConceptCatalog.model_validate(
             catalog.model_dump(mode="python"), strict=True,

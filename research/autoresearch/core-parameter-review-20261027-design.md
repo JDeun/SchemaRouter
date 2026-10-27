@@ -38,3 +38,16 @@ minimal disclosure.
 - Owner approval stays explicit, routing remains K5 and opt-in, no provider or
   model data call is made. This is not qualified E2, trained ranking or an
   executable receipt. #1346/#1477 and release #1356 remain gated.
+
+## Protected-CI follow-up: stand-alone model entrypoint
+
+Introducing `catalog=None` for the review-first bootstrap also widened the
+static type of `session._catalog`. The separate, public-module
+`compile_model_query(session, ...)` still accessed that optional attribute
+directly, bypassing the session's explicit review-only guard. The existing
+exception handler happened to turn the resulting `AttributeError` into a
+generic refusal, but Pyright identifies three unsafe optional uses and the
+function did not enforce the canonical approved-catalog contract itself.
+Require `session._require_catalog()` before owner declarations or any model
+disclosure, preserving the pre-existing authorized path. This is an inherited
+core gate/typecheck repair, not a new model policy or output capability.
