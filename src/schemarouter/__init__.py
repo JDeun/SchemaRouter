@@ -486,6 +486,11 @@ from .paper_typed_tool_plan import (
     PaperTypedToolPlan,
     compile_paper_typed_tool_plan,
 )
+from .paper_understood_direct_plan import (
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperUnderstanding,
+)
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
     ApprovalCallback,
@@ -648,6 +653,9 @@ __all__ = [
     "PaperPlanParameterMeta",
     "PaperTypedToolPlan",
     "compile_paper_typed_tool_plan",
+    "PaperIntentDeclaration",
+    "PaperIntentRegistry",
+    "PaperUnderstanding",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "PaperFieldRoute",

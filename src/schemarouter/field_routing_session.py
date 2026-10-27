@@ -15,6 +15,8 @@ from .native_graph_index import NativeSchemaGraphIndex
 from .native_semantic_index import NativeSchemaPostingIndex
 from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
 from .paper_typed_tool_plan import PaperTypedToolPlan, compile_paper_typed_tool_plan
+from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
+from .paper_understood_graph_plan import compile_paper_understood_graph_plan
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -112,4 +114,27 @@ class SchemaFieldRoutingSession:
             alternative_index=alternative_index,
             host_source_arguments=host_source_arguments, k=k,
             experimental_indexed_direct=True,
+        )
+
+    def compile_understood(
+        self,
+        understanding: PaperUnderstanding,
+        *,
+        principal: PrincipalContext,
+        intent_registry: PaperIntentRegistry,
+        host_source_arguments: dict[str, dict[str, Any]] | None = None,
+        k: int = 5,
+        max_hops: int = 2,
+    ) -> PaperTypedToolPlan:
+        """Compile untrusted structured Understand(q) hints to a source-proven plan.
+
+        Only the host-reviewed intent/concept catalog defines field meanings.
+        Model parameter hints are never treated as host-supplied arguments.
+        No model or provider is invoked, even for a `ready` receipt.
+        """
+        return compile_paper_understood_graph_plan(
+            self._router, understanding, principal=principal,
+            catalog=self._catalog, intent_registry=intent_registry,
+            index=self._index, host_source_arguments=host_source_arguments,
+            k=k, max_hops=max_hops,
         )

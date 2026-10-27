@@ -1520,3 +1520,22 @@ changing the original provider validation contract. A matching-scope TDD
 canary reproduced the leaked alias before the guard was added. Live scope
 drift tests additionally cover location, effective requiredness, JSON type,
 parameter removal, and parameter rename.
+
+## 2026-10-27 — #1775 prepared structured Understand(q) core wiring
+
+The original typed `PaperUnderstanding`, owner `PaperIntentRegistry`, direct
+planner and named 1-/2-hop G5 planner already existed, but they had no
+provider-neutral prepared-session entrypoint. The first-class
+`SchemaFieldRoutingSession.compile_understood()` delegates to those engines
+with the pinned source index and detached reviewed concept catalog. Exposed
+the strict understanding and intent types through the package API and added
+the original example/README path. Host source argument values are still
+explicit and separate; untrusted `parameter_hints` remain non-executable.
+
+TDD: a real 500-route graph test failed on the missing session method, then
+passed after the delegation. Expanded cases cover direct host root, source-
+typed one/two-hop bindings, authorization revocation, hidden required output,
+stale registry, invalid bounds/intent and the no-execution invariant. This is
+**input-hint → schema-proof wiring**, not a built-in model or a successful
+independent natural-language intent-understanding evaluation. Issue #1775
+and its stacked Draft track CI and integration separately.

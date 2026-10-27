@@ -147,6 +147,13 @@ your own registered capability schemas, then call
 and source/unit/license field metadata. Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.
+If your application already has structured `Understand(q)` hints, use
+`session.compile_understood(PaperUnderstanding(...), principal=reader,
+intent_registry=reviewed_intents)` to reuse the same prepared index and the
+original source-proven direct/one-/two-hop graph compiler. The host must
+review intent→concept contracts; model-proposed `parameter_hints` are never
+used as call arguments. This API does **not** call an LLM or any provider, and
+an independent model-understanding benchmark is still required.
 The caller supplies an explicit authorization
 policy and reviewed semantic concept catalog. Undeclared or conflicting
 concept aliases raise `ValueError` (no guessed mapping). Schema changes

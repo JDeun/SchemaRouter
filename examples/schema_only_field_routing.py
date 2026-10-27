@@ -10,6 +10,9 @@ from schemarouter import (
     FieldSpec,
     NativeConceptCatalog,
     NativeDeclaredConcept,
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperUnderstanding,
     ParameterSpec,
     PrincipalContext,
     SchemaRouter,
@@ -87,6 +90,29 @@ def main() -> None:
     for route in plan.calls:
         print("field metadata:", route.route_id, route.fields_meta)
         print("input parameter shapes:", route.route_id, route.parameters_meta)
+
+    # Optional structured Understand(q) is host/model SUPPLIED; the router
+    # verifies it against reviewed concepts and current source permissions.
+    # A model hint is not an argument. Only the explicit host value is bound.
+    reviewed_intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+        intent_id="customer.lookup",
+        required_concept_ids=("customer.overview",),
+    ),))
+    understood = session.compile_understood(
+        PaperUnderstanding(
+            intent_id="customer.lookup", named_tools=("directory",),
+            parameter_hints={"customer_id": "untrusted-model-value"},
+        ),
+        principal=principal, intent_registry=reviewed_intents,
+        host_source_arguments={
+            "directory.lookup": {"customer_id": "host-supplied-customer-1"},
+        },
+    )
+    print("structured understanding plan:", understood.status,
+          "executable:", understood.executable_authority)
+    for call in understood.calls:
+        print("understood fields / inputs:", call.route_id,
+              call.call.fields, call.call.arguments)
 
 
 if __name__ == "__main__":
