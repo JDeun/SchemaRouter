@@ -7,10 +7,10 @@ optional model-assisted method calls only the application's supplied model.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from hashlib import sha256
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_sha256
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
@@ -179,7 +179,7 @@ class SchemaFieldRoutingSession:
     @property
     def catalog_revision_id(self) -> str:
         """Stable reviewed-semantics digest; pair with the source snapshot ID."""
-        return sha256(self._catalog.model_dump_json().encode("utf-8")).hexdigest()
+        return canonical_json_sha256(self._catalog.model_dump(mode="json"))
 
     @property
     def indexed_route_count(self) -> int:

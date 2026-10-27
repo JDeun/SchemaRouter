@@ -179,9 +179,13 @@ schemas stay at the same revision, call
 This revalidates and detaches the owner's bounded catalog while reusing the
 same pinned posting/G5 graph, including host-approved roots; there is **no
 schema rescan** or provider execution. Use `(new_session.snapshot_id,
-new_session.catalog_revision_id)` as the combined schema+semantic cache key:
+new_session.catalog_revision_id)` to **partition host schema/semantic caches**:
 the source-only `snapshot_id` intentionally stays unchanged across a catalog
-revision. The application must atomically replace and retire its old handle
+revision. **Do not use this pair alone to cache or replay authorized
+`discover()`/`compile()` results.** Those results depend on the live principal,
+authorization policy, allowed scopes and availability, and require current
+source and authorization rechecks at use time. The application must atomically
+replace and retire its old handle
 after approving new meanings: independently retained old sessions are **not
 automatically revoked** by this API. Source changes still require `refresh()`;
 a stale source refuses catalog-only revision.

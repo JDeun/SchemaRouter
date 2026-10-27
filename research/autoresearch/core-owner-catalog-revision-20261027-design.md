@@ -40,8 +40,12 @@ newer native source version, so it cannot solve a concept-only update.
   this API does not claim automatic cross-session revocation. Applications
   must atomically replace their current session reference on review changes.
 - `snapshot_id` is intentionally the immutable native *source* digest. The
-  separate `catalog_revision_id` is for owner-semantic cache partitioning;
-  callers needing a full cache identity must use both.
+  separate `catalog_revision_id` uses canonical JSON hashing of the validated
+  owner semantics, without dependence on nested dictionary insertion order.
+  Together these IDs distinguish schema + owner-semantic revisions **only**;
+  they are not sufficient cache keys for authorized field discovery or plans.
+  Such receipts depend on live principal identity, policy, scope and source
+  availability, and must be reauthorized before any reuse.
 
 ## Acceptance
 

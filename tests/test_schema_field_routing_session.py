@@ -108,6 +108,22 @@ def test_revise_catalog_keeps_explicit_approved_host_roots():
     assert revised._index.approved_host_roots == frozenset({RIGHT})
 
 
+def test_revise_catalog_revision_digest_ignores_qualifier_dict_insertion_order():
+    owner_payload = _revised_catalog().model_dump(mode="python")
+    first = NativeConceptCatalog.model_validate(owner_payload, strict=True)
+    reordered = NativeConceptCatalog.model_validate(owner_payload, strict=True)
+    first.concepts[0].required_fields[0].qualifiers = {
+        "region": "KR", "tier": "standard",
+    }
+    reordered.concepts[0].required_fields[0].qualifiers = {
+        "tier": "standard", "region": "KR",
+    }
+    router = build_fixture(500)
+    prepared = router.prepare_field_routing(catalog=first)
+    revised = prepared.revise_catalog(catalog=reordered)
+    assert revised.catalog_revision_id == prepared.catalog_revision_id
+
+
 def test_revise_catalog_rejects_unreviewed_inputs_and_stale_sources():
     router = build_fixture(500)
     session = router.prepare_field_routing(catalog=_catalog())

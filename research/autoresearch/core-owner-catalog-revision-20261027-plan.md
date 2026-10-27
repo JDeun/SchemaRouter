@@ -35,5 +35,5 @@
 - [x] Step 1: Write failing 500-route EN/KO/JA owner catalog replacement/parity and no-rebuild/provider-I/O regressions, snapshot/revision cache identity and source/policy/malformed refusal tests.
 - [x] Step 2: Run and inspect expected missing-method/property RED (4 missing-API tests).
 - [x] Step 3: Implement only verified immutable source-index reuse and content digest; no new graph/retriever/model.
-- [x] Step 4: Run focused+native routing suites (188 passed), Ruff, source Pyright (0 errors), provider-neutral runnable example, and `git diff --check`; protected CI remains pending until checked.
+- [x] Step 4: Run focused+native routing suites (296 passed after review fixes), Ruff, source Pyright (0 errors), provider-neutral runnable example, and `git diff --check`; protected exact-head CI remains pending until checked.
 - [ ] Step 5: Update README and canonical handoff, publish stacked Draft, keep #1560/B1 and E2 open.

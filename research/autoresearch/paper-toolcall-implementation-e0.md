@@ -1608,10 +1608,13 @@ concept/field-semantic updates to an **immutable replacement handle** that
 reuses the exact already-pinned native posting and G5 graph. Unlike
 `refresh()`, an unchanged registered schema version is **required**: concept
 updates alone do not trigger journal changes or require full index rebuild.
-The new `catalog_revision_id` content digest partitions host caches separately
-from the source-only `snapshot_id`. Applications should key by both and
-atomically swap/retire the old session on owner review changes. No automatic
-global revocation of separately held old catalog snapshots is implied.
+The new canonical `catalog_revision_id` digest partitions host schema/semantic
+caches separately from the source-only `snapshot_id`. Applications should
+partition those caches by both and atomically swap/retire the old session on
+owner review changes. This pair **must never alone key/replay authorized proof
+results**; principal, live permission/scope and availability matter, and
+current reauthorization is required. No automatic global revocation of
+separately held old catalog snapshots is implied.
 
 500-route tri-lingual EN/KO/JA tests block posting/graph rebuild, registry
 `tools()`/`keys()` scans, and provider executor calls, and verify old/new
@@ -1623,3 +1626,13 @@ continues to verify selected-route source fingerprints and principal scope.
 This is schema-only core wiring, not default promotion, provider execution,
 independent A8 ranking validation or E2 release qualification. See
 `research/autoresearch/core-owner-catalog-revision-20261027-{design,plan}.md`.
+
+Independent read-only review of #1787 found no blocking mechanism defect but
+identified two integration details that were corrected before qualification:
+the README now rejects replaying principal- and policy-dependent proof
+receipts from a source+semantic digest alone, and the semantic revision ID
+uses the repository's canonical sorted-key JSON hash. A RED→GREEN test proves
+that equivalent owner qualifier mappings with reversed dictionary insertion
+order now share the same digest. Across the relevant native, typed-plan and
+public API suites, **296 local tests pass** with clean Ruff/Pyright. Exact-head
+Draft #1788 CI remains required; parent #1560 / B1 completion is not claimed.
