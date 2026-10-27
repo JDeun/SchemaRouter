@@ -10,7 +10,7 @@ on:
       - "tests/test_paper_deepwiki_native_a5_e1.py"
       - "tests/test_native_graph_host_root.py"
       - "research/autoresearch/paper-deepwiki-mcp-native-a5-e1-design.md"
-      - "docs/superpowers/plans/2026-10-27-paper-deepwiki-mcp-native-a5-e1.md"
+      - "research/autoresearch/paper-deepwiki-mcp-native-a5-e1-plan.md"
       - ".github/workflows/research-paper-deepwiki-native-a5-e1.yml"
   workflow_dispatch:
     inputs:

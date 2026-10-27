@@ -10,6 +10,9 @@
 
 **Spec:** `research/autoresearch/paper-deepwiki-mcp-native-a5-e1-design.md`
 
+**Documentation boundary:** This is internal engineering research, intentionally
+outside `docs/**/*.md` and its independently curated bilingual review corpus.
+
 ## Global Constraints
 
 - No invented source output fields or identifier-based graph join edges.
