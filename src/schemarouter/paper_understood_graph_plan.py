@@ -6,6 +6,7 @@ does not execute calls, trust a language-model parameter, or grant authority.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
@@ -75,6 +76,11 @@ def compile_paper_understood_graph_plan(
     host_inputs = {
         route: dict(values) for route, values in (host_source_arguments or {}).items()
     }
+    original_host_inputs = deepcopy(host_source_arguments)
+
+    def verify_host_inputs() -> None:
+        if host_source_arguments != original_host_inputs:
+            raise PolicyViolationError("paper named graph host source inputs changed")
 
     approved, group = _source_owned_understood_group(
         understanding, catalog, intent_registry,
@@ -92,6 +98,7 @@ def compile_paper_understood_graph_plan(
         router, understanding, principal=principal, catalog=catalog,
         intent_registry=intent_registry, index=index, k=k,
     )
+    verify_host_inputs()
     direct_routes = {call.route_id for call in direct.calls}
     if host_inputs and host_inputs.keys() <= direct_routes:
         # A declared scalar root is a direct tool, not a graph dependency.
@@ -102,6 +109,7 @@ def compile_paper_understood_graph_plan(
             intent_registry=intent_registry, index=index, k=k,
             host_source_arguments=host_source_arguments,
         )
+        verify_host_inputs()
     elif host_inputs and direct.status == "ready":
         raise ValueError("paper graph host arguments do not match direct proof")
     if (
@@ -120,6 +128,7 @@ def compile_paper_understood_graph_plan(
     policy_digest = _policy_contents_digest(policy)
 
     def verify_current() -> None:
+        verify_host_inputs()
         index.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
         if (

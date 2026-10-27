@@ -33,7 +33,10 @@ route as a host root. This leaves a valid direct source route perpetually
 - RED→GREEN: named-graph direct path uses same trusted scalar; real G5
   producer-root path remains unchanged, with original current source proof.
 - RED→GREEN: wrong route, missing/extra keys, hidden scoped limit, source
-  changes and mutation across the model callback fail closed.
+  changes and mutation across the model callback fail closed. During review,
+  an availability callback also mutated the host input between the first
+  named-graph direct probe and final binding: a separate observed RED→GREEN
+  regression now prevents this intermediate swap.
 - Run affected suites, Ruff, broader tests, then record exact local branch
   and any remote CI separately. Do not call E0 independent E2.
 

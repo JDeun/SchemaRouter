@@ -20,10 +20,18 @@
   extraction engine or implicit tool invocation grant.
 - New RED→GREEN tests exercise a real registered direct root, model-value
   forgery, closed typed arguments, unknown/non-root input, direct-vs-graph
-  selection and mutation during the model callback. Full related paper,
-  native G5 and opt-in fixed5 agent regression: **663 passed**; whole-repo
-  Ruff passed. Full local pytest and exact new GitHub Actions checks are
-  **not yet qualified** for this branch. [Implementation plan](paper-direct-host-arguments-wiring-e0-plan.md).
+  selection and mutation during the model callback. Read-only review also
+  found a route-probe-time mutation gap: a host callback could replace a
+  direct scalar **between** the graph's first direct proof and its second
+  argument-bearing proof. A separate failing regression preceded the new
+  original-input snapshot guard in the graph compiler, which also covers
+  graph-source verification. Fresh full related paper, native G5 and opt-in
+  fixed5 agent regression after the review fix: **664 passed**; whole-repo
+  Ruff passed and changed-module Pyright reported 0 errors / 0 warnings
+  before the additional typed-equivalent input guard. The initial full local
+  pytest was interrupted after the mid-run review change and is **not a
+  full-suite pass**; exact new GitHub Actions checks are still pending.
+  [Implementation plan](paper-direct-host-arguments-wiring-e0-plan.md).
 - Remaining major behaviors remain unchanged: source-authored independent
   `Understand(q)`/binding accuracy, qualified >K ranker, default-path
   promotion, genuine external agent E2 and independently approved

@@ -140,6 +140,26 @@ def test_named_graph_prefers_source_approved_direct_root_argument():
     assert plan.bindings == ()
 
 
+def test_named_graph_rejects_host_argument_mutation_during_direct_probe():
+    """The first route proof must not let a callback swap the later bound ID."""
+    router = _router()
+    router.add_tool(_node("direct", input_semantic="crm.case_id", identifier=True))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+        approved_host_roots=frozenset({"direct.read"}),
+    )
+    host_inputs = {"direct.read": {"case_id": "owner-id"}}
+
+    def mutate_host_input(tool, endpoint):
+        host_inputs["direct.read"]["case_id"] = "changed-after-source-probe"
+        return True
+
+    router.planner.availability_predicate = mutate_host_input
+    with pytest.raises(PolicyViolationError, match="host|changed"):
+        _compile(router, named_tools=("direct",), index=index,
+                 host_source_arguments=host_inputs)
+
+
 def test_named_one_hop_emits_original_typed_binding_not_model_parameters(monkeypatch):
     router = _router()
     monkeypatch.setattr(router, "execute", lambda *a, **kw: pytest.fail("executed"))
