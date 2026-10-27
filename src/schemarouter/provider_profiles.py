@@ -637,9 +637,39 @@ def _crossref_tool() -> ToolSpec:
                         json_schema={"type": "string"},
                     ),
                 ],
-                output_schema={"type": "object"},
+                input_schema={
+                    "type": "object",
+                    "properties": {"doi": {"type": "string"}},
+                    "required": ["doi"],
+                    "additionalProperties": False,
+                },
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "object",
+                            "properties": {
+                                "DOI": {"type": "string"},
+                                "publisher": {"type": "string"},
+                            },
+                        },
+                    },
+                },
                 output_fields=[
                     FieldSpec(name="message", json_schema={"type": "object"}),
+                    FieldSpec(
+                        name="message.DOI",
+                        path=["message", "DOI"],
+                        result_path=["message.DOI"],
+                        json_schema={"type": "string"},
+                        identifier=True,
+                    ),
+                    FieldSpec(
+                        name="message.publisher",
+                        path=["message", "publisher"],
+                        result_path=["message.publisher"],
+                        json_schema={"type": "string"},
+                    ),
                 ],
             ),
         ],

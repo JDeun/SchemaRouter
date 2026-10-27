@@ -1,5 +1,40 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 A5 Crossref native E1 — curated scalar fields and actual ToolCall wiring
+
+- The built-in Crossref REST `get_work` method previously returned only an
+  opaque `message` object and had no closed required DOI input envelope. The
+  original G5/P2 graph therefore refused to recognize it as a typed
+  host-approved source root. Its curated *existing* response has now been
+  declared with nested scalar `message.DOI` and `message.publisher` fields,
+  an identifier annotation and an exact closed `doi` input contract. The
+  generic executor already supports nested paths and field projection; no
+  new graph/planner/executor heuristic was added.
+- The opt-in `inspect_crossref_paper_source` produces the **curated local
+  declaration fingerprint** without contacting the provider; separate
+  `register_reviewed_crossref_paper_source` requires the host-pinned
+  fingerprint and official base URL, then composes the existing host semantic
+  attestation, HTTP/JSON native invoker and bound tool registration. It does
+  not prove the current remote schema, verify Crossref license terms, grant
+  execution automatically or widen default provider permissions.
+- The deterministic `research_paper_crossref_native_e1` runner executes
+  actual original Understand/P2 → A5 agent ToolCall → host DOI binding →
+  native Crossref GET, and compares returned DOI against the host DOI.
+  Model-forged DOI never reaches the native invoker. A source-specific
+  response guard rejects malformed response, wrong DOI, null/ill-typed
+  publisher, unexpected status or untrusted host DOI; selected native output
+  is only DOI/publisher. Scoped MockTransport regressions and a manual-only
+  keyless CI run are separate from independent E2 evidence.
+- The research scope remains E1 wiring and host-only receipts; real public
+  Crossref and independent E2 still require separate verification. The
+  optional live request with a previously printed local manifest digest
+  `a8b5ad8a494a6580e49c1bd0db82bc566a72d3f188620ebc99d90a21f5ace296`
+  and `10.1038/nature12373` could not resolve `api.crossref.org` under either
+  normal or separately approved read-only network execution; the host-only
+  HTTP mock integration succeeded, but remote data has **not** been observed
+  here. [Design](paper-a5-crossref-native-e1-design.md)
+  · [plan](paper-a5-crossref-native-e1-plan.md).
+
 ### 2026-10-27 A5 COD OPTIMADE native live E1 — reviewed source registration and real-invoker wiring
 
 - Prior E1 heterogeneous tests proved actual adapter *compilation* and native

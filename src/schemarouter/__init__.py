@@ -448,6 +448,11 @@ from .paper_consumer_execution import (
     observe_and_execute_paper_plan,
     observe_and_execute_paper_understood_graph,
 )
+from .paper_crossref_registration import (
+    CrossrefPaperSourceProbe,
+    inspect_crossref_paper_source,
+    register_reviewed_crossref_paper_source,
+)
 from .paper_field_retrieval import (
     PaperFieldAlternative,
     PaperFieldCoverage,
@@ -646,6 +651,9 @@ __all__ = [
     "HostSemanticAttestation",
     "HostSemanticMapping",
     "apply_host_semantic_attestation",
+    "CrossrefPaperSourceProbe",
+    "inspect_crossref_paper_source",
+    "register_reviewed_crossref_paper_source",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
