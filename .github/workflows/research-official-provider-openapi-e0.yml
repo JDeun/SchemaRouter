@@ -8,11 +8,13 @@ on:
       - "scripts/research_official_openai_get_e0.py"
       - "scripts/research_official_openai_operations_e0.py"
       - "scripts/research_official_github_get_e0.py"
+      - "scripts/research_official_four_provider_catalog_e0.py"
       - "tests/test_research_official_openapi_snapshot_e0.py"
       - "tests/test_research_cross_provider_openapi_e0.py"
       - "tests/test_research_official_openai_get_e0.py"
       - "tests/test_research_official_openai_operations_e0.py"
       - "tests/test_research_official_github_get_e0.py"
+      - "tests/test_research_official_four_provider_catalog_e0.py"
       - "research/fixtures/provider-snapshots/**"
       - "research/autoresearch/official-provider-ollama-openapi-e0.md"
       - "research/autoresearch/official-provider-pirate-weather-e0.md"
@@ -21,6 +23,8 @@ on:
       - "research/autoresearch/official-provider-all-http-e0-plan.md"
       - "research/autoresearch/official-github-rest-651-e0-design.md"
       - "research/autoresearch/official-github-rest-651-e0-plan.md"
+      - "research/autoresearch/official-four-provider-1009-e0-design.md"
+      - "research/autoresearch/official-four-provider-1009-e0-plan.md"
       - ".github/workflows/research-official-provider-openapi-e0.yml"
       - "src/schemarouter/adapters/openapi.py"
       - "src/schemarouter/native_graph_index.py"
@@ -33,7 +37,7 @@ permissions:
 jobs:
   official-pinned-provider-source:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -44,9 +48,9 @@ jobs:
       - name: Install checked-out package and offline source test tools
         run: python -m pip install . "pyyaml>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Lint exact pinned source audit
-        run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py scripts/research_cross_provider_openapi_e0.py tests/test_research_cross_provider_openapi_e0.py scripts/research_official_openai_get_e0.py tests/test_research_official_openai_get_e0.py scripts/research_official_openai_operations_e0.py tests/test_research_official_openai_operations_e0.py scripts/research_official_github_get_e0.py tests/test_research_official_github_get_e0.py
+        run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py scripts/research_cross_provider_openapi_e0.py tests/test_research_cross_provider_openapi_e0.py scripts/research_official_openai_get_e0.py tests/test_research_official_openai_get_e0.py scripts/research_official_openai_operations_e0.py tests/test_research_official_openai_operations_e0.py scripts/research_official_github_get_e0.py tests/test_research_official_github_get_e0.py scripts/research_official_four_provider_catalog_e0.py tests/test_research_official_four_provider_catalog_e0.py
       - name: Verify genuine publisher bytes and converter safety
-        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py tests/test_research_cross_provider_openapi_e0.py tests/test_research_official_openai_get_e0.py tests/test_research_official_openai_operations_e0.py tests/test_research_official_github_get_e0.py
+        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py tests/test_research_cross_provider_openapi_e0.py tests/test_research_official_openai_get_e0.py tests/test_research_official_openai_operations_e0.py tests/test_research_official_github_get_e0.py tests/test_research_official_four_provider_catalog_e0.py
       - name: Execute no-network safe source receipt and reject promotion
         run: |
           python - <<'PY'
@@ -124,8 +128,25 @@ jobs:
           assert github_bulk["provider_runtime_calls"] == 0
           assert github_bulk["execution_authority"] is False
           assert github_bulk["independent_e2_qualified"] is False
-          print("Verified original GitHub 651 GETs, 654 mixed routes, no grant/E2.")
+          from scripts.research_official_four_provider_catalog_e0 import (
+              audit_original_four_provider_native_churn_e0,
+          )
+          four = audit_original_four_provider_native_churn_e0()
+          assert four["original_publisher_count"] == 4
+          assert four["original_source_route_counts"] == [355, 651, 2, 1]
+          assert four["original_methods"] == {"GET": 815, "POST": 142, "DELETE": 52}
+          assert four["mixed_native_route_counts"] == [1009, 358, 1009, 654, 1009]
+          assert four["stale_index_rejections"] == 4
+          assert four["journal_matches_full_rebuild"] is True
+          assert four["original_source_manifest_matches"] is True
+          assert four["untrusted_semantic_postings"] == 0
+          assert four["unreviewed_typed_graph_edges"] == 0
+          assert four["provider_runtime_calls"] == 0
+          assert four["execution_authority"] is False
+          assert four["independent_e2_qualified"] is False
+          print("Verified four genuine original publishers, one 1,009-route native catalog, no grant/E2.")
           PY
       - name: Preserve proof tier in CI summary
         if: success()
-        run: echo "Original Ollama, Pirate Weather, OpenAI and GitHub REST OpenAPI sources are byte/hash pinned and offline-only. OpenAI 355 native HTTP operations (16 unsupported explicitly excluded); separate GitHub+Ollama+Pirate source registry 654 original native routes with 651 GitHub GETs and complete source-owned provider churn. SOURCE E0 ONLY, NOT independently verified gold/E2/permission, no tools executed." >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "Original Ollama, Pirate Weather, OpenAI and GitHub REST OpenAPI publisher sources are byte/hash pinned and offline-only. One genuine four-provider native registry: 355 OpenAI HTTP operations (16 unsupported explicitly excluded), 651 GitHub GETs, 2 Ollama GETs and 1 Pirate Weather GET = 1009 routes. Both full-publisher churn cycles match original manifest and full rebuild. SOURCE E0 ONLY, NOT independently verified gold/E2/permission, no tools executed." >> "$GITHUB_STEP_SUMMARY"

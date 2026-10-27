@@ -1,5 +1,41 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 B1 E0 — one authentic 1,009-operation four-provider native registry
+
+- Extend the separate original OpenAI 355-operation and GitHub 651-GET
+  source audits into **one actual versioned registry**, alongside the two
+  original Ollama GETs and one Pirate Weather GET: **four publisher tools,
+  1,009 genuine source-native routes**. This is not arithmetic addition of
+  two separately observed source receipts. Original OpenAI source includes
+  371 GET/POST/DELETE operations; exactly seven literal-query and nine
+  non-JSON-only operations remain explicitly excluded, with no adapter
+  semantic widening. Preserve path, verb, original operation ID, required
+  source path inputs, JSON body requirements and source-declared auth.
+- Exercise two whole-provider removal/restore cycles through the unchanged
+  native posting/graph journal: **1,009→358→1,009→654→1,009**, comparing
+  every state with the *independently derived original-source operation
+  manifest* and a fresh full rebuild. Stale lookups are rejected at all
+  four changes. Record fresh-build and journal replay wall times and
+  process peak RSS as **single-machine observations**, never E2/SLA.
+- [Four-publisher genuine-source design](official-four-provider-1009-e0-design.md)
+  and [TDD/CI implementation plan](official-four-provider-1009-e0-plan.md).
+  New **four-source bundle / native journal / measured-cost / forged journal
+  tests: 4 passed in 365.00s**. Existing native posting/graph regressions:
+  **133 passed in 5.86s**; repository Ruff green; new module Pyright
+  **0 errors/0 warnings**; workflow YAML and diff syntax clean. Local
+  repository-wide pytest again timed out at ~8% / 110s (exit 124),
+  **not green**. Read-only independent code review found no actionable
+  Critical/Important/Minor findings. New exact-head CI is **pending** at
+  this checkpoint. Independent offline diagnostic on the local Linux host:
+  five full-rebuild wall samples **[20.21, 6.70, 19.86, 16.23, 21.55]s**;
+  four corresponding journal refresh samples **[0.0017, 12.92, 0.0018,
+  6.03]s** (cheap provider removals; heavier full-provider restorations).
+  Peak *whole-process* Linux RSS reported **1,032,076 KiB**. These small,
+  sequential, environment-dependent samples do **not** establish p95/p99,
+  production memory isolation or an E2 speedup. Keep #1755 Draft/unmerged, #1346/#1477
+  BLOCKED_EXTERNAL, #1356 HARD HOLD. No owner-reviewed semantics/permission,
+  genuine independently sourced 5,000-route oracle, agent E2 or promotion.
+
 ### 2026-10-27 B1 E0 — genuine GitHub 651 GET publisher source and whole-provider churn
 
 - Read the official MIT-licensed `github/rest-api-description` original
