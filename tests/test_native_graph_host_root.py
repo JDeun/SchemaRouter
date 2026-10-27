@@ -125,6 +125,58 @@ def _index(router: SchemaRouter, *, allow: bool) -> NativeSchemaGraphIndex:
     )
 
 
+def test_scalar_only_explicit_host_root_can_be_direct_without_becoming_join_producer():
+    """A wiki outline is not an identifier usable to bind another MCP tool."""
+    router = SchemaRouter()
+    router.registry.register(ToolSpec(
+        name="wiki", source_type="mcp", license="reviewed-unverified",
+        endpoints=[EndpointSpec(
+            name="read_outline", read_only=True, destructive=False,
+            parameters=[ParameterSpec(
+                name="repoName", required=True, json_schema={"type": "string"},
+                semantic_id="wiki.repo",
+            )],
+            input_schema={
+                "type": "object", "properties": {"repoName": {"type": "string"}},
+                "required": ["repoName"], "additionalProperties": False,
+            },
+            output_fields=[FieldSpec(
+                name="result", json_schema={"type": "string"},
+                semantic_id="wiki.outline", identifier=False,
+            )],
+            output_schema={
+                "type": "object", "properties": {"result": {"type": "string"}},
+                "required": ["result"],
+            },
+        ), EndpointSpec(
+            name="read_page", read_only=True,
+            parameters=[ParameterSpec(
+                name="page", required=True, json_schema={"type": "string"},
+                semantic_id="wiki.outline",
+            )],
+            input_schema={
+                "type": "object", "properties": {"page": {"type": "string"}},
+                "required": ["page"],
+            },
+            output_fields=[FieldSpec(
+                name="page", json_schema={"type": "string"},
+                semantic_id="wiki.page",
+            )],
+        )],
+    ))
+    index = NativeSchemaPostingIndex.build(router.registry)
+    unapproved = NativeSchemaGraphIndex.build(index)
+    assert unapproved.native_root_count == 0
+    assert unapproved.approved_host_roots == frozenset()
+    reviewed = NativeSchemaGraphIndex.build(
+        index, approved_host_roots=frozenset({"wiki.read_outline"}),
+    )
+    assert reviewed.approved_host_roots == frozenset({"wiki.read_outline"})
+    assert reviewed.native_root_count == 1
+    assert "wiki.read_outline" in reviewed.graph.capability_ids
+    assert reviewed.graph.edges == ()
+
+
 def test_original_paper_typed_plan_keeps_host_root_and_consumer_inputs_deferred():
     """Host-approved graph roots still require actual host values at runtime."""
     router, seen = _setup()

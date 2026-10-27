@@ -1338,3 +1338,56 @@ Safety regression expectations:
 - The reviewed GET endpoint has a closed required scalar ID schema. Runtime GET responses must echo the requested entry ID and entry type; a mismatched HTTP 200 is rejected before field projection.
 - Paper field planning may select a host-approved, parameterized root only when the complete owner-declared semantic/unit contract is visible. The plan remains non-executable; absent host ID yields requires_arguments. Plan metadata distinguishes source unit from canonical unit.
 - This remains E0. It does not authenticate a provider independently, certify licensing beyond the host declaration, establish actual-materials answer quality, or clear independent E2 / release HOLD.
+
+## 2026-10-27 — DeepWiki real-shape MCP scalar result → original P2/A5 E1
+
+- **Missing seam addressed:** previous mixed-provider scripted MCP scenario
+  invented a `repoName` output identifier that the real DeepWiki
+  `read_wiki_structure` source does **not** declare. The earlier native-only
+  live matrix validated the actual `result: string`, but did not wire it
+  through original `Understand → P2 direct plan → A5 agent ToolCall`.
+- **Original G5 fix:** `NativeSchemaGraphIndex` now accepts a separately
+  host-approved source route with a semantically typed scalar, even without
+  a declared output identifier. Its graph capability explicitly has **zero
+  produced identifiers**, hence no downstream identifier-binding edge.
+  This is a direct-P2 option only, not inferred graph composition.
+- **Native source wiring:** `src/schemarouter/paper_deepwiki_registration.py`
+  implements live MCP `tools/list` probe and a separate **exact unreviewed
+  adapter-visible discovery snapshot digest + source URL** review gate
+  (not a raw-wire hash or signed source-owner receipt). The approval publishes only the
+  original `read_wiki_structure(repoName: string) → result: string` operation
+  through `MCPRemoteInvoker` with a narrowed closed input schema; remote
+  `readOnlyHint` is never trusted as authority. Existing fields receive
+  host-owned semantics `wiki.repository_id` and `wiki.outline`; **no result
+  identifier is fabricated**. Source license label remains
+  `source-license-unverified-research-only`. An independent read-only review
+  found a real-world schema incompatibility: the provider annotates
+  `repoName` with a description and marks its result envelope
+  `x-fastmcp-wrap-result: true`. Both are source-preserved at inspection;
+  only the nonvalidation parameter description is stripped after fingerprint
+  approval. Unknown source constraints and annotation drift fail closed.
+  Source observation: https://manufact.com/leaderboard/deepwiki (Oct 24, 2026).
+- **Original A5 pilot:** `scripts/research_paper_deepwiki_native_e1.py`
+  supplies a host-selected bounded repository. A scripted agent intentionally
+  submits a different repository, which is not executed. P2 uses one reviewed
+  original direct route and the normal principal-scoped native execution.
+  Returned source content must match the exact repository heading and have
+  at least two numbered pages within the size bound. Scripted E1 proves
+  routing/wiring, **not** autonomous model E2 or provider answer quality.
+- **Verification:** `tests/test_paper_deepwiki_native_a5_e1.py` includes
+  source-shaped asynchronous discovery and native execution, stale source,
+  malformed schema, wrong outline and host parameter refusal tests;
+  `tests/test_native_graph_host_root.py` proves no scalar-to-identifier
+  graph edge. Original-paper plus native regression **612 passed**,
+  additional real local MCP HTTP/stdio tests **2 passed** after the
+  sandbox's local socket restriction was lifted, Ruff **PASS**, targeted
+  Pyright **0 errors/0 warnings**. All actual network-backed DeepWiki
+  results still require a public runner: this environment's approved
+  `probe` fails DNS resolution before MCP discovery. No real live A5
+  execution or E2 success claimed.
+- **Resume:** exact source issue/stacked Draft PR and CI receipts should be
+  checked at their current remote head; run the mock GitHub Actions job and
+  manually dispatch `research-paper-deepwiki-native-a5-e1.yml` in `probe`
+  mode on an environment with public DNS. Review the probe fingerprint
+  **independently** before manual `run`. Keep predecessor Draft PRs and
+  external #1346/#1477 plus release #1356 HOLD unchanged.

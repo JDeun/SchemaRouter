@@ -326,7 +326,22 @@ def _source_native_graph_contracts(
                 if host_root:
                     accepted.add(route)
             elif host_root:
-                raise ValueError("G5 host-approved source has no typed output")
+                # A reviewed remote source may expose a genuine scalar value
+                # (for example MCP `result: string`) without an identifier.
+                # Such a route is eligible for source-owned *direct* P2
+                # lookup, but MUST NOT become a dependency producer: graph
+                # consumers can bind only genuine identifier fields.
+                scalar_output = any(
+                    field.unit is None and field.unit_normalization is None
+                    and _scalar_contract(field.json_schema)
+                    and CapabilityFieldContract.from_field(field) is not None
+                    for field in endpoint.output_fields
+                )
+                if not scalar_output:
+                    raise ValueError("G5 host-approved source has no typed output")
+                contracts.append(CapabilityContract(capability_id=route))
+                roots += 1
+                accepted.add(route)
         else:
             required = _native_required_inputs(endpoint)
             if required is not None:

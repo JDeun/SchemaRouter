@@ -453,6 +453,11 @@ from .paper_crossref_registration import (
     inspect_crossref_paper_source,
     register_reviewed_crossref_paper_source,
 )
+from .paper_deepwiki_registration import (
+    DeepWikiPaperSourceProbe,
+    inspect_deepwiki_paper_source,
+    register_reviewed_deepwiki_paper_source,
+)
 from .paper_field_retrieval import (
     PaperFieldAlternative,
     PaperFieldCoverage,
@@ -654,6 +659,9 @@ __all__ = [
     "CrossrefPaperSourceProbe",
     "inspect_crossref_paper_source",
     "register_reviewed_crossref_paper_source",
+    "DeepWikiPaperSourceProbe",
+    "inspect_deepwiki_paper_source",
+    "register_reviewed_deepwiki_paper_source",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
