@@ -14,7 +14,9 @@ from typing import TYPE_CHECKING, Any
 from .authorization import PrincipalContext
 from .concept_retrieval import MAX_QUERY_BYTES, MAX_QUERY_CHARS, NativeConceptCatalog
 from .errors import ModelAnalysisError, PolicyViolationError
+from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
+from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import PaperTypedToolPlan
 from .paper_understood_direct_plan import (
     PaperIntentRegistry,
@@ -86,6 +88,7 @@ async def compile_model_query(
     max_hops: int = 2,
     max_model_input_bytes: int = 32768,
     max_model_output_bytes: int = 4096,
+    rank_policy: PaperNativeRankPolicy | None = None,
 ) -> PaperTypedToolPlan:
     """Propose source-scoped intent IDs using a single caller-supplied model.
 
@@ -106,6 +109,8 @@ async def compile_model_query(
         raise ValueError("host-approved intent registry required")
     if not callable(model):
         raise ValueError("explicit model callback required")
+    if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
+        raise ValueError("reviewed paper rank policy required")
     if type(k) is not int or k != 5 or type(max_hops) is not int or max_hops not in (1, 2):
         raise ValueError("paper query requires K5 and one or two graph hops")
     if (
@@ -128,9 +133,30 @@ async def compile_model_query(
             intent_registry.model_dump(mode="python"), strict=True,
         )
         before = (catalog.model_dump_json(), intent_registry.model_dump_json(),
-                  principal.model_dump_json(), deepcopy(host_source_arguments))
+                  principal.model_dump_json(), deepcopy(host_source_arguments),
+                  rank_policy.model_dump_json() if rank_policy else None)
     except (ValueError, TypeError, AttributeError, OverflowError):
         raise PolicyViolationError("paper query owner declarations invalid") from None
+
+    if rank_policy is not None:
+        try:
+            reviewed_rank = PaperNativeRankPolicy.model_validate(
+                rank_policy.model_dump(mode="python"), strict=True,
+            )
+            annotated = (
+                set(reviewed_rank.route_domains)
+                | set(reviewed_rank.route_priorities)
+                | set(reviewed_rank.web_route_ids)
+            )
+            if (
+                reviewed_rank.snapshot_id != session.snapshot_id
+                or not annotated <= session._index.field_index.route_locations.keys()
+            ):
+                raise ValueError("stale paper Rank source declaration")
+        except Exception:
+            # Fail before any external model disclosure; diagnostics must
+            # never serialize provider/owner policy internals into errors.
+            raise PolicyViolationError("paper query rank source preflight failed") from None
 
     approved_concepts = {c.concept_id: c for c in reviewed.concepts}
     approved_intents = {i.intent_id: i for i in intents.intents}
@@ -166,6 +192,13 @@ async def compile_model_query(
     def verify() -> None:
         session._index.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
+        try:
+            current_rank_policy = rank_policy.model_dump_json() if rank_policy else None
+        except Exception:
+            # A model callback may mutate the caller's owned nested Pydantic
+            # collection to an unserializable object. Never return that
+            # object's type, repr or Pydantic diagnostic to a consumer.
+            raise PolicyViolationError("paper query owner authority changed") from None
         if (
             router.authorization_policy is None
             or _policy_contents_digest(router.authorization_policy) != policy_digest
@@ -174,6 +207,7 @@ async def compile_model_query(
             or intent_registry.model_dump_json() != before[1]
             or principal.model_dump_json() != before[2]
             or host_source_arguments != before[3]
+            or current_rank_policy != before[4]
         ):
             raise PolicyViolationError("paper query source or owner authority changed")
 
@@ -197,7 +231,24 @@ async def compile_model_query(
         except Exception:
             raise PolicyViolationError("paper query source eligibility check failed") from None
         verify()
-        if coverage.status == "complete":
+        qualified = coverage.status == "complete"
+        if not qualified and coverage.status == "over_k_unranked" and rank_policy:
+            # A reviewed concept with >K authorized candidates is still a
+            # valid disclosure if the same current native source can rank its
+            # complete field contract. No route IDs are offered to the model.
+            group = NativeDeclaredFieldGroup(
+                aliases=(concept.aliases[0],),
+                required_fields=concept.required_fields,
+                source_type=concept.source_type, license=concept.license,
+            )
+            ranked = session._index.field_index.lookup(
+                router, concept.aliases[0], principal=principal, group=group,
+                k=k, _paper_rank_policy=rank_policy,
+                _paper_rank_aliases=(tuple(concept.aliases),),
+            )
+            qualified = ranked.status in ("complete", "ranked_unverified")
+            verify()
+        if qualified:
             offered_concepts.append(concept)
     offered_ids = {concept.concept_id for concept in offered_concepts}
     offered_intents = [
@@ -276,6 +327,7 @@ async def compile_model_query(
         plan = session.compile_understood(
             understood, principal=principal, intent_registry=intent_registry,
             host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+            rank_policy=rank_policy,
         )
     except (ValueError, TypeError):
         verify()

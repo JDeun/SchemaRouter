@@ -92,6 +92,7 @@ class PaperTypedToolPlan:
     calls: tuple[PaperPlanCall, ...] = ()
     bindings: tuple[PaperPlanBinding, ...] = ()
     executable_authority: bool = False
+    ranked_unverified: bool = False
 
 
 def compile_paper_typed_tool_plan(

@@ -14,6 +14,7 @@ from schemarouter import (
     NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
+    PaperNativeRankPolicy,
     PaperUnderstanding,
     ParameterSpec,
     PrincipalContext,
@@ -175,6 +176,19 @@ def main() -> None:
     for call in understood.calls:
         print("understood fields / inputs:", call.route_id,
               call.call.fields, call.call.arguments)
+
+    # Opt-in original Algorithm 1 Rank: source-pinned host policy, after
+    # principal-scoped typed proof. This toy catalog has just one candidate;
+    # real >K catalogs select exactly the top five. A ranked receipt NEVER
+    # authorizes execution or model-proposed argument binding.
+    ranked = active.compile_understood(
+        PaperUnderstanding(intent_id="customer.lookup"),
+        principal=principal, intent_registry=reviewed_intents,
+        rank_policy=PaperNativeRankPolicy(snapshot_id=active.snapshot_id),
+    )
+    print("paper Rank:", ranked.status,
+          "ranked_unverified:", ranked.ranked_unverified,
+          "executable:", ranked.executable_authority)
 
     # A second, independently reviewed source schema can establish the
     # dependency without executing either endpoint. Reprepare after editing

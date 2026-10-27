@@ -1826,3 +1826,47 @@ provider-neutral example passed. New exact-head CI/full source suite and
 independent review are separate gates. B1 #1560 catalog-wide *qualified*
 Top-K ranking, 5,000-route heterogeneous source gold, #1346/#1477
 independent A6/A7/A8/E2 and #1356 release HARD HOLD remain open.
+
+## 2026-10-28 — #1797 original-paper deterministic native direct Rank (B1 E0)
+
+Implemented the **previously missing owner-reviewed Rank(Tcand, C) wiring**
+behind a new opt-in `PaperNativeRankPolicy`. The current source-pinned native
+posting index first evaluates *all* typed FieldGroup candidate routes against
+registered fingerprints, read-only constraints, RBAC, principal data scope,
+availability, schema typing and owner license/source requirements. It then
+uses a deterministic bounded Top-K5 heap ordered by owner concept-alias
+match, web-route demotion, owner route priority, principal-visible field
+count and stable route ID. Per-intent domain tags are host-reviewed, not
+LLM-proposed. The legacy 32-route **research callback** budget is unchanged;
+5,000-route local selection performs no untrusted model callback.
+
+`SchemaFieldRoutingSession.compile_understood` and `acompile_query` forward
+the explicit `rank_policy`; structured model proposals remain bounded and
+the original source/owner state is reattested across the async callback.
+For current, fully authorized direct candidates, a `PaperTypedToolPlan`
+contains at most five typed call receipts and `ranked_unverified=True`, but
+**always** `executable_authority=False`. Named tool overrides bypass auto
+Rank and remain exact scoped lookups; G5 dependency-path ranking is still
+conservative/unranked. No default router `plan`/`execute` behavior, native
+ToolSpec schema fingerprint or prepared source snapshot hash was changed.
+
+Issue: [#1797](https://github.com/JDeun/SchemaRouter/issues/1797).
+Design: `paper-native-rank-policy-20261028-design.md`.
+Benchmark: `python -m scripts.benchmark_paper_native_rank_b1 --routes 5000
+--repeats 3` (500 routes also supported). Fixtures contain synthetic
+heterogeneous CRM/MCP/web/custom ToolSpecs and an independent eligible-route
+ordering oracle with a highly ranked denied decoy.
+Local Python 3.12.14/Linux x86_64, three measured requests after index
+build: 500 registered / 120 qualified routes, lookup wall p50 **51.955ms**,
+CPU p50 **51.952ms**, receipt **1,534 bytes**; 5,000 registered / 1,206
+qualified routes, lookup wall p50 **523.090ms**, CPU p50 **522.948ms**,
+receipt **1,536 bytes**. Neither index-build time nor callback/provider
+latency is included; no prechange speedup, relevance accuracy, independent
+real-provider transport or publisher gold can be inferred. These values
+are specific to this local source-owned fixture and current machine.
+
+**E0 mechanism evidence**
+does not replace publisher-authorized 500/5,000 mixed-provider task-gold,
+real model/provider data, A6/A7/A8, default promotion or the #1356 release
+HARD HOLD. Exact local test and CI/PR qualifications belong to the new
+branch record, not earlier #1795 review-paging measurements.

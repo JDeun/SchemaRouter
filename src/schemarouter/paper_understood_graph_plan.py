@@ -15,6 +15,7 @@ from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
 from .native_graph_index import NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute
+from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
     PaperPlanBinding,
     PaperPlanCall,
@@ -44,6 +45,7 @@ def compile_paper_understood_graph_plan(
     k: int = 5,
     max_hops: int = 2,
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
 ) -> PaperTypedToolPlan:
     """Compile one exact model-named target path without source execution.
 
@@ -97,6 +99,7 @@ def compile_paper_understood_graph_plan(
     direct = compile_paper_understood_direct_plan(
         router, understanding, principal=principal, catalog=catalog,
         intent_registry=intent_registry, index=index, k=k,
+        rank_policy=rank_policy,
     )
     verify_host_inputs()
     direct_routes = {call.route_id for call in direct.calls}
@@ -107,6 +110,7 @@ def compile_paper_understood_graph_plan(
         direct = compile_paper_understood_direct_plan(
             router, understanding, principal=principal, catalog=catalog,
             intent_registry=intent_registry, index=index, k=k,
+            rank_policy=rank_policy,
             host_source_arguments=host_source_arguments,
         )
         verify_host_inputs()

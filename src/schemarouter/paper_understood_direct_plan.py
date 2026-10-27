@@ -21,6 +21,7 @@ from .host_field_contract import _policy_contents_digest
 from .models import StrictModel
 from .native_graph_index import NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute
+from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
     PaperTypedToolPlan,
     _check_current_call_scopes,
@@ -44,6 +45,7 @@ class PaperIntentDeclaration(StrictModel):
 
     intent_id: str
     required_concept_ids: tuple[str, ...]
+    domains: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def validate_declaration(self) -> PaperIntentDeclaration:
@@ -56,6 +58,10 @@ class PaperIntentDeclaration(StrictModel):
                 for cid in self.required_concept_ids
             )
             or len(set(self.required_concept_ids)) != len(self.required_concept_ids)
+            or len(self.domains) > 8
+            or len(set(self.domains)) != len(self.domains)
+            or any(type(domain) is not str or not _ID_PATTERN.fullmatch(domain)
+                   for domain in self.domains)
         ):
             raise ValueError("invalid owner-reviewed paper intent declaration")
         return self
@@ -184,6 +190,7 @@ def compile_paper_understood_direct_plan(
     index: NativeSchemaGraphIndex,
     k: int = 5,
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
 ) -> PaperTypedToolPlan:
     """Plan field-complete original *direct* tools from structured hints.
 
@@ -203,6 +210,8 @@ def compile_paper_understood_direct_plan(
         raise ValueError("host-approved intent registry required")
     if not isinstance(understanding, PaperUnderstanding):
         raise ValueError("structured paper understanding required")
+    if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
+        raise ValueError("reviewed paper rank policy required")
     if host_source_arguments is not None and (
         type(host_source_arguments) is not dict
         or len(host_source_arguments) > k
@@ -222,12 +231,19 @@ def compile_paper_understood_direct_plan(
         original_intents = intent_registry.model_dump_json()
         original_catalog = catalog.model_dump_json()
         original_principal = principal.model_dump_json()
+        original_rank_policy = rank_policy.model_dump_json() if rank_policy else None
     except (TypeError, ValueError, OverflowError, AttributeError) as exc:
         raise ValueError("paper understood declarations changed or invalid") from exc
 
     approved_hints, group = _source_owned_understood_group(
         understanding, catalog, intent_registry,
     )
+    intent = next(i for i in intent_registry.intents
+                  if i.intent_id == approved_hints.intent_id)
+    concept_ids = set(intent.required_concept_ids) | set(approved_hints.concept_ids)
+    approved_concepts = {c.concept_id: c for c in catalog.concepts}
+    rank_aliases = tuple(tuple(approved_concepts[cid].aliases)
+                         for cid in sorted(concept_ids))
 
     witness = router._retrieval_authority_witness()
     index.field_index._assert_source(router)
@@ -239,6 +255,10 @@ def compile_paper_understood_direct_plan(
     def verify_owner_and_source() -> None:
         index.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
+        try:
+            current_rank_policy = rank_policy.model_dump_json() if rank_policy else None
+        except Exception:
+            raise PolicyViolationError("paper understood owner or authority changed") from None
         if (
             router.authorization_policy is None
             or _policy_contents_digest(router.authorization_policy) != original_policy
@@ -246,6 +266,7 @@ def compile_paper_understood_direct_plan(
             or catalog.model_dump_json() != original_catalog
             or intent_registry.model_dump_json() != original_intents
             or understanding.model_dump_json() != original_hints
+            or current_rank_policy != original_rank_policy
             or host_source_arguments is not None
             and host_source_arguments != host_inputs
         ):
@@ -271,8 +292,11 @@ def compile_paper_understood_direct_plan(
     first = index.field_index.lookup(
         router, group.aliases[0], principal=principal, group=group,
         k=k, allowed_tool_keys=keys,
+        _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
+        _paper_rank_domains=intent.domains,
     )
-    if first.status != "complete":
+    ranked = first.status == "ranked_unverified" and first.deterministic_paper_ranked
+    if first.status != "complete" and not ranked:
         if host_inputs:
             raise ValueError("host direct arguments require a proved source route")
         if first.status not in ("no_proven_hit", "over_k_unranked"):
@@ -329,6 +353,8 @@ def compile_paper_understood_direct_plan(
         second = index.field_index.lookup(
             router, group.aliases[0], principal=principal, group=group,
             k=k, allowed_tool_keys=keys,
+            _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
+            _paper_rank_domains=intent.domains,
         )
         if first != second or materialize(second.candidates) != initial_calls:
             raise PolicyViolationError("paper understood source proof changed")
@@ -344,4 +370,5 @@ def compile_paper_understood_direct_plan(
         registry_version=first.registry_version,
         requested_k=k,
         calls=initial_calls,
+        ranked_unverified=first.deterministic_paper_ranked,
     )

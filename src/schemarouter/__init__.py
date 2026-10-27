@@ -475,6 +475,7 @@ from .paper_field_retrieval import (
     PaperFieldRoute,
     retrieve_paper_field_coverage,
 )
+from .paper_native_rank import PaperNativeRankPolicy
 from .paper_observed_binding import (
     PaperObservedBinding,
     observe_and_bind_paper_plan,
@@ -657,6 +658,7 @@ __all__ = [
     "PaperPlanFieldMeta",
     "PaperPlanParameterMeta",
     "PaperTypedToolPlan",
+    "PaperNativeRankPolicy",
     "compile_paper_typed_tool_plan",
     "PaperIntentDeclaration",
     "PaperIntentRegistry",

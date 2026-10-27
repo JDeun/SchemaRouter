@@ -23,6 +23,7 @@ from .native_semantic_index import (
     _native_review_cursor,
 )
 from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
+from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_understanding import PaperFieldModel, compile_model_query
 from .paper_typed_tool_plan import (
     PaperPlanParameterMeta,
@@ -565,6 +566,7 @@ class SchemaFieldRoutingSession:
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         k: int = 5,
         max_hops: int = 2,
+        rank_policy: PaperNativeRankPolicy | None = None,
     ) -> PaperTypedToolPlan:
         """Compile untrusted structured Understand(q) hints to a source-proven plan.
 
@@ -578,6 +580,7 @@ class SchemaFieldRoutingSession:
             catalog=catalog, intent_registry=intent_registry,
             index=self._index, host_source_arguments=host_source_arguments,
             k=k, max_hops=max_hops,
+            rank_policy=rank_policy,
         )
 
     async def acompile_query(
@@ -595,6 +598,7 @@ class SchemaFieldRoutingSession:
         max_hops: int = 2,
         max_model_input_bytes: int = 32768,
         max_model_output_bytes: int = 4096,
+        rank_policy: PaperNativeRankPolicy | None = None,
     ) -> PaperTypedToolPlan:
         """Use a caller-owned model to suggest IDs, then prove source fields.
 
@@ -611,4 +615,5 @@ class SchemaFieldRoutingSession:
             host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
             max_model_input_bytes=max_model_input_bytes,
             max_model_output_bytes=max_model_output_bytes,
+            rank_policy=rank_policy,
         )

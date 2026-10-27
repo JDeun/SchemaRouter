@@ -26,6 +26,7 @@ from .field_group_retrieval import (
     _scalar_contract,
 )
 from .models import FieldSpec, ToolSpec
+from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
@@ -102,6 +103,7 @@ class IndexedNativeFieldResult:
     qualified_count: int
     candidates: tuple[IndexedNativeFieldCandidate, ...]
     experimental_ranked: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -430,6 +432,9 @@ class NativeSchemaPostingIndex:
         _research_ranker: Callable[
             [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
         ] | None = None,
+        _paper_rank_policy: PaperNativeRankPolicy | None = None,
+        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
+        _paper_rank_domains: tuple[str, ...] = (),
     ) -> IndexedNativeFieldResult:
         """Conjunctive source-owned lookup with optional bounded E0 ranking.
 
@@ -454,6 +459,25 @@ class NativeSchemaPostingIndex:
             raise ValueError("invalid bounded named tool override")
         if _research_ranker is not None and not callable(_research_ranker):
             raise ValueError("indexed research ranker must be callable")
+        if _paper_rank_policy is not None and not isinstance(
+            _paper_rank_policy, PaperNativeRankPolicy,
+        ):
+            raise ValueError("original paper Rank needs a reviewed policy")
+        if _paper_rank_policy is not None and _research_ranker is not None:
+            raise ValueError("original paper Rank cannot share a model ranker")
+        if _paper_rank_domains and _paper_rank_policy is None:
+            raise ValueError("paper intent domains need a reviewed rank policy")
+        if (
+            type(_paper_rank_aliases) is not tuple
+            or len(_paper_rank_aliases) > 8
+            or any(type(group) is not tuple or not 1 <= len(group) <= 16
+                   or any(type(alias) is not str or not alias or len(alias) > 160
+                          for alias in group) for group in _paper_rank_aliases)
+            or type(_paper_rank_domains) is not tuple
+            or len(_paper_rank_domains) > 8
+            or any(type(domain) is not str for domain in _paper_rank_domains)
+        ):
+            raise ValueError("invalid bounded original paper Rank declarations")
         if type(k) is not int or k != STRICT_K:
             raise ValueError("native indexed lookup requires exact K5")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
@@ -481,6 +505,21 @@ class NativeSchemaPostingIndex:
         if router.authorization_policy is None:
             raise PolicyViolationError("explicit authorization policy required")
         self._assert_source(router)
+        original_paper_policy: str | None = None
+        rank_policy = _paper_rank_policy
+        if rank_policy is not None:
+            original_paper_policy = rank_policy.model_dump_json()
+            rank_policy = PaperNativeRankPolicy.model_validate(
+                rank_policy.model_dump(mode="python"), strict=True,
+            )
+            if rank_policy.snapshot_id != self.snapshot_id:
+                raise PolicyViolationError("paper Rank source snapshot mismatch")
+            annotated = (
+                set(rank_policy.route_domains) | set(rank_policy.route_priorities)
+                | set(rank_policy.web_route_ids)
+            )
+            if not annotated <= self.route_locations.keys():
+                raise PolicyViolationError("paper Rank contains unregistered routes")
         witness = router._retrieval_authority_witness()
         original_policy = (
             router.authorization_policy.default_effect,
@@ -497,6 +536,8 @@ class NativeSchemaPostingIndex:
             raise PolicyViolationError("explicit authorization required")
         availability = router.planner.availability_predicate
         qualified: list[IndexedNativeFieldCandidate] = []
+        visible_field_counts: dict[str, int] = {}
+        use_paper_rank = rank_policy is not None and allowed_tool_keys is None
         for route in sorted(matched):
             # Key is an opaque exact registered route; never parse a route ID
             # with split because tool namespaces may contain separators.
@@ -508,6 +549,9 @@ class NativeSchemaPostingIndex:
                 raise PolicyViolationError("indexed registered route missing")
             tool_key, endpoint_name = location
             if allowed_tool_keys is not None and tool_key not in allowed_tool_keys:
+                continue
+            if (use_paper_rank and rank_policy is not None
+                    and not rank_policy.permits_domain(route, _paper_rank_domains)):
                 continue
             tool = router.registry.get(tool_key)
             endpoint = tool.endpoint(endpoint_name)
@@ -556,9 +600,17 @@ class NativeSchemaPostingIndex:
                 endpoint_fingerprint=endpoint.fingerprint,
                 required_output_fields=tuple(sorted(set(matched_names))),
             ))
+            if use_paper_rank:
+                visible_field_counts[route] = len(visible.output_fields)
         count = len(qualified)
         ranked_offsets: tuple[int, ...] | None = None
-        if (
+        if use_paper_rank and rank_policy is not None:
+            ranked_offsets = rank_authorized_paper_direct(
+                tuple(qualified), concept_aliases=_paper_rank_aliases,
+                visible_field_count=visible_field_counts,
+                policy=rank_policy, k=k,
+            )
+        elif (
             count > k and _research_ranker is not None
             and count <= MAX_RESEARCH_RANKABLE_POSTINGS
         ):
@@ -625,6 +677,9 @@ class NativeSchemaPostingIndex:
                 }))
                 if current_names != candidate.required_output_fields:
                     raise PolicyViolationError("indexed candidate projection changed")
+                if (use_paper_rank and
+                        len(scoped.output_fields) != visible_field_counts[candidate.route_id]):
+                    raise PolicyViolationError("paper Rank visible field count changed")
         except Exception:
             # Avoid leaking provider/private schema details in callback errors.
             raise PolicyViolationError(
@@ -632,6 +687,16 @@ class NativeSchemaPostingIndex:
             ) from None
         self._assert_source(router)
         router._check_retrieval_authority_witness(witness)
+        if original_paper_policy is not None:
+            try:
+                if _paper_rank_policy is None or (
+                    _paper_rank_policy.model_dump_json() != original_paper_policy
+                ):
+                    raise PolicyViolationError("paper Rank owner declaration changed")
+            except Exception:
+                raise PolicyViolationError(
+                    "paper Rank owner declaration changed"
+                ) from None
         current_policy = router.authorization_policy
         if (
             current_policy.default_effect,
@@ -673,6 +738,7 @@ class NativeSchemaPostingIndex:
                 tuple(qualified) if count <= k else ()
             ),
             experimental_ranked=ranked_offsets is not None,
+            deterministic_paper_ranked=use_paper_rank,
         )
 
     def lookup_concepts(

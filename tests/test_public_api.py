@@ -83,6 +83,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PaperPlanFieldMeta",
         "PaperPlanParameterMeta",
         "PaperTypedToolPlan",
+        "PaperNativeRankPolicy",
         "compile_paper_typed_tool_plan",
         "PaperIntentDeclaration",
         "PaperIntentRegistry",

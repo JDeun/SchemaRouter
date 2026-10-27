@@ -228,6 +228,26 @@ disclose; the router never fetches provider rows, promotes model suggestions
 to source authority, or binds model-proposed parameter values. An independent
 model-understanding benchmark is still required.
 
+For original-paper **Algorithm 1 `Rank(Tcand, C)`**, a trusted host can
+optionally declare `PaperNativeRankPolicy(snapshot_id=session.snapshot_id,
+route_priorities={"already.reviewed.route": 2})` and pass it as
+`rank_policy=...` to `compile_understood` or `acompile_query`. Annotated
+route IDs must be currently registered and the source snapshot must match;
+the policy also supports owner-assigned domain tags (`PaperIntentDeclaration`
+`domains`) and web-route demotion. The index first checks the **entire**
+eligible native FieldGroup cohort against live principal authorization,
+field scope, source contract, health and fingerprints, then locally ranks
+only those already-qualified routes to Top-K5 (including >32 and 5,000-route
+catalogs). Direct plans report `ranked_unverified=True` and always
+`executable_authority=False`; no model/provider is invoked by Rank. Named
+tool overrides continue through their original scoped source proof without
+implicit ranking. Without an explicit rank policy, the original
+`over_k_unranked` refusal at >K remains unchanged. Dependency-path G5
+ranking, quality evidence, independently reviewed E2 and default promotion
+are **not** implemented by this opt-in direct route feature. Synthetic
+CPU/byte evidence: `python -m scripts.benchmark_paper_native_rank_b1
+--routes 5000 --repeats 3`; this is not an E2 accuracy benchmark.
+
 After registered schemas change, the original prepared session becomes stale.
 Call `new_session = session.refresh()` to create a new immutable field-routing
 snapshot using the built-in in-memory/SQLite registry's verified change journal.
