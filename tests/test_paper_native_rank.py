@@ -345,3 +345,155 @@ async def test_invalid_rank_snapshot_refuses_before_any_model_disclosure():
             model_visible_concept_ids=("crm.status", "crm.priority"),
             rank_policy=policy,
         )
+
+
+def _graph_candidate(
+    root: str,
+    target: str,
+    *,
+    fields: tuple[str, ...] = ("case status",),
+    bindings: tuple[tuple[str, str], ...] = (("case_id", "case_id"),),
+):
+    from schemarouter.native_graph_index import NativeIndexedGraphCandidate
+
+    single = len(bindings) == 1
+    return NativeIndexedGraphCandidate(
+        producer_route_id=root,
+        consumer_route_id=target,
+        producer_tool_fingerprint="t",
+        producer_endpoint_fingerprint="e",
+        consumer_tool_fingerprint="t",
+        consumer_endpoint_fingerprint="e",
+        producer_identifier_field=bindings[0][1] if single else None,
+        consumer_required_parameter=bindings[0][0] if single else None,
+        consumer_output_fields=fields,
+        parameter_bindings=bindings,
+        source_root_parameters=(),
+    )
+
+
+def _two_hop_candidate(
+    root: str,
+    middle: str,
+    target: str,
+    *,
+    fields: tuple[str, ...] = ("case status",),
+    first: tuple[tuple[str, str], ...] = (("contact_id", "contact_id"),),
+    second: tuple[tuple[str, str], ...] = (("case_id", "case_id"),),
+):
+    from schemarouter.native_graph_index import NativeIndexedTwoHopCandidate
+
+    return NativeIndexedTwoHopCandidate(
+        route_ids=(root, middle, target),
+        route_fingerprints=(("t", "e"), ("t", "e"), ("t", "e")),
+        root_to_intermediate=first,
+        intermediate_to_target=second,
+        target_output_fields=fields,
+        source_root_parameters=(),
+    )
+
+
+def test_owner_rank_orders_complete_one_hop_paths_by_paper_precedence():
+    from schemarouter import paper_native_rank
+
+    candidates = (
+        _graph_candidate("root_p.read", "target_partial.read",
+                         fields=("case status value",)),
+        _graph_candidate("root_w.read", "target_web.read"),
+        _graph_candidate("root_z.read", "target_priority.read",
+                         bindings=(("case_id", "case_id"),
+                                   ("tenant_id", "tenant_id"))),
+        _graph_candidate("root_b.read", "target_b.read"),
+        _graph_candidate("root_a.read", "target_a.read"),
+        _graph_candidate("root_wide.read", "target_wide.read",
+                         bindings=(("case_id", "case_id"),
+                                   ("tenant_id", "tenant_id"))),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=SNAPSHOT,
+        web_route_ids=("target_web.read",),
+        route_priorities={
+            "target_priority.read": 10,
+            "target_partial.read": 100,
+        },
+    )
+
+    offsets = paper_native_rank.rank_authorized_paper_graph_one_hop(
+        candidates, concept_aliases=(("case status",),), policy=policy, k=5,
+    )
+
+    assert tuple(candidates[i].consumer_route_id for i in offsets) == (
+        "target_priority.read", "target_a.read", "target_b.read",
+        "target_wide.read", "target_web.read",
+    )
+
+
+def test_owner_rank_orders_complete_two_hop_paths_by_visible_binding_cost():
+    from schemarouter import paper_native_rank
+
+    candidates = (
+        _two_hop_candidate("root_w.read", "middle_w.read", "target_web.read"),
+        _two_hop_candidate("root_z.read", "middle_z.read", "target_wide.read",
+                           first=(("contact_id", "contact_id"),
+                                  ("tenant_id", "tenant_id"))),
+        _two_hop_candidate("root_p.read", "middle_p.read", "target_partial.read",
+                           fields=("case status value",)),
+        _two_hop_candidate("root_b.read", "middle_b.read", "target_b.read"),
+        _two_hop_candidate("root_a.read", "middle_a.read", "target_a.read"),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=SNAPSHOT,
+        web_route_ids=("root_w.read",),
+        route_priorities={"target_partial.read": 100},
+    )
+
+    offsets = paper_native_rank.rank_authorized_paper_graph_two_hop(
+        candidates, concept_aliases=(("case status",),), policy=policy, k=5,
+    )
+
+    assert tuple(candidates[i].route_ids for i in offsets) == (
+        ("root_a.read", "middle_a.read", "target_a.read"),
+        ("root_b.read", "middle_b.read", "target_b.read"),
+        ("root_z.read", "middle_z.read", "target_wide.read"),
+        ("root_w.read", "middle_w.read", "target_web.read"),
+        ("root_p.read", "middle_p.read", "target_partial.read"),
+    )
+
+
+@pytest.mark.parametrize("count", [500, 5000])
+def test_owner_rank_handles_500_and_5000_complete_path_receipts(count):
+    from schemarouter import paper_native_rank
+
+    candidates = tuple(
+        _graph_candidate(f"root_{i:05d}.read", f"target_{i:05d}.read")
+        for i in range(count)
+    )
+    winner = f"target_{count - 1:05d}.read"
+    policy = PaperNativeRankPolicy(
+        snapshot_id=SNAPSHOT, route_priorities={winner: 100},
+    )
+
+    offsets = paper_native_rank.rank_authorized_paper_graph_one_hop(
+        candidates, concept_aliases=(("case status",),), policy=policy, k=5,
+    )
+
+    assert len(offsets) == 5
+    assert candidates[offsets[0]].consumer_route_id == winner
+    assert tuple(candidates[i].consumer_route_id for i in offsets[1:]) == tuple(
+        f"target_{i:05d}.read" for i in range(4)
+    )
+
+
+def test_owner_rank_refuses_more_than_5000_complete_path_receipts():
+    from schemarouter import paper_native_rank
+
+    candidates = tuple(
+        _graph_candidate(f"root_{i:05d}.read", f"target_{i:05d}.read")
+        for i in range(5001)
+    )
+    policy = PaperNativeRankPolicy(snapshot_id=SNAPSHOT)
+
+    with pytest.raises(ValueError, match="5000"):
+        paper_native_rank.rank_authorized_paper_graph_one_hop(
+            candidates, concept_aliases=(("case status",),), policy=policy, k=5,
+        )
