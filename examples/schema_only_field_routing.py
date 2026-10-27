@@ -55,8 +55,19 @@ def main() -> None:
         )],
     ))
 
-    # Semantic IDs/aliases express the fields the host wants discovered.
-    # They are a reviewed declaration, not inferred from provider replies.
+    session = router.prepare_field_routing(
+        approved_host_roots=frozenset({"directory.lookup"}),
+    )  # index once for review; no concept authority exists yet
+    principal = PrincipalContext(subject="example-reader", roles=("reader",))
+    reviewed_fields = session.inspect_visible_fields(principal=principal)
+    for route in reviewed_fields.routes:
+        print("visible source field candidate:", route.route_id,
+              [(field.name, field.semantic_id) for field in route.fields])
+    assert not reviewed_fields.executable_authority
+    # The host can use this CURRENT scoped inventory to review concepts;
+    # no aliases are inferred and no provider data is fetched.
+
+    # The owner now explicitly reviews/declares the meanings to route.
     catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id="customer.overview",
         aliases=("customer status and owner", "고객 상태와 담당자"),
@@ -70,20 +81,16 @@ def main() -> None:
         ),
         source_type="host-owned", license="internal",
     ),))
-
-    session = router.prepare_field_routing(
-        catalog=catalog,
-        approved_host_roots=frozenset({"directory.lookup"}),
-    )  # index once, only this explicit host input route is approved
-    principal = PrincipalContext(subject="example-reader", roles=("reader",))
-    fields = session.discover("고객 상태와 담당자", principal=principal)
+    active = session.revise_catalog(catalog=catalog)
+    assert active.snapshot_id == session.snapshot_id  # same index; no rescan
+    fields = active.discover("고객 상태와 담당자", principal=principal)
     print("status:", fields.status)
     for alternative in fields.alternatives:
         for route in alternative.routes:
             print("route / selected schema fields:", route.route_id, route.output_fields)
 
     # Optional metadata and argument-shape inspection, not data fetching.
-    plan = session.compile(
+    plan = active.compile(
         "customer status and owner", principal=principal,
         host_source_arguments={
             "directory.lookup": {"customer_id": "host-supplied-customer-1"},
@@ -102,9 +109,9 @@ def main() -> None:
         required_fields=catalog.concepts[0].required_fields,
         source_type="host-owned", license="internal",
     ),))
-    reviewed_session = session.revise_catalog(catalog=updated_catalog)
-    assert reviewed_session.snapshot_id == session.snapshot_id
-    assert reviewed_session.catalog_revision_id != session.catalog_revision_id
+    reviewed_session = active.revise_catalog(catalog=updated_catalog)
+    assert reviewed_session.snapshot_id == active.snapshot_id
+    assert reviewed_session.catalog_revision_id != active.catalog_revision_id
     print("reviewed fields:", reviewed_session.discover(
         "계정 상태와 담당자", principal=principal,
     ).status)
@@ -118,7 +125,7 @@ def main() -> None:
         intent_id="customer.lookup",
         required_concept_ids=("customer.overview",),
     ),))
-    understood = session.compile_understood(
+    understood = active.compile_understood(
         PaperUnderstanding(
             intent_id="customer.lookup", named_tools=("directory",),
             parameter_hints={"customer_id": "untrusted-model-value"},

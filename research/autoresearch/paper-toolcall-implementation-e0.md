@@ -1636,3 +1636,48 @@ that equivalent owner qualifier mappings with reversed dictionary insertion
 order now share the same digest. Across the relevant native, typed-plan and
 public API suites, **296 local tests pass** with clean Ruff/Pyright. Exact-head
 Draft #1788 CI remains required; parent #1560 / B1 completion is not claimed.
+
+## 2026-10-27 — #1789 principal-scoped native field review inventory (B1)
+
+`SchemaFieldRoutingSession.inspect_visible_fields(principal=...,
+after_route=..., limit=...)` makes native registered **scalar field review**
+available to applications without exposing the authorization-neutral posting
+index or running a provider. Unlike the full operator-oriented Schema
+Explorer, it pages at most 64 source-attested route descriptors only after
+the current principal's permission, field scope, availability and original
+route fingerprint checks. Restricted output field names and raw annotations
+are never included; tool provenance is suppressed when a scope-restricted
+view could echo denied field labels. Emitted entries are rechecked before
+publication, along with source, policy, principal and availability witnesses.
+
+This API is **not** a concept/alias inference engine, automatic reviewed
+catalog, K5 ranking model, execution plan or authorization grant; hosts must
+separately review and declare concepts. Pages are not a cross-request
+permission-stable snapshot. Initial 500-route TDD exercises safe pagination,
+hidden/denied names, scoped provenance, mutation rejection and data-I/O
+prohibition. See `research/autoresearch/core-visible-field-review-20261027-{design,plan}.md`.
+Exact-head Draft CI is needed and B1/#1560 + independent E2 remain open.
+
+The public flow now explicitly supports **first-time owner onboarding**:
+`router.prepare_field_routing()` without a catalog yields a review-only
+session; its principal-scoped inventory allows a human to review registered
+field semantics. `session.revise_catalog(catalog=owner_approval)` then returns
+a route-enabled handle reusing the pinned native graph. On the unapproved
+handle, `discover`, `compile`, `compile_understood`, `acompile_query` and
+`catalog_revision_id` reject with `PolicyViolationError`, and `refresh`
+preserves review-only state. This closes the otherwise circular dependency
+between reviewing visible fields and already having approved concepts.
+Independent read-only review of #1789 identified gaps that were corrected:
+opaque source-bound cursors now round-trip arbitrary native route names;
+callbacks receive disposable model copies, mutable source fingerprints are
+reverified, and sensitive policy errors are normalized. Scope-restricted
+route identifiers echoing denied names are omitted. Response field/byte
+budgets prevent unbounded metadata emission. Two final eligibility passes
+detect ordinary one-shot availability churn, while documentation explicitly
+limits claims to best-effort when host callbacks have unversioned mutable
+state. Only scoped page receipts cross a consumer trust boundary; prepared
+handles remain trusted host-side because existing index properties are global.
+The combined native/typed/public-API/Explorer test selection passed **329
+tests**, including 5,000-route pagination and these negative regressions,
+with clean Ruff, focused source Pyright and the runnable provider-neutral
+example. GitHub exact-head CI is not inferred from these local checks.

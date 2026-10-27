@@ -139,14 +139,44 @@ Use `retrieve_executable(...)` when the shortlist must also have a currently val
 binding.
 
 For the original paper's **field-only routing** (which schema fields and typed
-dependencies a caller would need, without fetching provider records), opt into
-`router.prepare_field_routing(catalog=reviewed_concepts)`. Prepare once from
-your own registered capability schemas, then call
+dependencies a caller would need, without fetching provider records), register
+your source schemas and opt into `router.prepare_field_routing()` **without a
+concept catalog** to begin owner review. Call
+`session.inspect_visible_fields(principal=reader, limit=32)` first. After the
+owner explicitly approves `NativeConceptCatalog`, call
+`session = session.revise_catalog(catalog=reviewed_concepts)`; this activates
+field routing **without rebuilding the registered-source index**. Alternatively
+start with `router.prepare_field_routing(catalog=reviewed_concepts)` if your
+application already has an approved catalog. Then call
 `session.discover(query, principal=reader)` for field-complete alternatives or
 `session.compile(query, principal=reader)` for typed, non-executing call shapes
 and source/unit/license field metadata. Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.
+Each bounded page contains only currently authorized and visible scalar
+field names, semantic IDs, type labels, units and (when not scope-restricted)
+source/license labels, sourced from the existing pinned schema index. Follow
+the fixed-size opaque `next_after_route` token by passing it as `after_route`
+until it is `None`. That token is tied to the source snapshot and works even
+when registered route names are unusually long or contain control characters.
+This does not auto-author a `NativeConceptCatalog`, guess aliases or fetch
+records: the host still reviews and explicitly declares concept meanings.
+On a review-only session, `discover`, `compile`, `compile_understood`,
+`acompile_query` and `catalog_revision_id` fail closed until catalog approval.
+Recheck current authorization when using this inventory; a cursor is not
+permission and different pages are not a policy-stable snapshot. The complete
+operator-oriented Schema Explorer intentionally remains a separate interface
+and is **not** a principal-safe substitute for this review API.
+Keep the prepared session object **on the trusted host**: properties such as
+`indexed_route_count` intentionally describe the full registered index, not
+one principal's visibility. Expose only the principal-scoped page receipts to
+consumer UIs. Pages have strict route (64), field (512 per route / 2,048 per
+page), and conservative byte budgets; unusually wide or huge registered
+schemas fail explicitly rather than silently omitting reviewable fields.
+Those schemas require host-side splitting or a future field-granular paging
+interface. Live, internally stateful availability callbacks are not an atomic
+permission snapshot: owners must supply stable/versioned availability state
+when they need transaction-like consistency and reauthorize later actions.
 If your application already has structured `Understand(q)` hints, use
 `session.compile_understood(PaperUnderstanding(...), principal=reader,
 intent_registry=reviewed_intents)` to reuse the same prepared index and the
@@ -189,8 +219,9 @@ replace and retire its old handle
 after approving new meanings: independently retained old sessions are **not
 automatically revoked** by this API. Source changes still require `refresh()`;
 a stale source refuses catalog-only revision.
-The caller supplies an explicit authorization policy and reviewed semantic
-concept catalog. Undeclared or conflicting concept aliases raise `ValueError`
+The caller supplies an explicit authorization policy; a reviewed semantic
+concept catalog is required **to route**, not to inspect source fields.
+Undeclared or conflicting concept aliases raise `ValueError`
 (no guessed mapping). Changes require a fresh session, either through verified
 `refresh()`, catalog-only `revise_catalog()` or an explicit new
 `prepare_field_routing` build; none grants execution permission. See the runnable

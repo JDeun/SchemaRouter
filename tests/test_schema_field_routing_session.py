@@ -6,12 +6,17 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeRule,
     EndpointSpec,
+    FieldSpec,
     InMemoryRegistry,
     NativeConceptCatalog,
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperUnderstanding,
     SchemaFieldRoutingSession,
     SchemaRouter,
     SQLiteRegistry,
@@ -48,6 +53,407 @@ def _revised_catalog() -> NativeConceptCatalog:
         source_type=GROUP.source_type,
         license=GROUP.license,
     ),))
+
+
+def test_visible_field_review_bootstraps_without_preapproved_concept_catalog(monkeypatch):
+    router = build_fixture(500)
+    session = router.prepare_field_routing()
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("review and owner catalog approval must never call providers")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(router.executor, "execute", forbidden)
+        scope.setattr(router.executor, "execute_call", forbidden)
+        review = session.inspect_visible_fields(principal=ACTOR, limit=64)
+        assert any(route.route_id == LEFT for route in review.routes)
+        with pytest.raises(PolicyViolationError, match="catalog|review"):
+            _ = session.catalog_revision_id
+        with pytest.raises(PolicyViolationError, match="catalog|review"):
+            session.discover(ALIASES[0], principal=ACTOR)
+        with pytest.raises(PolicyViolationError, match="catalog|review"):
+            session.compile(ALIASES[0], principal=ACTOR)
+        with pytest.raises(PolicyViolationError, match="catalog|review"):
+            session.compile_understood(
+                PaperUnderstanding(intent_id="crm.review"),
+                principal=ACTOR,
+                intent_registry=PaperIntentRegistry(intents=(
+                    PaperIntentDeclaration(
+                        intent_id="crm.review", required_concept_ids=(
+                            "crm.customer_fields",
+                        ),
+                    ),
+                )),
+            )
+
+        activated = session.revise_catalog(catalog=_catalog())
+        assert activated.snapshot_id == session.snapshot_id
+        assert activated._index is session._index
+        assert activated.discover(ALIASES[0], principal=ACTOR).status == "complete"
+        with pytest.raises(PolicyViolationError, match="catalog|review"):
+            session.discover(ALIASES[0], principal=ACTOR)
+
+
+@pytest.mark.asyncio
+async def test_review_only_session_rejects_model_calls_before_owner_approval():
+    session = build_fixture(500).prepare_field_routing()
+
+    async def forbidden_model(_payload):
+        pytest.fail("unapproved review session cannot call a model")
+
+    with pytest.raises(PolicyViolationError, match="catalog|review"):
+        await session.acompile_query(
+            "customer owner", principal=ACTOR,
+            model=forbidden_model,
+            intent_registry=PaperIntentRegistry(intents=(
+                PaperIntentDeclaration(
+                    intent_id="crm.review", required_concept_ids=(
+                        "crm.customer_fields",
+                    ),
+                ),
+            )),
+            model_visible_intent_ids=("crm.review",),
+            model_visible_concept_ids=("crm.customer_fields",),
+        )
+
+
+def test_review_only_session_can_refresh_before_owner_catalog_approval():
+    router = build_fixture(500)
+    review_session = router.prepare_field_routing()
+    router.add_tool(ToolSpec(
+        name="extra_review_source", source_type="crm", license="owner-approved",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="reference", semantic_id="crm.reference",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    refreshed = review_session.refresh()
+    page = refreshed.inspect_visible_fields(
+        principal=ACTOR, after_route="extra_", limit=32,
+    )
+    assert any(item.route_id == "extra_review_source.read" for item in page.routes)
+    assert refreshed.revise_catalog(catalog=_catalog()).discover(
+        ALIASES[0], principal=ACTOR,
+    ).status == "complete"
+    with pytest.raises(PolicyViolationError, match="stale|changed|source"):
+        review_session.inspect_visible_fields(principal=ACTOR)
+
+
+def test_visible_field_review_pages_source_proven_metadata_without_provider_io(
+    monkeypatch,
+):
+    router = build_fixture(500, mixed_scope=True)
+    session = router.prepare_field_routing(catalog=_catalog())
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("field review must not scan the registry or execute data tools")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(router.registry, "tools", forbidden)
+        scope.setattr(router.registry, "keys", forbidden)
+        scope.setattr(router.executor, "execute", forbidden)
+        scope.setattr(router.executor, "execute_call", forbidden)
+        pages = []
+        cursor = None
+        for _ in range(12):
+            page = session.inspect_visible_fields(
+                principal=ACTOR, after_route=cursor, limit=64,
+            )
+            pages.append(page)
+            assert page.snapshot_id == session.snapshot_id
+            assert not page.executable_authority
+            assert len(page.routes) <= 64
+            if page.next_after_route is None:
+                break
+            cursor = page.next_after_route
+        else:
+            pytest.fail("bounded review pagination did not terminate")
+
+    found = {route.route_id: route for page in pages for route in page.routes}
+    assert len(found) == sum(len(page.routes) for page in pages)
+    assert list(found) == sorted(found)
+    assert LEFT in found and RIGHT in found and ROOT in found
+    assert "fork_status_denied.read" not in found
+    assert "fork_owner_hidden.read" not in found
+    assert tuple((f.name, f.semantic_id, f.json_type) for f in found[LEFT].fields) == (
+        ("status", "crm.fork_status", "string"),
+    )
+    assert found[LEFT].source_type == "crm"
+    assert found[LEFT].license == "host-reviewed-synthetic"
+    assert not found[LEFT].fields[0].identifier
+
+
+def test_visible_field_review_suppresses_restricted_source_provenance():
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="scoped_review", source_type="private_name", license="private_name",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="public_name", semantic_id="crm.public_name",
+                      json_schema={"type": "string"}),
+            FieldSpec(name="private_name", semantic_id="crm.private_name",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(effect="allow", operation="*.read",
+                                 roles_any=("reader",)),),
+        data_rules=(DataScopeRule(
+            operation="scoped_review.read", roles_any=("reader",),
+            hidden_fields=("private_name",),
+        ),),
+    )
+    session = router.prepare_field_routing(catalog=_catalog())
+    page = session.inspect_visible_fields(
+        principal=ACTOR, after_route="scoped_", limit=64,
+    )
+    reviewed = next(route for route in page.routes
+                    if route.route_id == "scoped_review.read")
+    assert tuple(field.name for field in reviewed.fields) == ("public_name",)
+    assert reviewed.source_type is None and reviewed.license is None
+    assert "private_name" not in repr(reviewed)
+
+
+def test_visible_field_review_omits_route_identifiers_echoing_hidden_fields():
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="private_name_probe", source_type="crm", license="approved",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="public_name", semantic_id="crm.public_name",
+                      json_schema={"type": "string"}),
+            FieldSpec(name="private_name", semantic_id="crm.private_name",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(effect="allow", operation="*.read",
+                                 roles_any=("reader",)),),
+        data_rules=(DataScopeRule(
+            operation="private_name_probe.read", roles_any=("reader",),
+            hidden_fields=("private_name",),
+        ),),
+    )
+    page = router.prepare_field_routing().inspect_visible_fields(
+        principal=ACTOR, after_route="private", limit=64,
+    )
+    assert all("private_name" not in route.route_id for route in page.routes)
+
+
+def test_visible_field_review_5000_routes_stays_bounded_and_source_pinned():
+    router = build_fixture(5000)
+    session = router.prepare_field_routing(catalog=_catalog())
+    first = session.inspect_visible_fields(principal=ACTOR, limit=5)
+    assert first.snapshot_id == session.snapshot_id
+    assert len(first.routes) == 5
+    assert first.next_after_route is not None
+    assert first.next_after_route.startswith("sr1:")
+    assert len(first.next_after_route) == 68
+    second = session.inspect_visible_fields(
+        principal=ACTOR, after_route=first.next_after_route, limit=5,
+    )
+    assert len(second.routes) == 5
+    assert set(item.route_id for item in first.routes).isdisjoint(
+        item.route_id for item in second.routes
+    )
+    assert first.routes[-1].route_id < second.routes[0].route_id
+
+
+def test_visible_field_review_cursor_handles_valid_long_registered_route_ids():
+    router = build_fixture(500)
+    long_names = ("z" * 270, "z" * 271)
+    for name in long_names:
+        router.add_tool(ToolSpec(
+            name=name, source_type="crm", license="host-reviewed-synthetic",
+            endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+                FieldSpec(name="public_value", semantic_id="crm.public_value",
+                          json_schema={"type": "string"}),
+            ])],
+        ))
+    session = router.prepare_field_routing()
+    first = session.inspect_visible_fields(
+        principal=ACTOR, after_route="y", limit=1,
+    )
+    assert [item.route_id for item in first.routes] == [long_names[0] + ".read"]
+    assert first.next_after_route is not None
+    assert len(first.next_after_route) <= 256
+    second = session.inspect_visible_fields(
+        principal=ACTOR, after_route=first.next_after_route, limit=1,
+    )
+    assert [item.route_id for item in second.routes] == [long_names[1] + ".read"]
+    assert second.next_after_route is None
+
+    with pytest.raises(ValueError, match="cursor"):
+        session.inspect_visible_fields(
+            principal=ACTOR, after_route="sr1:" + "0" * 64,
+        )
+
+
+def test_visible_field_review_cursor_handles_odd_but_registered_route_names():
+    router = build_fixture(500)
+    source_names = ("z\nsource", "z final ")
+    for name in source_names:
+        router.add_tool(ToolSpec(
+            name=name, source_type="crm", license="host-reviewed-synthetic",
+            endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+                FieldSpec(name="public_value", semantic_id="crm.public_value",
+                          json_schema={"type": "string"}),
+            ])],
+        ))
+    session = router.prepare_field_routing()
+    seen = []
+    cursor = "y"
+    for _ in source_names:
+        page = session.inspect_visible_fields(
+            principal=ACTOR, after_route=cursor, limit=1,
+        )
+        assert len(page.routes) == 1
+        seen.append(page.routes[0].route_id)
+        cursor = page.next_after_route
+    assert seen == sorted(name + ".read" for name in source_names)
+    assert cursor is None
+
+
+def test_visible_field_review_refuses_unbounded_field_payload():
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="wide_review", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name=f"column_{index}", semantic_id=f"crm.column_{index}",
+                      json_schema={"type": "string"})
+            for index in range(513)
+        ])],
+    ))
+    session = router.prepare_field_routing()
+    with pytest.raises(PolicyViolationError, match="budget|bound|large"):
+        session.inspect_visible_fields(
+            principal=ACTOR, after_route="v", limit=1,
+        )
+
+
+def test_visible_field_review_fails_closed_on_stale_schema_and_policy_mutation():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+    denied = session.inspect_visible_fields(principal=ACTOR, limit=64)
+    assert denied.routes == () and denied.next_after_route is None
+
+    router.add_tool(ToolSpec(
+        name="new_review_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    with pytest.raises(PolicyViolationError, match="stale|changed|source"):
+        session.inspect_visible_fields(principal=ACTOR)
+
+
+def test_visible_field_review_fails_on_inflight_health_policy_change():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    once = False
+
+    def revoke_during_review(tool, endpoint):
+        nonlocal once
+        if not once:
+            once = True
+            router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return True
+
+    router.planner.availability_predicate = revoke_during_review
+    with pytest.raises(PolicyViolationError, match="changed|policy|authorization"):
+        session.inspect_visible_fields(principal=ACTOR)
+
+
+def test_visible_field_review_detects_one_shot_mutable_availability_revocation():
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(effect="allow", operation="*.read",
+                                 roles_any=("reader",)),),
+    ))
+    for name in ("a", "b", "c"):
+        router.add_tool(ToolSpec(
+            name=name, source_type="crm", license="approved",
+            endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+                FieldSpec(name="public", semantic_id="opaque.a",
+                          json_schema={"type": "string"}),
+            ])],
+        ))
+    session = router.prepare_field_routing()
+    first_available = True
+    checks_of_b = 0
+
+    def revoke_previous_route_once(tool, _endpoint):
+        nonlocal first_available, checks_of_b
+        if tool.name == "b":
+            checks_of_b += 1
+            if checks_of_b == 2:
+                first_available = False
+        return first_available if tool.name == "a" else True
+
+    router.planner.availability_predicate = revoke_previous_route_once
+    with pytest.raises(PolicyViolationError, match="eligibility|changed"):
+        session.inspect_visible_fields(principal=ACTOR, limit=2)
+
+
+def test_visible_field_review_suppresses_sensitive_callback_errors():
+    router = build_fixture(500)
+    session = router.prepare_field_routing()
+
+    def forbidden_diagnostic(_tool, _endpoint):
+        raise PolicyViolationError("private SSN field in provider callback")
+
+    router.planner.availability_predicate = forbidden_diagnostic
+    with pytest.raises(PolicyViolationError) as caught:
+        session.inspect_visible_fields(principal=ACTOR)
+    assert "private" not in str(caught.value)
+    assert "SSN" not in str(caught.value)
+
+
+def test_visible_field_review_callback_cannot_forge_hidden_field_semantics():
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="callback_review", source_type="crm", license="approved",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="public", semantic_id="opaque.a",
+                      json_schema={"type": "string"}),
+            FieldSpec(name="secret", semantic_id="opaque.b",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(effect="allow", operation="*.read",
+                                 roles_any=("reader",)),),
+        data_rules=(DataScopeRule(
+            operation="callback_review.read", roles_any=("reader",),
+            hidden_fields=("secret",),
+        ),),
+    )
+    session = router.prepare_field_routing()
+
+    def mutate_callback_view(tool, endpoint):
+        if tool.name == "callback_review":
+            endpoint.output_fields[0].semantic_id = "opaque.b"
+        return True
+
+    router.planner.availability_predicate = mutate_callback_view
+    page = session.inspect_visible_fields(principal=ACTOR, limit=64)
+    visible = next(route for route in page.routes
+                   if route.route_id == "callback_review.read")
+    assert [(field.name, field.semantic_id) for field in visible.fields] == [
+        ("public", "opaque.a"),
+    ]
+
+
+@pytest.mark.parametrize("limit,after_route", [
+    (0, None), (65, None), (True, None), (1.0, None),
+    (32, ""), (32, " x"), (32, "bad\nroute"), (32, 7),
+    (32, "sr1:not-a-valid-token"),
+])
+def test_visible_field_review_rejects_unbounded_page_inputs(limit, after_route):
+    session = build_fixture(500).prepare_field_routing(catalog=_catalog())
+    with pytest.raises(ValueError, match="page|cursor|limit"):
+        session.inspect_visible_fields(
+            principal=ACTOR, limit=limit, after_route=after_route,
+        )
 
 
 def test_revise_catalog_reuses_attested_graph_without_rebuild_or_provider_io(

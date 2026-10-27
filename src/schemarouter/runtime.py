@@ -4181,14 +4181,16 @@ class SchemaRouter(NativeProviderConvenienceMixin):
     def prepare_field_routing(
         self,
         *,
-        catalog: NativeConceptCatalog,
+        catalog: NativeConceptCatalog | None = None,
         approved_host_roots: frozenset[str] = frozenset(),
     ) -> SchemaFieldRoutingSession:
         """Prepare provider-agnostic, schema-only Algorithm 1 field routing.
 
-        Build a reusable original-source index for `session.discover()` and
-        `session.compile()`. No provider is called, no answer is generated,
-        and existing planner retrieval defaults are left unchanged.
+        Build a reusable original-source index, optionally before any concept
+        catalog exists. `session.inspect_visible_fields()` can then support
+        owner review; `session.revise_catalog(catalog=...)` enables routing
+        without rebuilding the index. No provider is called, no answer is
+        generated, and planner retrieval defaults are left unchanged.
         """
         from .field_routing_session import SchemaFieldRoutingSession
 
