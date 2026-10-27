@@ -1,6 +1,10 @@
 """#1771: user-owned schema routing, without any provider data execution."""
 from __future__ import annotations
 
+from collections.abc import Mapping
+from dataclasses import replace
+from hashlib import sha256
+
 import pytest
 
 from schemarouter import (
@@ -18,6 +22,7 @@ from schemarouter import (
     PaperIntentRegistry,
     PaperUnderstanding,
     ParameterSpec,
+    PrincipalContext,
     SchemaFieldRoutingSession,
     SchemaRouter,
     SQLiteRegistry,
@@ -409,6 +414,104 @@ def test_visible_field_review_pages_source_proven_metadata_without_provider_io(
     assert found[LEFT].source_type == "crm"
     assert found[LEFT].license == "host-reviewed-synthetic"
     assert not found[LEFT].fields[0].identifier
+
+
+def test_review_pagination_consumes_pinned_reverse_index_without_global_posting_inversion(
+    monkeypatch,
+):
+    """A review page must never re-traverse every native semantic posting."""
+    router = build_fixture(5000, mixed_scope=True)
+    session = router.prepare_field_routing()
+
+    class PostingsWithoutItems(Mapping):
+        def __init__(self, wrapped):
+            self._wrapped = wrapped
+
+        def __getitem__(self, key):
+            return self._wrapped[key]
+
+        def __iter__(self):
+            raise AssertionError("review query traversed all source postings")
+
+        def __len__(self):
+            return len(self._wrapped)
+
+        def items(self):
+            raise AssertionError("review query inverted all source postings")
+
+    # Install an original-data proxy which permits indexed lookups but refuses
+    # any query-time traversal of the authorization-neutral postings catalog.
+    posting = replace(
+        session._index.field_index,
+        postings=PostingsWithoutItems(session._index.field_index.postings),
+    )
+    probed = replace(session, _index=replace(session._index, field_index=posting))
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("prepared review page must not rescan or invoke providers")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(router.registry, "tools", forbidden)
+        scope.setattr(router.registry, "keys", forbidden)
+        scope.setattr(router.executor, "execute", forbidden)
+        scope.setattr(router.executor, "execute_call", forbidden)
+        cursor = None
+        pages = []
+        for _ in range(3):
+            page = probed.inspect_visible_fields(
+                principal=ACTOR, after_route=cursor, limit=5,
+            )
+            assert len(page.routes) == 5
+            assert page.next_after_route is not None
+            pages.extend(page.routes)
+            cursor = page.next_after_route
+
+    assert [item.route_id for item in pages] == sorted(
+        item.route_id for item in pages
+    )
+    assert len({item.route_id for item in pages}) == 15
+    assert not any(item.route_id.startswith("fork_status_denied") for item in pages)
+
+
+def test_review_opaque_cursor_cannot_confirm_currently_hidden_route_existence():
+    """A guessed `sr1` hash is not authorization to test a private route ID."""
+    router = build_fixture(500, mixed_scope=True)
+    session = router.prepare_field_routing()
+    denied_route = "fork_status_denied.read"
+    assert denied_route in session._index.field_index.review_route_ids
+    guessed = "sr1:" + sha256(
+        f"{session.snapshot_id}:{denied_route}".encode(),
+    ).hexdigest()
+    with pytest.raises(ValueError, match="cursor"):
+        session.inspect_visible_fields(
+            principal=ACTOR, after_route=guessed, limit=5,
+        )
+
+
+def test_review_opaque_cursor_rejects_revoked_anchor_and_other_principal():
+    router = build_fixture(500)
+    session = router.prepare_field_routing()
+    first = session.inspect_visible_fields(
+        principal=ACTOR, after_route="fork_", limit=1,
+    )
+    assert len(first.routes) == 1 and first.next_after_route is not None
+    token = first.next_after_route
+    # A real cursor issued to one authorized reader is not reusable as proof
+    # of the same original route's existence by an unrelated principal.
+    outsider = PrincipalContext(subject="no-access", roles=("no-access",))
+    with pytest.raises(ValueError, match="cursor"):
+        session.inspect_visible_fields(
+            principal=outsider, after_route=token, limit=1,
+        )
+
+    revoked_route = first.routes[-1].route_id
+    router.planner.availability_predicate = lambda tool, endpoint: (
+        f"{tool.key}.{endpoint.name}" != revoked_route
+    )
+    with pytest.raises(ValueError, match="cursor"):
+        session.inspect_visible_fields(
+            principal=ACTOR, after_route=token, limit=1,
+        )
 
 
 def test_visible_field_review_includes_typed_inputs_before_catalog_approval():

@@ -58,19 +58,26 @@ def main() -> None:
     session = router.prepare_field_routing()
     # No root is approved before the human sees the native parameter shape.
     principal = PrincipalContext(subject="example-reader", roles=("reader",))
-    reviewed_fields = session.inspect_visible_fields(principal=principal)
-    for route in reviewed_fields.routes:
-        print("visible source field candidate:", route.route_id,
-              [(field.name, field.semantic_id) for field in route.fields])
-        print("safe source input shapes:", route.route_id, route.parameters_meta)
-        # These shapes are available BEFORE owner concept approval. They
-        # contain no input values, raw schemas, aliases, or credential data.
-        if route.route_id == "directory.lookup":
-            assert tuple((item.name, item.required, item.location, item.json_types)
-                         for item in route.parameters_meta) == (
-                ("customer_id", True, "query", ("string",)),
-            )
-    assert not reviewed_fields.executable_authority
+    cursor = None
+    while True:
+        reviewed_fields = session.inspect_visible_fields(
+            principal=principal, after_route=cursor, limit=1,
+        )
+        for route in reviewed_fields.routes:
+            print("visible source field candidate:", route.route_id,
+                  [(field.name, field.semantic_id) for field in route.fields])
+            print("safe source input shapes:", route.route_id, route.parameters_meta)
+            # The pinned reverse schema index seeks each authorized page,
+            # but the route still passes current principal/source checks.
+            if route.route_id == "directory.lookup":
+                assert tuple((item.name, item.required, item.location, item.json_types)
+                             for item in route.parameters_meta) == (
+                    ("customer_id", True, "query", ("string",)),
+                )
+        assert not reviewed_fields.executable_authority
+        cursor = reviewed_fields.next_after_route
+        if cursor is None:
+            break
     # The host can use this CURRENT scoped inventory to review concepts;
     # no aliases are inferred and no provider data is fetched.
 

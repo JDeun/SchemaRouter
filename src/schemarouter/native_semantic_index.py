@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
+from dataclasses import field as dataclass_field
 from hashlib import sha256
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
@@ -33,6 +34,31 @@ if TYPE_CHECKING:
 STRICT_K = 5
 # Non-production research rankers never receive an unbounded private candidate menu.
 MAX_RESEARCH_RANKABLE_POSTINGS = 32
+
+
+def _native_review_cursor(snapshot_id: str, route_id: str) -> str:
+    """Legacy fixed-size review cursor, now materialized per source revision."""
+    digest = sha256(f"{snapshot_id}:{route_id}".encode()).hexdigest()
+    return f"sr1:{digest}"
+
+
+def _native_review_views(
+    route_semantics: Mapping[str, set[str]], snapshot_id: str,
+) -> tuple[
+    Mapping[str, frozenset[str]], tuple[str, ...], Mapping[str, str],
+]:
+    """Build immutable, authorization-neutral review accelerators only once."""
+    inverse = {
+        route: frozenset(semantic_ids)
+        for route, semantic_ids in route_semantics.items() if semantic_ids
+    }
+    ordered = tuple(sorted(inverse))
+    anchors = {
+        _native_review_cursor(snapshot_id, route): route for route in ordered
+    }
+    if len(anchors) != len(ordered):
+        raise PolicyViolationError("native review cursor collision")
+    return MappingProxyType(inverse), ordered, MappingProxyType(anchors)
 
 
 def _indexable_semantic_field(field: FieldSpec) -> bool:
@@ -96,11 +122,22 @@ class NativeSchemaPostingIndex:
     route_locations: Mapping[str, tuple[str, str]]
     # Include even zero-endpoint tools for exact omitted-change detection.
     tool_fingerprints: Mapping[str, str]
+    # Immutable source-owned reverse inventory; still NOT authorized evidence.
+    # Defaults support legacy explicit construction solely for stale/journal
+    # rejection; public review refuses incomplete derived projections.
+    route_semantic_ids: Mapping[str, frozenset[str]] = dataclass_field(
+        default_factory=lambda: MappingProxyType({}),
+    )
+    review_route_ids: tuple[str, ...] = ()
+    review_cursor_anchors: Mapping[str, str] = dataclass_field(
+        default_factory=lambda: MappingProxyType({}),
+    )
 
     @classmethod
     def build(cls, registry: ToolRegistry) -> NativeSchemaPostingIndex:
         version = registry.version
         semantic: dict[str, set[str]] = {}
+        reverse_semantic: dict[str, set[str]] = {}
         revisions: dict[str, tuple[str, str]] = {}
         locations: dict[str, tuple[str, str]] = {}
         tool_fingerprints: dict[str, str] = {}
@@ -127,6 +164,7 @@ class NativeSchemaPostingIndex:
                 for field in endpoint.output_fields:
                     if field.semantic_id is not None and _indexable_semantic_field(field):
                         semantic.setdefault(field.semantic_id, set()).add(route)
+                        reverse_semantic.setdefault(route, set()).add(field.semantic_id)
         if registry.version != version:
             raise PolicyViolationError("native index source changed during build")
         ordered = {key: tuple(sorted(items)) for key, items in sorted(semantic.items())}
@@ -135,15 +173,22 @@ class NativeSchemaPostingIndex:
              "postings": ordered},
             ensure_ascii=False, sort_keys=True, separators=(",", ":"),
         )
+        snapshot_id = sha256(receipt.encode("utf-8")).hexdigest()
+        reverse, review_routes, cursor_anchors = _native_review_views(
+            reverse_semantic, snapshot_id,
+        )
         return cls(
             registry_ref=registry,
             registry_version=version,
-            snapshot_id=sha256(receipt.encode("utf-8")).hexdigest(),
+            snapshot_id=snapshot_id,
             indexed_route_count=count,
             postings=MappingProxyType(ordered),
             route_fingerprints=MappingProxyType(revisions),
             route_locations=MappingProxyType(locations),
             tool_fingerprints=MappingProxyType(tool_fingerprints),
+            route_semantic_ids=reverse,
+            review_route_ids=review_routes,
+            review_cursor_anchors=cursor_anchors,
         )
 
     @classmethod
@@ -316,6 +361,13 @@ class NativeSchemaPostingIndex:
             name: set(routes) - stale_routes
             for name, routes in previous.postings.items()
         }
+        if previous.postings and not previous.route_semantic_ids:
+            raise PolicyViolationError("native posting delta missing reverse index")
+        reverse_semantic = {
+            route: set(ids)
+            for route, ids in previous.route_semantic_ids.items()
+            if route not in stale_routes
+        }
         for key, tool in changed_tools.items():
             tool_fingerprint = fresh_fingerprints[key]
             for endpoint in tool.endpoints:
@@ -328,6 +380,7 @@ class NativeSchemaPostingIndex:
                     for field in endpoint.output_fields:
                         if field.semantic_id is not None and _indexable_semantic_field(field):
                             semantic.setdefault(field.semantic_id, set()).add(route)
+                            reverse_semantic.setdefault(route, set()).add(field.semantic_id)
         if registry.version != version:
             raise PolicyViolationError("native posting refresh source changed")
         ordered = {
@@ -339,15 +392,22 @@ class NativeSchemaPostingIndex:
              "postings": ordered},
             ensure_ascii=False, sort_keys=True, separators=(",", ":"),
         )
+        snapshot_id = sha256(receipt.encode("utf-8")).hexdigest()
+        reverse, review_routes, cursor_anchors = _native_review_views(
+            reverse_semantic, snapshot_id,
+        )
         return cls(
             registry_ref=registry,
             registry_version=version,
-            snapshot_id=sha256(receipt.encode("utf-8")).hexdigest(),
+            snapshot_id=snapshot_id,
             indexed_route_count=len(revisions),
             postings=MappingProxyType(ordered),
             route_fingerprints=MappingProxyType(revisions),
             route_locations=MappingProxyType(locations),
             tool_fingerprints=MappingProxyType(fresh_fingerprints),
+            route_semantic_ids=reverse,
+            review_route_ids=review_routes,
+            review_cursor_anchors=cursor_anchors,
         )
 
     def _assert_source(self, router: SchemaRouter) -> None:

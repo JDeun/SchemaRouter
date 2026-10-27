@@ -1767,3 +1767,62 @@ minor suggestions (destructive and forged-source negative cases, separated
 64-root cardinality and explicit `get` instrumentation) are deferred and do
 not qualify independent E2 or full CI. No original schema fragments may be
 surfaced from a custom plugin's source-version exception.
+
+## 2026-10-28 — #1795 catalog-wide native reverse FieldGroup review index (B1)
+
+The original source-pinned native semantic posting index was already a
+catalog-wide inverted map, but public `inspect_visible_fields` reconstructed
+the **entire route→semantic inverse and sorted all registered route IDs on
+every page**. Its fixed-length `sr1:` cursor had to be resolved by hashing
+every route again. This was a missing prepared-index reuse seam for owners
+reviewing 500/5,000 heterogeneous schemas over many pages, not a new
+provider integration or measured Top-K ranking policy.
+
+Issue #1795 stores the immutable original-native reverse
+`NativeSchemaPostingIndex.route_semantic_ids`, sorted `review_route_ids` and
+snapshot-bound `review_cursor_anchors` once per full build or verified
+delta assembly. The existing native source `snapshot_id` JSON/hash receipt
+formula is **unchanged**. The in-memory and SQLite source-owned journal paths
+derive the same reverse/cursor inventory after original producer
+replacement/deletion/re-registration as an independent complete rebuild;
+no per-page `registry.tools()/keys()` or full posting inversion is needed.
+
+`SchemaFieldRoutingSession.inspect_visible_fields` now resolves valid old
+`sr1:` cursors using the pinned anchor map and seeks plain route anchors
+with `bisect_right`, then iterates from that exact source index position.
+It still re-fetches, principal-authorizes, field-scopes, byte-bounds and
+double reattests every page's emitted original native routes. Denied
+field labels, raw registry metadata and internal reverse postings are not
+returned. Old long/control-character route cursor tests remain valid;
+new TDD failed on the old global `postings.items()` scan and went GREEN when
+the prepared reverse index was wired.
+
+Independent review identified an inherited route-existence oracle in the
+old snapshot-deterministic `sr1:` format: a guessed private route hash was
+accepted as a cursor even for an unauthorized principal. A new regression
+first went RED; the optimized lookup now reattests the **anchor route** using
+the current principal, authorization policy, data-scope and availability
+before seeking. Unknown, hidden and revoked anchors raise the same generic
+`ValueError`, and separate tests cover guessed denied IDs, another principal
+and mid-session revocation. Original hash ABI, source version and provider
+non-execution guarantees remain unchanged.
+
+**Measured E0 synthetic review-page workload:** Python 3.12.14,
+Linux 6.18.55 x86_64, 64 routes/page, current public review method.
+500 registered routes: 8 pages / 500 reviewed, 116,543 serialized page
+bytes, page latency p50 **55.7731ms**, p95 **64.8601ms**, p99 **64.8601ms**.
+5,000 registered routes: 79 pages / 5,000 reviewed, 1,163,807 serialized
+bytes, page latency p50 **60.0182ms**, p95 **76.9213ms**, p99 **91.9475ms**.
+CPU-time p50/p95 for 5,000 routes: 60.0125/76.9157ms. The benchmark is
+`python -m scripts.benchmark_native_review_pagination_b1 --routes 5000
+--limit 64` and verifies cursor progress/uniqueness and serialized bytes.
+There is **no same-run prechange baseline or speedup claim**; current
+original-source reattestation intentionally dominates page cost.
+
+**257 adjacent native field/index/journal/G5/session/benchmark regressions
+passed locally including the review-driven cursor privacy fix**; repository
+Ruff and targeted Pyright clean, runnable
+provider-neutral example passed. New exact-head CI/full source suite and
+independent review are separate gates. B1 #1560 catalog-wide *qualified*
+Top-K ranking, 5,000-route heterogeneous source gold, #1346/#1477
+independent A6/A7/A8/E2 and #1356 release HARD HOLD remain open.

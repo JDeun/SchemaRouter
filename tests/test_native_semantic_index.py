@@ -1,6 +1,8 @@
 """E0: whole registry semantic postings with live principal-scoped verification."""
 from __future__ import annotations
 
+from hashlib import sha256
+
 import pytest
 
 from schemarouter import (
@@ -21,6 +23,7 @@ from schemarouter import (
 )
 from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
 
 ANALYST = PrincipalContext(subject="researcher", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -115,6 +118,80 @@ def _router(*, many_partial=0, many_complete=0):
                          _field("priority", "crm.priority")],
         ))
     return router
+
+
+def test_native_review_reverse_index_preserves_exact_original_semantics_and_cursors():
+    """Missing reverse postings force global source inversion on every page."""
+    router = _router()
+    router.add_tool(_tool(
+        "no_source", [_field("status", "crm.status")], source=None,
+    ))
+    router.add_tool(_tool(
+        "no_semantic", [FieldSpec(name="plain", json_schema={"type": "string"})],
+    ))
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.route_semantic_ids["complete.read"] == frozenset({
+        "crm.status", "crm.priority",
+    })
+    assert index.route_semantic_ids["partial.read"] == frozenset({"crm.status"})
+    assert "no_source.read" not in index.route_semantic_ids
+    assert "no_semantic.read" not in index.route_semantic_ids
+    assert "no_source.read" in index.route_locations
+    assert index.review_route_ids == tuple(sorted(index.route_semantic_ids))
+    assert len(index.review_route_ids) == len(set(index.review_route_ids))
+    expected_cursor = "sr1:" + sha256(
+        f"{index.snapshot_id}:complete.read".encode(),
+    ).hexdigest()
+    assert index.review_cursor_anchors[expected_cursor] == "complete.read"
+    assert len(expected_cursor) == 68
+
+
+def test_native_review_reverse_index_journal_delta_rotates_cursor_and_matches_clean_build():
+    router = _router()
+    old = NativeSchemaPostingIndex.build(router.registry)
+    old_cursor = "sr1:" + sha256(
+        f"{old.snapshot_id}:complete.read".encode(),
+    ).hexdigest()
+    router.registry.unregister("complete")
+    removed = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        old, router.registry,
+    )
+    removed_oracle = NativeSchemaPostingIndex.build(router.registry)
+    assert dict(removed.route_semantic_ids) == dict(removed_oracle.route_semantic_ids)
+    assert removed.review_route_ids == removed_oracle.review_route_ids
+    assert dict(removed.review_cursor_anchors) == dict(removed_oracle.review_cursor_anchors)
+    assert "complete.read" not in removed.route_semantic_ids
+    assert old_cursor not in removed.review_cursor_anchors
+
+    router.add_tool(_tool(
+        "complete", [_field("status", "crm.status"),
+                     _field("priority", "crm.priority")],
+    ))
+    restored = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        removed, router.registry,
+    )
+    oracle = NativeSchemaPostingIndex.build(router.registry)
+    assert dict(restored.route_semantic_ids) == dict(oracle.route_semantic_ids)
+    assert restored.review_route_ids == oracle.review_route_ids
+    assert dict(restored.review_cursor_anchors) == dict(oracle.review_cursor_anchors)
+    assert restored.snapshot_id != old.snapshot_id
+    assert restored.route_semantic_ids["complete.read"] == frozenset({
+        "crm.status", "crm.priority",
+    })
+
+
+def test_native_review_reverse_index_5000_matches_independent_forward_posting_oracle():
+    router = build_fixture(5000, mixed_scope=True)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    oracle: dict[str, set[str]] = {}
+    for semantic_id, routes in index.postings.items():
+        for route_id in routes:
+            oracle.setdefault(route_id, set()).add(semantic_id)
+    assert {
+        route: set(ids) for route, ids in index.route_semantic_ids.items()
+    } == oracle
+    assert index.review_route_ids == tuple(sorted(oracle))
+    assert len(index.review_cursor_anchors) == len(oracle)
 
 
 @pytest.mark.parametrize("query", ALIASES)

@@ -177,6 +177,21 @@ routes fail explicitly. Follow
 the fixed-size opaque `next_after_route` token by passing it as `after_route`
 until it is `None`. That token is tied to the source snapshot and works even
 when registered route names are unusually long or contain control characters.
+The prepared native index now materializes its route→semantic reverse inventory,
+sorted review routes and original-format `sr1:` cursor anchors **once per
+verified source revision**. Review pages use an indexed cursor or binary-search
+seek instead of rebuilding and sorting the entire posting catalog on each
+page. This does **not** replace live source fingerprint, principal permission,
+field-scope or availability checks; pages may still scan forward past denied
+or unavailable sources. An opaque cursor is also rechecked against the
+**current principal's live visibility** before it can be used as an anchor:
+unknown, hidden and revoked anchors are rejected indistinguishably. The
+reverse index stays private on the trusted host
+and must never be served as an authorized route listing. Measure synthetic
+500/5,000-route page CPU/latency and serialized metadata bytes with
+`python -m scripts.benchmark_native_review_pagination_b1 --routes 5000
+--limit 64` from the repository root. This is not an independently measured
+ranking or E2 improvement.
 This does not auto-author a `NativeConceptCatalog`, guess aliases or fetch
 records: the host still reviews and explicitly declares concept meanings.
 On a review-only session, `discover`, `compile`, `compile_understood`,

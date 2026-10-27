@@ -98,6 +98,9 @@ def test_sqlite_journal_postings_match_canonical_full_source(
         assert dict(fast.tool_fingerprints) == dict(fresh.tool_fingerprints)
         assert dict(fast.route_locations) == dict(fresh.route_locations)
         assert dict(fast.postings) == dict(fresh.postings)
+        assert dict(fast.route_semantic_ids) == dict(fresh.route_semantic_ids)
+        assert fast.review_route_ids == fresh.review_route_ids
+        assert dict(fast.review_cursor_anchors) == dict(fresh.review_cursor_anchors)
         assert fast.lookup(
             router, QUERY, group=GROUP, principal=PRINCIPAL,
         ) == fresh.lookup(

@@ -6,9 +6,9 @@ optional model-assisted method calls only the application's supplied model.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
+from bisect import bisect_right
+from collections.abc import Callable, Container
 from dataclasses import dataclass, field
-from hashlib import sha256
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
@@ -20,6 +20,7 @@ from .native_graph_index import NativeSchemaGraphIndex
 from .native_semantic_index import (
     NativeSchemaPostingIndex,
     _indexable_semantic_field,
+    _native_review_cursor,
 )
 from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
 from .paper_query_understanding import PaperFieldModel, compile_model_query
@@ -76,18 +77,12 @@ class SchemaFieldReviewPage:
     executable_authority: bool = False
 
 
-def _field_review_cursor(snapshot_id: str, route_id: str) -> str:
-    """Fixed-size opaque cursor, including for arbitrary native route names."""
-    digest = sha256(f"{snapshot_id}:{route_id}".encode()).hexdigest()
-    return f"sr1:{digest}"
-
-
 def _attest_visible_review_route(
     router: SchemaRouter,
     index: NativeSchemaPostingIndex,
     *,
     route_id: str,
-    indexed_semantic_ids: set[str],
+    indexed_semantic_ids: Container[str],
     principal: PrincipalContext,
     permitted: Callable[[Any, Any], bool],
     availability: Callable[[Any, Any], bool] | None,
@@ -140,7 +135,8 @@ def _attest_visible_review_route(
                 identifier=field.identifier,
             )
             for field in scoped.output_fields
-            if field.semantic_id in indexed_semantic_ids
+            if field.semantic_id is not None
+            and field.semantic_id in indexed_semantic_ids
             and _indexable_semantic_field(field)
         ), key=lambda item: (item.semantic_id, item.name)))
         if not fields:
@@ -399,35 +395,55 @@ class SchemaFieldRoutingSession:
             raise PolicyViolationError("field review source authorization missing")
         availability = self._router.planner.availability_predicate
 
-        # Reuse the existing source-derived inverted postings as candidate
-        # inventory; authorization-neutral route IDs stay entirely private.
-        semantic_ids_by_route: dict[str, set[str]] = {}
-        for semantic_id, routes in posting.postings.items():
-            for route_id in routes:
-                semantic_ids_by_route.setdefault(route_id, set()).add(semantic_id)
-
-        sorted_routes = sorted(semantic_ids_by_route)
+        # Use the original pinned, authorization-neutral reverse index
+        # materialized on source build/refresh. No per-page full posting
+        # inversion, global sorting or cursor-hash scan is permitted.
+        semantic_ids_by_route = posting.route_semantic_ids
+        sorted_routes = posting.review_route_ids
+        if (
+            bool(posting.postings) and not semantic_ids_by_route
+            or len(sorted_routes) != len(semantic_ids_by_route)
+            or len(posting.review_cursor_anchors) != len(sorted_routes)
+        ):
+            raise PolicyViolationError("field review source reverse index missing")
         if after_route is not None and after_route.startswith("sr1:"):
             if len(after_route) != 68 or any(
                 char not in "0123456789abcdef" for char in after_route[4:]
             ):
                 raise ValueError("invalid field review page cursor")
-            anchors = [
-                route_id for route_id in sorted_routes
-                if _field_review_cursor(posting.snapshot_id, route_id) == after_route
-            ]
-            if len(anchors) != 1:
+            anchor = posting.review_cursor_anchors.get(after_route)
+            if anchor is None:
                 raise ValueError("field review page cursor is not in this source")
-            after_route = anchors[0]
+            # The hash format is deliberately stable and computable from a
+            # public snapshot. A guessed private route must NOT become an
+            # existence oracle merely because its source-bound hash exists.
+            # Validate current principal visibility before accepting it as a
+            # seek anchor; indistinguishable errors cover missing/denied IDs.
+            try:
+                visible_anchor = _attest_visible_review_route(
+                    self._router, posting, route_id=anchor,
+                    indexed_semantic_ids=semantic_ids_by_route[anchor],
+                    principal=principal, permitted=permitted,
+                    availability=availability,
+                )
+            except Exception:
+                visible_anchor = None
+            if visible_anchor is None:
+                raise ValueError("field review page cursor is not in this source")
+            after_route = anchor
+
+        first_index = (
+            bisect_right(sorted_routes, after_route) if after_route is not None
+            else 0
+        )
 
         reviewed: list[SchemaFieldReviewRoute] = []
         has_more = False
         field_count = 0
         parameter_count = 0
         payload_bytes = 0
-        for route_id in sorted_routes:
-            if after_route is not None and route_id <= after_route:
-                continue
+        for offset in range(first_index, len(sorted_routes)):
+            route_id = sorted_routes[offset]
             current = _attest_visible_review_route(
                 self._router, posting, route_id=route_id,
                 indexed_semantic_ids=semantic_ids_by_route[route_id],
@@ -498,7 +514,7 @@ class SchemaFieldRoutingSession:
             registry_version=posting.registry_version,
             routes=tuple(reviewed),
             next_after_route=(
-                _field_review_cursor(posting.snapshot_id, reviewed[-1].route_id)
+                _native_review_cursor(posting.snapshot_id, reviewed[-1].route_id)
                 if has_more else None
             ),
         )
