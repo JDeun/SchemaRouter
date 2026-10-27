@@ -1,5 +1,56 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 B1 E1 — unhinted real-provider multilingual route/field planning baseline
+
+- Extend the preceding real 3-provider registration (Crossref HTTP JSON,
+  COD OPTIMADE and remote DeepWiki Streamable HTTP MCP) from **execution of
+  host-chosen endpoints** to **unhinted native query retrieval and planning**.
+  Use two actual remote contract discoveries (COD OPTIMADE and DeepWiki MCP)
+  plus the bundled Crossref provider profile in one shared registry; the
+  preceding separate matrix verified real Crossref REST execution, but **this
+  selection run does not remotely rediscover Crossref's schema**. No API keys,
+  model calls or invocations of selected/wrong routes. The frozen 12-case
+  host-labeled suite contains three source-shaped tasks in each of English,
+  Korean and Japanese, plus one out-of-scope credential/account mutation
+  request per language. DOI and repository identity appear literally as
+  user-provided task inputs; no `preferred_tools`, concepts or source
+  answer labels are passed to `PlanRequest`.
+- **Actual public E1 baseline:** **0/9** positive-score exact endpoint
+  Top-1, **5/9** positive-score Top-5 (EN 3/3, KO 1/3, JA 1/3); raw Top-5
+  had **7/9** but **two of those hits scored zero** and are not counted as
+  positive matches. Native `plan_executable` selected the expected route
+  in **0/9** cases, so exact intended output fields were present on the
+  correct planned route in **0/9**. The unrelated mutation queries gave
+  **3/3 no-positive-score outcomes and 0 actual native plan proposals**;
+  this is a small host-authored observation, not a calibrated refusal rate.
+- English original-plan mistakes are semantically consequential: a DOI
+  journal work lookup selected COD's **reference-by-ID** endpoint; a
+  bounded Si/O crystal search selected COD's **structure-by-ID** endpoint;
+  public repository wiki structure chose COD's structure endpoint. Their
+  plans reported missing `id`, not a fabricated identifier. The regression
+  reports **native candidate order, score, planned fields, missing expected
+  fields and missing source-required arguments**; it never executes a
+  mismatched route.
+- Source-shaped [design and observed input audit](public-anonymous-route-selection-e1-design.md),
+  [TDD/CI implementation plan](public-anonymous-route-selection-e1-plan.md),
+  fixed-case opt-in live script and offline regression suite provide the
+  next measured optimization baseline. An initial public discovery attempt
+  failed with a sanitized `SchemaSourceError` and did **not** report a
+  success; later two-source true remote discovery, bundled Crossref profile
+  registration and 12-case native evaluation **succeeded again after review**.
+  **248 related regression tests passed**, whole-repository Ruff passed,
+  changed-script Pyright reported zero errors/warnings; whole pytest was
+  **capped at 75s around 8% (exit 124), not green**. Independent read-only
+  review found and corrected misleading three-remote-schema provenance.
+  Exact new-head GitHub CI still needs its own qualification; do not inherit
+  previous commit's green.
+- **E1 source-native retrieval characterization**, not independent
+  publisher-judged route gold, an actual inference-model trial, original
+  Algorithm 1 end-to-end E2, 500/5000 heterogeneity qualification or
+  production release authority. This code **does not change** the default
+  planner, source metadata, permissions or ranking. Keep #1346/#1477
+  BLOCKED_EXTERNAL, #1356 HARD HOLD and #1755 Draft/unmerged.
+
 ### 2026-10-27 B1 E1 — actual keyless REST/OPTIMADE/public remote MCP source-task matrix
 
 - A **single live SchemaRouter registry** discovered and bound three authentic,
