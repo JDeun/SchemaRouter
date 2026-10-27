@@ -23,7 +23,12 @@ from .native_semantic_index import (
 )
 from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
 from .paper_query_understanding import PaperFieldModel, compile_model_query
-from .paper_typed_tool_plan import PaperTypedToolPlan, compile_paper_typed_tool_plan
+from .paper_typed_tool_plan import (
+    PaperPlanParameterMeta,
+    PaperTypedToolPlan,
+    _paper_public_parameters,
+    compile_paper_typed_tool_plan,
+)
 from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
 from .paper_understood_graph_plan import compile_paper_understood_graph_plan
 from .registry import InMemoryRegistry, SQLiteRegistry
@@ -33,6 +38,8 @@ if TYPE_CHECKING:
 
 _MAX_REVIEW_FIELDS_PER_ROUTE = 512
 _MAX_REVIEW_FIELDS_PER_PAGE = 2048
+_MAX_REVIEW_PARAMETERS_PER_ROUTE = 512
+_MAX_REVIEW_PARAMETERS_PER_PAGE = 2048
 _MAX_REVIEW_PAGE_BYTES = 262144
 
 
@@ -55,6 +62,7 @@ class SchemaFieldReviewRoute:
     source_type: str | None
     license: str | None
     fields: tuple[SchemaFieldReviewField, ...]
+    parameters_meta: tuple[PaperPlanParameterMeta, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,6 +159,7 @@ def _attest_visible_review_route(
             source_type=None if restricted else tool.source_type,
             license=None if restricted else tool.license,
             fields=fields,
+            parameters_meta=_paper_public_parameters(scoped),
         )
     except Exception:
         # This includes PolicyViolationError raised BY callbacks/source plugins:
@@ -389,6 +398,7 @@ class SchemaFieldRoutingSession:
         reviewed: list[SchemaFieldReviewRoute] = []
         has_more = False
         field_count = 0
+        parameter_count = 0
         payload_bytes = 0
         for route_id in sorted_routes:
             if after_route is not None and route_id <= after_route:
@@ -407,6 +417,7 @@ class SchemaFieldRoutingSession:
             # models. Refuse oversized review pages instead of silently
             # truncating authorized fields or returning unbounded payloads.
             field_count += len(current.fields)
+            parameter_count += len(current.parameters_meta)
             payload_bytes += 160 + 6 * sum(
                 len(value.encode("utf-8")) for value in (
                     current.route_id,
@@ -420,9 +431,17 @@ class SchemaFieldRoutingSession:
                         item.name, item.semantic_id, item.json_type, item.unit or "",
                     )
                 )
+            for item in current.parameters_meta:
+                payload_bytes += 160 + 6 * sum(
+                    len(value.encode("utf-8")) for value in (
+                        item.name, item.location, *item.json_types,
+                    )
+                )
             if (
                 len(current.fields) > _MAX_REVIEW_FIELDS_PER_ROUTE
                 or field_count > _MAX_REVIEW_FIELDS_PER_PAGE
+                or len(current.parameters_meta) > _MAX_REVIEW_PARAMETERS_PER_ROUTE
+                or parameter_count > _MAX_REVIEW_PARAMETERS_PER_PAGE
                 or payload_bytes > _MAX_REVIEW_PAGE_BYTES
             ):
                 raise PolicyViolationError("field review page budget exceeded")

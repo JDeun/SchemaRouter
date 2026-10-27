@@ -1681,3 +1681,25 @@ The combined native/typed/public-API/Explorer test selection passed **329
 tests**, including 5,000-route pagination and these negative regressions,
 with clean Ruff, focused source Pyright and the runnable provider-neutral
 example. GitHub exact-head CI is not inferred from these local checks.
+
+## 2026-10-27 — #1791 review-first typed input parameter metadata (B1)
+
+The public review-only inventory introduced in #1789 did not expose any
+**input parameter shape** until after owner concept approval and `compile()`.
+That left first-time P2 source-input review unwired even though guarded typed
+plans already exposed minimal `PaperPlanParameterMeta` receipts (#1773).
+
+The `SchemaFieldReviewRoute.parameters_meta` addition reuses exactly the
+existing current-principal `_paper_public_parameters(scoped_endpoint)`
+projection: original name, required flag, location and basic JSON type
+labels, but no input values, wire aliases, description, defaults, full JSON
+schema, credentials or inferred semantics. Each page continues its original
+authorization, availability, output-field scope and source fingerprint checks;
+the safe input receipt participates in double re-attestation. The existing
+256 KiB budget now includes bounded input metadata (512/route, 2048/page).
+Review-only catalog approval remains explicit, and a receipt remains
+non-executable. Existing optional provider adapters and default lexical
+ranking are unchanged. See issue #1791 and
+`research/autoresearch/core-parameter-review-20261027-{design,plan}.md`.
+This is B1 mechanism wiring, not independent A6/A7/A8/E2 qualification,
+catalog-wide proven ranking, a release, or any provider data execution.

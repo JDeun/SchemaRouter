@@ -17,6 +17,7 @@ from schemarouter import (
     PaperIntentDeclaration,
     PaperIntentRegistry,
     PaperUnderstanding,
+    ParameterSpec,
     SchemaFieldRoutingSession,
     SchemaRouter,
     SQLiteRegistry,
@@ -181,6 +182,134 @@ def test_visible_field_review_pages_source_proven_metadata_without_provider_io(
     assert found[LEFT].source_type == "crm"
     assert found[LEFT].license == "host-reviewed-synthetic"
     assert not found[LEFT].fields[0].identifier
+
+
+def test_visible_field_review_includes_typed_inputs_before_catalog_approval():
+    """Missing input projection breaks review-first P2 authoring."""
+    router = build_fixture(500)
+    review_only = router.prepare_field_routing()
+    page = review_only.inspect_visible_fields(
+        principal=ACTOR, after_route="fork_", limit=64,
+    )
+    routes = {route.route_id: route for route in page.routes}
+    assert routes[ROOT].parameters_meta == ()
+    assert tuple((param.name, param.required, param.location, param.json_types)
+                 for param in routes[RIGHT].parameters_meta) == (
+        ("customer_id", True, "argument", ("string",)),
+    )
+    assert routes[LEFT].parameters_meta == routes[RIGHT].parameters_meta
+
+    approved = review_only.revise_catalog(catalog=_catalog())
+    planned = approved.compile(ALIASES[0], principal=ACTOR)
+    compiled = {call.route_id: call.parameters_meta for call in planned.calls}
+    assert compiled[LEFT] == routes[LEFT].parameters_meta
+    assert compiled[RIGHT] == routes[RIGHT].parameters_meta
+    assert not page.executable_authority
+
+
+def test_visible_field_review_hides_scoped_parameter_aliases_and_annotations():
+    """Denied output aliases must not be repeated as input metadata."""
+    secret = "internal_alias_do_not_disclose"
+    router = build_fixture(500)
+    tool = router.registry.get("fork_owner")
+    parameter = tool.endpoints[0].parameters[0]
+    parameter.description = f"secret credential {secret}"
+    parameter.wire_name = f"X-{secret}"
+    parameter.aliases = [secret]
+    tool.endpoints[0].parameters.append(ParameterSpec(
+        name=secret, json_schema={"type": "string"},
+    ))
+    tool.endpoints[0].output_fields.append(FieldSpec(
+        name="private_col", aliases=[secret],
+        json_schema={"type": "string"},
+    ))
+    router.add_tool(tool, replace=True)
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(effect="allow", operation="*.read",
+                                 roles_any=("reader",)),),
+        data_rules=(DataScopeRule(
+            operation=RIGHT, roles_any=("reader",),
+            hidden_fields=("private_col",),
+        ),),
+    )
+    page = router.prepare_field_routing().inspect_visible_fields(
+        principal=ACTOR, after_route="fork_", limit=64,
+    )
+    route = next(route for route in page.routes if route.route_id == RIGHT)
+    assert tuple((p.name, p.json_types) for p in route.parameters_meta) == (
+        ("customer_id", ("string",)),
+    )
+    assert secret not in repr(route)
+    assert "credential" not in repr(route)
+
+
+def test_visible_field_review_refuses_oversized_input_inventory():
+    """A maliciously wide declared input shape cannot bypass page budgets."""
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="wide_input_review", source_type="crm", license="approved",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name=f"input_{index}", json_schema={"type": "string"},
+            ) for index in range(513)],
+            output_fields=[FieldSpec(
+                name="public", semantic_id="crm.public",
+                json_schema={"type": "string"},
+            )],
+        )],
+    ))
+    with pytest.raises(PolicyViolationError, match="budget|bound|large"):
+        router.prepare_field_routing().inspect_visible_fields(
+            principal=ACTOR, after_route="wide_input", limit=1,
+        )
+
+
+def test_visible_field_review_refuses_oversized_parameter_name_bytes():
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="wide_byte_input", source_type="crm", license="approved",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name="long_" + "가" * 22000,
+                json_schema={"type": "string"},
+            )],
+            output_fields=[FieldSpec(
+                name="public", semantic_id="crm.public",
+                json_schema={"type": "string"},
+            )],
+        )],
+    ))
+    with pytest.raises(PolicyViolationError, match="budget|bound|large"):
+        router.prepare_field_routing().inspect_visible_fields(
+            principal=ACTOR, after_route="wide_byte", limit=1,
+        )
+
+
+def test_visible_field_review_refuses_inflight_input_shape_change(monkeypatch):
+    """A live input projection changing after the first page pass is stale."""
+    router = build_fixture(500)
+    session = router.prepare_field_routing()
+    original = router._data_scope_endpoint_view
+    seen = 0
+
+    def scoped_input_churn(principal, tool, endpoint):
+        nonlocal seen
+        visible = original(principal, tool, endpoint)
+        if visible is not None and tool.name == "fork_owner":
+            visible = visible.model_copy(deep=True)
+            seen += 1
+            if seen >= 2:
+                visible.parameters[0].location = "query"
+        return visible
+
+    monkeypatch.setattr(router, "_data_scope_endpoint_view", scoped_input_churn)
+    with pytest.raises(PolicyViolationError, match="changed|eligibility"):
+        session.inspect_visible_fields(
+            principal=ACTOR, after_route="fork_", limit=64,
+        )
 
 
 def test_visible_field_review_suppresses_restricted_source_provenance():

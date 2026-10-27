@@ -154,8 +154,14 @@ and source/unit/license field metadata. Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.
 Each bounded page contains only currently authorized and visible scalar
-field names, semantic IDs, type labels, units and (when not scope-restricted)
-source/license labels, sourced from the existing pinned schema index. Follow
+field names, semantic IDs, type labels, units, safe source input parameter
+shapes (`parameters_meta`: canonical name, required flag, location and basic
+JSON types), and (when not scope-restricted) source/license labels. The input
+projection uses the same live principal/data-scope rules as the guarded typed
+plan; it excludes descriptions, wire aliases, raw JSON schemas, defaults and
+argument values. At most 512 parameters per route and 2,048 per page share
+the conservative 256 KiB review budget with output field metadata; oversized
+routes fail explicitly. Follow
 the fixed-size opaque `next_after_route` token by passing it as `after_route`
 until it is `None`. That token is tied to the source snapshot and works even
 when registered route names are unusually long or contain control characters.

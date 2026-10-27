@@ -63,6 +63,14 @@ def main() -> None:
     for route in reviewed_fields.routes:
         print("visible source field candidate:", route.route_id,
               [(field.name, field.semantic_id) for field in route.fields])
+        print("safe source input shapes:", route.route_id, route.parameters_meta)
+        # These shapes are available BEFORE owner concept approval. They
+        # contain no input values, raw schemas, aliases, or credential data.
+        if route.route_id == "directory.lookup":
+            assert tuple((item.name, item.required, item.location, item.json_types)
+                         for item in route.parameters_meta) == (
+                ("customer_id", True, "query", ("string",)),
+            )
     assert not reviewed_fields.executable_authority
     # The host can use this CURRENT scoped inventory to review concepts;
     # no aliases are inferred and no provider data is fetched.
