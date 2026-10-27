@@ -184,6 +184,72 @@ def test_understood_session_abstains_when_required_output_field_becomes_hidden()
     assert plan.calls == ()
 
 
+def test_hidden_output_decoys_do_not_exhaust_named_graph_candidate_budget():
+    router = _two_hop_router()
+    router.add_tool(ToolSpec(
+        name="metadata_noise", source_type="crm",
+        license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(
+            name=f"read_{i}", read_only=True,
+            output_fields=[
+                FieldSpec(name="owner", semantic_id="crm.fork_owner",
+                          json_schema={"type": "string"}),
+                FieldSpec(name="audit_note", json_schema={"type": "string"}),
+            ],
+        ) for i in range(33)],
+    ))
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny", rules=(AuthorizationRule(
+            effect="allow", operation="*", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="metadata_noise.*", roles_any=("reader",),
+            visible_fields=("audit_note",),
+        ),),
+    )
+    plan = router.prepare_field_routing(catalog=CATALOG).compile_understood(
+        PaperUnderstanding(
+            intent_id="crm.owner_lookup", named_tools=("leaf", "metadata_noise"),
+        ), principal=ACTOR, intent_registry=INTENTS,
+    )
+    assert plan.status == "requires_observation"
+    assert [call.route_id for call in plan.calls] == [
+        "origin.read", "middle.read", "leaf.read",
+    ]
+
+
+def test_named_graph_availability_errors_never_echo_private_callback_diagnostics():
+    # An unfit named endpoint skips direct candidate evaluation but is still
+    # checked by the graph-target prefilter, where a callback may throw.
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny", rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="unrelated", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            output_fields=[FieldSpec(
+                name="audit_note", semantic_id="crm.audit_note",
+                json_schema={"type": "string"},
+            )],
+        )],
+    ))
+    secret = "PRIVATE_PROVIDER_DIAGNOSTIC_xyz_12345"
+
+    def private_availability(_tool, _endpoint):
+        raise RuntimeError(secret)
+
+    router.planner.availability_predicate = private_availability
+    with pytest.raises(PolicyViolationError, match="availability") as exc:
+        router.prepare_field_routing(catalog=CATALOG).compile_understood(
+            PaperUnderstanding(intent_id="crm.owner_lookup", named_tools=("unrelated",)),
+            principal=ACTOR, intent_registry=INTENTS,
+        )
+    assert secret not in str(exc.value)
+
+
 @pytest.mark.parametrize("bad_k,bad_hops", [(4, 2), (6, 2), (5, 0), (5, 3)])
 def test_understood_session_preserves_exact_paper_plan_bounds(bad_k, bad_hops):
     session = build_fixture(500).prepare_field_routing(catalog=CATALOG)

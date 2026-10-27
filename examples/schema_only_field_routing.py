@@ -34,7 +34,8 @@ def main() -> None:
         endpoints=[EndpointSpec(
             name="lookup", read_only=True,
             parameters=[ParameterSpec(
-                name="customer_id", required=True, location="query",
+                name="customer_id", semantic_id="customer.id",
+                required=True, location="query",
                 json_schema={"type": "string"},
             )],
             input_schema={
@@ -113,6 +114,34 @@ def main() -> None:
     for call in understood.calls:
         print("understood fields / inputs:", call.route_id,
               call.call.fields, call.call.arguments)
+
+    # A second, independently reviewed source schema can establish the
+    # dependency without executing either endpoint. Reprepare after editing
+    # the registry; this session does not approve a parameterized host root.
+    router.add_tool(ToolSpec(
+        name="directory_keys", source_type="host-owned", license="internal",
+        endpoints=[EndpointSpec(
+            name="lookup", read_only=True,
+            output_fields=[FieldSpec(
+                name="customer_id", semantic_id="customer.id",
+                identifier=True, json_schema={"type": "string"},
+            )],
+            output_schema={
+                "type": "object",
+                "properties": {"customer_id": {"type": "string"}},
+                "required": ["customer_id"],
+            },
+        )],
+    ))
+    graph_session = router.prepare_field_routing(catalog=catalog)
+    graph_plan = graph_session.compile_understood(
+        PaperUnderstanding(
+            intent_id="customer.lookup", named_tools=("directory",),
+        ), principal=principal, intent_registry=reviewed_intents,
+    )
+    print("one-hop schema-only graph:", graph_plan.status,
+          tuple(call.route_id for call in graph_plan.calls))
+    print("typed dependency bindings:", graph_plan.bindings)
 
 
 if __name__ == "__main__":

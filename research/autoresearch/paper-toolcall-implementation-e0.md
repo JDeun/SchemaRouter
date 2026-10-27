@@ -1539,3 +1539,14 @@ stale registry, invalid bounds/intent and the no-execution invariant. This is
 **input-hint → schema-proof wiring**, not a built-in model or a successful
 independent natural-language intent-understanding evaluation. Issue #1775
 and its stacked Draft track CI and integration separately.
+
+Independent read-only review of #1775 found two inherited named-graph
+boundaries that matter now that this path is publicly wired. RED→GREEN
+regressions now require (1) source-visible matching required semantic
+outputs **before** counting toward the bounded 32-target prefilter, so
+partially visible hidden-field decoys cannot crowd out a valid path, and
+(2) generic fail-closed `PolicyViolationError` rather than raw availability
+callback diagnostic text. Both original 1-/2-hop proof engines remain
+authoritative; a semantic prefilter is only a necessary condition, never
+an attestation. The provider-neutral runnable example additionally prints
+the actual one-hop dependency binding without any source execution.

@@ -176,8 +176,27 @@ def compile_paper_understood_graph_plan(
             or not permitted_targets(tool, endpoint)
             or endpoint.read_only is not True
             or endpoint.destructive is True
-            or available is not None and not available(tool, endpoint)
-            or router._data_scope_endpoint_view(principal, tool, endpoint) is None
+        ):
+            continue
+        # Availability is a host callback and can contain private provider
+        # diagnostics. Never propagate its exception text (including errors
+        # thrown by truth-value conversion) to an untrusted planner caller.
+        try:
+            if available is not None and not available(tool, endpoint):
+                continue
+        except Exception:
+            raise PolicyViolationError("paper named graph availability check failed") from None
+        visible = router._data_scope_endpoint_view(principal, tool, endpoint)
+        if visible is None:
+            continue
+        # A partially visible endpoint with none of the requested semantic
+        # outputs cannot be a G5 target. Exclude it BEFORE the 32-route cap,
+        # or hidden/unrelated routes can crowd out a valid field proof.
+        # Exact type/edge compatibility is still checked by native G5.
+        if not all(
+            any(field.semantic_id == required.semantic_id
+                for field in visible.output_fields)
+            for required in group.required_fields
         ):
             continue
         scoped_targets.add(route_id)
