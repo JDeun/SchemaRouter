@@ -57,6 +57,208 @@ def _revised_catalog() -> NativeConceptCatalog:
     ),))
 
 
+def _owner_only_catalog() -> NativeConceptCatalog:
+    return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.owner_only",
+        aliases=("customer owner only",),
+        required_fields=(GROUP.required_fields[1],),
+        source_type="crm",
+        license="host-reviewed-synthetic",
+    ),))
+
+
+@pytest.mark.parametrize("route_count", (500, 5000))
+def test_host_root_graph_review_delta_matches_fresh_build_without_catalog_scan(
+    monkeypatch, route_count,
+):
+    """Removing the canonical incremental graph delta would break parity."""
+    router = build_fixture(route_count)
+    prepared = router.prepare_field_routing(catalog=_owner_only_catalog())
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("host-root review must reuse the indexed source and graph")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(NativeSchemaPostingIndex, "build", forbidden)
+        scope.setattr(NativeSchemaGraphIndex, "build", forbidden)
+        scope.setattr(router.registry, "tools", forbidden)
+        scope.setattr(router.registry, "keys", forbidden)
+        scope.setattr(router.executor, "execute", forbidden)
+        approved = prepared._index.revise_host_roots(
+            approved_host_roots=frozenset({RIGHT}),
+        )
+        revoked = approved.revise_host_roots(approved_host_roots=frozenset())
+
+    owner_oracle = router.prepare_field_routing(
+        catalog=_owner_only_catalog(), approved_host_roots=frozenset({RIGHT}),
+    )
+    assert approved.field_index is prepared._index.field_index
+    assert approved.approved_host_roots == frozenset({RIGHT})
+    assert approved.graph == owner_oracle._index.graph
+    assert approved.native_root_count == owner_oracle._index.native_root_count
+    assert approved.native_consumer_count == owner_oracle._index.native_consumer_count
+    assert revoked.graph == prepared._index.graph
+    assert revoked.approved_host_roots == frozenset()
+    assert prepared._index.approved_host_roots == frozenset()
+
+
+def test_review_only_owner_approval_can_activate_and_revoke_host_root_without_rebuild(
+    monkeypatch,
+):
+    """P2 direct parameterized paths must switch with explicit owner review."""
+    router = build_fixture(500)
+    review_only = router.prepare_field_routing()
+    catalog = _owner_only_catalog()
+    indirect = review_only.revise_catalog(catalog=catalog)
+    assert [route.route_id for route in indirect.discover(
+        "customer owner only", principal=ACTOR,
+    ).alternatives[0].routes] == [ROOT, RIGHT]
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("owner root approval must not rebuild or execute providers")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(NativeSchemaPostingIndex, "build", forbidden)
+        scope.setattr(NativeSchemaGraphIndex, "build", forbidden)
+        scope.setattr(router.registry, "tools", forbidden)
+        scope.setattr(router.registry, "keys", forbidden)
+        scope.setattr(router.executor, "execute", forbidden)
+        scope.setattr(router.executor, "execute_call", forbidden)
+        approved = review_only.revise_catalog(
+            catalog=catalog, approved_host_roots=frozenset({RIGHT}),
+        )
+        direct = approved.compile("customer owner only", principal=ACTOR)
+        ready = approved.compile(
+            "customer owner only", principal=ACTOR,
+            host_source_arguments={RIGHT: {"customer_id": "host-42"}},
+        )
+        revoked = approved.revise_catalog(
+            catalog=catalog, approved_host_roots=frozenset(),
+        )
+
+    assert approved.snapshot_id == review_only.snapshot_id
+    assert approved._index.field_index is review_only._index.field_index
+    assert approved._index.approved_host_roots == frozenset({RIGHT})
+    assert [call.route_id for call in direct.calls] == [RIGHT]
+    assert direct.status == "requires_arguments"
+    assert direct.calls[0].call.missing_required_arguments == ["customer_id"]
+    assert ready.status == "ready"
+    assert ready.calls[0].call.arguments == {"customer_id": "host-42"}
+    assert not ready.executable_authority
+    assert [route.route_id for route in revoked.discover(
+        "customer owner only", principal=ACTOR,
+    ).alternatives[0].routes] == [ROOT, RIGHT]
+    assert revoked.catalog_revision_id == indirect.catalog_revision_id
+    assert approved.catalog_revision_id != revoked.catalog_revision_id
+    assert review_only._index.approved_host_roots == frozenset()
+    assert indirect._index is review_only._index
+
+
+def test_host_root_review_rejects_unapproved_nonexistent_and_invalid_sets():
+    router = build_fixture(500)
+    prepared = router.prepare_field_routing(catalog=_owner_only_catalog())
+    for invalid in ({RIGHT}, frozenset({"not-a-native-route.read"}),
+                    frozenset({ROOT}), frozenset({""}), frozenset(range(65))):
+        with pytest.raises((ValueError, PolicyViolationError)):
+            prepared.revise_catalog(
+                catalog=_owner_only_catalog(), approved_host_roots=invalid,
+            )
+    assert prepared._index.approved_host_roots == frozenset()
+
+
+def test_host_root_review_fails_closed_on_policy_mutation_during_source_access(
+    monkeypatch,
+):
+    router = build_fixture(500)
+    prepared = router.prepare_field_routing(catalog=_owner_only_catalog())
+    original_get = router.registry.get
+
+    def change_policy_on_get(key):
+        router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return original_get(key)
+
+    with monkeypatch.context() as scope:
+        scope.setattr(router.registry, "get", change_policy_on_get)
+        with pytest.raises(PolicyViolationError, match="policy|authorization"):
+            prepared.revise_catalog(
+                catalog=_owner_only_catalog(),
+                approved_host_roots=frozenset({RIGHT}),
+            )
+    assert prepared._index.approved_host_roots == frozenset()
+
+
+def test_host_root_review_sanitizes_plugin_version_exception_after_source_access(
+    monkeypatch,
+):
+    """Plugin version diagnostics must never leak private schema text."""
+    router = build_fixture(500)
+    prepared = router.prepare_field_routing(catalog=_owner_only_catalog())
+    registry = router.registry
+    original_get = registry.get
+    original_version = type(registry).version.fget
+    assert original_version is not None
+    change = {"after_get": False}
+
+    def get_then_break_version(key):
+        item = original_get(key)
+        change["after_get"] = True
+        return item
+
+    def private_version(instance):
+        if change["after_get"]:
+            raise RuntimeError("PRIVATE_SCHEMA_SENTINEL")
+        return original_version(instance)
+
+    with monkeypatch.context() as scope:
+        scope.setattr(registry, "get", get_then_break_version)
+        scope.setattr(type(registry), "version", property(private_version))
+        with pytest.raises(PolicyViolationError) as raised:
+            prepared.revise_catalog(
+                catalog=_owner_only_catalog(),
+                approved_host_roots=frozenset({RIGHT}),
+            )
+    assert "PRIVATE_SCHEMA_SENTINEL" not in str(raised.value)
+    assert prepared._index.approved_host_roots == frozenset()
+
+
+def test_host_root_review_preserves_direct_scalar_root_count_without_identifier():
+    """An MCP-style `result: string` source is a direct root, not an ID producer."""
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="reviewed_scalar", source_type="mcp", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name="page", semantic_id="docs.page_id", required=True,
+                json_schema={"type": "string"},
+            )],
+            input_schema={
+                "type": "object", "properties": {"page": {"type": "string"}},
+                "required": ["page"], "additionalProperties": False,
+            },
+            output_fields=[FieldSpec(
+                name="result", semantic_id="docs.body",
+                json_schema={"type": "string"},
+            )],
+        )],
+    ))
+    prepared = router.prepare_field_routing(catalog=_owner_only_catalog())
+    approved = prepared._index.revise_host_roots(
+        approved_host_roots=frozenset({"reviewed_scalar.read"}),
+    )
+    oracle = router.prepare_field_routing(
+        catalog=_owner_only_catalog(),
+        approved_host_roots=frozenset({"reviewed_scalar.read"}),
+    )
+    assert approved.native_root_count == oracle._index.native_root_count
+    assert approved.native_root_count == prepared._index.native_root_count + 1
+    assert approved.native_consumer_count == oracle._index.native_consumer_count
+    assert approved.graph == oracle._index.graph
+    assert approved.revise_host_roots(
+        approved_host_roots=frozenset(),
+    ).graph == prepared._index.graph
+
+
 def test_visible_field_review_bootstraps_without_preapproved_concept_catalog(monkeypatch):
     router = build_fixture(500)
     session = router.prepare_field_routing()

@@ -438,6 +438,102 @@ class NativeSchemaGraphIndex:
             tuple(sorted(contracts, key=lambda item: item.capability_id)),
         )
 
+    def revise_host_roots(
+        self, *, approved_host_roots: frozenset[str],
+    ) -> NativeSchemaGraphIndex:
+        """Atomically reproject owner-approved roots on the SAME native source.
+
+        Only tools owning added or revoked roots are reopened. Reuse the
+        canonical graph edge delta updater; leave the old index immutable.
+        This is source metadata review, never provider authorization/execution.
+        """
+        if (
+            type(approved_host_roots) is not frozenset
+            or len(approved_host_roots) > 64
+            or any(type(route) is not str or not route for route in approved_host_roots)
+        ):
+            raise ValueError("G5 exact bounded host-approved route set required")
+
+        posting = self.field_index
+        registry = posting.registry_ref
+        try:
+            source_version = registry.version
+        except Exception:
+            raise PolicyViolationError("G5 host revision source verification failed") from None
+        if source_version != posting.registry_version:
+            raise PolicyViolationError("G5 host revision source changed")
+        if (
+            {contract.capability_id for contract in self._source_contracts}
+            != set(self.graph.capability_ids)
+            or not self.approved_host_roots.issubset(posting.route_locations)
+        ):
+            raise PolicyViolationError("G5 host revision prior graph invalid")
+        if approved_host_roots == self.approved_host_roots:
+            return self
+
+        changed_routes = approved_host_roots ^ self.approved_host_roots
+        if not changed_routes.issubset(posting.route_locations):
+            raise PolicyViolationError("G5 host revision unknown original route")
+        changed_keys = {
+            posting.route_locations[route][0] for route in changed_routes
+        }
+        contracts = [
+            contract.model_copy(deep=True)
+            for contract in self._source_contracts
+            if posting.route_locations.get(contract.capability_id, ("", ""))[0]
+            not in changed_keys
+        ]
+        accepted = {
+            route for route in approved_host_roots
+            if posting.route_locations[route][0] not in changed_keys
+        }
+        try:
+            for key in sorted(changed_keys):
+                tool = registry.get(key)
+                fingerprint = tool.fingerprint
+                if (tool.key != key or posting.tool_fingerprints.get(key) != fingerprint):
+                    raise PolicyViolationError("G5 host revision source fingerprint drift")
+                for endpoint in tool.endpoints:
+                    route = f"{key}.{endpoint.name}"
+                    if posting.route_fingerprints.get(route) != (
+                        fingerprint, endpoint.fingerprint,
+                    ):
+                        raise PolicyViolationError("G5 host revision endpoint drift")
+                part, _, _, approved = _source_native_graph_contracts(
+                    tool, approved_host_roots,
+                )
+                contracts.extend(part)
+                accepted.update(approved)
+        except Exception:
+            # Registry errors can contain private source schema fragments.
+            raise PolicyViolationError("G5 host revision source review failed") from None
+
+        if accepted != set(approved_host_roots):
+            raise PolicyViolationError("G5 host revision route not accepted")
+        updated = update_capability_dependency_graph(
+            self.graph, list(self._source_contracts), contracts,
+        )
+        try:
+            source_version = registry.version
+        except Exception:
+            raise PolicyViolationError("G5 host revision source verification failed") from None
+        if source_version != posting.registry_version:
+            raise PolicyViolationError("G5 host revision source changed")
+        roots = sum(
+            not contract.requires and (
+                bool(contract.produces)
+                or contract.capability_id in approved_host_roots
+            )
+            for contract in contracts
+        )
+        consumers = sum(bool(contract.requires) for contract in contracts)
+        return NativeSchemaGraphIndex(
+            posting, updated, roots, consumers,
+            frozenset(edge.consumer_id for edge in updated.edges),
+            approved_host_roots,
+            tuple(sorted(contracts, key=lambda item: item.capability_id)),
+        )
+
     @classmethod
     def refresh(
         cls,

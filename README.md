@@ -153,6 +153,18 @@ application already has an approved catalog. Then call
 and source/unit/license field metadata. Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.
+For registered sources needing an explicit host-supplied scalar (for example,
+an owner-reviewed lookup identifier), first inspect that native input shape,
+then approve it alongside the concept mapping:
+`session = session.revise_catalog(catalog=reviewed_concepts,
+approved_host_roots=frozenset({"directory.lookup"}))`. Omit the argument to
+retain existing root approvals, or pass `frozenset()` to revoke all of them.
+These are exact registered route IDs, not model-suggested values. Revision
+reprojects only original tools affected by added/revoked roots through the
+existing canonical graph updater; no source-wide index rebuild, provider call
+or implicit execution grant occurs. An approved root can yield a typed plan
+with `requires_arguments`; only separately supplied valid host values may
+produce a `ready` **non-executing** receipt.
 Each bounded page contains only currently authorized and visible scalar
 field names, semantic IDs, type labels, units, safe source input parameter
 shapes (`parameters_meta`: canonical name, required flag, location and basic
@@ -217,7 +229,9 @@ same pinned posting/G5 graph, including host-approved roots; there is **no
 schema rescan** or provider execution. Use `(new_session.snapshot_id,
 new_session.catalog_revision_id)` to **partition host schema/semantic caches**:
 the source-only `snapshot_id` intentionally stays unchanged across a catalog
-revision. **Do not use this pair alone to cache or replay authorized
+revision. With nonempty explicit root approvals, `catalog_revision_id` also
+commits to the sorted root list; changing only that list changes the semantic
+cache key. **Do not use this pair alone to cache or replay authorized
 `discover()`/`compile()` results.** Those results depend on the live principal,
 authorization policy, allowed scopes and availability, and require current
 source and authorization rechecks at use time. The application must atomically

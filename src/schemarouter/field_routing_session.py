@@ -281,10 +281,13 @@ class SchemaFieldRoutingSession:
 
     def revise_catalog(
         self, *, catalog: NativeConceptCatalog,
+        approved_host_roots: frozenset[str] | None = None,
     ) -> SchemaFieldRoutingSession:
-        """Replace only host-reviewed field meanings, reusing the pinned graph.
+        """Atomically replace host-reviewed meanings and optional input roots.
 
-        Registry changes require ``refresh``; semantic review changes do not.
+        Omitted roots retain the exact graph; explicit root replacement uses
+        the same-source canonical incremental edge delta, never a full scan.
+        Registry changes require ``refresh``; owner review changes do not.
         The host must replace/retire its old session reference explicitly;
         this operation does not revoke separately retained old handles.
         """
@@ -296,14 +299,30 @@ class SchemaFieldRoutingSession:
                 "field session catalog revision needs authorization policy"
             )
         policy_digest = _policy_contents_digest(policy)
-        self._index.field_index._assert_source(self._router)
+        try:
+            self._index.field_index._assert_source(self._router)
+        except Exception:
+            raise PolicyViolationError(
+                "field session catalog revision source verification failed"
+            ) from None
 
         # Revalidate and detach from the caller's mutable Pydantic object.
         # Neither the source postings nor approved host roots are rebuilt.
         reviewed = NativeConceptCatalog.model_validate(
             catalog.model_dump(mode="python"), strict=True,
         )
-        self._index.field_index._assert_source(self._router)
+        updated = (
+            self._index if approved_host_roots is None
+            else self._index.revise_host_roots(
+                approved_host_roots=approved_host_roots,
+            )
+        )
+        try:
+            self._index.field_index._assert_source(self._router)
+        except Exception:
+            raise PolicyViolationError(
+                "field session catalog revision source verification failed"
+            ) from None
         if (
             self._router.authorization_policy is not policy
             or _policy_contents_digest(policy) != policy_digest
@@ -312,7 +331,7 @@ class SchemaFieldRoutingSession:
                 "field session authorization policy changed during catalog revision"
             )
         return SchemaFieldRoutingSession(
-            _router=self._router, _catalog=reviewed, _index=self._index,
+            _router=self._router, _catalog=reviewed, _index=updated,
         )
 
     @property
@@ -329,8 +348,14 @@ class SchemaFieldRoutingSession:
 
     @property
     def catalog_revision_id(self) -> str:
-        """Stable reviewed-semantics digest; pair with the source snapshot ID."""
-        return canonical_json_sha256(self._require_catalog().model_dump(mode="json"))
+        """Reviewed semantics/root-approval digest; pair with source snapshot."""
+        catalog = self._require_catalog().model_dump(mode="json")
+        if not self._index.approved_host_roots:
+            return canonical_json_sha256(catalog)
+        return canonical_json_sha256({
+            "catalog": catalog,
+            "approved_host_roots": sorted(self._index.approved_host_roots),
+        })
 
     @property
     def indexed_route_count(self) -> int:

@@ -1720,3 +1720,50 @@ GREEN and provided an explicit fail-closed review-only contract. **177**
 adjacent tests passed locally, repository Ruff clean, both changed modules
 Pyright 0 errors/0 warnings. Updated exact-head GitHub CI and full-source
 typecheck remain separate gates. This is not E2 or release qualification.
+
+## 2026-10-27 — #1793 atomic review of explicit host input roots (B1)
+
+The review-first `prepare_field_routing()` → `inspect_visible_fields()` →
+`revise_catalog()` flow could approve new field concepts but **could not
+activate or revoke a parameterized native root** without starting over with a
+full G5 build. That made first-time review of native required P2 source input
+shapes a dead end for hosts with no preapproved roots. Issue #1793 adds
+`revise_catalog(catalog=..., approved_host_roots=frozenset(...))`. Omission
+preserves old roots and exact graph identity; an explicit empty set revokes.
+The original posting/source snapshot is never rebuilt or changed.
+
+The new `NativeSchemaGraphIndex.revise_host_roots` reads only original source
+tools whose route names belong to the added/revoked root symmetric difference,
+reuses `_source_native_graph_contracts` and canonical
+`update_capability_dependency_graph`, proves bounded exact owner approvals and
+source fingerprints, and preserves the immutable old handle. No registry
+`tools()`/`keys()` enumeration, provider call, model call or executor call is
+allowed. The reviewed `catalog_revision_id` includes sorted nonempty root
+approvals so a root-only semantic change cannot alias a prior host cache key;
+the historical empty-root catalog digest stays unchanged.
+
+TDD confirmed missing graph/public API RED, then tested a 500/5,000 registered
+route graph against independent fresh-build oracles, owner activation from a
+review-only handle, direct host-input `requires_arguments` and explicit ready
+plan after validated host scalar, revocation to the original source dependency,
+invalid/nonexistent/overwide roots, same-session isolation and in-flight
+policy rejection. A real MCP-style scalar-only direct root preserves native
+root counts without pretending to produce an identifier. **238 scoped G5,
+session, P1/P2 regression tests passed**, repository Ruff clean, changed
+module Pyright 0 errors/0 warnings, provider-neutral example ran. The whole
+repository pytest and new exact-head Draft CI remain independent verification
+gates. This is B1 E0 mechanism wiring, not default ranked Top-K promotion,
+independently authored A6/A7/A8/E2 or #1356 release approval.
+
+Independent whole-branch review found one Important provider-plugin privacy
+gap: a custom registry `version` getter could throw private diagnostic text
+after a valid `get()` but outside the new graph revision sanitizer. An exact
+`PRIVATE_SCHEMA_SENTINEL` regression went RED with raw `RuntimeError`, then
+GREEN as generic `PolicyViolationError` after enclosing both G5 version
+reads and both outer session source assertions in generic error boundaries.
+The complete related **238-test** selection, Ruff and focused Pyright were
+rerun successfully on this corrected implementation. Reviewer's remaining
+minor suggestions (destructive and forged-source negative cases, separated
+64-root cardinality and explicit `get` instrumentation) are deferred and do
+not qualify independent E2 or full CI. No original schema fragments may be
+surfaced from a custom plugin's source-version exception.

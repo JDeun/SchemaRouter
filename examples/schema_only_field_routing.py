@@ -55,9 +55,8 @@ def main() -> None:
         )],
     ))
 
-    session = router.prepare_field_routing(
-        approved_host_roots=frozenset({"directory.lookup"}),
-    )  # index once for review; no concept authority exists yet
+    session = router.prepare_field_routing()
+    # No root is approved before the human sees the native parameter shape.
     principal = PrincipalContext(subject="example-reader", roles=("reader",))
     reviewed_fields = session.inspect_visible_fields(principal=principal)
     for route in reviewed_fields.routes:
@@ -89,8 +88,14 @@ def main() -> None:
         ),
         source_type="host-owned", license="internal",
     ),))
-    active = session.revise_catalog(catalog=catalog)
+    active = session.revise_catalog(
+        catalog=catalog,
+        approved_host_roots=frozenset({"directory.lookup"}),
+    )  # owner explicitly approves the reviewed scalar input source
     assert active.snapshot_id == session.snapshot_id  # same index; no rescan
+    assert active.catalog_revision_id != session.revise_catalog(
+        catalog=catalog,
+    ).catalog_revision_id  # root approval is part of semantic cache identity
     fields = active.discover("고객 상태와 담당자", principal=principal)
     print("status:", fields.status)
     for alternative in fields.alternatives:
@@ -108,6 +113,21 @@ def main() -> None:
     for route in plan.calls:
         print("field metadata:", route.route_id, route.fields_meta)
         print("input parameter shapes:", route.route_id, route.parameters_meta)
+
+    # Revocation is equally explicit and never mutates an already-held handle.
+    revoked = active.revise_catalog(
+        catalog=catalog, approved_host_roots=frozenset(),
+    )
+    assert revoked.catalog_revision_id != active.catalog_revision_id
+    assert revoked.discover(
+        "customer status and owner", principal=principal,
+    ).status == "no_proven_hit"
+    assert active.compile(
+        "customer status and owner", principal=principal,
+        host_source_arguments={
+            "directory.lookup": {"customer_id": "host-supplied-customer-1"},
+        },
+    ).status == "ready"
 
     # Owner vocabulary updates do not change the registered source schemas.
     # Reuse the exact pinned graph while reviewing a NEW semantic catalog.
