@@ -1,5 +1,71 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 A5 E1 — source-proved direct agent selection reaches native executor
+
+- A major remaining wire after Draft #1759 was that A5's correctly
+  host-bound direct ToolCall could run **only in the frozen synthetic fixture**.
+  The new **opt-in async E1 adapter** composes the current principal-scoped
+  `Understand(q)` and P2 direct proof, one actual original-agent
+  `<tool_call>` selection, the existing A5 host-source argument binder and
+  **the original `SchemaRouter.execute` registered invoker**. No second
+  executor, fixture fallback, production default or historical benchmark
+  change. The one-call execution budget allows only one attempt and reapplies
+  the current principal. Its host-only `ToolResult` receipt is **not** a
+  model-visible observation, a final answer, source-authenticity attestation
+  or an independent E2 result.
+- Unready, ambiguous, multiple-route, dependency, missing-input, denied-review
+  and unoffered routes produce **zero native I/O**. A model's scalar input
+  hints never supply actual invoker values; when a model chooses the right
+  offered route but fabricates another ID or extra parameter, only the
+  separately supplied/reviewed original P2 host input reaches execution.
+  The host-owned route/menu, graph, full declaration set and policy are
+  rechecked before and after agent generation and the awaited provider
+  call. An independently failing test caught mutable **model-visible tool
+  definition** tampering: the agent could change its received name and then
+  appear to select an unoffered function. We now pin and recheck the
+  detached definitions before using the original offered name. Deep nested
+  tool JSON and non-scalar model argument envelopes are also refused.
+- The E1 parser rejects duplicate JSON keys and string-wrapped argument
+  objects before using the unchanged historical ToolCall parser. A raw
+  response naming an unoffered and an offered route together is rejected,
+  not silently resolved by JSON's last-key-wins behavior.
+- Independent read-only review exposed a **native invoker rebind** gap:
+  a host callback could replace a tool's registered execution function
+  while retaining the same schema fingerprint. Two regressions reproduced
+  it RED (rebind during agent generation and during an awaited before-call
+  hook). The bridge now pins the exact original executor identity, binding
+  generation and invoker identity; an opt-in task-local witness is
+  enforced at the **actual executor lookup**, closing the hook/preflight
+  gap without changing default invocation semantics. Both tests are GREEN;
+  replacement invokers receive zero calls.
+- **Real public E1 execution:** the same new A5 bridge registered Open-Meteo's
+  already source-reviewed *noncommercial-only* HTTPS geocoding contract and
+  ran one **actual anonymous HTTPS request** after a host-scripted agent
+  deliberately chose wrong city parameters. Result was
+  `status=success`, `native_invocations=1`, `source_http_attempts=1`,
+  `host_bound_tool_calls=1`, `provider_result_contract_matched=true`;
+  report redacted original coordinates and response bytes. Separate
+  `httpx.MockTransport` integration tests exercise this exact native HTTP
+  adapter deterministically, including a 503 source failure that cannot
+  become a success receipt. The first restricted-sandbox network attempt
+  was interrupted without success evidence; the permitted public run
+  succeeded. This is still a **scripted chooser, no inference model**;
+  `model_selected_calls=0`, `independent_e2=false`. It does not prove
+  provider semantics for Crossref/OPTIMADE/MCP or qualify publisher gold.
+- Final post-review checks: **810** original-paper/P2/A5/G5/scoped/native
+  tests and **261** historical frozen-agent tests passed; executor hook,
+  registry binding and startup suites passed, along with 50 normal executor
+  tests. Four offload-thread executor cases hung in this sandbox and were
+  explicitly excluded from the 50-case pass (the full suite likewise did
+  not finish before timeout). Repository Ruff passed; changed E1 and core
+  executor modules Pyright reported **0 errors, 0 warnings** with a
+  temporary dependency path. The final post-review public Open-Meteo
+  HTTPS read also succeeded with one request; this remains E1 scripted.
+- Implementation notes:
+  [design](paper-a5-native-direct-e1-design.md),
+  [plan](paper-a5-native-direct-e1-plan.md). External original-provider
+  E2 #1346/#1477 is still BLOCKED_EXTERNAL and #1356 remains HARD HOLD.
+
 ### 2026-10-27 A5 execution gap — approved direct root actually bound at fixed-K5 dispatch (E0)
 
 - **The missing A5 runtime wire is now implemented locally**: previously a
