@@ -1,5 +1,36 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 B1 E0 — genuine GitHub 651 GET publisher source and whole-provider churn
+
+- Read the official MIT-licensed `github/rest-api-description` original
+  `api.github.com.2022-11-28.json` at immutable revision `755ee33b`:
+  **823 source paths, 651 GET operations**. The complete unchanged
+  **13,429,427-byte** upstream JSON and LICENSE.md are Git-blob/SHA-256
+  verified; a deterministic gzip fixture is container-byte pinned before
+  decompressing. The untouched existing native OpenAPI complexity guard
+  handles each exact original GET/component closure, no whole-file bypass.
+- Consolidate 651 real GET operations into **one original publisher tool**
+  with 651 distinct original operation IDs; register alongside separate
+  byte-pinned Ollama (2) and Pirate Weather (1) provider tools in the
+  existing registry (**654 actual source-native routes**). Remove and
+  restore the GitHub provider atomically: **654→3→654**, two stale lookup
+  rejections; canonical source-owned journal = full rebuild = original
+  operation manifest at each registry version. Distinct from the
+  preceding 358-route OpenAI/Ollama/Pirate all-method audit; **do not sum
+  separate catalog receipts as one 1,012-route experiment**.
+- [Genuine provider design/source pins](official-github-rest-651-e0-design.md)
+  and [TDD/CI plan](official-github-rest-651-e0-plan.md).
+  **10 source/journal tests passed locally in 195.35s**, and the expanded
+  **187 related provider/index/graph tests passed in 288.28s**. Changed-code
+  Pyright 0 errors/0 warnings and repository Ruff green. Repository-wide
+  local pytest reached ~8% and timed out at the 110-second cap (exit 124),
+  **not claimed green**; new exact-head GitHub CI remains pending.
+  No host-approved source semantics/license permissions, verified foreign
+  MCP/OPTIMADE input, executable invoker, independent gold/E2 or default
+  promotion. B1 full 500/5000 heterogeneous acceptance remains unchecked,
+  A6/A7/A10 and #1346/#1477 external evidence still blocked, #1356 HARD
+  HOLD, #1755 Draft/unmerged.
+
 ### 2026-10-27 B1 E0 — 355 real OpenAI HTTP operations, native journal churn
 
 - Extended the pinned original OpenAI `8243cc8f` source beyond 161 GETs
@@ -27,8 +58,10 @@
   repository Ruff green; changed-script Pyright 0 errors (2 local YAML source
   resolution warnings). Repository-wide local pytest reached ~8% and
   **timed out at the 110-second cap (exit 124); not claimed green**.
-  Exact **new remote HEAD** CI is pending publication
-  and cannot inherit prior HEAD's 36/36 success.
+  **Exact OpenAI code HEAD `ab125b3591437d685bce032e318d0a86d098b468`
+  qualified 36/36 GitHub PR workflows.** Main Python 3.12 CI run
+  `40418913072`: **6663 passed, 3 skipped in 1739.50s, coverage 85.12%**.
+  That prior green must not be inherited by the new GitHub source code HEAD.
   No provider execution, independent source-owned semantic gold, model/agent
   E2 or release/default promotion. A6/A7/A10 and B1 full acceptance remain
   unchecked; #1346/#1477 BLOCKED_EXTERNAL, #1356 HARD HOLD, #1755 Draft.
