@@ -74,6 +74,7 @@ async def run_paper_scoped_native_direct_e1(
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     review_model_root_arguments: PaperRootArgumentReviewer | None = None,
+    expected_route_id: str | None = None,
 ) -> tuple[Decision, PaperScopedNativeDirectE1 | None]:
     """One source-proved direct agent call through original `router.execute`.
 
@@ -89,6 +90,10 @@ async def run_paper_scoped_native_direct_e1(
         raise ValueError("E1 original direct execution requires owner catalog")
     if not isinstance(intent_registry, PaperIntentRegistry):
         raise ValueError("E1 original direct execution requires owner intents")
+    if expected_route_id is not None and (
+        type(expected_route_id) is not str or not expected_route_id
+    ):
+        raise ValueError("E1 expected native route must be a source-owned ID")
 
     host_pinned = deepcopy(host_source_arguments)
     catalog_pinned = catalog.model_dump_json()
@@ -131,6 +136,10 @@ async def run_paper_scoped_native_direct_e1(
     routes = paper_plan_fixed5_menu(view, plan)
     if len(routes) != 1 or routes != [plan.calls[0].route_id]:
         return "abstain", None
+    if expected_route_id is not None and routes[0] != expected_route_id:
+        # The matrix's verified scenario route is narrower than an agent's
+        # independently valid alternative P2 source; refuse before I/O.
+        return "abstain", None
 
     host_binding = None
     if plan.calls[0].call.arguments:
@@ -166,6 +175,8 @@ async def run_paper_scoped_native_direct_e1(
             raise PolicyViolationError("E1 original direct native invoker binding changed")
         if plan != plan_pinned or paper_plan_fixed5_menu(view, plan) != routes:
             raise PolicyViolationError("E1 original direct P2 proof changed")
+        if expected_route_id is not None and routes[0] != expected_route_id:
+            raise PolicyViolationError("E1 model selected a nonmanifest native route")
         _check_current_call_scopes(view.router, view._principal, [selected])
         tool = view.router.registry.get(selected.call.tool)
         endpoint = tool.endpoint(selected.call.endpoint)

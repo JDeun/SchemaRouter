@@ -1,5 +1,70 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 A5 heterogeneous E1 — one G5/native catalog across three adapter protocols
+
+- Following opt-in native direct Draft #1760, the new bounded
+  `run_paper_heterogeneous_native_e1` composes **one original-paper
+  `Understand` → P2 direct proof → original A5 agent ToolCall → registered
+  `SchemaRouter.execute` per approved scenario**, across a **single**
+  principal-scoped catalog. Real OpenAPI, MCP and OPTIMADE *adapter compilers*
+  populate one shared native registry. This is a sequential set of independent
+  direct source choices, **not** a model-planned cross-source synthesis,
+  multi-hop derivation or an independent E2 reasoning evaluation.
+- The entire trusted scenario manifest (up to five unique, source-approved,
+  read-only routes) is proven with the original G5/P2 compiler before the
+  first model generation or provider I/O. Unreviewed license/source identity,
+  hidden or duplicate routes, incomplete or ill-typed host roots and invalid
+  model/agent interfaces abort the **whole matrix with zero native calls**.
+  Model-forged input values never reach any invoker; only reviewed, explicitly
+  host-supplied scalar arguments can be materialized by the existing binder.
+- The shared concept catalog, intent registry, native graph, source contracts,
+  root approvals, consumer set and **each case's native invoker identity,
+  schema fingerprint and binding generation** are now **pinned for the whole
+  matrix**, not
+  only independently within each source call. An independently RED-then-GREEN
+  regression showed a mutated graph *between* otherwise valid calls used to
+  be accepted as the next direct call's fresh snapshot. A later unbound
+  invoker previously allowed the first two sources to run, and a second
+  invoker could be rebound between calls without a source-version change;
+  both are now rejected. A third adversarial regression proved that an
+  availability predicate **during preflight** could rebind an as-yet-unpinned
+  later invoker; the matrix now captures **all** registered tool bindings in
+  a callback-free first pass, then starts the original P2 readiness proofs.
+  Further RED-then-GREEN cases caught missing or
+  wrong-arity model/agent interfaces in a *later* scenario triggering earlier
+  native requests, and a compatible **different model-selected no-input
+  source** executing before the matrix's post-execution route check. The
+  existing E1 direct bridge now accepts an optional **expected route** and
+  refuses a nonmanifest selection **before agent/native execution**;
+  existing unpinned single-call E1 behavior is unchanged. If a later
+  provider raises, no successful matrix receipt is produced and no subsequent
+  provider runs. Earlier completed read-only requests cannot be rolled back.
+- Successful host-only receipts report the **exact registered source types**
+  and a derived `heterogeneous_sources` boolean; a valid single-source call
+  does **not** claim heterogeneous coverage merely because it used the
+  matrix API. The actual three-adapter fixture positively establishes its
+  own three distinct registered source types.
+- Integration tests use **locally scripted/native simulated provider outputs**
+  but compile all three genuine protocol descriptors and actually dispatch
+  through their registered bound native invokers. Separate keyless **public
+  live E1** probing through the preexisting **host-selected** native matrix
+  succeeded on Crossref REST, COD OPTIMADE and DeepWiki MCP:
+  `registered_access_modes=[http_json,mcp,optimade]`, three native tool
+  executions, four task endpoint invocations and all three source-specific
+  probes passed (~16 s). **That live result does not establish live A5
+  model-selected ToolCall dispatch for all three providers.** Real Crossref
+  `message` object, OPTIMADE collection arrays and some MCP responses need
+  further source-reviewed identity/scalar-or-structured typed projection
+  before a strict P2 field group can legitimately route them. Do not fake
+  source identity or flatten arrays into claims of paper correctness.
+- New matrix tests: **18 passing** after multiple reproduced red cases; broader
+  regression/typing/CI evidence recorded on the stacked Draft PR separately.
+  [Design](paper-a5-heterogeneous-native-e1-design.md) ·
+  [implementation plan](paper-a5-heterogeneous-native-e1-plan.md).
+  This remains opt-in E1 scripted evidence: no independent E2, no product
+  default, no publication permission uplift. External #1346/#1477 remain
+  blocked, and #1356 stays release **HARD HOLD**.
+
 ### 2026-10-27 A5 E1 — source-proved direct agent selection reaches native executor
 
 - A major remaining wire after Draft #1759 was that A5's correctly
