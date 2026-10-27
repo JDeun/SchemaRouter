@@ -122,6 +122,7 @@ def retrieve_paper_field_coverage(
     catalog: NativeConceptCatalog,
     index: NativeSchemaGraphIndex,
     k: int = 5,
+    experimental_indexed_direct: bool = False,
 ) -> PaperFieldCoverage:
     """Prove required response fields BEFORE exposing any K5 route menu.
 
@@ -134,6 +135,8 @@ def retrieve_paper_field_coverage(
     """
     if type(k) is not int or k != 5:
         raise ValueError("paper field proof requires exact K5")
+    if type(experimental_indexed_direct) is not bool:
+        raise ValueError("paper indexed direct mode requires boolean opt-in")
     if not isinstance(principal, PrincipalContext):
         raise PolicyViolationError("paper field proof requires trusted principal")
     if not isinstance(catalog, NativeConceptCatalog):
@@ -161,6 +164,7 @@ def retrieve_paper_field_coverage(
 
     current = retrieve_authorized_concept_graph(
         router, query, principal=principal, catalog=catalog, index=index, k=k,
+        experimental_indexed_direct=experimental_indexed_direct,
     )
     host_roots = (
         ()

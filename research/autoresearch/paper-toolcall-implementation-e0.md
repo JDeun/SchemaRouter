@@ -1438,3 +1438,52 @@ Safety regression expectations:
 - **Remaining gates:** manual-only public-DNS `probe/run` on GitHub Actions,
   independent model E2 data and answer-quality assessment, #1346/#1477,
   release #1356 HOLD. Do not merge stacked Drafts as a side effect of E1.
+
+## 2026-10-27 — #1771 core product boundary correction: field-only API
+
+**User clarification:** schema routing is primarily discovery of *which
+registered tool, endpoint, parameters, and fields* a calling agent needs; it
+does not execute each user's data providers or answer the query. Provider-native
+HTTP/API/MCP runners from earlier A5/E1 branches are auxiliary validation
+fixtures, **not a mandatory provider-development roadmap**.
+
+Implementation on `feat/1771-core-schema-field-routing-session-20261027`:
+
+- `src/schemarouter/field_routing_session.py` introduces a reusable, original-
+  registry `SchemaFieldRoutingSession`; the host opt-in entry point is
+  `router.prepare_field_routing(catalog=reviewed_catalog)`.
+- `session.discover(query, principal=...)` reuses #1535 complete-field,
+  source-scoped proof; `session.compile(query, principal=...)` reuses #1560
+  non-executing typed ToolCall shapes, dependency receipts, and owner-declared
+  unit/source/license field metadata. Both use the ONE prepared schema posting
+  index and typed graph without source rows, LLM inference or provider calls.
+- Input concept declarations are snapshotted and revalidated on preparation;
+  registry drift is fail-closed, live authorization/data scope is rechecked
+  through P1/P2, K5 remains exact, execution authority always false. The
+  default `retrieve_authorized()` and all existing execution behavior are
+  unchanged. Unknown aliases raise `ValueError` (not calibrated unsupported);
+  unrelated field joins and partially proven alternatives still abstain.
+- Review uncovered that the legacy P1 direct discovery path rebuilt a scoped
+  full-catalog planner registry on each query. The *prepared session only*
+  opts into the preexisting source-pinned indexed direct lookup, threaded
+  through P1/P2 with a default-disabled keyword argument. A RED regression
+  that forbids `_scoped_analysis_registry()` became GREEN; direct/fork parity
+  was checked on 500 and 5000 registered-route fixtures. Legacy P1/P2 remain
+  behaviorally unchanged. Private schema posting internals are omitted from
+  the public session representation.
+- Runnable provider-neutral example:
+  `examples/schema_only_field_routing.py`. README now explicitly distinguishes
+  paper-field discovery from the optional caller-invoked execution subsystem.
+
+Local verification: 388 targeted native/paper tests passed in 22.93 s, Ruff
+passed for modified Python files, targeted Pyright for product files and
+example passed (0 errors/warnings), runnable example returned `complete` for
+the field-only route and non-executable typed metadata. Remote Draft PR and
+CI must be recorded separately, not treated as a source-execution claim.
+
+**Next product-first work:** cover full paper `Understand(q)` (trusted semantic
+concept/intent/parameter interpretation) as a pluggable, evaluated component;
+calibrate policy-safe Top-K routing and abstention against independent task
+gold; make the product UX explain complete/abstaining field plans. Avoid
+further provider-specific adapters unless needed to prove an uncovered generic
+capability or an independently authorized E2 benchmark.

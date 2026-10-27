@@ -138,6 +138,18 @@ for candidate in candidates.candidates:
 Use `retrieve_executable(...)` when the shortlist must also have a currently valid execution
 binding.
 
+For the original paper's **field-only routing** (which schema fields and typed
+dependencies a caller would need, without fetching provider records), opt into
+`router.prepare_field_routing(catalog=reviewed_concepts)`. Prepare once from
+your own registered capability schemas, then call
+`session.discover(query, principal=reader)` for field-complete alternatives or
+`session.compile(query, principal=reader)` for typed, non-executing call shapes
+and source/unit/license metadata. The caller supplies an explicit authorization
+policy and reviewed semantic concept catalog. Undeclared or conflicting
+concept aliases raise `ValueError` (no guessed mapping). Schema changes
+require a fresh session, and neither result grants execution permission. See the runnable
+[provider-neutral field-routing example](examples/schema_only_field_routing.py).
+
 ## Connect tools and data
 
 SchemaRouter supports several ingress families behind the same capability model.

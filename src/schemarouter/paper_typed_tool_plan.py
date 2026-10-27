@@ -89,6 +89,7 @@ def compile_paper_typed_tool_plan(
     alternative_index: int = 0,
     k: int = 5,
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    experimental_indexed_direct: bool = False,
 ) -> PaperTypedToolPlan:
     """Compile ONE source-proven K5 alternative without executing or binding data.
 
@@ -111,6 +112,7 @@ def compile_paper_typed_tool_plan(
     }
     proof = retrieve_paper_field_coverage(
         router, query, principal=principal, catalog=catalog, index=index, k=k,
+        experimental_indexed_direct=experimental_indexed_direct,
     )
     if proof.status != "complete":
         if host_inputs:
@@ -158,6 +160,7 @@ def compile_paper_typed_tool_plan(
         # not a substitute for atomic provider snapshots or execution checks.
         if retrieve_paper_field_coverage(
             router, query, principal=principal, catalog=catalog, index=index, k=k,
+            experimental_indexed_direct=experimental_indexed_direct,
         ) != proof:
             raise PolicyViolationError("paper field proof changed during compilation")
         # The P1 proof rechecks visible OUTPUTS, not argument-specific scope.

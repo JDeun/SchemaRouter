@@ -352,6 +352,7 @@ from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     retrieve_authorized_field_group,
 )
+from .field_routing_session import SchemaFieldRoutingSession
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .host_field_contract import (
@@ -649,6 +650,7 @@ __all__ = [
     "PaperFieldCoverage",
     "PaperFieldRoute",
     "retrieve_paper_field_coverage",
+    "SchemaFieldRoutingSession",
     "NativeConceptGraphSelection",
     "NativeConceptRouteSet",
     "retrieve_authorized_concept_graph",

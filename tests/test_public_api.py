@@ -68,6 +68,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PaperFieldAlternative",
         "PaperFieldCoverage",
         "retrieve_paper_field_coverage",
+        "SchemaFieldRoutingSession",
         "PaperObservedBinding",
         "observe_and_bind_paper_plan",
         "PaperExecutedToolSequence",
