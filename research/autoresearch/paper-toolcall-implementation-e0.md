@@ -1,5 +1,45 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 A5 COD OPTIMADE native live E1 — reviewed source registration and real-invoker wiring
+
+- Prior E1 heterogeneous tests proved actual adapter *compilation* and native
+  executor dispatch, but provider output was simulated. The separate keyless
+  public matrix used live providers only with **host-selected** calls. A new
+  opt-in `register_reviewed_optimade_paper_source` SDK entrypoint now wires
+  **actual remote discovery → a prior host-pinned unreviewed fingerprint →
+  original `review_optimade_paper_tool` → the unchanged discovered native
+  invoker published in `SchemaRouter`**. It does not replace existing tools,
+  invent fields, bypass reviewed owner license labels, or create a second
+  executor. The default egress policy rejects internal destinations.
+- Independent review found that legitimate OPTIMADE fields may declare
+  `type=[string,null]` plus `x-optimade-type`, which original P2 correctly
+  rejects as an unconditional scalar. An **explicit host-reviewed runtime
+  non-null string refinement** now accepts only pinned source `string` or
+  `string|null`, mirrors that refinement in the reviewed endpoint response
+  schema, records the original nullable shape and **rejects null at
+  execution**. This is a conditional runtime constraint, not source-wide
+  non-null evidence. GET formula must exactly match its host search value.
+- `scripts/research_paper_optimade_live_e1.py` has separate `probe` and
+  fingerprint-pinned `run` commands. Its deterministic example first executes
+  a **distinct host-selected OPTIMADE filter** for one source-reported record
+  ID. It then executes the existing original P2/Understand → scoped A5 agent
+  ToolCall → **host-bound source ID** → registered native OPTIMADE `get`
+  route. The scripted agent deliberately forges an ID: the mock transport
+  confirms the real invoker receives only the host-validated record ID.
+  Remote ID and formula mismatches fail, with no fallback data.
+- Dedicated CI runs a live-shaped `httpx.MockTransport` matrix, guarded schema
+  publication cases, the original OPTIMADE contract tests and native A5
+  heterogeneous regressions. Separately, the CI workflow offers a **manual**
+  public keyless COD `probe` and a `run` requiring its independently approved
+  fingerprint; neither is run automatically on pull requests.
+- Local simulated native integration passes; **real-provider A5 evidence is
+  currently unverified**. The attempted public COD probe failed because this
+  executor cannot resolve `www.crystallography.net`, including a permitted
+  escalated read-only attempt. No E2 inference, commercial license proof,
+  autonomous model planning or release permission is claimed. Keep #1346/
+  #1477 externally blocked and #1356 on HARD HOLD. [Design](paper-a5-optimade-live-e1-design.md)
+  · [plan](paper-a5-optimade-live-e1-plan.md).
+
 ### 2026-10-27 A5 heterogeneous E1 — one G5/native catalog across three adapter protocols
 
 - Following opt-in native direct Draft #1760, the new bounded

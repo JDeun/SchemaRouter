@@ -658,6 +658,7 @@ def review_optimade_paper_tool(
     reviewed_unit_normalizations: dict[str, UnitNormalizationSpec] | None = None,
     expected_source_units: dict[str, str] | None = None,
     identifier_semantic_id: str | None = None,
+    reviewed_nonnull_string_fields: tuple[str, ...] = (),
 ) -> ToolSpec:
     """Host-review one original OPTIMADE entry type without mutating discovery."""
     source = _safe_base_url(expected_versioned_base_url)
@@ -684,6 +685,13 @@ def review_optimade_paper_tool(
         raise SchemaSourceError("OPTIMADE owner license declaration is invalid")
     if type(field_semantic_ids) is not dict or not field_semantic_ids:
         raise SchemaSourceError("OPTIMADE owner field declaration is invalid")
+    if (
+        type(reviewed_nonnull_string_fields) is not tuple
+        or len(set(reviewed_nonnull_string_fields)) != len(reviewed_nonnull_string_fields)
+        or any(type(name) is not str or name not in field_semantic_ids
+               for name in reviewed_nonnull_string_fields)
+    ):
+        raise SchemaSourceError("OPTIMADE non-null string refinement requires reviewed fields")
     if any(
         type(name) is not str or not name or name in {"id", "type"}
         or type(semantic) is not str or not semantic or semantic != semantic.strip()
@@ -739,6 +747,7 @@ def review_optimade_paper_tool(
     # Discovery may share FieldSpec objects between endpoints: split them first.
     search.output_fields = [f.model_copy(deep=True) for f in search.output_fields]
     get.output_fields = [f.model_copy(deep=True) for f in get.output_fields]
+    refined_source_schemas: dict[str, dict[str, Any]] = {}
     for endpoint in (search, get):
         fields = {field.name: field for field in endpoint.output_fields}
         if not set(field_semantic_ids) <= set(fields):
@@ -757,6 +766,29 @@ def review_optimade_paper_tool(
                             "OPTIMADE reviewed schema source unit annotation mismatch"
                         )
             field.json_schema = schema
+            if name in reviewed_nonnull_string_fields:
+                # The OPTIMADE *source* may declare a nullable string. A
+                # trusted host may demand a stronger, runtime-enforced
+                # projection for this research route; it is NOT a claim that
+                # all source records are non-null. Original source schema is
+                # retained in the pinned review provenance below.
+                type_shape = schema.get("type")
+                source_types = ({type_shape} if type(type_shape) is str else
+                                set(type_shape) if type(type_shape) is list
+                                and all(type(t) is str for t in type_shape) else set())
+                if (
+                    source_types not in ({"string"}, {"string", "null"})
+                    or not set(schema) <= {"type", "x-optimade-type"}
+                    or schema.get("x-optimade-type", "string") != "string"
+                    or field.unit is not None
+                ):
+                    raise SchemaSourceError(
+                        "OPTIMADE nullable string refinement lacks exact source type proof"
+                    )
+                if name in refined_source_schemas and refined_source_schemas[name] != schema:
+                    raise SchemaSourceError("OPTIMADE reviewed source field schemas differ")
+                refined_source_schemas[name] = deepcopy(schema)
+                field.json_schema = {"type": "string"}
             if field.unit is not None:
                 if name not in source_units or field.unit != source_units[name]:
                     raise SchemaSourceError("OPTIMADE reviewed source unit mismatch")
@@ -768,6 +800,25 @@ def review_optimade_paper_tool(
                 field.unit_normalization = units[name].model_copy(deep=True)
             else:
                 field.unit_normalization = None
+
+        if reviewed_nonnull_string_fields:
+            # EndpointSpec validates that a selected FieldSpec agrees with
+            # the advertised response schema. Apply the same *host-local*
+            # narrowing to this reviewed copy; the discovery ToolSpec,
+            # source fingerprint and original nullable schema stay pinned.
+            output_schema = deepcopy(endpoint.output_schema)
+            item_schema = (output_schema.get("items") if endpoint is search
+                           else output_schema)
+            if not isinstance(item_schema, dict):
+                raise SchemaSourceError("OPTIMADE refined response schema is invalid")
+            properties = item_schema.get("properties")
+            if not isinstance(properties, dict):
+                raise SchemaSourceError("OPTIMADE refined output properties are missing")
+            for name in reviewed_nonnull_string_fields:
+                if name not in properties:
+                    raise SchemaSourceError("OPTIMADE refined output field is absent")
+                properties[name] = {"type": "string"}
+            endpoint.output_schema = output_schema
 
     id_field = next((f for f in get.output_fields if f.name == "id"), None)
     if id_field is None or id_field.identifier is not True:
@@ -784,6 +835,7 @@ def review_optimade_paper_tool(
         "reviewed_fields": dict(sorted(field_semantic_ids.items())),
         "reviewed_source_units": dict(sorted(source_units.items())),
         "identifier_semantic_id": identifier_semantic_id,
+        "runtime_non_null_string_source_schemas": refined_source_schemas,
     }
     return reviewed
 

@@ -458,6 +458,10 @@ from .paper_observed_binding import (
     PaperObservedBinding,
     observe_and_bind_paper_plan,
 )
+from .paper_optimade_registration import (
+    discover_optimade_paper_source,
+    register_reviewed_optimade_paper_source,
+)
 from .paper_typed_tool_plan import (
     PaperPlanBinding,
     PaperPlanCall,
@@ -613,6 +617,8 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "discover_optimade_paper_source",
+    "register_reviewed_optimade_paper_source",
     "PaperObservedBinding",
     "observe_and_bind_paper_plan",
     "PaperExecutedToolSequence",
