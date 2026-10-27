@@ -1391,3 +1391,50 @@ Safety regression expectations:
   mode on an environment with public DNS. Review the probe fingerprint
   **independently** before manual `run`. Keep predecessor Draft PRs and
   external #1346/#1477 plus release #1356 HOLD unchanged.
+
+## 2026-10-27 — Europe PMC native HTTP/JSON DOI search → original P2/A5 E1
+
+- **Missing feature closed locally:** `research_public_heterogeneous_live_e1.py`
+  previously made an independent Europe PMC HTTP crosscheck, which never
+  entered SchemaRouter's registry, original-paper P2 graph or A5 agent call.
+  Issue #1769 introduces an opt-in curated Europe PMC native profile and a
+  reviewed `GET /search` HTTP/JSON route. New files:
+  `src/schemarouter/paper_europepmc_registration.py`,
+  `scripts/research_paper_europepmc_native_e1.py`,
+  `tests/test_paper_europepmc_native_a5_e1.py`, and
+  `.github/workflows/research-paper-europepmc-native-a5-e1.yml`.
+- **Source shape:** query `DOI:<explicit host DOI>`, `format=json`,
+  `pageSize=1`, source `hitCount:int` and nested `resultList.result[*]`
+  `doi`/`id` string fields. The native executor uses typed wildcard projection
+  on original JSON, with no invented top-level DOI and no graph-join edge.
+  The source-specific wrapper requires an exact matching DOI and nonempty
+  source record ID before returning the provider response; `hitCount` remains
+  an unverified provider **search-hit count**, not a verified match count.
+- **P2/A5:** separately host-approved exact local source fingerprint and
+  origin; source-semantic attestation, original G5 host-approved direct
+  scalar inputs, scoped reader authorization, EN/KO/JA concept aliases, one
+  native typed read-only call. A deterministic agent emits a forged DOI and
+  incompatible `format/pageSize`; neither is executed.
+- **Local tests:** initial source module import RED, then GREEN. The source-
+  shaped and existing provider/public-API regression ran **128 passed**; the
+  wider original-paper/provider/native group ultimately ran **692 passed**
+  in 30.69s, including source-row failure branches and search metacharacters.
+  Full-repository Ruff **PASS**; targeted Pyright **0 errors/0 warnings**.
+  Exact remote tree, review and GitHub PR/CI status must be appended after
+  publication; these local checks alone are **not** a live-provider claim.
+- **Independent review:** a significant query-language boundary was identified:
+  the generic Crossref DOI validator allowed `*`/`?`/grouping punctuation to
+  pass into Europe PMC's unquoted search grammar. The specific failing
+  regression was RED before / GREEN after a conservative literal-DOI suffix
+  allowlist, enforced both by the host runner and native invoker before I/O.
+  This pilot intentionally rejects less common standards-valid DOI punctuation
+  outside `[A-Za-z0-9._/-]`. Reviewer's remaining test coverage suggestions
+  were added for malformed records and provider hit-count semantics.
+- **Live verification attempted:** sandboxed public API call failed on local
+  proxy connection; the approved unsandboxed `curl` attempt returned HTTP 503.
+  There was no successfully observed Europe PMC payload this turn. Use the
+  manual-only GitHub Actions live job on a public-DNS runner, with a separately
+  approved prior source fingerprint, before claiming public E1 success.
+- **Remaining gates:** manual-only public-DNS `probe/run` on GitHub Actions,
+  independent model E2 data and answer-quality assessment, #1346/#1477,
+  release #1356 HOLD. Do not merge stacked Drafts as a side effect of E1.

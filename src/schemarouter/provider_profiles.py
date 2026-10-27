@@ -676,6 +676,79 @@ def _crossref_tool() -> ToolSpec:
     )
 
 
+def _europepmc_tool() -> ToolSpec:
+    """Curated keyless Europe PMC JSON search (not remotely attested)."""
+    return ToolSpec(
+        name="europepmc",
+        description="Europe PMC life-sciences literature DOI search",
+        provider="europepmc",
+        access_mode="http_json",
+        endpoints=[EndpointSpec(
+            name="search_doi",
+            description="Read Europe PMC DOI search results (host-pinned single page).",
+            method="GET",
+            path="/search",
+            read_only=True,
+            destructive=False,
+            parameters=[
+                ParameterSpec(
+                    name="query", location="query", required=True,
+                    json_schema={"type": "string"},
+                ),
+                ParameterSpec(
+                    name="format", location="query", required=True,
+                    json_schema={"type": "string"},
+                ),
+                ParameterSpec(
+                    name="pageSize", location="query", required=True,
+                    json_schema={"type": "integer"},
+                ),
+            ],
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "format": {"type": "string"},
+                    "pageSize": {"type": "integer"},
+                },
+                "required": ["query", "format", "pageSize"],
+                "additionalProperties": False,
+            },
+            output_schema={
+                "type": "object",
+                "properties": {
+                    "hitCount": {"type": "integer"},
+                    "resultList": {"type": "object", "properties": {
+                        "result": {"type": "array", "items": {
+                            "type": "object", "properties": {
+                                "doi": {"type": "string"},
+                                "id": {"type": "string"},
+                            },
+                        }},
+                    }},
+                },
+            },
+            output_fields=[
+                FieldSpec(name="hitCount", json_schema={"type": "integer"}),
+                FieldSpec(
+                    name="resultList.result.*.doi",
+                    path=["resultList", "result", "*", "doi"],
+                    result_path=["resultList", "result", "*", "doi"],
+                    json_schema={"type": "string"},
+                    identifier=False,
+                ),
+                FieldSpec(
+                    name="resultList.result.*.id",
+                    path=["resultList", "result", "*", "id"],
+                    result_path=["resultList", "result", "*", "id"],
+                    json_schema={"type": "string"},
+                    identifier=False,
+                ),
+            ],
+        )],
+    )
+
+
 def _tavily_tool() -> ToolSpec:
     return ToolSpec(
         name="tavily_search",
@@ -806,6 +879,23 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
                     ),
                 ),
             ),
+        )
+    )
+    registry.register(
+        ProviderProfile(
+            provider_id="europepmc",
+            display_name="Europe PMC",
+            aliases=("europe-pmc", "europe pmc", "epmc"),
+            profile_version="1",
+            profile_source="schemarouter:builtin",
+            homepage="https://europepmc.org",
+            methods=(ProviderAccessMethod(
+                method_id="rest",
+                kind="http_json", access_mode="http_json",
+                url="https://www.ebi.ac.uk/europepmc/webservices/rest",
+                tool=_europepmc_tool(),
+                description="Keyless Europe PMC REST JSON source; local schema only.",
+            ),),
         )
     )
     registry.register(

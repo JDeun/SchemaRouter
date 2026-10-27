@@ -458,6 +458,11 @@ from .paper_deepwiki_registration import (
     inspect_deepwiki_paper_source,
     register_reviewed_deepwiki_paper_source,
 )
+from .paper_europepmc_registration import (
+    EuropePMCPaperSourceProbe,
+    inspect_europepmc_paper_source,
+    register_reviewed_europepmc_paper_source,
+)
 from .paper_field_retrieval import (
     PaperFieldAlternative,
     PaperFieldCoverage,
@@ -662,6 +667,9 @@ __all__ = [
     "DeepWikiPaperSourceProbe",
     "inspect_deepwiki_paper_source",
     "register_reviewed_deepwiki_paper_source",
+    "EuropePMCPaperSourceProbe",
+    "inspect_europepmc_paper_source",
+    "register_reviewed_europepmc_paper_source",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
