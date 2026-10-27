@@ -20,6 +20,7 @@ from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.agent_utility_generated_common import GeneratedEpisodeAgent
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_paper_refusal_eval_e0 import Decision
+from scripts.research_paper_reviewed_model_arguments_e0 import PaperRootArgumentReviewer
 from scripts.research_paper_scoped_observed_graph_a9_e0 import (
     run_paper_scoped_named_graph_a9_e0,
 )
@@ -172,6 +173,7 @@ async def run_paper_scoped_answered_graph_a9_e0(
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    review_model_root_arguments: PaperRootArgumentReviewer | None = None,
 ) -> tuple[Decision, PaperScopedAnsweredGraph | None]:
     """Run exactly one tool-free presentation after a completed G5 graph.
 
@@ -200,6 +202,7 @@ async def run_paper_scoped_answered_graph_a9_e0(
         index=index, model_visible_intent_ids=model_visible_intent_ids,
         model_visible_concept_ids=model_visible_concept_ids,
         host_source_arguments=host_source_arguments,
+        review_model_root_arguments=review_model_root_arguments,
     )
     check_host()
     if decision != "offer" or receipt is None:

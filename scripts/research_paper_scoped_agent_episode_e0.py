@@ -16,6 +16,7 @@ from scripts.agent_utility_generated_common import GeneratedEpisodeAgent
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_paper_fixed5_episode_e0 import run_paper_fixed5_episode_e0
 from scripts.research_paper_refusal_eval_e0 import Decision
+from scripts.research_paper_reviewed_model_arguments_e0 import PaperRootArgumentReviewer
 from scripts.research_paper_scoped_plan_e0 import analyze_and_plan_paper_scoped_e0
 from scripts.research_paper_scoped_understand_e0 import PaperScopedModel
 
@@ -32,6 +33,7 @@ async def run_paper_scoped_agent_episode_e0(
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    review_model_root_arguments: PaperRootArgumentReviewer | None = None,
 ) -> tuple[Decision, dict[str, Any]]:
     """Perform one scoped model analysis before the unchanged frozen executor.
 
@@ -59,11 +61,22 @@ async def run_paper_scoped_agent_episode_e0(
         model_visible_intent_ids=model_visible_intent_ids,
         model_visible_concept_ids=model_visible_concept_ids,
         host_source_arguments=host_source_arguments,
+        review_model_root_arguments=review_model_root_arguments,
     )
     check_host_inputs()
     view.assert_source_unchanged()
+    # A5 previously exposed a `requires_arguments` direct route so its
+    # existing agent could request a value. The new explicit host-review
+    # branch must NOT fall back to that path after a denied/missing review:
+    # the untrusted model could otherwise call an unreviewed route. Keep
+    # legacy behavior unchanged when no reviewer was supplied.
+    episode_plan = (
+        None if review_model_root_arguments is not None
+        and host_source_arguments is None
+        and decision == "request_arguments" else plan
+    )
     episode = run_paper_fixed5_episode_e0(
-        agent, view=view, task=task, plan=plan,
+        agent, view=view, task=task, plan=episode_plan,
     )
     view.assert_source_unchanged()
     check_host_inputs()

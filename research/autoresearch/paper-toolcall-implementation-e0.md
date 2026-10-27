@@ -1,5 +1,63 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 A5/A9 gap closure — model parameter suggestions with explicit host review (E0)
+
+- The opt-in original-paper `Understand(q)` returns bounded *untrusted*
+  `parameter_hints`, but only separately supplied source-validated host arguments
+  reached the existing typed planner. A new opt-in host **review boundary**
+  connects these without granting authority to model output. A suggested value
+  is considered only if the already-compiled P2 proof has an incomplete
+  source-authored, explicitly approved scalar root, all exact required
+  parameters are present, JSON Schema validates the primitive values, and
+  the root belongs to the current captured principal-visible scope.
+- Before the host callback sees any value, the publicly constructible plan is
+  independently reconstructed with the **original** G5/direct compiler to
+  avoid letting a forged plan become a trusted review proposal. The callback
+  receives only a detached proposal (source route/fingerprints, exact named
+  values) and must return the literal Boolean `True`. It is *not* called
+  for unknown routes, missing, surplus, invalid or model-invented consumer
+  values. The decision and model/host/source snapshots are rechecked after
+  the callback. Rejected proposals remain deferred with **zero tool I/O**.
+  An independent code review found that the legacy A5 fixed-K5 episode still
+  offered a missing-input direct route to its agent even after the *new*
+  host callback rejected its model proposal. The opt-in episode now sends
+  only an empty verified menu for `request_arguments` with a supplied
+  reviewer when there are no separately supplied host arguments; the
+  no-reviewer and explicit-host-input legacy paths remain unchanged.
+  The helper also declines multi-alternative direct receipts rather than
+  approving only their first incomplete root. A source-native endpoint-schema
+  mutation and positive integer/number/boolean cases remain useful follow-up
+  coverage, not independent semantic verification.
+- This opt-in helper is wired to the scoped A5 direct-plan/fixed-K5
+  episode bridge, the existing A9 1-/2-hop observed DAG runner **and its
+  tool-free final-answer wrapper**. A reviewed
+  source root travels as `host_source_arguments` through the preexisting
+  original typed compiler and registered SchemaRouter executor. No reviewer
+  leaves *all existing behavior unchanged*, and separately provided host
+  arguments bypass model review. No new graph executor, default ranking,
+  automatic approval or production privilege has been added.
+- Important status detail: the existing graph compiler can return
+  `requires_observation` **even while its first root input is missing**;
+  reviewing only `requires_arguments` would leave that real wiring gap
+  unresolved. A root's actual `missing_required_arguments` controls review
+  eligibility, and the graph cannot execute until the checked host value
+  makes that root runnable. The scoped A5 result now reports such a blocked
+  graph as `request_arguments` (without changing its source-typed planning
+  receipt or flattening it into an agent menu). The synthetic real-registered-tool
+  regressions cover success, rejection, typed refusal, G5 origin, mutation,
+  and original agent adapter. The complete local paper/native-graph related
+  suite after review safety fixes: **678 passed**;
+  whole-repository Ruff **passed**; five changed scripts' Pyright
+  **0 errors / 0 warnings**. The current change's exact
+  GitHub Actions CI is **pending** and the independent E2 gate
+  remains open. [Implementation plan](paper-reviewed-model-arguments-e0-plan.md).
+- **Known remaining major wiring:** the A5 fixed-K5 agent consumes the
+  route menu, not P2's host-reviewed argument values. A `ready` direct plan
+  does **not** guarantee the independent agent's generated call will use that
+  value. A9's named DAG runner does execute its reviewed root as a registered
+  source-checked ToolCall. A5 runtime argument propagation needs a separate
+  opt-in implementation and real-agent regression; it is still unfinished.
+
 ### 2026-10-27 P2/A5 gap closure — trusted direct host-source scalar wiring (E0)
 
 - A previously **unwired** Algorithm 1 branch discarded explicit host-owned

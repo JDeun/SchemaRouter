@@ -20,6 +20,10 @@ from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_paper_refusal_eval_e0 import Decision, decision_from_plan_status
+from scripts.research_paper_reviewed_model_arguments_e0 import (
+    PaperRootArgumentReviewer,
+    review_paper_root_model_arguments_e0,
+)
 from scripts.research_paper_scoped_understand_e0 import (
     PaperScopedModel,
     analyze_paper_understanding_scoped,
@@ -36,6 +40,7 @@ async def run_paper_scoped_named_graph_a9_e0(
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    review_model_root_arguments: PaperRootArgumentReviewer | None = None,
 ) -> tuple[Decision, PaperUnderstoodExecutedGraph | None]:
     """Execute an exact source-approved 1-/2-hop named graph, if available.
 
@@ -64,6 +69,27 @@ async def run_paper_scoped_named_graph_a9_e0(
         host_source_arguments=host_source_arguments,
     )
     view.assert_source_unchanged()
+    approved_inputs = host_source_arguments
+    if (
+        review_model_root_arguments is not None
+        and host_source_arguments is None
+        and plan.status in ("requires_arguments", "requires_observation")
+        and plan.calls
+        and plan.calls[0].call.missing_required_arguments
+    ):
+        reviewed = await review_paper_root_model_arguments_e0(
+            review_model_root_arguments,
+            view=view, understanding=understood, plan=plan, index=index,
+            catalog=catalog, intent_registry=intent_registry,
+        )
+        if reviewed is not None:
+            approved_inputs = reviewed
+            plan = compile_paper_understood_graph_plan(
+                view.router, understood, principal=view._principal,
+                catalog=catalog, intent_registry=intent_registry, index=index,
+                host_source_arguments=approved_inputs,
+            )
+            view.assert_source_unchanged()
     if plan.executable_authority:
         raise PolicyViolationError("paper named graph is not an execution grant")
     if plan.status != "requires_observation":
@@ -83,7 +109,7 @@ async def run_paper_scoped_named_graph_a9_e0(
     receipt = await observe_and_execute_paper_understood_graph(
         view.router, understood, principal=view._principal, catalog=catalog,
         intent_registry=intent_registry, index=index,
-        host_source_arguments=host_source_arguments,
+        host_source_arguments=approved_inputs,
     )
     view.assert_source_unchanged()
     if receipt.executable_authority or receipt.independent_e2:
