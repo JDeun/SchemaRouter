@@ -173,11 +173,23 @@ full native manifest is checked before accepting those hints. A missing,
 expired or inconsistent delta fails closed (reprepare explicitly if needed).
 Refreshing does not fetch provider records, invoke tool executors, or grant a
 model permission to supply query arguments. The old session stays stale.
+If **only the host-reviewed concept/field catalog changes** while registered
+schemas stay at the same revision, call
+`new_session = session.revise_catalog(catalog=updated_reviewed_concepts)`.
+This revalidates and detaches the owner's bounded catalog while reusing the
+same pinned posting/G5 graph, including host-approved roots; there is **no
+schema rescan** or provider execution. Use `(new_session.snapshot_id,
+new_session.catalog_revision_id)` as the combined schema+semantic cache key:
+the source-only `snapshot_id` intentionally stays unchanged across a catalog
+revision. The application must atomically replace and retire its old handle
+after approving new meanings: independently retained old sessions are **not
+automatically revoked** by this API. Source changes still require `refresh()`;
+a stale source refuses catalog-only revision.
 The caller supplies an explicit authorization policy and reviewed semantic
 concept catalog. Undeclared or conflicting concept aliases raise `ValueError`
 (no guessed mapping). Changes require a fresh session, either through verified
-`refresh()` or an explicit new `prepare_field_routing` build; neither result
-grants execution permission. See the runnable
+`refresh()`, catalog-only `revise_catalog()` or an explicit new
+`prepare_field_routing` build; none grants execution permission. See the runnable
 [provider-neutral field-routing example](examples/schema_only_field_routing.py).
 
 ## Connect tools and data

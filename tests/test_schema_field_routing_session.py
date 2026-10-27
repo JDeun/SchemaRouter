@@ -40,6 +40,147 @@ def _catalog() -> NativeConceptCatalog:
     ),))
 
 
+def _revised_catalog() -> NativeConceptCatalog:
+    return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.customer_fields",
+        aliases=("account owner", "계정 담당자", "アカウント担当者"),
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type,
+        license=GROUP.license,
+    ),))
+
+
+def test_revise_catalog_reuses_attested_graph_without_rebuild_or_provider_io(
+    monkeypatch,
+):
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    new_catalog = _revised_catalog()
+    original_catalog_id = session.catalog_revision_id
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("catalog-only revision must not rescan schemas or query providers")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(NativeSchemaPostingIndex, "build", forbidden)
+        scope.setattr(NativeSchemaGraphIndex, "build", forbidden)
+        scope.setattr(router.registry, "tools", forbidden)
+        scope.setattr(router.registry, "keys", forbidden)
+        scope.setattr(router.executor, "execute", forbidden)
+        scope.setattr(router.executor, "execute_call", forbidden)
+        revised = session.revise_catalog(catalog=new_catalog)
+        for query in new_catalog.concepts[0].aliases:
+            assert revised.discover(query, principal=ACTOR).status == "complete"
+            assert {call.route_id for call in revised.compile(
+                query, principal=ACTOR,
+            ).calls} == {ROOT, LEFT, RIGHT}
+
+    assert revised is not session
+    assert revised._index is session._index
+    assert revised._index.approved_host_roots == frozenset()
+    assert revised.snapshot_id == session.snapshot_id
+    assert revised.catalog_revision_id != original_catalog_id
+    assert revised.catalog_revision_id == session.revise_catalog(
+        catalog=_revised_catalog(),
+    ).catalog_revision_id
+    assert session.discover(ALIASES[0], principal=ACTOR).status == "complete"
+    with pytest.raises(ValueError, match="no declared concept"):
+        revised.discover(ALIASES[0], principal=ACTOR)
+
+
+def test_revise_catalog_detaches_new_caller_owned_catalog():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    amended = _revised_catalog()
+    revised = session.revise_catalog(catalog=amended)
+    amended.concepts = _catalog().concepts
+    assert revised.discover("account owner", principal=ACTOR).status == "complete"
+    assert revised.catalog_revision_id != session.catalog_revision_id
+
+
+def test_revise_catalog_keeps_explicit_approved_host_roots():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(
+        catalog=_catalog(), approved_host_roots=frozenset({RIGHT}),
+    )
+    revised = session.revise_catalog(catalog=_revised_catalog())
+    assert revised._index is session._index
+    assert revised._index.approved_host_roots == frozenset({RIGHT})
+
+
+def test_revise_catalog_rejects_unreviewed_inputs_and_stale_sources():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    with pytest.raises(ValueError, match="catalog"):
+        session.revise_catalog(catalog={"concepts": []})
+
+    malformed = _revised_catalog()
+    object.__setattr__(malformed, "concepts", ())
+    with pytest.raises(ValueError, match="catalog|concept"):
+        session.revise_catalog(catalog=malformed)
+
+    router.add_tool(ToolSpec(
+        name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    with pytest.raises(PolicyViolationError, match="stale|changed|source"):
+        session.revise_catalog(catalog=_revised_catalog())
+
+
+def test_revise_catalog_rejects_inflight_nested_policy_mutation(monkeypatch):
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    policy = router.authorization_policy
+    assert policy is not None
+    amended = _revised_catalog()
+    real_dump = NativeConceptCatalog.model_dump
+
+    def mutate_policy_during_copy(self, *args, **kwargs):
+        data = real_dump(self, *args, **kwargs)
+        if self is amended:
+            policy._rule_index.partitions[("synthetic", None, None)] = (0,)
+        return data
+
+    monkeypatch.setattr(NativeConceptCatalog, "model_dump", mutate_policy_during_copy)
+    with pytest.raises(PolicyViolationError, match="policy|authorization"):
+        session.revise_catalog(catalog=amended)
+
+
+def test_revise_catalog_rejects_inflight_schema_revision(monkeypatch):
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    amended = _revised_catalog()
+    real_dump = NativeConceptCatalog.model_dump
+
+    def change_registry_during_copy(self, *args, **kwargs):
+        data = real_dump(self, *args, **kwargs)
+        if self is amended:
+            router.add_tool(ToolSpec(
+                name="mid_copy_tool", endpoints=[EndpointSpec(name="noop")],
+            ))
+        return data
+
+    monkeypatch.setattr(NativeConceptCatalog, "model_dump", change_registry_during_copy)
+    with pytest.raises(PolicyViolationError, match="stale|changed|source"):
+        session.revise_catalog(catalog=amended)
+
+
+def test_revise_catalog_rejects_inflight_policy_identity_swap(monkeypatch):
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    amended = _revised_catalog()
+    real_dump = NativeConceptCatalog.model_dump
+
+    def change_policy_during_copy(self, *args, **kwargs):
+        data = real_dump(self, *args, **kwargs)
+        if self is amended:
+            router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return data
+
+    monkeypatch.setattr(NativeConceptCatalog, "model_dump", change_policy_during_copy)
+    with pytest.raises(PolicyViolationError, match="policy|authorization"):
+        session.revise_catalog(catalog=amended)
+
+
 @pytest.mark.parametrize("query", ALIASES)
 def test_prepared_session_discovers_complete_native_field_routes(query):
     router = build_fixture(500, mixed_scope=True)

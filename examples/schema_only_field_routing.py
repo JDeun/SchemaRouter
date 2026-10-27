@@ -94,6 +94,23 @@ def main() -> None:
         print("field metadata:", route.route_id, route.fields_meta)
         print("input parameter shapes:", route.route_id, route.parameters_meta)
 
+    # Owner vocabulary updates do not change the registered source schemas.
+    # Reuse the exact pinned graph while reviewing a NEW semantic catalog.
+    updated_catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="customer.overview",
+        aliases=("account status and owner", "계정 상태와 담당자"),
+        required_fields=catalog.concepts[0].required_fields,
+        source_type="host-owned", license="internal",
+    ),))
+    reviewed_session = session.revise_catalog(catalog=updated_catalog)
+    assert reviewed_session.snapshot_id == session.snapshot_id
+    assert reviewed_session.catalog_revision_id != session.catalog_revision_id
+    print("reviewed fields:", reviewed_session.discover(
+        "계정 상태와 담당자", principal=principal,
+    ).status)
+    # The host replaces its live handle with reviewed_session once approved;
+    # any old handle retained elsewhere still uses its original meanings.
+
     # Optional structured Understand(q) is host/model SUPPLIED; the router
     # verifies it against reviewed concepts and current source permissions.
     # A model hint is not an argument. Only the explicit host value is bound.

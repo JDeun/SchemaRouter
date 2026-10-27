@@ -7,6 +7,7 @@ optional model-assisted method calls only the application's supplied model.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from hashlib import sha256
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
@@ -134,10 +135,51 @@ class SchemaFieldRoutingSession:
             _router=self._router, _catalog=reviewed, _index=updated,
         )
 
+    def revise_catalog(
+        self, *, catalog: NativeConceptCatalog,
+    ) -> SchemaFieldRoutingSession:
+        """Replace only host-reviewed field meanings, reusing the pinned graph.
+
+        Registry changes require ``refresh``; semantic review changes do not.
+        The host must replace/retire its old session reference explicitly;
+        this operation does not revoke separately retained old handles.
+        """
+        if not isinstance(catalog, NativeConceptCatalog):
+            raise ValueError("owner-reviewed concept catalog required")
+        policy = self._router.authorization_policy
+        if policy is None:
+            raise PolicyViolationError(
+                "field session catalog revision needs authorization policy"
+            )
+        policy_digest = _policy_contents_digest(policy)
+        self._index.field_index._assert_source(self._router)
+
+        # Revalidate and detach from the caller's mutable Pydantic object.
+        # Neither the source postings nor approved host roots are rebuilt.
+        reviewed = NativeConceptCatalog.model_validate(
+            catalog.model_dump(mode="python"), strict=True,
+        )
+        self._index.field_index._assert_source(self._router)
+        if (
+            self._router.authorization_policy is not policy
+            or _policy_contents_digest(policy) != policy_digest
+        ):
+            raise PolicyViolationError(
+                "field session authorization policy changed during catalog revision"
+            )
+        return SchemaFieldRoutingSession(
+            _router=self._router, _catalog=reviewed, _index=self._index,
+        )
+
     @property
     def snapshot_id(self) -> str:
         """Original schema index fingerprint used by every result."""
         return self._index.field_index.snapshot_id
+
+    @property
+    def catalog_revision_id(self) -> str:
+        """Stable reviewed-semantics digest; pair with the source snapshot ID."""
+        return sha256(self._catalog.model_dump_json().encode("utf-8")).hexdigest()
 
     @property
     def indexed_route_count(self) -> int:

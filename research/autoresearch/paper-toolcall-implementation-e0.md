@@ -1600,3 +1600,26 @@ This fixes a specific **missing public wiring** slice of B1; **B1 remains
 unchecked** pending all-provider heterogeneous 5000 churn, qualified
 performance and independently authored E2 evidence. New branch CI is required
 for qualification; targeted local tests alone do not satisfy release gates.
+
+## 2026-10-27 — #1787 reviewed catalog-only session revision (B1 core wiring)
+
+`SchemaFieldRoutingSession.revise_catalog(catalog=...)` now connects owner
+concept/field-semantic updates to an **immutable replacement handle** that
+reuses the exact already-pinned native posting and G5 graph. Unlike
+`refresh()`, an unchanged registered schema version is **required**: concept
+updates alone do not trigger journal changes or require full index rebuild.
+The new `catalog_revision_id` content digest partitions host caches separately
+from the source-only `snapshot_id`. Applications should key by both and
+atomically swap/retire the old session on owner review changes. No automatic
+global revocation of separately held old catalog snapshots is implied.
+
+500-route tri-lingual EN/KO/JA tests block posting/graph rebuild, registry
+`tools()`/`keys()` scans, and provider executor calls, and verify old/new
+semantic isolation, approved host-root retention, deterministic cache ID,
+strict catalog validation and source/version or authorization policy churn
+during copy. The source index is checked by object and version without
+performing a full fingerprint manifest scan; original downstream retrieval
+continues to verify selected-route source fingerprints and principal scope.
+This is schema-only core wiring, not default promotion, provider execution,
+independent A8 ranking validation or E2 release qualification. See
+`research/autoresearch/core-owner-catalog-revision-20261027-{design,plan}.md`.
