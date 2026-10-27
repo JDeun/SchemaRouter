@@ -1,5 +1,61 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 B1 E1 — actual keyless REST/OPTIMADE/public remote MCP source-task matrix
+
+- A **single live SchemaRouter registry** discovered and bound three authentic,
+  unrelated public sources at once: Crossref REST (`http_json`), COD OPTIMADE
+  (`optimade`), and DeepWiki Streamable HTTP (`mcp`). All three host-pinned
+  source-described read-only calls executed through the existing native
+  `ExecutionPlan`/`ToolCall` and the **same registry version**, with no
+  model-derived URLs, API keys or custom executor. This is **three real
+  providers / three native executions**, not the previous 1,009-route
+  publisher-source-only E0 audit or a claim that 1,009 protected operations
+  were run externally.
+- Independent public Europe PMC JSON REST was actually contacted as a
+  **fourth task-endpoint invocation** using only the DOI verified from the
+  Crossref work lookup (`10.1038/nature12373`). Europe PMC reported **one
+  matching DOI**, COD's returned structure satisfied original Si/O elements,
+  `nelements=2`, source ID and formula checks (**one matching structure**),
+  and DeepWiki's real `read_wiki_structure` MCP source-declared `result:
+  string` projection returned one valid bounded document outline. The
+  separate Europe PMC validation is **not** misrepresented as a fourth
+  SchemaRouter-registered source.
+- The actual real-network script completed with all three source-shaped
+  scenario checks **PASS** on four observed local runs:
+  **4.32 s / 5.14 s / 5.00 s / 4.94 s** (last after stricter MCP validation,
+  per-response transport byte controls and compressed-response rejection); it also
+  performs registration/discovery reads beyond the four counted task calls.
+  During RED→GREEN validation the first COD attempt failed safely because
+  the required identity `id` was absent from the explicit projection; adding
+  the source-declared `id` projection produced the observed real-network
+  PASS. Real DeepWiki likewise requires its actual declared `result` string,
+  not a fabricated generic MCP text-block output. Offline negative cases
+  reject inconsistent DOI, no hit, wrong elemental composition, missing
+  structure identity, oversized MCP text, source-error messages masquerading
+  as an outline, untrusted output fields and unsafe route selection. Europe
+  PMC uses byte-capped streamed HTTP reads; the research-only MCP factory
+  caps each HTTP response **before the SDK buffers it**, requests identity
+  encoding and fails closed on compressed responses, and disables
+  tool-session DELETE teardown. Untrusted SDK exception text is suppressed
+  from CLI/CI logs; only an error type and nonzero exit are reported. These
+  are bounded **harness-level** defenses, not a core production protocol SLA.
+- New [source design](public-anonymous-api-mcp-optimade-e1-design.md),
+  [TDD execution plan](public-anonymous-api-mcp-optimade-e1-plan.md),
+  [opt-in live script](../../scripts/research_public_heterogeneous_live_e1.py),
+  and dedicated PR offline/dispatch-only live workflow
+  `research-public-heterogeneous-e1.yml`. Local offline source tests
+  **15 passed**; extended original native provider/OPTIMADE/MCP invariants
+  **114 passed**. Repository Ruff green; changed-code isolated Python 3.12
+  Pyright **0 errors/0 warnings**. Repository-wide pytest again timed out
+  under the 110-second local cap at ~8–9% (exit 124); **not full-suite
+  green**. Exact new-head CI must be checked separately.
+- Evidence = **real anonymous read-only source interoperability E1** for
+  fixed, host-authored, per-source scenarios. This is not an independent
+  publisher-reviewed semantic gold, shared ontology, multi-turn generated
+  agent route accuracy, E2, public service SLA or commercial license grant.
+  Preserve #1346/#1477 `BLOCKED_EXTERNAL`, #1356 `HARD HOLD` and Draft #1755
+  unmerged; no default routing/release promotion.
+
 ### 2026-10-27 B1 E0 — one authentic 1,009-operation four-provider native registry
 
 - Extend the separate original OpenAI 355-operation and GitHub 651-GET
