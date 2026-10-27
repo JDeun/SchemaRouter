@@ -1575,3 +1575,28 @@ host-owned argument separation, missing-policy abstention without model
 invocation, hidden identities, malformed JSON, changed source permission,
 model exception privacy and byte budgets. This is E0 mechanism integration,
 not qualified model understanding accuracy or independent E2 evidence.
+
+## 2026-10-27 — B1 public prepared-session incremental refresh (E0 integration)
+
+The owner-facing `SchemaFieldRoutingSession.refresh()` now connects existing
+version-pinned canonical `NativeSchemaPostingIndex` + `NativeSchemaGraphIndex`
+incremental update primitives. It returns a **new** session; the old handle
+stays source-stale and fails closed. Exact native `InMemoryRegistry` and
+`SQLiteRegistry` use their own atomic changed-tool journal; custom registries
+require explicit bounded hints which are re-checked against the full source
+fingerprint manifest. There is no silent full-catalog rebuild, ranking
+promotion, provider network call, data query or executor invocation.
+
+Integration tests cover 500 original registered routes, EN/KO/JA field-only
+and typed-plan equivalence to an independent clean rebuild after producer
+delete/restore churn, SQLite producer-semantic replacement, exact postings and
+G5 graph parity, no source `tools()`/`keys()` scan on the journal path,
+explicit omitted hints, bounded journal refusal, approved host-root revocation,
+authorization policy replacement **and same-object index mutation** during
+refresh, explicit-only custom-registry hints and the legacy session's
+stale-source refusal. See
+`research/autoresearch/core-session-refresh-20261027-{design,plan}.md`.
+This fixes a specific **missing public wiring** slice of B1; **B1 remains
+unchecked** pending all-provider heterogeneous 5000 churn, qualified
+performance and independently authored E2 evidence. New branch CI is required
+for qualification; targeted local tests alone do not satisfy release gates.

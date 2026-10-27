@@ -164,10 +164,20 @@ compiler. The caller is responsible for model privacy and deciding what to
 disclose; the router never fetches provider rows, promotes model suggestions
 to source authority, or binds model-proposed parameter values. An independent
 model-understanding benchmark is still required.
-The caller supplies an explicit authorization
-policy and reviewed semantic concept catalog. Undeclared or conflicting
-concept aliases raise `ValueError` (no guessed mapping). Schema changes
-require a fresh session, and neither result grants execution permission. See the runnable
+
+After registered schemas change, the original prepared session becomes stale.
+Call `new_session = session.refresh()` to create a new immutable field-routing
+snapshot using the built-in in-memory/SQLite registry's verified change journal.
+For a custom registry, pass `changed_tool_keys=(...)` to the same method; the
+full native manifest is checked before accepting those hints. A missing,
+expired or inconsistent delta fails closed (reprepare explicitly if needed).
+Refreshing does not fetch provider records, invoke tool executors, or grant a
+model permission to supply query arguments. The old session stays stale.
+The caller supplies an explicit authorization policy and reviewed semantic
+concept catalog. Undeclared or conflicting concept aliases raise `ValueError`
+(no guessed mapping). Changes require a fresh session, either through verified
+`refresh()` or an explicit new `prepare_field_routing` build; neither result
+grants execution permission. See the runnable
 [provider-neutral field-routing example](examples/schema_only_field_routing.py).
 
 ## Connect tools and data

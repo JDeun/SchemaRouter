@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
+from .host_field_contract import _policy_contents_digest
 from .native_graph_index import NativeSchemaGraphIndex
 from .native_semantic_index import NativeSchemaPostingIndex
 from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
@@ -19,6 +20,7 @@ from .paper_query_understanding import PaperFieldModel, compile_model_query
 from .paper_typed_tool_plan import PaperTypedToolPlan, compile_paper_typed_tool_plan
 from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
 from .paper_understood_graph_plan import compile_paper_understood_graph_plan
+from .registry import InMemoryRegistry, SQLiteRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -28,8 +30,9 @@ if TYPE_CHECKING:
 class SchemaFieldRoutingSession:
     """Reuse an attested index to locate necessary schema fields, not records.
 
-    The index is tied to one exact router registry revision. Reprepare after
-    schema changes; no automatic source refresh or background provider query.
+    The index is tied to one exact router registry revision. ``refresh``
+    returns a new pinned session after verified schema changes; no background
+    provider query is ever performed.
     Authorization and scoped visibility are checked live on *every* query.
     """
 
@@ -72,6 +75,64 @@ class SchemaFieldRoutingSession:
         )
         field_index._assert_source(router)
         return cls(_router=router, _catalog=reviewed, _index=index)
+
+    def refresh(
+        self, *, changed_tool_keys: tuple[str, ...] | None = None,
+    ) -> SchemaFieldRoutingSession:
+        """Produce a new schema-only snapshot from verified native changes.
+
+        The exact built-in registries own their atomic delta journals. Other
+        registry implementations must provide bounded changed-tool hints,
+        which are exhaustively verified by the original source manifest.
+        This never calls data providers or silently falls back to a rebuild.
+        The previous immutable handle remains stale after a source change.
+        """
+        registry = self._router.registry
+        if registry is not self._index.field_index.registry_ref:
+            raise PolicyViolationError("field session refresh source mismatch")
+        if registry.version <= self._index.field_index.registry_version:
+            raise PolicyViolationError("field session refresh needs newer source")
+        policy = self._router.authorization_policy
+        if policy is None:
+            raise PolicyViolationError("field session refresh needs authorization policy")
+        policy_digest = _policy_contents_digest(policy)
+
+        if changed_tool_keys is None:
+            if type(registry) is InMemoryRegistry:
+                updated = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+                    self._index, registry,
+                )
+            elif type(registry) is SQLiteRegistry:
+                updated = NativeSchemaGraphIndex.refresh_from_sqlite_journal(
+                    self._index, registry,
+                )
+            else:
+                raise PolicyViolationError(
+                    "custom registry requires verified changed-tool keys"
+                )
+        else:
+            posting = NativeSchemaPostingIndex.refresh(
+                self._index.field_index, registry,
+                changed_tool_keys=changed_tool_keys,
+            )
+            updated = NativeSchemaGraphIndex.refresh(
+                self._index, posting, changed_tool_keys=changed_tool_keys,
+            )
+
+        updated.field_index._assert_source(self._router)
+        if (
+            self._router.authorization_policy is not policy
+            or _policy_contents_digest(policy) != policy_digest
+        ):
+            raise PolicyViolationError(
+                "field session authorization policy changed during refresh"
+            )
+        reviewed = NativeConceptCatalog.model_validate(
+            self._catalog.model_dump(mode="python"), strict=True,
+        )
+        return SchemaFieldRoutingSession(
+            _router=self._router, _catalog=reviewed, _index=updated,
+        )
 
     @property
     def snapshot_id(self) -> str:

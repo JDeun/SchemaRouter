@@ -6,12 +6,15 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    EndpointSpec,
+    InMemoryRegistry,
     NativeConceptCatalog,
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     SchemaFieldRoutingSession,
     SchemaRouter,
+    SQLiteRegistry,
     ToolSpec,
     retrieve_paper_field_coverage,
 )
@@ -171,6 +174,211 @@ def test_prepared_session_fails_closed_when_registry_changes():
     assert router.prepare_field_routing(catalog=_catalog()).discover(
         ALIASES[0], principal=ACTOR,
     ).status == "complete"
+
+
+def test_prepared_session_journal_refresh_preserves_original_and_matches_rebuild(
+    monkeypatch,
+):
+    router = build_fixture(500, mixed_scope=True)
+    session = router.prepare_field_routing(catalog=_catalog())
+    original_snapshot = session.snapshot_id
+    router.add_tool(ToolSpec(
+        name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    reference = router.prepare_field_routing(catalog=_catalog())
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("journal session refresh must not rebuild or execute providers")
+
+    with monkeypatch.context() as scope:
+        scope.setattr(NativeSchemaPostingIndex, "build", forbidden)
+        scope.setattr(NativeSchemaGraphIndex, "build", forbidden)
+        scope.setattr(router.registry, "tools", forbidden)
+        scope.setattr(router.registry, "keys", forbidden)
+        scope.setattr(router.executor, "execute", forbidden)
+        scope.setattr(router.executor, "execute_call", forbidden)
+        refreshed = session.refresh()
+        for query in ALIASES:
+            assert refreshed.discover(query, principal=ACTOR) == reference.discover(
+                query, principal=ACTOR,
+            )
+            assert refreshed.compile(query, principal=ACTOR) == reference.compile(
+                query, principal=ACTOR,
+            )
+
+    assert refreshed is not session
+    assert refreshed.snapshot_id == reference.snapshot_id != original_snapshot
+    assert refreshed.indexed_route_count == 501
+    with pytest.raises(PolicyViolationError, match="stale|changed|source"):
+        session.discover(ALIASES[0], principal=ACTOR)
+
+
+def test_prepared_session_verified_hint_refresh_rejects_omissions():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    with pytest.raises(PolicyViolationError, match="newer|changed|source"):
+        session.refresh()
+    router.add_tool(ToolSpec(
+        name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    with pytest.raises((ValueError, PolicyViolationError)):
+        session.refresh(changed_tool_keys=())
+    with pytest.raises(PolicyViolationError, match="changed|unknown|verify"):
+        session.refresh(changed_tool_keys=("fork_origin",))
+    refreshed = session.refresh(changed_tool_keys=("new_empty_tool",))
+    assert refreshed.snapshot_id == router.prepare_field_routing(
+        catalog=_catalog(),
+    ).snapshot_id
+    assert refreshed.discover(ALIASES[0], principal=ACTOR).status == "complete"
+
+
+def test_prepared_session_refresh_refuses_inflight_authorization_policy_swap(
+    monkeypatch,
+):
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    router.add_tool(ToolSpec(
+        name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    real_refresh = NativeSchemaGraphIndex.refresh_from_inmemory_journal.__func__
+
+    def swap_policy(cls, previous, registry):
+        updated = real_refresh(cls, previous, registry)
+        router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return updated
+
+    monkeypatch.setattr(
+        NativeSchemaGraphIndex, "refresh_from_inmemory_journal",
+        classmethod(swap_policy),
+    )
+    with pytest.raises(PolicyViolationError, match="policy|authorization"):
+        session.refresh()
+
+
+def test_prepared_session_refresh_refuses_same_policy_nested_index_mutation(
+    monkeypatch,
+):
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    policy = router.authorization_policy
+    assert policy is not None
+    router.add_tool(ToolSpec(
+        name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    original = NativeSchemaGraphIndex.refresh_from_inmemory_journal.__func__
+
+    def mutate_nested_index(cls, previous, registry):
+        updated = original(cls, previous, registry)
+        policy._rule_index.partitions[("synthetic", None, None)] = (0,)
+        return updated
+
+    monkeypatch.setattr(
+        NativeSchemaGraphIndex, "refresh_from_inmemory_journal",
+        classmethod(mutate_nested_index),
+    )
+    with pytest.raises(PolicyViolationError, match="policy|authorization"):
+        session.refresh()
+
+
+def test_prepared_session_custom_registry_requires_verified_explicit_delta():
+    class CustomInMemoryRegistry(InMemoryRegistry):
+        pass
+
+    fixture = build_fixture(500)
+    registry = CustomInMemoryRegistry()
+    router = SchemaRouter(
+        registry=registry, authorization_policy=fixture.authorization_policy,
+    )
+    for name in ("fork_origin", "fork_status", "fork_owner"):
+        router.add_tool(fixture.registry.get(name))
+    session = router.prepare_field_routing(catalog=_catalog())
+    router.add_tool(ToolSpec(
+        name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
+    ))
+    with pytest.raises(PolicyViolationError, match="custom registry"):
+        session.refresh()
+    new_session = session.refresh(changed_tool_keys=("new_empty_tool",))
+    oracle = router.prepare_field_routing(catalog=_catalog())
+    assert new_session.snapshot_id == oracle.snapshot_id
+    assert new_session.discover(ALIASES[0], principal=ACTOR) == oracle.discover(
+        ALIASES[0], principal=ACTOR,
+    )
+
+
+def test_prepared_session_refresh_wires_exact_sqlite_journal():
+    fixture = build_fixture(500)
+    with SQLiteRegistry(":memory:") as sqlite:
+        router = SchemaRouter(
+            registry=sqlite, authorization_policy=fixture.authorization_policy,
+        )
+        for name in ("fork_origin", "fork_status", "fork_owner"):
+            router.add_tool(fixture.registry.get(name))
+        original = router.prepare_field_routing(catalog=_catalog())
+        owner = sqlite.get("fork_owner")
+        owner.endpoint("read").output_fields[0].semantic_id = "crm.unrelated"
+        sqlite.register(owner, replace=True)
+        refreshed = original.refresh()
+        oracle = router.prepare_field_routing(catalog=_catalog())
+        assert refreshed.snapshot_id == oracle.snapshot_id
+        assert refreshed.discover(ALIASES[0], principal=ACTOR) == oracle.discover(
+            ALIASES[0], principal=ACTOR,
+        )
+        assert refreshed._index.graph.edges == oracle._index.graph.edges
+        assert refreshed._index.field_index.postings == oracle._index.field_index.postings
+
+
+def test_prepared_session_real_producer_delete_and_restore_refresh_graph():
+    router = build_fixture(500)
+    assert isinstance(router.registry, InMemoryRegistry)
+    original_owner = router.registry.get("fork_owner")
+    initial = router.prepare_field_routing(catalog=_catalog())
+    assert initial.discover(ALIASES[0], principal=ACTOR).status == "complete"
+
+    router.registry.unregister("fork_owner")
+    removed = initial.refresh()
+    missing_oracle = router.prepare_field_routing(catalog=_catalog())
+    for query in ALIASES:
+        assert removed.discover(query, principal=ACTOR) == missing_oracle.discover(
+            query, principal=ACTOR,
+        )
+    assert removed._index.graph.edges == missing_oracle._index.graph.edges
+    assert removed._index.field_index.postings == missing_oracle._index.field_index.postings
+    assert removed.discover(ALIASES[0], principal=ACTOR).status != "complete"
+
+    router.add_tool(original_owner)
+    restored = removed.refresh()
+    restored_oracle = router.prepare_field_routing(catalog=_catalog())
+    for query in ALIASES:
+        assert restored.discover(query, principal=ACTOR) == restored_oracle.discover(
+            query, principal=ACTOR,
+        )
+        assert restored.compile(query, principal=ACTOR) == restored_oracle.compile(
+            query, principal=ACTOR,
+        )
+    assert restored._index.graph.edges == restored_oracle._index.graph.edges
+    assert restored._index.field_index.postings == restored_oracle._index.field_index.postings
+
+
+def test_prepared_session_refresh_rejects_removed_approved_host_root():
+    router = build_fixture(500)
+    assert isinstance(router.registry, InMemoryRegistry)
+    session = router.prepare_field_routing(
+        catalog=_catalog(), approved_host_roots=frozenset({RIGHT}),
+    )
+    router.registry.unregister("fork_owner")
+    with pytest.raises((ValueError, PolicyViolationError), match="host|approved"):
+        session.refresh()
+
+
+def test_prepared_session_refresh_refuses_unbounded_native_journal():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=_catalog())
+    for n in range(65):
+        router.add_tool(ToolSpec(
+            name=f"added_{n}", endpoints=[EndpointSpec(name="noop")],
+        ))
+    with pytest.raises(PolicyViolationError, match="delta|version|history|journal"):
+        session.refresh()
 
 
 def test_prepared_session_honors_current_source_policy_revocation():
