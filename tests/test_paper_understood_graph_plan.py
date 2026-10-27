@@ -106,7 +106,8 @@ def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
 
 
 def _compile(router, *, named_tools=("target_0",), max_hops=2,
-             hints=None, index=None, source_type=None, host_source_arguments=None):
+             hints=None, index=None, source_type=None, host_source_arguments=None,
+             rank_policy=None):
     return compile_paper_understood_graph_plan(
         router, PaperUnderstanding(
             intent_id="case.lookup", named_tools=named_tools,
@@ -118,6 +119,7 @@ def _compile(router, *, named_tools=("target_0",), max_hops=2,
         ),
         max_hops=max_hops,
         host_source_arguments=host_source_arguments,
+        rank_policy=rank_policy,
     )
 
 
@@ -304,3 +306,55 @@ def test_source_availability_change_during_compilation_aborts(monkeypatch):
     monkeypatch.setattr(module, "_compile_one_route", revoke)
     with pytest.raises(PolicyViolationError, match="changed|eligibility"):
         _compile(router, index=index)
+
+
+@pytest.mark.parametrize("hops", [1, 2])
+def test_owner_rank_policy_selects_one_complete_g5_dependency_dag(hops):
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=hops, n_targets=2)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    rank_policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_1.read": 10},
+    )
+
+    plan = _compile(
+        router, named_tools=("target_0", "target_1"), index=index,
+        rank_policy=rank_policy,
+    )
+
+    expected = (
+        ("root.read", "target_1.read")
+        if hops == 1
+        else ("root.read", "middle.read", "target_1.read")
+    )
+    assert plan.status == "requires_observation"
+    assert tuple(call.route_id for call in plan.calls) == expected
+    assert plan.ranked_unverified is True
+    assert plan.executable_authority is False
+    assert len({call.route_id for call in plan.calls}) == len(plan.calls)
+
+
+def test_owner_rank_policy_mutation_during_g5_lookup_fails_closed():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, n_targets=2)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    rank_policy = PaperNativeRankPolicy(snapshot_id=index.field_index.snapshot_id)
+
+    def mutate_only_when_dependency_is_probed(tool, _endpoint):
+        if tool.key == "root":
+            rank_policy.route_priorities["target_1.read"] = 99
+        return True
+
+    router.planner.availability_predicate = mutate_only_when_dependency_is_probed
+    with pytest.raises(PolicyViolationError, match="rank|owner|changed"):
+        _compile(
+            router, named_tools=("target_0", "target_1"), index=index,
+            rank_policy=rank_policy,
+        )
