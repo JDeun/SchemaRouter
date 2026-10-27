@@ -327,6 +327,7 @@ class AuthorizedAgentToolSurface:
                 result[name] = value
         for name in (
             "turns", "tool_call_count", "policy_blocks",
+            "host_bound_tool_calls",
             "unauthorized_destructive_executions", "input_tokens",
             "output_tokens", "tool_schema_tokens", "retrieval_calls",
         ):
@@ -340,7 +341,10 @@ class AuthorizedAgentToolSurface:
             "episode_wall_latency_ms",
         ):
             value = episode_row.get(name)
-            if type(value) in (int, float) and math.isfinite(value) and value >= 0:
+            if (
+                value is not None and type(value) in (int, float)
+                and math.isfinite(value) and value >= 0
+            ):
                 result[name] = float(value)
         # Do not echo candidate history containing foreign route IDs.
         history = episode_row.get("candidate_history")

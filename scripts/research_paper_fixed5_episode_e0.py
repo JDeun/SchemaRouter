@@ -5,9 +5,9 @@ The host awaits scoped Understand/plan first, then invokes this sync adapter.
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
-from schemarouter import PolicyViolationError
+from schemarouter import InMemoryRegistry, PolicyViolationError
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
@@ -15,6 +15,7 @@ from scripts.agent_utility_generated_common import (
     run_generated_episode,
 )
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_paper_a5_runtime_source_binding_e0 import ScopedHostCallBinding
 from scripts.research_paper_fixed5_menu_e0 import paper_plan_fixed5_menu
 
 
@@ -24,6 +25,7 @@ def run_paper_fixed5_episode_e0(
     view: AuthorizedAgentToolSurface,
     task: dict[str, Any],
     plan: PaperTypedToolPlan | None,
+    scoped_host_call_binding: ScopedHostCallBinding | None = None,
 ) -> dict[str, Any]:
     """Use only existing frozen executor and principal-scoped model exposure."""
     if not isinstance(view, AuthorizedAgentToolSurface):
@@ -47,8 +49,10 @@ def run_paper_fixed5_episode_e0(
 
     view.assert_source_unchanged()
     return run_generated_episode(
-        agent, view.router.registry, task, EXPERIMENTAL_FIXED5_CONDITION,
+        agent, cast(InMemoryRegistry, view.router.registry), task,
+        EXPERIMENTAL_FIXED5_CONDITION,
         experimental_candidate_selector=select,
         experimental_agent_tool_surface=view,
         experimental_host_empty_menu_terminal=True,
+        experimental_scoped_call_binding=scoped_host_call_binding,
     )

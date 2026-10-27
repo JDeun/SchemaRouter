@@ -16,5 +16,5 @@ def test_episode_uses_only_existing_executor():
 
     assert module.run_generated_episode.__module__ == "scripts.agent_utility_generated_common"
     assert tuple(inspect.signature(run_paper_fixed5_episode_e0).parameters) == (
-        "agent", "view", "task", "plan",
+        "agent", "view", "task", "plan", "scoped_host_call_binding",
     )

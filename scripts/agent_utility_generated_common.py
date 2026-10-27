@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import statistics
 import time
 from collections.abc import Callable
@@ -25,7 +26,7 @@ from benchmarks.agent_utility_b2_executor import (
     ExecutionAttempt,
     _schema_valid,
 )
-from schemarouter import InMemoryRegistry, SchemaPlanner
+from schemarouter import InMemoryRegistry, PolicyViolationError, SchemaPlanner
 from scripts.agent_utility_v6_state import (
     empty_state,
     render_retrieval_query,
@@ -490,6 +491,9 @@ def run_generated_episode(
     experimental_block_unavailable_observation: bool = False,
     experimental_preserve_candidate_order: bool = False,
     experimental_host_empty_menu_terminal: bool = False,
+    experimental_scoped_call_binding: Callable[
+        [str, dict[str, Any]], tuple[dict[str, Any], bool]
+    ] | None = None,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -522,7 +526,19 @@ def run_generated_episode(
     An opt-in, principal-scoped host guard can terminate with the original
     generic REQUEST_MORE_TOOLS response when **no verified tools were offered**.
     It never establishes semantic/global no-fit or changes frozen runs.
+
+    A separately authorized opt-in E0 host may bind a first, offered direct
+    call's exact original-source scalar inputs just before the EXISTING
+    frozen executor dispatch. This never creates a tool call for the agent.
     """
+    if experimental_scoped_call_binding is not None and (
+        not callable(experimental_scoped_call_binding)
+        or condition != EXPERIMENTAL_FIXED5_CONDITION
+        or candidate_condition is not None
+        or experimental_candidate_selector is None
+        or experimental_agent_tool_surface is None
+    ):
+        raise ValueError("scoped fixed5 host call binding requires explicit E0 source")
     if (
         type(experimental_host_empty_menu_terminal) is not bool
         or (experimental_host_empty_menu_terminal and (
@@ -676,6 +692,7 @@ def run_generated_episode(
     context_overflow = False
     malformed_calls = 0
     expansions = 0
+    host_bound_tool_calls = 0
 
     for turn in (() if host_empty_menu_terminal else range(1, MAX_TURNS + 1)):
         if experimental_agent_tool_surface is None:
@@ -765,6 +782,43 @@ def run_generated_episode(
             step_index = executor.progress
             if experimental_agent_tool_surface is not None:
                 experimental_agent_tool_surface.assert_source_unchanged()
+            # Only an agent-selected FIRST, originally offered call can
+            # receive a host-owned scalar. The callback is restricted to
+            # the exact scoped E0 surface, never frozen/historical runs.
+            if (
+                experimental_scoped_call_binding is not None
+                and len(calls) == 1
+                and call_index == 0
+                and route_id in visible_routes
+            ):
+                original_arguments = copy.deepcopy(arguments)
+                isolated = copy.deepcopy(original_arguments)
+                result = experimental_scoped_call_binding(route_id, isolated)
+                scoped_view = experimental_agent_tool_surface
+                if scoped_view is None:
+                    raise PolicyViolationError("scoped call lost original host source")
+                scoped_view.assert_source_unchanged()
+                if isolated != original_arguments:
+                    raise PolicyViolationError("scoped host binding mutated model call")
+                if (
+                    type(result) is not tuple or len(result) != 2
+                    or type(result[0]) is not dict
+                    or type(result[1]) is not bool
+                    or len(result[0]) > 4
+                    or any(
+                        type(key) is not str or type(value) not in
+                        (str, int, float, bool)
+                        or type(value) is str and len(value.encode("utf-8")) > 4096
+                        or type(value) is int and not -(2**63) <= value < 2**63
+                        or type(value) is float and not math.isfinite(value)
+                        for key, value in result[0].items()
+                    )
+                    or not result[1] and result[0] != original_arguments
+                ):
+                    raise PolicyViolationError("invalid scoped host tool arguments")
+                arguments = copy.deepcopy(result[0])
+                if result[1]:
+                    host_bound_tool_calls += 1
             attempt = executor.execute(
                 route_id,
                 arguments,
@@ -976,6 +1030,8 @@ def run_generated_episode(
     }
     if experimental_host_empty_menu_terminal:
         episode_record["host_empty_menu_terminal"] = host_empty_menu_terminal
+    if experimental_scoped_call_binding is not None:
+        episode_record["host_bound_tool_calls"] = host_bound_tool_calls
     if experimental_agent_tool_surface is not None:
         # Grader-only raw attempts/gold are consumed AFTER all model turns.
         # Never hand this record, or the HMAC key, to the agent/selector.

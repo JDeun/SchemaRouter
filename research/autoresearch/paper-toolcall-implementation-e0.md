@@ -1,5 +1,51 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 A5 execution gap — approved direct root actually bound at fixed-K5 dispatch (E0)
+
+- **The missing A5 runtime wire is now implemented locally**: previously a
+  host-reviewed input reached the `ready` original P2 typed plan, but the
+  existing fixed-K5 agent loop executed the agent's independently generated
+  argument object. An opt-in scoped callback now materializes **the exact
+  approved, original-source direct-root scalar arguments** at the existing
+  `FrozenCorpusExecutor.execute` boundary. This preserves the existing parser,
+  agent-chosen tool call, fixture executor and all historical experiment
+  conditions; it does not create a second ToolCall or executor.
+- Eligibility is deliberately narrow: a single `ready`, dependency-free P2
+  direct root; source-declared complete closed scalar input envelope; original
+  approved G5 host-root set; principal-visible route; explicit host input or
+  a positively host-reviewed model proposal. The bounded callback rejects
+  graph/source/schema/policy/principal/plan drift before materialization and
+  again immediately afterward. No callback occurs for non-tool generations,
+  unoffered routes or parallel/multiple tool calls. The original scoped
+  boundary continues to reject hidden-route observations.
+- Independent read-only review identified two further fail-closed cases,
+  both reproduced RED before the fix: an explicitly present but empty host
+  input dictionary could bypass a simultaneously configured review gate;
+  and a stateful availability callback could mutate owner declarations
+  during the *last* proof check. A reviewer-present `requires_arguments`
+  receipt now exposes no agent menu, even with `{}` host input, while a
+  valid explicit `ready` source input still runs. Every pinned declaration,
+  schema and graph manifest is rechecked after the last availability probe.
+- **Host assist is separately measured** by the redacted public E0 trace
+  `host_bound_tool_calls`; it is *not* evidence that the model generated the
+  correct argument. A scoped registered-tool agent regression deliberately
+  outputs the **wrong** case ID with an extra unapproved property: with a
+  reviewed/explicit source root the preexisting fixture completes, and without
+  review it does not. Rejected host review yields **zero agent turns and zero
+  tool calls**. Tests also cover no-tool, unknown-route, parallel-call,
+  policy and graph mutation branches.
+- Fresh broad local paper/P2/G5/scoped-authority regression (including the
+  new tests): **777 passed**; separate frozen/historical agent utility
+  regressions: **261 passed**. Whole-repository Ruff **passed**. Changed
+  execution modules Pyright: **0 errors, 0 warnings**. Exact-head GitHub
+  Actions must be reported separately; do not infer CI success from local tests.
+  [Design](paper-a5-runtime-host-arguments-e0-design.md) ·
+  [implementation plan](paper-a5-runtime-host-arguments-e0-plan.md).
+- This validates **synthetic E0 fixture dispatch**, not real provider execution
+  through the original agent, end-to-end independent E2 reasoning, accurate
+  unhinted multilingual ranking, or default release authority. Public live E1
+  remains at 0/9 exact top-1; #1346/#1477 external and #1356 HARD HOLD remain.
+
 ### 2026-10-27 A5/A9 gap closure — model parameter suggestions with explicit host review (E0)
 
 - The opt-in original-paper `Understand(q)` returns bounded *untrusted*
@@ -51,12 +97,10 @@
   **0 errors / 0 warnings**. The current change's exact
   GitHub Actions CI is **pending** and the independent E2 gate
   remains open. [Implementation plan](paper-reviewed-model-arguments-e0-plan.md).
-- **Known remaining major wiring:** the A5 fixed-K5 agent consumes the
-  route menu, not P2's host-reviewed argument values. A `ready` direct plan
-  does **not** guarantee the independent agent's generated call will use that
-  value. A9's named DAG runner does execute its reviewed root as a registered
-  source-checked ToolCall. A5 runtime argument propagation needs a separate
-  opt-in implementation and real-agent regression; it is still unfinished.
+- **Historical handoff note (now superseded by the A5 execution section
+  above):** this revision still had an A5 direct-plan-to-agent-dispatch gap.
+  The new opt-in E0 host-materialization layer closes *that specific gap*;
+  independent live-provider E2 remains unimplemented/unverified.
 
 ### 2026-10-27 P2/A5 gap closure — trusted direct host-source scalar wiring (E0)
 

@@ -14,6 +14,9 @@ from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.agent_utility_generated_common import GeneratedEpisodeAgent
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_paper_a5_runtime_source_binding_e0 import (
+    build_paper_a5_root_binding_e0,
+)
 from scripts.research_paper_fixed5_episode_e0 import run_paper_fixed5_episode_e0
 from scripts.research_paper_refusal_eval_e0 import Decision
 from scripts.research_paper_reviewed_model_arguments_e0 import PaperRootArgumentReviewer
@@ -68,15 +71,25 @@ async def run_paper_scoped_agent_episode_e0(
     # A5 previously exposed a `requires_arguments` direct route so its
     # existing agent could request a value. The new explicit host-review
     # branch must NOT fall back to that path after a denied/missing review:
-    # the untrusted model could otherwise call an unreviewed route. Keep
-    # legacy behavior unchanged when no reviewer was supplied.
+    # the untrusted model could otherwise call an unreviewed route. An empty
+    # explicit host mapping is not authorization to bypass this reviewer gate.
+    # Keep legacy behavior unchanged when no reviewer was supplied.
     episode_plan = (
         None if review_model_root_arguments is not None
-        and host_source_arguments is None
         and decision == "request_arguments" else plan
     )
+    # Preserve the legacy A5 episode path exactly when no host ever supplied
+    # or reviewed an input; there is nothing for the source binder to grant.
+    source_binding = None
+    if host_source_arguments is not None or review_model_root_arguments is not None:
+        source_binding = build_paper_a5_root_binding_e0(
+            view=view, plan=episode_plan, index=index,
+            catalog=catalog, intent_registry=intent_registry,
+            host_review_or_inputs_supplied=True,
+        )
     episode = run_paper_fixed5_episode_e0(
         agent, view=view, task=task, plan=episode_plan,
+        scoped_host_call_binding=source_binding,
     )
     view.assert_source_unchanged()
     check_host_inputs()

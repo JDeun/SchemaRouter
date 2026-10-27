@@ -359,7 +359,7 @@ async def test_rejected_review_blocks_original_fixed5_agent_and_tool_attempts():
 
 
 @pytest.mark.asyncio
-async def test_explicit_host_argument_mode_does_not_activate_reviewer_denial_gate():
+async def test_explicit_empty_host_mapping_cannot_disable_reviewer_denial_gate():
     from scripts.research_paper_scoped_agent_episode_e0 import (
         run_paper_scoped_agent_episode_e0,
     )
@@ -372,7 +372,7 @@ async def test_explicit_host_argument_mode_does_not_activate_reviewer_denial_gat
             "parameter_hints": {"case_id": "model-hint"},
         },
         ExistingAgent(), view=view, task={
-            "semantic_task_id": "legacy-host-explicit-empty-e0",
+            "semantic_task_id": "reviewer-host-explicit-empty-e0",
             "query": view.original_query, "language": "en", "supported": False,
             "required_routes": [], "executor_fixture": {"steps": []},
         },
@@ -383,5 +383,5 @@ async def test_explicit_host_argument_mode_does_not_activate_reviewer_denial_gat
         review_model_root_arguments=lambda _proposal: pytest.fail("review bypassed"),
     )
     assert decision == "request_arguments"
-    assert row["host_empty_menu_terminal"] is False
-    assert row["tool_call_count"] >= 1
+    assert row["host_empty_menu_terminal"] is True
+    assert row["tool_call_count"] == row["turns"] == 0
