@@ -358,3 +358,31 @@ def test_owner_rank_policy_mutation_during_g5_lookup_fails_closed():
             router, named_tools=("target_0", "target_1"), index=index,
             rank_policy=rank_policy,
         )
+
+
+def test_owner_rank_filters_source_incompatible_upstream_before_selecting_top_path():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=2)
+    foreign_root = _node(
+        "aaa_foreign", output_semantic="crm.case_id", identifier=True,
+    ).model_copy(update={"source_type": "foreign"})
+    router.add_tool(foreign_root)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    rank_policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_0.read": 10},
+    )
+
+    plan = _compile(
+        router, named_tools=("target_0", "target_1"), source_type="crm",
+        index=index, rank_policy=rank_policy,
+    )
+
+    assert plan.status == "requires_observation"
+    assert tuple(call.route_id for call in plan.calls) == (
+        "root.read", "target_0.read",
+    )
+    assert plan.ranked_unverified is True
