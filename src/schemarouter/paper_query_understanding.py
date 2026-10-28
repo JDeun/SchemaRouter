@@ -261,6 +261,44 @@ async def compile_model_query(
         if qualified:
             offered_concepts.append(concept)
     offered_ids = {concept.concept_id for concept in offered_concepts}
+    if allow_unnamed_graph_discovery:
+        # The ordinary per-concept direct posting preflight deliberately
+        # excludes outputs available ONLY through typed two-hop joins. A
+        # host-approved unnamed G5 path is also a source-owned field proof,
+        # provided the ENTIRE reviewed intent FieldGroup can be satisfied.
+        # Reuse the current public plan compiler (including owner domain,
+        # source ACL, K5, typed joins and live scope reattestation); do not
+        # infer concept eligibility from model text or raw graph topology.
+        graph_offered: set[str] = set()
+        for intent_id in model_visible_intent_ids:
+            required = set(approved_intents[intent_id].required_concept_ids)
+            if required <= offered_ids:
+                continue
+            verify()
+            try:
+                proof = session.compile_understood(
+                    PaperUnderstanding(intent_id=intent_id, named_tools=()),
+                    principal=principal, intent_registry=intent_registry,
+                    host_source_arguments=host_source_arguments,
+                    k=k, max_hops=max_hops, rank_policy=rank_policy,
+                    allow_unnamed_graph_discovery=True,
+                )
+            except Exception:
+                raise PolicyViolationError(
+                    "paper query G5 intent preflight failed"
+                ) from None
+            verify()
+            if (
+                proof.status == "requires_observation"
+                and len(proof.calls) in (2, 3)
+                and len(proof.bindings) == len(proof.calls) - 1
+                and not proof.executable_authority
+            ):
+                graph_offered.update(required)
+        for concept_id in model_visible_concept_ids:
+            if concept_id in graph_offered and concept_id not in offered_ids:
+                offered_concepts.append(approved_concepts[concept_id])
+                offered_ids.add(concept_id)
     offered_intents = [
         approved_intents[iid] for iid in model_visible_intent_ids
         if set(approved_intents[iid].required_concept_ids) <= offered_ids
