@@ -199,7 +199,15 @@ def rank_authorized_paper_graph_one_hop(
     paths = tuple((
         (candidate.producer_route_id, candidate.consumer_route_id),
         candidate.consumer_output_fields,
-        len(candidate.consumer_output_fields) + len(candidate.parameter_bindings),
+        (
+            candidate.producer_visible_field_count
+            if candidate.producer_visible_field_count is not None
+            else len(candidate.parameter_bindings)
+        ) + (
+            candidate.consumer_visible_field_count
+            if candidate.consumer_visible_field_count is not None
+            else len(candidate.consumer_output_fields)
+        ) + len(candidate.parameter_bindings),
     ) for candidate in candidates)
     return _rank_verified_graph_paths(
         paths, concept_aliases=concept_aliases, policy=policy, k=k,
@@ -216,7 +224,15 @@ def rank_authorized_paper_graph_two_hop(
     """Rank only original 2-hop complete DAG receipts after G5 proof."""
     paths = tuple((
         candidate.route_ids, candidate.target_output_fields,
-        len(candidate.target_output_fields) + len(candidate.root_to_intermediate)
+        (
+            sum(candidate.visible_field_counts)
+            if candidate.visible_field_counts is not None
+            else (
+                len(candidate.root_to_intermediate)
+                + len(candidate.intermediate_to_target)
+                + len(candidate.target_output_fields)
+            )
+        ) + len(candidate.root_to_intermediate)
         + len(candidate.intermediate_to_target),
     ) for candidate in candidates)
     return _rank_verified_graph_paths(
