@@ -243,3 +243,44 @@ async def test_host_unnamed_graph_discovery_without_rank_is_rejected_before_mode
             model_visible_concept_ids=("crm.owner",),
             allow_unnamed_graph_discovery=True,
         )
+
+
+@pytest.mark.asyncio
+async def test_model_unnamed_query_preserves_host_only_intent_domain_g5_filter():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=CATALOG)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_domains={RIGHT: ("crm",)},
+    )
+    domain_intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+        intent_id="crm.owner_lookup",
+        required_concept_ids=("crm.owner",), domains=("crm",),
+    ),))
+    disclosed = []
+
+    async def model(payload):
+        disclosed.append(payload)
+        return {
+            "intent_id": "crm.owner_lookup",
+            "concept_ids": ["crm.owner"], "named_tools": [],
+        }
+
+    plan = await session.acompile_query(
+        "Who is the customer owner?", principal=ACTOR, model=model,
+        intent_registry=domain_intents,
+        model_visible_intent_ids=("crm.owner_lookup",),
+        model_visible_concept_ids=("crm.owner",),
+        model_visible_tool_keys=(), rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "requires_observation"
+    assert tuple(c.route_id for c in plan.calls) == (ROOT, RIGHT)
+    assert plan.ranked_unverified and not plan.executable_authority
+    assert len(disclosed) == 1
+    assert disclosed[0]["offered_tool_keys"] == []
+    assert "allow_unnamed_graph_discovery" not in json.dumps(disclosed[0])
+    assert ROOT not in json.dumps(disclosed[0])
+    assert RIGHT not in json.dumps(disclosed[0])
