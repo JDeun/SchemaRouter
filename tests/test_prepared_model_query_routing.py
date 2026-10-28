@@ -194,3 +194,52 @@ async def test_model_query_rejects_incompatible_intent_or_payload_budget():
             model_visible_concept_ids=("crm.owner",),
             max_model_input_bytes=32,
         )
+
+
+@pytest.mark.asyncio
+async def test_host_opt_in_model_query_discovers_unnamed_dependency_without_tool_disclosure():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=CATALOG)
+    policy = PaperNativeRankPolicy(snapshot_id=session.snapshot_id)
+    observed = []
+
+    async def model(payload):
+        observed.append(payload)
+        return {"intent_id": "crm.owner_lookup", "named_tools": []}
+
+    plan = await session.acompile_query(
+        "who owns the customer", principal=ACTOR,
+        model=model, intent_registry=INTENTS,
+        model_visible_intent_ids=("crm.owner_lookup",),
+        model_visible_concept_ids=("crm.owner",),
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "requires_observation"
+    assert tuple(call.route_id for call in plan.calls) == (ROOT, RIGHT)
+    assert len(plan.bindings) == 1
+    assert plan.ranked_unverified and not plan.executable_authority
+    assert len(observed) == 1
+    assert observed[0]["offered_tool_keys"] == []
+    assert "allow_unnamed_graph_discovery" not in json.dumps(observed[0])
+    assert ROOT not in json.dumps(observed[0])
+    assert RIGHT not in json.dumps(observed[0])
+
+
+@pytest.mark.asyncio
+async def test_host_unnamed_graph_discovery_without_rank_is_rejected_before_model_call():
+    router = build_fixture(500)
+    session = router.prepare_field_routing(catalog=CATALOG)
+
+    def model(_payload):
+        pytest.fail("non-owner-approved graph discovery must never call model")
+
+    with pytest.raises(ValueError, match="rank|owner|approved"):
+        await session.acompile_query(
+            "who owns the customer", principal=ACTOR,
+            model=model, intent_registry=INTENTS,
+            model_visible_intent_ids=("crm.owner_lookup",),
+            model_visible_concept_ids=("crm.owner",),
+            allow_unnamed_graph_discovery=True,
+        )
