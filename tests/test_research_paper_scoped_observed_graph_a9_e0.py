@@ -179,11 +179,12 @@ async def test_scoped_policy_change_during_middle_stops_target_and_receipt():
 @pytest.mark.asyncio
 @pytest.mark.parametrize("hops", [1, 2])
 async def test_scoped_a9_explicit_owner_unnamed_graph_executes_pinned_path(hops):
+    from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
+
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
     from scripts.research_paper_scoped_observed_graph_a9_e0 import (
         run_paper_scoped_named_graph_a9_e0,
     )
-    from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
 
     router, index, seen = _ranked_fixture(hops=hops)
     view = _view(router)
