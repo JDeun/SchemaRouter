@@ -45,7 +45,9 @@ class _FakeResponse:
         return self.payload
 
 
-def _run_watchdog(*, new_status: str, unrelated_failure: bool = False) -> dict:
+def _run_watchdog(
+    *, new_status: str, unrelated_failure: bool = False, newer_failed_run: bool = False
+) -> dict:
     now = datetime.now(timezone.utc)
     old_date = (now - timedelta(hours=3)).isoformat()
     new_date = (now - timedelta(minutes=3)).isoformat()
@@ -95,6 +97,18 @@ def _run_watchdog(*, new_status: str, unrelated_failure: bool = False) -> dict:
                 "run_attempt": 1,
             }
         )
+    if newer_failed_run:
+        runs.insert(
+            0,
+            {
+                "name": "Post-merge Qualification",
+                "head_sha": HEAD,
+                "status": "completed",
+                "conclusion": "failure",
+                "id": 45,
+                "run_attempt": 1,
+            },
+        )
 
     def fake_urlopen(request: Request, *, timeout: int) -> _FakeResponse:
         assert timeout == 20
@@ -103,7 +117,7 @@ def _run_watchdog(*, new_status: str, unrelated_failure: bool = False) -> dict:
             return _FakeResponse({"object": {"sha": HEAD}})
         if "/commits/" in path:
             return _FakeResponse(commits[path.split("/commits/", 1)[1]])
-        if path.endswith("/actions/runs"):
+        if path.endswith("/actions/workflows/post-merge-qualification.yml/runs"):
             return _FakeResponse({"workflow_runs": runs})
         raise AssertionError(f"Unexpected API path: {path}")
 
@@ -152,3 +166,8 @@ class PostMergeQualificationWatchdogTests(unittest.TestCase):
     def test_other_failed_main_commit_is_not_excused(self) -> None:
         report = _run_watchdog(new_status="success", unrelated_failure=True)
         self.assertTrue(any(OLD in failure for failure in report["failures"]))
+
+    def test_older_success_does_not_excuse_newer_failed_run(self) -> None:
+        report = _run_watchdog(new_status="success", newer_failed_run=True)
+        self.assertTrue(any(HEAD in failure for failure in report["failures"]))
+        self.assertTrue(any(BASELINE in failure for failure in report["failures"]))

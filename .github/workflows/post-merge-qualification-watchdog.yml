@@ -79,7 +79,7 @@ jobs:
                   break
               cursor = parents[0]["sha"]
           runs_payload = get_json(
-              f"/repos/{repository}/actions/runs",
+              f"/repos/{repository}/actions/workflows/post-merge-qualification.yml/runs",
               {"branch": "main", "event": "push", "per_page": 100},
           )
           runs = runs_payload.get("workflow_runs", [])
@@ -93,6 +93,18 @@ jobs:
               if isinstance(head_sha, str):
                   runs_by_sha.setdefault(head_sha, []).append(run)
 
+          def latest_run(sha: str) -> dict | None:
+              # A fresh dispatch gets a higher run ID; a rerun of the same
+              # dispatch increments its attempt. Older successes must never
+              # mask a newer failed qualification of the same source tree.
+              return max(
+                  runs_by_sha.get(sha, []),
+                  key=lambda run: (
+                      int(run.get("id") or 0), int(run.get("run_attempt") or 0)
+                  ),
+                  default=None,
+              )
+
           # The first integration push was cancelled by its original 30-minute
           # limit. Its historical failure must remain visible, but a later
           # successful qualification of a first-parent descendant tests that
@@ -100,9 +112,11 @@ jobs:
           # Never excuse the cancellation while the latest main run is pending
           # or failed; never excuse an unrelated commit's failed run.
           newest_main_sha = commits[0]["sha"]
-          newest_main_qualified = any(
-              run.get("status") == "completed" and run.get("conclusion") == "success"
-              for run in runs_by_sha.get(newest_main_sha, [])
+          newest_main_run = latest_run(newest_main_sha)
+          newest_main_qualified = (
+              newest_main_run is not None
+              and newest_main_run.get("status") == "completed"
+              and newest_main_run.get("conclusion") == "success"
           )
 
           report: list[dict[str, object]] = []
@@ -122,12 +136,8 @@ jobs:
                   "age_minutes": round(age_minutes, 2),
               }
 
-              matching = sorted(
-                  runs_by_sha.get(sha, []),
-                  key=lambda run: int(run.get("run_attempt") or 0),
-                  reverse=True,
-              )
-              if not matching:
+              latest = latest_run(sha)
+              if latest is None:
                   record["qualification"] = "within_grace"
                   if age_minutes >= missing_grace_minutes:
                       record["qualification"] = "missing"
@@ -138,7 +148,6 @@ jobs:
                   report.append(record)
                   continue
 
-              latest = matching[0]
               record.update(
                   {
                       "qualification": latest.get("status"),
