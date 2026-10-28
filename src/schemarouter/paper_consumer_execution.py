@@ -16,6 +16,7 @@ from .models import ExecutionPlan, ToolResult
 from .native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
 from .native_graph_observation import _materialize_original_observed_edge
 from .paper_observed_binding import observe_and_bind_paper_plan
+from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
     PaperTypedToolPlan,
     _check_current_call_scopes,
@@ -107,6 +108,8 @@ async def observe_and_execute_paper_understood_graph(
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
     max_hops: int = 2,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
 ) -> PaperUnderstoodExecutedGraph:
     """Explicit E0 1-/2-hop named G5 DAG using the registered executor only.
 
@@ -115,29 +118,57 @@ async def observe_and_execute_paper_understood_graph(
     observer before the independently authorized next tool runs. No partial
     receipt is published when any step fails or the source proof changes.
     """
-    owner_claims = (
-        principal.model_dump_json(), understanding.model_dump_json(),
-        catalog.model_dump_json(), intent_registry.model_dump_json(),
-    )
+    if (
+        rank_policy is not None
+        and not isinstance(rank_policy, PaperNativeRankPolicy)
+    ):
+        raise ValueError("A9 owner-reviewed Rank policy required")
+    if (
+        type(allow_unnamed_graph_discovery) is not bool
+        or allow_unnamed_graph_discovery and rank_policy is None
+    ):
+        raise ValueError("A9 unnamed G5 execution requires host-approved owner Rank")
+    try:
+        initial_rank_policy = (
+            rank_policy.model_dump_json() if rank_policy is not None else None
+        )
+        owner_claims = (
+            principal.model_dump_json(), understanding.model_dump_json(),
+            catalog.model_dump_json(), intent_registry.model_dump_json(),
+        )
+    except Exception:
+        raise PolicyViolationError("A9 owner source declarations invalid") from None
     host_snapshot = deepcopy(host_source_arguments)
     pinned_principal = principal.model_copy(deep=True)
 
     def check_owner() -> None:
-        if (
-            (
-                principal.model_dump_json(), understanding.model_dump_json(),
-                catalog.model_dump_json(), intent_registry.model_dump_json(),
-            ) != owner_claims
-            or pinned_principal.model_dump_json() != owner_claims[0]
-            or host_source_arguments != host_snapshot
-        ):
-            raise PolicyViolationError("paper named graph principal or source declarations changed")
+        try:
+            changed = (
+                (
+                    principal.model_dump_json(), understanding.model_dump_json(),
+                    catalog.model_dump_json(), intent_registry.model_dump_json(),
+                ) != owner_claims
+                or pinned_principal.model_dump_json() != owner_claims[0]
+                or host_source_arguments != host_snapshot
+                or (
+                    rank_policy.model_dump_json() if rank_policy is not None else None
+                ) != initial_rank_policy
+            )
+        except Exception:
+            raise PolicyViolationError(
+                "paper named graph owner source declarations changed"
+            ) from None
+        if changed:
+            raise PolicyViolationError(
+                "paper named graph principal or source declarations changed"
+            )
 
     check_owner()
     original = compile_paper_understood_graph_plan(
         router, understanding, principal=pinned_principal, catalog=catalog,
         intent_registry=intent_registry, index=index, k=k, max_hops=max_hops,
-        host_source_arguments=host_snapshot,
+        host_source_arguments=host_snapshot, rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )
     if (
         original.status != "requires_observation"
@@ -164,7 +195,8 @@ async def observe_and_execute_paper_understood_graph(
         current = compile_paper_understood_graph_plan(
             router, understanding, principal=pinned_principal, catalog=catalog,
             intent_registry=intent_registry, index=index, k=k, max_hops=max_hops,
-            host_source_arguments=host_snapshot,
+            host_source_arguments=host_snapshot, rank_policy=rank_policy,
+            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )
         if current != original:
             raise PolicyViolationError("paper named graph original G5 proof changed")
