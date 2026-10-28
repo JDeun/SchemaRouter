@@ -223,6 +223,37 @@ def test_owner_approved_direct_scalar_is_bound_without_trusting_model_hint():
     assert plan.executable_authority is False
 
 
+def test_public_field_discovery_preserves_only_visible_identifiers_of_approved_root():
+    """Algorithm 1 Identifiers(t) applies to approved roots within current scope."""
+    router = _router()
+    session = router.prepare_field_routing(
+        catalog=_catalog(),
+        approved_host_roots=frozenset({"parameterized.read"}),
+    )
+    result = session.discover("case status", principal=ANALYST)
+    assert result.status == "complete"
+    assert [alternative.routes[0].route_id for alternative in result.alternatives] == [
+        "parameterized.read"
+    ]
+    assert result.alternatives[0].routes[0].output_fields == ("status", "case_id")
+
+    original = router.authorization_policy
+    assert original is not None
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect=original.default_effect, rules=original.rules,
+        data_rules=original.data_rules + (DataScopeRule(
+            operation="parameterized.read", roles_any=("viewer",),
+            hidden_fields=("case_id",),
+        ),),
+    )
+    scoped = router.prepare_field_routing(
+        catalog=_catalog(),
+        approved_host_roots=frozenset({"parameterized.read"}),
+    ).discover("case status", principal=VIEWER)
+    assert scoped.status == "complete"
+    assert scoped.alternatives[0].routes[0].output_fields == ("status",)
+
+
 @pytest.mark.parametrize("arguments", [
     {"parameterized.read": {}},
     {"parameterized.read": {"case_id": "ok", "private": "bad"}},
