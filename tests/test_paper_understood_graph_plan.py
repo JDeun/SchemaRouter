@@ -107,13 +107,14 @@ def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
 
 def _compile(router, *, named_tools=("target_0",), max_hops=2,
              hints=None, index=None, source_type=None, host_source_arguments=None,
-             rank_policy=None, allow_unnamed_graph_discovery=False):
+             rank_policy=None, allow_unnamed_graph_discovery=False,
+             intent_registry=INTENTS):
     return compile_paper_understood_graph_plan(
         router, PaperUnderstanding(
             intent_id="case.lookup", named_tools=named_tools,
             parameter_hints=hints or {}, source_type=source_type,
         ),
-        principal=ACTOR, catalog=CATALOG, intent_registry=INTENTS,
+        principal=ACTOR, catalog=CATALOG, intent_registry=intent_registry,
         index=index or NativeSchemaGraphIndex.build(
             NativeSchemaPostingIndex.build(router.registry),
         ),
@@ -847,3 +848,146 @@ def test_cross_depth_model_named_target_does_not_discover_other_tool_names():
         "root_short.read", "target_short.read",
     )
     assert "target_long" not in repr(only_short)
+
+
+DOMAIN_INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+    intent_id="case.lookup", required_concept_ids=("crm.status",),
+    domains=("cases",),
+),))
+
+
+def test_unnamed_graph_intent_domain_rejects_wrong_domain_before_priority():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=2)
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_domains={
+            "target_0.read": ("finance",),
+            "target_1.read": ("cases",),
+        },
+        route_priorities={"target_0.read": 100},
+    )
+    plan = _compile(
+        router, index=idx, named_tools=(), intent_registry=DOMAIN_INTENTS,
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "requires_observation"
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root.read", "target_1.read",
+    )
+    assert plan.ranked_unverified and not plan.executable_authority
+
+
+def test_model_named_graph_target_overrides_intent_domain_filter():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, n_targets=2)
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_domains={"target_0.read": ("finance",)},
+    )
+    plan = _compile(
+        router, index=idx, named_tools=("target_0",),
+        intent_registry=DOMAIN_INTENTS, rank_policy=policy,
+    )
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root.read", "middle.read", "target_0.read",
+    )
+
+
+def test_unnamed_graph_never_uses_unannotated_or_wrong_domain_targets():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=2)
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_domains={"target_0.read": ("finance",)},
+    )
+    plan = _compile(
+        router, index=idx, named_tools=(),
+        intent_registry=DOMAIN_INTENTS, rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "no_proven_hit"
+    assert plan.calls == () and plan.bindings == ()
+    assert "target_0" not in repr(plan)
+
+
+def test_unnamed_domain_filter_precedes_graph_scoped_target_budget(monkeypatch):
+    from schemarouter import paper_understood_graph_plan
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=12)
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_domains={
+            **{f"target_{i}.read": ("finance",) for i in range(11)},
+            "target_11.read": ("cases",),
+        },
+    )
+    monkeypatch.setattr(paper_understood_graph_plan, "MAX_OWNER_RANKABLE_PATHS", 1)
+    plan = _compile(
+        router, index=idx, named_tools=(),
+        intent_registry=DOMAIN_INTENTS, rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "requires_observation"
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root.read", "target_11.read",
+    )
+    assert not plan.executable_authority
+
+
+def test_unnamed_graph_domain_filters_target_not_required_dependency_root():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, n_targets=1)
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_domains={
+            "root.read": ("finance",),
+            "middle.read": ("finance",),
+            "target_0.read": ("cases",),
+        },
+    )
+    plan = _compile(
+        router, index=idx, named_tools=(),
+        intent_registry=DOMAIN_INTENTS, rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root.read", "middle.read", "target_0.read",
+    )
+    assert plan.ranked_unverified and not plan.executable_authority
+
+
+def test_unnamed_graph_direct_and_dependency_domain_filters_choose_same_target():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=2)
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_domains={
+            "target_0.read": ("finance",), "target_1.read": ("cases",),
+        },
+        route_priorities={"target_0.read": 100},
+    )
+    direct = compile_paper_understood_direct_plan(
+        router, PaperUnderstanding(intent_id="case.lookup", named_tools=()),
+        principal=ACTOR, catalog=CATALOG, intent_registry=DOMAIN_INTENTS,
+        index=idx, rank_policy=policy,
+    )
+    graph = _compile(
+        router, index=idx, named_tools=(),
+        intent_registry=DOMAIN_INTENTS, rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert tuple(c.route_id for c in direct.calls) == ("target_1.read",)
+    assert graph.calls[-1].route_id == direct.calls[0].route_id
