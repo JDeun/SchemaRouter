@@ -15,7 +15,7 @@ from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
 from .native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute
-from .paper_native_rank import PaperNativeRankPolicy
+from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed
 from .paper_typed_tool_plan import (
     PaperPlanBinding,
     PaperPlanCall,
@@ -295,9 +295,48 @@ def compile_paper_understood_graph_plan(
 
     hops = 1
     result = lookup(hops)
-    if result.status == "no_proven_hit" and max_hops == 2:
+    selected_index = 0
+    # With an explicit host-pinned policy, one-hop precedence must not hide
+    # a better complete two-hop DAG. Compare source-proven cohort Top-K5
+    # receipts, never individually ranked nodes or unverified join fragments.
+    cross_depth = rank_policy is not None and max_hops == 2
+    original_cohorts: tuple[Any, Any] | None = None
+    if cross_depth:
+        first = result
+        if first.status == "budget_unsatisfied":
+            return empty("budget_unsatisfied")
+        second = lookup(2)
+        if second.status == "budget_unsatisfied":
+            return empty("budget_unsatisfied")
+        if any(
+            cohort.status not in {
+                "complete", "ranked_unverified", "no_proven_hit",
+            }
+            or cohort.candidates and not cohort.deterministic_paper_ranked
+            for cohort in (first, second)
+        ):
+            raise PolicyViolationError("paper cross-depth G5 proof unverified")
+        # A separate 5,000 limit per depth would expose up to 10,000
+        # qualified DAGs as a global K5 cohort. Check the combined *fully
+        # qualified* count before comparing any returned candidate.
+        if first.qualified_path_count + second.qualified_path_count > (
+            MAX_OWNER_RANKABLE_PATHS
+        ):
+            return empty("budget_unsatisfied")
+        assert rank_policy is not None
+        mixed = rank_authorized_paper_graph_mixed(
+            first.candidates, second.candidates,
+            concept_aliases=rank_aliases, policy=rank_policy, k=k,
+        )
+        if not mixed:
+            return no_graph_hit()
+        hops, selected_index = mixed[0]
+        result = first if hops == 1 else second
+        original_cohorts = (first, second)
+    elif result.status == "no_proven_hit" and max_hops == 2:
         hops = 2
         result = lookup(hops)
+
     if result.status not in {"complete", "ranked_unverified"}:
         if result.status not in {
             "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
@@ -320,7 +359,7 @@ def compile_paper_understood_graph_plan(
 
     if not result.candidates:
         return empty("no_proven_hit")
-    candidate = result.candidates[0]
+    candidate = result.candidates[selected_index]
     if hops == 1:
         route_ids = (candidate.producer_route_id, candidate.consumer_route_id)
         binding_maps = (
@@ -409,7 +448,15 @@ def compile_paper_understood_graph_plan(
 
     try:
         first_calls, first_edges = materialize()
-        if lookup(hops) != result or materialize() != (first_calls, first_edges):
+        # The second-depth probe can call a mutable host availability
+        # predicate. Re-attest BOTH entire qualified cohorts, not just the
+        # winning branch, before publishing a selected proof.
+        if original_cohorts is not None:
+            if (lookup(1), lookup(2)) != original_cohorts:
+                raise PolicyViolationError("paper cross-depth G5 proof changed")
+        elif lookup(hops) != result:
+            raise PolicyViolationError("paper named graph source proof changed")
+        if materialize() != (first_calls, first_edges):
             raise PolicyViolationError("paper named graph source proof changed")
         _check_current_call_scopes(router, principal, list(first_calls))
     except Exception:
