@@ -807,7 +807,10 @@ def test_cross_depth_mutable_availability_revocation_fails_before_returning_plan
     state = {"short_available": True}
 
     def check_availability(tool, _endpoint):
-        if tool.key == "middle_long":
+        # middle_long is also a direct predecessor and is touched by the
+        # one-hop probe. Only root_long belongs exclusively to the
+        # two-hop traversal, so its callback mutates a *prior* cohort.
+        if tool.key == "root_long":
             state["short_available"] = False
         if tool.key == "root_short":
             return state["short_available"]
