@@ -66,6 +66,10 @@ def test_public_review_pages_cover_500_source_routes() -> None:
     assert report["reviewed_route_count"] > 0
     assert report["page_count"] >= 1
     assert report["serialized_page_bytes"] > 0
+    assert report["page_latency_ms"]["p99"] >= report["page_latency_ms"]["p50"]
+    assert report["page_cpu_ms"]["p99"] >= report["page_cpu_ms"]["p50"]
+    if report["process_peak_rss_before_kib"] is not None:
+        assert report["process_peak_rss_after_kib"] >= report["process_peak_rss_before_kib"]
 
 
 @pytest.mark.parametrize("route_count", (500, 5000))
