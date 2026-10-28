@@ -1022,6 +1022,13 @@ class NativeSchemaGraphIndex:
                     parameter_bindings=tuple(bindings),
                     source_root_parameters=root_required,
                 ))
+                if owner_rank is not None and len(found) > MAX_OWNER_RANKABLE_PATHS:
+                    # No partial count or source names leave an oversized cohort.
+                    # Bound expansion before any 5001+ path memory growth.
+                    return NativeIndexedGraphResult(
+                        "budget_unsatisfied", self.field_index.snapshot_id,
+                        self.field_index.registry_version, k, 0, (),
+                    )
         # The availability predicate can be the SAME callable while its
         # underlying live health set changes during a multi-route lookup.
         # Revalidate *all* qualified paths before publishing either a
@@ -1100,11 +1107,6 @@ class NativeSchemaGraphIndex:
             except Exception:
                 raise PolicyViolationError("G5 Rank owner declaration changed") from None
         if owner_rank is not None:
-            if len(found) > MAX_OWNER_RANKABLE_PATHS:
-                return NativeIndexedGraphResult(
-                    "budget_unsatisfied", self.field_index.snapshot_id,
-                    self.field_index.registry_version, k, 0, (),
-                )
             positions = rank_authorized_paper_graph_one_hop(
                 tuple(found), concept_aliases=_paper_rank_aliases,
                 policy=owner_rank, k=k,
