@@ -16,6 +16,7 @@ from typing import Any
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.agent_utility_generated_common import GeneratedEpisodeAgent
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
@@ -174,6 +175,8 @@ async def run_paper_scoped_answered_graph_a9_e0(
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     review_model_root_arguments: PaperRootArgumentReviewer | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
 ) -> tuple[Decision, PaperScopedAnsweredGraph | None]:
     """Run exactly one tool-free presentation after a completed G5 graph.
 
@@ -182,18 +185,36 @@ async def run_paper_scoped_answered_graph_a9_e0(
     """
     if not isinstance(view, AuthorizedAgentToolSurface):
         raise ValueError("captured scoped view required")
+    if (
+        type(allow_unnamed_graph_discovery) is not bool
+        or allow_unnamed_graph_discovery and rank_policy is None
+    ):
+        raise ValueError("paper A9 finalizer needs host-approved owner Rank")
+    if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
+        raise ValueError("paper A9 finalizer needs reviewed Rank declaration")
     view.assert_source_unchanged()
     original_catalog = catalog.model_dump_json()
     original_intents = intent_registry.model_dump_json()
     original_host_args = deepcopy(host_source_arguments)
+    try:
+        original_rank = rank_policy.model_dump_json() if rank_policy is not None else None
+    except Exception:
+        raise PolicyViolationError("paper answer Rank declaration invalid") from None
 
     def check_host() -> None:
         view.assert_source_unchanged()
-        if (
-            catalog.model_dump_json() != original_catalog
-            or intent_registry.model_dump_json() != original_intents
-            or host_source_arguments != original_host_args
-        ):
+        try:
+            changed = (
+                catalog.model_dump_json() != original_catalog
+                or intent_registry.model_dump_json() != original_intents
+                or host_source_arguments != original_host_args
+                or (
+                    rank_policy.model_dump_json() if rank_policy is not None else None
+                ) != original_rank
+            )
+        except Exception:
+            raise PolicyViolationError("paper answer source declarations changed") from None
+        if changed:
             raise PolicyViolationError("paper answer source declarations changed")
 
     decision, receipt = await run_paper_scoped_named_graph_a9_e0(
@@ -203,6 +224,8 @@ async def run_paper_scoped_answered_graph_a9_e0(
         model_visible_concept_ids=model_visible_concept_ids,
         host_source_arguments=host_source_arguments,
         review_model_root_arguments=review_model_root_arguments,
+        rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )
     check_host()
     if decision != "offer" or receipt is None:
