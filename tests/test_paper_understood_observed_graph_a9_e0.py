@@ -609,3 +609,94 @@ async def test_ranked_unnamed_g5_changed_live_policy_blocks_downstream_execution
             rank_policy=policy, allow_unnamed_graph_discovery=True,
         )
     assert [name for name, _ in seen] == ["root", "middle"]
+
+
+def _mixed_depth_bound_execution_fixture(*, on_step=None):
+    """One direct producer and a genuinely different two-hop target."""
+    from test_paper_understood_graph_plan import _node
+
+    seen: list[str] = []
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+    ))
+    nodes = (
+        ("root_short", None, "crm.case_id", {"case_id": "case-short"}),
+        ("root_long", None, "crm.contact_id", {"contact_id": "contact-long"}),
+        ("middle_long", "crm.contact_id", "crm.account_id", {"account_id": "account-long"}),
+        ("target_short", "crm.case_id", "crm.status", {"status": "short"}),
+        ("target_long", "crm.account_id", "crm.status", {"status": "long"}),
+    )
+    for name, input_semantic, output_semantic, output in nodes:
+        def invoke(_endpoint, _arguments, *, route=name, data=output):
+            seen.append(route)
+            if on_step is not None:
+                on_step(router, route)
+            return data
+        router.add_bound_tool(
+            _node(
+                name, input_semantic=input_semantic,
+                output_semantic=output_semantic, identifier=name.startswith("root")
+                or name == "middle_long",
+            ),
+            invoke,
+        )
+    idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    return router, idx, seen
+
+
+@pytest.mark.asyncio
+async def test_a9_owner_rank_cross_depth_executes_only_higher_ranked_two_hop_dag():
+    from schemarouter.paper_consumer_execution import observe_and_execute_paper_understood_graph
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router, index, seen = _mixed_depth_bound_execution_fixture()
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 100},
+    )
+    receipt = await observe_and_execute_paper_understood_graph(
+        router, PaperUnderstanding(
+            intent_id="case.lookup",
+            named_tools=("target_short", "target_long"),
+        ),
+        principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+        catalog=CATALOG, intent_registry=INTENTS, index=index,
+        rank_policy=policy,
+    )
+    assert seen == ["root_long", "middle_long", "target_long"]
+    assert len(receipt.results) == 3
+    assert receipt.results[-1].data == {"status": "long"}
+    assert receipt.plan.ranked_unverified
+    assert not receipt.executable_authority and not receipt.independent_e2
+
+
+@pytest.mark.asyncio
+async def test_a9_cross_depth_policy_mutation_at_root_blocks_other_hops():
+    from schemarouter.paper_consumer_execution import observe_and_execute_paper_understood_graph
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    state = {}
+    def mutate(_router, name):
+        if name == "root_long":
+            state["rank"].route_priorities["target_short.read"] = 100
+
+    router, index, seen = _mixed_depth_bound_execution_fixture(on_step=mutate)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 80},
+    )
+    state["rank"] = policy
+    with pytest.raises(PolicyViolationError, match="source declarations|changed"):
+        await observe_and_execute_paper_understood_graph(
+            router, PaperUnderstanding(
+                intent_id="case.lookup",
+                named_tools=("target_short", "target_long"),
+            ),
+            principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+            catalog=CATALOG, intent_registry=INTENTS, index=index,
+            rank_policy=policy,
+        )
+    assert seen == ["root_long"]
