@@ -992,3 +992,29 @@ def test_unnamed_graph_direct_and_dependency_domain_filters_choose_same_target()
     )
     assert tuple(c.route_id for c in direct.calls) == ("target_1.read",)
     assert graph.calls[-1].route_id == direct.calls[0].route_id
+
+
+def test_prepared_session_unnamed_g5_uses_owner_reviewed_intent_domains():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, n_targets=2)
+    session = router.prepare_field_routing(catalog=CATALOG)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_domains={
+            "target_0.read": ("finance",),
+            "target_1.read": ("cases",),
+            "root.read": ("finance",),
+            "middle.read": ("finance",),
+        },
+        route_priorities={"target_0.read": 100},
+    )
+    plan = session.compile_understood(
+        PaperUnderstanding(intent_id="case.lookup"),
+        principal=ACTOR, intent_registry=DOMAIN_INTENTS,
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root.read", "middle.read", "target_1.read",
+    )
+    assert plan.ranked_unverified and not plan.executable_authority
