@@ -48,15 +48,14 @@ def test_review_views_are_immutable_and_ignore_empty_semantics() -> None:
 
 def test_public_review_pages_cover_500_source_routes() -> None:
     """Exercise the public, scoped cursor path rather than only index helpers."""
-    from schemarouter import PrincipalContext
-    from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
+    from scripts.benchmark_native_fork_fieldgroup_e0 import ACTOR, build_fixture
     from scripts.benchmark_native_review_pagination_b1 import benchmark_review_pages
 
     router = build_fixture(500)
     session = router.prepare_field_routing()
     report = benchmark_review_pages(
         session,
-        principal=PrincipalContext(subject="researcher", roles=("analyst",)),
+        principal=ACTOR,
         limit=64,
     )
     assert report["source_snapshot"] == session.snapshot_id
