@@ -18,6 +18,7 @@ from .models import StrictModel
 
 if TYPE_CHECKING:
     from .native_semantic_index import IndexedNativeFieldCandidate
+    from .native_graph_index import NativeIndexedGraphCandidate, NativeIndexedTwoHopCandidate
 
 
 _DOMAIN_ID = re.compile(r"[a-zA-Z][a-zA-Z0-9._:-]{0,79}\Z")
@@ -148,3 +149,76 @@ def rank_authorized_paper_direct(
         )
 
     return tuple(heapq.nsmallest(k, range(len(candidates)), key=rank_key))
+
+
+_MAX_RANKABLE_GRAPH_PATHS = 5_000
+
+
+def _rank_verified_graph_paths(
+    paths: tuple[tuple[tuple[str, ...], tuple[str, ...], int], ...],
+    *,
+    concept_aliases: tuple[tuple[str, ...], ...],
+    policy: PaperNativeRankPolicy,
+    k: int,
+) -> tuple[int, ...]:
+    """Rank complete, already authorized dependency DAGs, not isolated nodes."""
+    if type(k) is not int or k != 5 or not isinstance(policy, PaperNativeRankPolicy):
+        raise ValueError("G5 paper Rank requires K5 and reviewed owner policy")
+    if len(paths) > _MAX_RANKABLE_GRAPH_PATHS:
+        raise ValueError("G5 paper Rank exceeds 5000 qualified paths")
+    identifiers = tuple(route_ids for route_ids, _, _ in paths)
+    if len(set(identifiers)) != len(identifiers) or any(
+        not route_ids or len(set(route_ids)) != len(route_ids)
+        or breadth < 1
+        for route_ids, _names, breadth in paths
+    ):
+        raise ValueError("G5 paper Rank requires distinct complete paths")
+
+    web = set(policy.web_route_ids)
+
+    def key(index: int) -> tuple[int, int, bool, int, int, tuple[str, ...]]:
+        route_ids, names, breadth = paths[index]
+        exact, partial = _concept_match_strength(names, concept_aliases)
+        return (
+            -exact, -partial, bool(web.intersection(route_ids)),
+            -policy.route_priorities.get(route_ids[-1], 0),
+            breadth, route_ids,
+        )
+
+    return tuple(heapq.nsmallest(k, range(len(paths)), key=key))
+
+
+def rank_authorized_paper_graph_one_hop(
+    candidates: tuple[NativeIndexedGraphCandidate, ...],
+    *,
+    concept_aliases: tuple[tuple[str, ...], ...],
+    policy: PaperNativeRankPolicy,
+    k: int = 5,
+) -> tuple[int, ...]:
+    """Rank only original 1-hop complete DAG receipts after G5 proof."""
+    paths = tuple((
+        (candidate.producer_route_id, candidate.consumer_route_id),
+        candidate.consumer_output_fields,
+        len(candidate.consumer_output_fields) + len(candidate.parameter_bindings),
+    ) for candidate in candidates)
+    return _rank_verified_graph_paths(
+        paths, concept_aliases=concept_aliases, policy=policy, k=k,
+    )
+
+
+def rank_authorized_paper_graph_two_hop(
+    candidates: tuple[NativeIndexedTwoHopCandidate, ...],
+    *,
+    concept_aliases: tuple[tuple[str, ...], ...],
+    policy: PaperNativeRankPolicy,
+    k: int = 5,
+) -> tuple[int, ...]:
+    """Rank only original 2-hop complete DAG receipts after G5 proof."""
+    paths = tuple((
+        candidate.route_ids, candidate.target_output_fields,
+        len(candidate.target_output_fields) + len(candidate.root_to_intermediate)
+        + len(candidate.intermediate_to_target),
+    ) for candidate in candidates)
+    return _rank_verified_graph_paths(
+        paths, concept_aliases=concept_aliases, policy=policy, k=k,
+    )
