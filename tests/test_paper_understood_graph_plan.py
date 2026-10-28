@@ -543,3 +543,48 @@ def test_unnamed_graph_discovery_does_not_resurrect_hidden_or_denied_root():
         assert tuple(c.route_id for c in plan.calls) == ("target_0.read",)
         assert plan.bindings == ()
         assert "middle.read" not in repr(plan)
+
+
+def test_unnamed_graph_direct_fallback_does_not_survive_live_health_revocation():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(snapshot_id=index.field_index.snapshot_id)
+    health = {"target": True}
+    secret = "PRIVATE_AVAILABILITY_REASON_abc"
+
+    def availability(tool, _endpoint):
+        if tool.key == "middle":
+            health["target"] = False
+        if tool.key == "target_0":
+            return health["target"]
+        return True
+
+    router.planner.availability_predicate = availability
+    with pytest.raises(PolicyViolationError, match="changed|eligibility|source") as err:
+        _compile(
+            router, index=index, named_tools=(), rank_policy=policy,
+            allow_unnamed_graph_discovery=True,
+        )
+    assert secret not in str(err.value)
+
+
+def test_unnamed_graph_discovery_never_discards_unproved_host_root_arguments():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, hidden_middle=True)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(snapshot_id=index.field_index.snapshot_id)
+    unproved_inputs = {"root.read": {"case_id": "HOST"}}
+    plan = _compile(
+        router, index=index, named_tools=(), rank_policy=policy,
+        host_source_arguments=unproved_inputs,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "no_proven_hit"
+    assert plan.calls == () and plan.bindings == ()
