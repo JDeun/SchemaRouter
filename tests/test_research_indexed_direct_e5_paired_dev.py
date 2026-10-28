@@ -26,6 +26,23 @@ def test_public_synthetic_direct_index_benchmark_has_fixed_roster_and_gold_is_sc
     assert report["product_default_promoted"] is False
     assert report["languages"] == LANGUAGES
     assert report["total_lookup_calls_measured"] == 30
+    assert report["baseline_total_lookup_calls_measured"] == 30
+    assert len(report["input_roster_sha256"]) == 64
+    assert report["supported_abstentions"] == 0
+    assert report["ood_abstentions"] == 0
+    assert report["baseline_ood_nonempty"] == 3
+    assert report["baseline_scorer_only_hits_at_5"] >= 0
+    assert report["baseline_supported_recall_at_5"] == pytest.approx(
+        report["baseline_scorer_only_hits_at_5"] / 27
+    )
+    assert report["paired_recall_delta_at_5"] == pytest.approx(
+        report["supported_recall_at_5"] - report["baseline_supported_recall_at_5"]
+    )
+    assert (
+        report["baseline_latency_ms_p50"]
+        <= report["baseline_latency_ms_p95"]
+        <= report["baseline_latency_ms_p99"]
+    )
     assert sum(r["supported_count"] for r in report["by_language"].values()) == 27
     assert sum(r["ood_count"] for r in report["by_language"].values()) == 3
     assert sum(r["hits_at_5"] for r in report["by_language"].values()) == (
@@ -61,12 +78,44 @@ def test_actual_injected_decision_backend_runs_with_only_scoped_options():
     assert all(report["by_language"][lang]["ood_nonempty"] == 1 for lang in LANGUAGES)
 
 
-def test_abstaining_backend_does_not_fake_supported_success_or_no_fit():
+def test_abstaining_backend_scores_supported_misses_and_unverified_ood():
     def abstain(_request):
         return {"abstained": True}
 
-    with pytest.raises(ValueError, match="invalid ranked Top-K5"):
-        run(CallableDecisionBackend(abstain))
+    report = run(CallableDecisionBackend(abstain))
+    assert report["supported_cases"] == 27
+    assert report["supported_abstentions"] == 27
+    assert report["scorer_only_hits_at_5"] == 0
+    assert report["supported_recall_at_5"] == 0
+    assert report["ood_abstentions"] == 3
+    assert report["ood_nonempty"] == 0
+    assert report["baseline_ood_nonempty"] == 3
+    assert report["calibrated_no_fit"] is False
+    assert report["independent_publisher_gold"] is False
+    assert report["paired_recall_delta_at_5"] == pytest.approx(
+        -report["baseline_supported_recall_at_5"]
+    )
+
+
+def test_injected_ranker_is_scored_against_same_first_five_cohort():
+    def choose_last_five(request):
+        return {"selections": [
+            {"option_id": option.id}
+            for option in request.options[-5:]
+        ]}
+
+    ranked = run(CallableDecisionBackend(choose_last_five))
+    baseline = run()
+    assert ranked["input_roster_sha256"] == baseline["input_roster_sha256"]
+    assert ranked["baseline_scorer_only_hits_at_5"] == (
+        baseline["baseline_scorer_only_hits_at_5"]
+    )
+    assert ranked["baseline_ood_nonempty"] == baseline["baseline_ood_nonempty"]
+    assert ranked["supported_recall_at_5"] != baseline["supported_recall_at_5"]
+    assert ranked["paired_recall_delta_at_5"] == pytest.approx(
+        ranked["supported_recall_at_5"]
+        - ranked["baseline_supported_recall_at_5"]
+    )
 
 
 def test_percentile_fixed_interpolation():
