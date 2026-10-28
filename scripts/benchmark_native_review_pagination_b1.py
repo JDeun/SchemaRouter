@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import resource
 import sys
 from dataclasses import asdict
 from math import ceil
@@ -46,6 +47,8 @@ def benchmark_review_pages(
     cursor = None
     seen: set[str] = set()
     last_route: str | None = None
+    # Linux ru_maxrss is process peak KiB, not an isolated allocation delta.
+    peak_rss_before_kib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     wall_ms: list[float] = []
     cpu_ms: list[float] = []
     serialized_bytes = 0
@@ -83,6 +86,8 @@ def benchmark_review_pages(
     return {
         "provenance": EVIDENCE,
         "source_snapshot": session.snapshot_id,
+        "process_peak_rss_before_kib": peak_rss_before_kib,
+        "process_peak_rss_after_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "source_route_count": session.indexed_route_count,
         "reviewed_route_count": len(seen),
         "requested_page_size": limit,
@@ -106,6 +111,8 @@ def main() -> None:
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "evidence_tier": "E0_SYNTHETIC_NOT_PUBLISHER_E2",
+        "rss_unit": "KiB (Linux ru_maxrss; process lifetime peak)",
+        "measurement_runs": 1,
     }, ensure_ascii=False, sort_keys=True))
 
 
