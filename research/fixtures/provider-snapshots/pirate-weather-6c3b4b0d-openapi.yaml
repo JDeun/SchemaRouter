@@ -1,0 +1,1751 @@
+openapi: 3.1.0
+info:
+  version: "2.10.3"
+  title: Pirate Weather API
+  description: Pirate Weather provides an open, free, and documented source of government weather data.
+  termsOfService: https://pirate-weather.apiable.io/terms
+  contact:
+    email: mail@pirateweather.net
+  license:
+    name: Apache License 2.0
+    url: https://github.com/Pirate-Weather/pirateweather/blob/main/LICENSE.md
+externalDocs:
+  description: Full API reference
+  url: https://pirate-weather.apiable.io/full-api-reference
+tags:
+  - name: Weather
+    description: Pirate Weather provides an open, free, and documented source of government weather data.
+      
+paths:
+  "/forecast/{api_key}/{lat_and_long_or_time}":
+    get:
+      tags:
+        - Weather
+      operationId: Weather
+      summary: Make a request to Pirate Weather
+      description: Fetch a weather forecast or get historical weather data based on latitude/longitude or city/country input.
+      parameters:
+        - name: api_key
+          in: path
+          description: Pirate Weather Authentication Token.
+          required: true
+          schema:
+            type: string
+        - name: lat_and_long_or_time
+          in: path
+          description: A single comma-delimited location string. Use either latitude,longitude or city,country. Optionally append a UNIX timestamp, ISO 8601 date string, or relative negative time in seconds (S), hours (H), or days (D). Examples include '45.42,-75.69', 'Ottawa,Canada', 'New%20York,US', and 'Paris,France,1704067200'.
+          required: true
+          schema:
+            type: string
+            examples:
+              - '45.42,-75.69'
+              - 'Ottawa,Canada'
+              - 'New%20York,US'
+              - 'Paris,France,1704067200'
+        - name: exclude
+          in: query
+          description: A comma-separated list of keys to exclude (currently, minutely, hourly, daily, day_night, flags, alerts), models (nbm, hrrr, gefs, gfs, ecmwf_ifs, dwd_mosmix, rtma_ru, aigefs, aigfs, ecmwf_aifs, raqdps, silam, hrdps, gdps, geps, reps), or detailed text summaries (summary) from the Pirate Weather forecast response. Use cmc or cmcmodels to exclude all four Canadian models. Exclude takes precedence over include-based feature flags.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - summary
+                - currently
+                - minutely
+                - hourly
+                - daily
+                - day_night
+                - flags
+                - alerts
+                - nbm
+                - hrrr
+                - gefs
+                - gfs
+                - aigefs
+                - aigfs
+                - ecmwf_aifs
+                - raqdps
+                - silam
+                - rtma_ru
+                - ecmwf_ifs
+                - dwd_mosmix
+                - hrdps
+                - gdps
+                - geps
+                - reps
+                - cmc
+                - cmcmodels
+        - name: days
+          in: query
+          description: For historical requests, return 1 to 8 days of daily data. Defaults to 1 day. Hourly output defaults to days multiplied by 24 unless hours is supplied.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 8
+            default: 1
+            example: 8
+        - name: hours
+          in: query
+          description: For historical requests, return 1 to 192 hours of hourly data. Defaults to days multiplied by 24. This overrides the hourly output length without changing the requested number of daily entries. Ignored for forecast requests.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 192
+            example: 48
+        - name: extend
+          in: query
+          description: Fetch the next 168 hours (7 days) worth of hourly data, instead of the next 48.
+          schema:
+            type: string
+            enum:
+              - hourly
+        - name: extraVars
+          in: query
+          description: Add additional variables to the response.
+          schema:
+            type: string
+            enum:
+              - stationPressure      
+        - name: lang
+          in: query
+          description: Returns the forecast summaries in the desired language.
+          schema:
+            type: string
+            enum:
+              - ar
+              - az
+              - be
+              - bg
+              - bn
+              - bs
+              - ca
+              - cs
+              - cy
+              - da
+              - de
+              - el
+              - en
+              - eo
+              - es
+              - et
+              - fa
+              - fi
+              - fr
+              - ga
+              - gd
+              - he
+              - hi
+              - hr
+              - hu
+              - id
+              - is
+              - it
+              - ja
+              - ka
+              - kn
+              - ko
+              - kw
+              - lv
+              - ml
+              - mr
+              - nl
+              - no
+              - pa
+              - pl
+              - pt
+              - ro
+              - ru
+              - sk
+              - sl
+              - sr
+              - sv
+              - ta
+              - te
+              - tet
+              - tr
+              - uk
+              - ur
+              - vi
+              - x-pig-latin
+              - zh
+              - zh-tw
+        - name: units
+          in: query
+          description: Return the weather forecast data in the requested unit system.
+          schema:
+            type: string
+        - name: aqiunits
+          in: query
+          description: Override the air quality index scale independently of weather units. Values are case-insensitive. ca selects Canadian AQHI; us selects US EPA AQI; eu selects normalized EAQI on the legacy CAQI scale; uk selects UK DAQI; hk, ie, il, id, cn, my, and vn select the local indexes for Hong Kong, Ireland, Israel, Indonesia, China, Malaysia, and Vietnam. Missing or unrecognized values use the index associated with units.
+          schema:
+            type: string
+            examples:
+              - ca
+              - us
+              - eu
+              - uk
+              - hk
+              - ie
+              - il
+              - id
+              - cn
+              - my
+              - vn
+        - name: version
+          in: query
+          description: Include fields which were not part of the Dark Sky API but were introduced in API version 2, including airQualityIndex and the daily airQualityIndexMax and airQualityIndexMin fields.
+          schema:
+            type: integer
+        - name: tmextra
+          in: query
+          description: Include the full set of parameters in recent time machine requests.
+          schema:
+            type: integer    
+        - name: icon
+          in: query
+          description: Changes the icon field to return icons which aren't part of the Dark Sky icon set.
+          schema:
+            type: string   
+        - name: include
+          in: query
+          description: A comma-separated list of extra blocks or model families. Use airqualitydetails with version>=2 to include detailed pollutant concentrations in currently and hourly. Use aimodels to prefer supported AI values and exclude the Canadian models (HRDPS, GDPS, GEPS, and REPS).
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - day_night_forecast
+                - aimodels
+                - airqualitydetails
+        - name: blocks
+          in: query
+          description: A comma-delimited allowlist of response blocks to return. Supported blocks are currently, minutely, hourly, daily, day_night, alerts, and flags.
+          schema:
+            type: string
+            example: currently,hourly
+        - name: daily_indices
+          in: query
+          description: A comma-delimited list of zero-based indices to return from daily.data.
+          schema:
+            type: string
+            example: 0,1,2
+        - name: hourly_indices
+          in: query
+          description: A comma-delimited list of zero-based indices to return from hourly.data.
+          schema:
+            type: string
+            example: 0,1,2,6
+        - name: day_night_indices
+          in: query
+          description: A comma-delimited list of zero-based indices to return from day_night.data.
+          schema:
+            type: string
+            example: 0,1
+                
+      responses:
+        "400":
+          description: "Bad Request. Longitude or Latitude is invalid, or one of the filtering query parameters is malformed."
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                    description: The error message
+                    example: "Invalid Location Specification"
+        "401":
+          description: "API key does not have access to the queried endpoint or if you did not include an API key in your request."
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Kong Error Invalid authentication credentials.
+        "404":
+          description: "You queried the API using an invalid route or if you do not supply a latitude or longitude in your request."
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    description: The error message.
+                    example: "no Route matched with those values"
+        "429":
+          description: "Your your API key has hit the quota for the month."
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Kong Error API rate limit exceeded.
+        "500":
+          description: "Internal Server Error."
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    description: The error message.
+                    example: "Internal Server Error"
+        "502":
+          description: "Bad Gateway."
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    description: The error message.
+                    example: "An invalid response was received from the upstream server"
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  latitude:
+                    $ref: "#/components/schemas/latitude"
+                  longitude:
+                    $ref: "#/components/schemas/longitude"
+                  timezone:
+                    $ref: "#/components/schemas/timezone"
+                  offset:
+                    $ref: "#/components/schemas/offset"
+                  elevation:
+                    $ref: "#/components/schemas/elevation"
+                  currently:
+                    $ref: "#/components/schemas/currently"
+                  minutely:
+                    $ref: "#/components/schemas/minutely"
+                  hourly:
+                    $ref: "#/components/schemas/hourly"
+                  day_night:
+                    $ref: "#/components/schemas/day_night"
+                  daily:
+                    $ref: "#/components/schemas/daily"
+                  alerts:
+                    $ref: "#/components/schemas/alerts"
+                  flags:
+                    $ref: "#/components/schemas/flags"
+servers:
+  - url: https://api.pirateweather.net
+    description: Production forecast data server
+  - url: https://dev.pirateweather.net
+    description: Development forecast data server
+  - url: https://timemachine.pirateweather.net
+    description: Production historic data server    
+components:
+  schemas:
+    latitude:
+      type: number
+      description: The requested latitude.
+      example: 37.3035
+    longitude:
+      type: number
+      description: The requested longitude.
+      example: -89.523
+    timezone:
+      type: string
+      description: The timezone name for the requested location.
+      example: America/Chicago
+    offset:
+      type: number
+      description: The timezone offset in hours.
+      example: -6
+    elevation:
+      type: number
+      description: The elevation in meters of the forecast point.
+      example: 105
+    currently:
+      type: object
+      description: A block containing the current weather for the requested location.
+      properties:
+        time:
+          type: integer
+          format: int32
+          description: The current time in UNIX format.
+          example: 1762721160
+        summary:
+          type: string
+          description: A human-readable summary of the current weather.
+          example: Breezy and Mostly Clear
+        icon:
+          type: string
+          description: An icon representing the current weather.
+          example: wind
+        nearestStormDistance:
+          type: number
+          description: The distance to the nearest storm.
+          example: 194.97
+        nearestStormBearing:
+          type: integer
+          format: int32
+          description: The direction to the nearest storm in degrees.
+          example: 131
+        precipIntensity:
+          type: number
+          description: The intensity of liquid water equivalent precipitation.
+          example: 0
+        precipProbability:
+          type: number
+          description: The probability of precipitation occurring.
+          example: 0
+        precipIntensityError:
+          type: number
+          description: The standard deviation of the precipitation intensity.
+          example: 0
+        precipType:
+          type: string
+          description: The type of precipitation occurring.
+          example: none
+        rainIntensity:
+          type: number
+          description: The intensity of rain precipitation. Only returned when version>1.
+          example: 0
+        snowIntensity:
+          type: number
+          description: The intensity of snow precipitation. Only returned when version>1.
+          example: 0
+        iceIntensity:
+          type: number
+          description: The intensity of ice precipitation. Only returned when version>1.
+          example: 0
+        temperature:
+          type: number
+          description: The air temperature.
+          example: 42.15
+        apparentTemperature:
+          type: number
+          description: The apparent temperature (feels like).
+          example: 29.95
+        dewPoint:
+          type: number
+          description: The dew point temperature.
+          example: 24.21
+        humidity:
+          type: number
+          description: The relative humidity.
+          example: 0.49
+        pressure:
+          type: number
+          description: The sea-level pressure in hectopascals.
+          example: 1024.45
+        windSpeed:
+          type: number
+          description: The wind speed.
+          example: 17.25
+        windGust:
+          type: number
+          description: The wind gust speed.
+          example: 24.93
+        windBearing:
+          type: integer
+          format: int32
+          description: The direction of the wind in degrees.
+          example: 333
+        cloudCover:
+          type: number
+          description: The fraction of the sky covered by clouds.
+          example: 0.14
+        uvIndex:
+          type: number
+          description: The UV index.
+          example: 2.19
+        visibility:
+          type: number
+          description: The visibility.
+          example: 10
+        ozone:
+          type: number
+          description: The ozone concentration in Dobson units.
+          example: 321.45
+        airQualityIndex:
+          type: number
+          description: The air quality index for the requested location. The scale follows aqiunits when supplied; otherwise us/default uses US EPA AQI, ca uses ECCC AQHI, uk uses UK DAQI, and si uses normalized EAQI on the legacy CAQI scale. Only returned when version>1.
+          example: 42
+        coConcentration:
+          type: number
+          description: The carbon monoxide concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+          example: 126.4
+        no2Concentration:
+          type: number
+          description: The nitrogen dioxide concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+          example: 2.8
+        ozoneConcentration:
+          type: number
+          description: The ozone concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+          example: 36.5
+        so2Concentration:
+          type: number
+          description: The sulfur dioxide concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+          example: 0.4
+        pm10:
+          type: number
+          description: The coarse particulate matter concentration in micrograms per cubic meter (ug/m^3). Only returned when version>=2 and include contains airqualitydetails.
+          example: 8.7
+        pm25:
+          type: number
+          description: The fine particulate matter concentration in micrograms per cubic meter (ug/m^3). Only returned when version>=2 and include contains airqualitydetails.
+          example: 4.6
+        smoke:
+          type: number
+          description: The amount of near-surface smoke in ug/m^3. Only returned when version>1.
+          example: 0.34
+        fireIndex:
+          type: number
+          description: The Fosberg Fire Weather Index, derived from temperature, relative humidity, and wind speed. Only returned when version>1.
+          example: 27.58
+        feelsLike:
+          type: number
+          description: The apparent temperature reported by NBM and gfs. Only returned when version>1.
+          example: 33.75        
+        currentDayIce:
+          type: number
+          description: The ice precipitation that has accumulated so far during the day, from midnight until the forecast request time. Only returned when version>1.
+          example: 0
+        currentDayLiquid:
+          type: number
+          description: The liquid precipitation that has accumulated so far during the day, from midnight until the forecast request time. Only returned when version>1.
+          example: 0
+        currentDaySnow:
+          type: number
+          description: The snow precipitation that has accumulated so far during the day, from midnight until the forecast request time. Only returned when version>1.
+          example: 0    
+        stationPressure:      
+          type: number
+          description: The station pressure hectopascals. Only returned when extraVars contains stationPressure.
+          example: 0
+        solar:
+          type: number
+          description: The Downward Short-Wave Radiation Flux measured in W/m^2. Only returned when version>1.
+          example: 319.73 
+        cape:
+          type: integer
+          format: int32
+          description: The Convective Available Potential Energy measured in J/kg. Only returned when version>1.
+          example: 3
+        liftedIndex:
+          type: integer
+          format: int32
+          description: The lifted index (LI) in °C. Only returned when version>1.
+          example: 15
+        kIndex:
+          type: integer
+          format: int32
+          description: The K-Index (KI) in °C. Only returned when version>1.
+          example: -42
+        verticalVelocity:
+          type: number
+          description: The vertical pressure velocity in Pa/s. Negative values indicate upward motion; positive values indicate downward motion. Only returned when version>1.
+          example: 0.09
+        convectiveInhibition:
+          type: integer
+          format: int32
+          description: The convective inhibition (CIN) in J/kg. Only returned when version>1.
+          example: 0
+    minutely:
+      type: object
+      description: A block containing minute-by-minute precipitation intensity for the next 60 minutes.
+      properties:
+        summary:
+          type: string
+          description: A summary of the minute-by-minute forecast.
+          example: Breezy and mostly clear for the hour.
+        icon:
+          type: string
+          description: An icon representing the minute-by-minute forecast.
+          example: wind
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: integer
+                format: int32
+                description: The time of the data point in UNIX format.
+                example: 1762721160
+              precipIntensity:
+                type: number
+                description: The intensity of precipitation.
+                example: 0
+              precipProbability:
+                type: number
+                description: The probability of precipitation.
+                example: 0.38
+              precipIntensityError:
+                type: number
+                description: The standard deviation of the precipitation intensity.
+                example: 0
+              precipType:
+                type: string
+                description: The type of precipitation occurring.
+                example: none
+              rainIntensity:
+                type: number
+                description: The intensity of rain precipitation. Only returned when version>1.
+                example: 0
+              snowIntensity:
+                type: number
+                description: The intensity of snow precipitation. Only returned when version>1.
+                example: 0
+              sleetIntensity:
+                type: number
+                description: The intensity of sleet precipitation. Only returned when version>1.
+                example: 0
+    hourly:
+      type: object
+      description: A block containing hour-by-hour forecasted conditions for the next 48 hours. If `extend=hourly` is used, the hourly block gives hour-by-hour forecasted conditions for the next 168 hours.
+      properties:
+        summary:
+          type: string
+          description: A summary of the hourly forecast.
+          example: Breezy until this evening, starting again tomorrow morning.
+        icon:
+          type: string
+          description: An icon representing the hourly forecast.
+          example: wind
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: integer
+                format: int32
+                description: The time of the data point in UNIX format.
+                example: 1762718400
+              summary:
+                type: string
+                description: A summary of the weather.
+                example: Breezy and Mostly Clear
+              icon:
+                type: string
+                description: An icon representing the weather.
+                example: wind
+              precipIntensity:
+                type: number
+                description: The intensity of precipitation.
+                example: 0
+              precipProbability:
+                type: number
+                description: The probability of precipitation.
+                example: 0
+              precipIntensityError:
+                type: number
+                description: The standard deviation of the precipitation intensity.
+                example: 0
+              precipAccumulation:
+                type: number
+                description: The total amount of precipitation.
+                example: 0
+              precipType:
+                type: string
+                description: The type of precipitation occurring.
+                example: none
+              rainIntensity:
+                type: number
+                description: The intensity of rain precipitation. Only returned when version>1.
+                example: 0
+              snowIntensity:
+                type: number
+                description: The intensity of snow precipitation. Only returned when version>1.
+                example: 0
+              iceIntensity:
+                type: number
+                description: The intensity of ice precipitation. Only returned when version>1.
+                example: 0
+              temperature:
+                type: number
+                description: The air temperature.
+                example: 42.22
+              apparentTemperature:
+                type: number
+                description: The apparent temperature (feels like).
+                example: 31.26
+              dewPoint:
+                type: number
+                description: The dew point temperature.
+                example: 23.85
+              humidity:
+                type: number
+                description: The relative humidity.
+                example: 0.47
+              pressure:
+                type: number
+                description: The air pressure.
+                example: 1024.02
+              stationPressure:
+                type: number
+                description: The station pressure. Only returned when extraVars contains stationPressure.
+                example: 1009.92                
+              windSpeed:
+                type: number
+                description: The wind speed.
+                example: 16.98
+              windGust:
+                type: number
+                description: The wind gust speed.
+                example: 27.48
+              windBearing:
+                type: integer
+                format: int32
+                description: The direction of the wind in degrees.
+                example: 330
+              cloudCover:
+                type: number
+                description: The fraction of the sky covered by clouds.
+                example: 0.35
+              uvIndex:
+                type: number
+                description: The UV index.
+                example: 2.93
+              visibility:
+                type: number
+                description: The visibility.
+                example: 10
+              ozone:
+                type: number
+                description: The ozone concentration in Dobson units.
+                example: 319.3
+              airQualityIndex:
+                type: number
+                description: The air quality index for the requested location. The scale follows aqiunits when supplied; otherwise us/default uses US EPA AQI, ca uses ECCC AQHI, uk uses UK DAQI, and si uses normalized EAQI on the legacy CAQI scale. Only returned when version>1.
+                example: 42
+              coConcentration:
+                type: number
+                description: The carbon monoxide concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+                example: 126.4
+              no2Concentration:
+                type: number
+                description: The nitrogen dioxide concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+                example: 2.8
+              ozoneConcentration:
+                type: number
+                description: The ozone concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+                example: 36.5
+              so2Concentration:
+                type: number
+                description: The sulfur dioxide concentration in parts per billion (ppb). Only returned when version>=2 and include contains airqualitydetails.
+                example: 0.4
+              pm10:
+                type: number
+                description: The coarse particulate matter concentration in micrograms per cubic meter (ug/m^3). Only returned when version>=2 and include contains airqualitydetails.
+                example: 8.7
+              pm25:
+                type: number
+                description: The fine particulate matter concentration in micrograms per cubic meter (ug/m^3). Only returned when version>=2 and include contains airqualitydetails.
+                example: 4.6
+              smoke:
+                type: number
+                description: The amount of near-surface smoke in ug/m3. Only returned when version>1.
+                example: 0.4
+              liquidAccumulation:
+                type: number
+                description: The amount of liquid precipitation expected. Only returned when version>1.
+                example: 0
+              snowAccumulation:
+                type: number
+                description: The amount of snow precipitation expected. Only returned when version>1.
+                example: 0
+              iceAccumulation:
+                type: number
+                description: The amount of ice precipitation expected. Only returned when version>1.
+                example: 0
+              nearestStormDistance:
+                type: number
+                description: The distance to the nearest storm.
+                example: 172.16
+              nearestStormBearing:
+                type: integer
+                format: int32
+                description: The direction to the nearest storm.
+                example: 127
+              fireIndex:
+                type: number
+                description: The Fosberg Fire Weather Index, derived from temperature, relative humidity, and wind speed. Only returned when version>1.
+                example: 27.2
+              feelsLike:
+                type: number
+                description: The apparent temperature reported by NBM and gfs. Only returned when version>1.
+                example: 34.38
+              solar:
+                type: number
+                description: The Downward Short-Wave Radiation Flux measured in W/m^2. Only returned when version>1.
+                example: 498.64
+              cape:
+                type: integer
+                format: int32
+                description: The Convective Available Potential Energy measured in J/kg. Only returned when version>1.
+                example: 0
+              liftedIndex:
+                type: integer
+                format: int32
+                description: The lifted index (LI) in °C. Only returned when version>1.
+                example: 15
+              kIndex:
+                type: integer
+                format: int32
+                description: The K-Index (KI) in °C. Only returned when version>1.
+                example: -42
+              verticalVelocity:
+                type: number
+                description: The vertical pressure velocity in Pa/s. Negative values indicate upward motion; positive values indicate downward motion. Only returned when version>1.
+                example: 0.15
+              convectiveInhibition:
+                type: integer
+                format: int32
+                description: The convective inhibition (CIN) in J/kg. Only returned when version>1.
+                example: 0
+    day_night:
+      type: object
+      description: A block containing day and night forecasts for today and the next 7 days (up to 16 entries). Returned when include contains day_night_forecast or blocks requests day_night; not returned for historical requests.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: integer
+                format: int32
+                description: The time of the data point in UNIX format.
+                example: 1762682400
+              summary:
+                type: string
+                description: A summary of the weather.
+                example: Breezy throughout the day.
+              icon:
+                type: string
+                description: An icon representing the weather.
+                example: wind
+              precipIntensity:
+                type: number
+                description: The intensity of precipitation.
+                example: 0
+              precipIntensityMax:
+                type: number
+                description: The maximum intensity of precipitation.
+                example: 0
+              rainIntensity:
+                type: number
+                description: The intensity of rain precipitation. Only returned when version>1.
+                example: 0
+              rainIntensityMax:
+                type: number
+                description: The maximum intensity of rain precipitation. Only returned when version>1.
+                example: 0
+              snowIntensity:
+                type: number
+                description: The intensity of snow precipitation. Only returned when version>1.
+                example: 0
+              snowIntensityMax:
+                type: number
+                description: The maximum intensity of snow precipitation. Only returned when version>1.
+                example: 0
+              iceIntensity:
+                type: number
+                description: The intensity of ice precipitation. Only returned when version>1.
+                example: 0
+              iceIntensityMax:
+                type: number
+                description: The maximum intensity of ice precipitation. Only returned when version>1.
+                example: 0
+              precipProbability:
+                type: number
+                description: The probability of precipitation.
+                example: 0
+              precipAccumulation:
+                type: number
+                description: The total amount of precipitation.
+                example: 0
+              precipType:
+                type: string
+                description: The type of precipitation occurring.
+                example: none
+              temperature:
+                type: number
+                description: The air temperature.
+                example: 42.82
+              apparentTemperature:
+                type: number
+                description: The apparent temperature (feels like).
+                example: 32.32
+              dewPoint:
+                type: number
+                description: The dew point temperature.
+                example: 29.17
+              humidity:
+                type: number
+                description: The relative humidity.
+                example: 0.62
+              pressure:
+                type: number
+                description: The air pressure.
+                example: 1021.06
+              stationPressure:
+                type: number
+                description: The station pressure. Only returned when extraVars contains stationPressure.
+                example: 1009.92                
+              windSpeed:
+                type: number
+                description: The wind speed.
+                example: 16.15
+              windGust:
+                type: number
+                description: The wind gust speed.
+                example: 26.4
+              windBearing:
+                type: integer
+                format: int32
+                description: The direction of the wind in degrees.
+                example: 328
+              cloudCover:
+                type: number
+                description: The fraction of the sky covered by clouds.
+                example: 0.58
+              uvIndex:
+                type: number
+                description: The UV index.
+                example: 1.15
+              visibility:
+                type: number
+                description: The visibility.
+                example: 10
+              ozone:
+                type: number
+                description: The ozone concentration in Dobson units.
+                example: 317.12
+              smoke:
+                type: number
+                description: The amount of near-surface smoke in ug/m3. Only returned when version>1.
+                example: 0.12
+              liquidAccumulation:
+                type: number
+                description: The amount of liquid precipitation expected. Only returned when version>1.
+                example: 0
+              snowAccumulation:
+                type: number
+                description: The amount of snow precipitation expected. Only returned when version>1.
+                example: 0
+              iceAccumulation:
+                type: number
+                description: The amount of ice precipitation expected. Only returned when version>1.
+                example: 0
+              fireIndex:
+                type: number
+                description: The Fosberg Fire Weather Index, derived from temperature, relative humidity, and wind speed. Only returned when version>1.
+                example: 22.08
+              solar:
+                type: number
+                description: The Downward Short-Wave Radiation Flux measured in W/m^2. Only returned when version>1.
+                example: 178.72
+              cape:
+                type: integer
+                format: int32
+                description: The Convective Available Potential Energy measured in J/kg. Only returned when version>1.
+                example: 4
+              liftedIndex:
+                type: integer
+                format: int32
+                description: The lifted index (LI) in °C. Only returned when version>1.
+                example: 18
+              kIndex:
+                type: integer
+                format: int32
+                description: The K-Index (KI) in °C. Only returned when version>1.
+                example: -44
+              verticalVelocity:
+                type: number
+                description: The vertical pressure velocity in Pa/s. Negative values indicate upward motion; positive values indicate downward motion. Only returned when version>1.
+                example: 0.17
+              convectiveInhibition:
+                type: integer
+                format: int32
+                description: The convective inhibition (CIN) in J/kg. Only returned when version>1.
+                example: 0
+    daily:
+      type: object
+      description: A block containing daily forecasted conditions for today and the next 7 days (8 entries). Historical requests use the days parameter to control the number of entries.
+      properties:
+        summary:
+          type: string
+          description: A summary of the daily forecast.
+          example: Drizzle next Sunday, with high temperatures peaking at 71°F on Friday.
+        icon:
+          type: string
+          description: An icon representing the daily forecast.
+          example: rain
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              time:
+                type: integer
+                format: int32
+                description: The time of the data point in UNIX format.
+                example: 1762668000
+              summary:
+                type: string
+                description: A summary of the weather.
+                example: Breezy until evening.
+              icon:
+                type: string
+                description: An icon representing the weather.
+                example: wind
+              dawnTime:
+                type: integer
+                format: int32
+                description: The time when the sun is a specific (6 degrees) height above the horizon after sunrise. Only returned when version>1.
+                example: 1762689813
+              sunriseTime:
+                type: integer
+                format: int32
+                description: The time of sunrise in UNIX format.
+                example: 1762691493
+              sunsetTime:
+                type: integer
+                format: int32
+                description: The time of sunset in UNIX format.
+                example: 1762728710
+              duskTime:
+                type: integer
+                format: int32
+                description: The time when the sun is a specific (6 degrees) height above the horizon before sunset. Only returned when version>1.
+                example: 1762730390
+              moonPhase:
+                type: number
+                description: The fractional lunation number for the given day.
+                example: 0.65
+              precipIntensity:
+                type: number
+                description: The intensity of precipitation.
+                example: 0
+              precipIntensityMax:
+                type: number
+                description: The maximum intensity of precipitation.
+                example: 0
+              precipIntensityMaxTime:
+                type: integer
+                format: int32
+                description: The time when the maximum precipitation intensity occurs in UNIX format.
+                example: 1762668000
+              precipProbability:
+                type: number
+                description: The probability of precipitation.
+                example: 0
+              precipAccumulation:
+                type: number
+                description: The total amount of precipitation.
+                example: 0
+              precipType:
+                type: string
+                description: The type of precipitation occurring.
+                example: none
+              rainIntensity:
+                type: number
+                description: The intensity of rain precipitation. Only returned when version>1.
+                example: 0
+              rainIntensityMax:
+                type: number
+                description: The maximum intensity of rain precipitation. Only returned when version>1.
+                example: 0
+              snowIntensity:
+                type: number
+                description: The intensity of snow precipitation. Only returned when version>1.
+                example: 0
+              snowIntensityMax:
+                type: number
+                description: The maximum intensity of snow precipitation. Only returned when version>1.
+                example: 0
+              iceIntensity:
+                type: number
+                description: The intensity of ice precipitation. Only returned when version>1.
+                example: 0
+              iceIntensityMax:
+                type: number
+                description: The maximum intensity of ice precipitation. Only returned when version>1.
+              temperatureHigh:
+                type: number
+                description: The daytime high temperature.
+                example: 42.82
+              temperatureHighTime:
+                type: integer
+                format: int32
+                description: The time when the high temperature occurs in UNIX format.
+                example: 1762707600
+              temperatureLow:
+                type: number
+                description: The overnight low temperature.
+                example: 26.6
+              temperatureLowTime:
+                type: integer
+                format: int32
+                description: The time when the low temperature occurs in UNIX format.
+                example: 1762776000
+              apparentTemperatureHigh:
+                type: number
+                description: The apparent daytime high temperature (feels like).
+                example: 32.32
+              apparentTemperatureHighTime:
+                type: integer
+                format: int32
+                description: The time when the apparent high temperature occurs in UNIX format.
+                example: 1762714800
+              apparentTemperatureLow:
+                type: number
+                description: The apparent overnight low temperature (feels like).
+                example: 15.43
+              apparentTemperatureLowTime:
+                type: integer
+                format: int32
+                description: The time when the apparent low temperature occurs in UNIX format.
+                example: 1762776000
+              dewPoint:
+                type: number
+                description: The dew point temperature.
+                example: 27.67
+              humidity:
+                type: number
+                description: The relative humidity.
+                example: 0.61
+              pressure:
+                type: number
+                description: The air pressure.
+                example: 1021.84
+              stationPressure:
+                type: number
+                description: The mean station pressure for the day, in hectopascals. Only returned when extraVars contains stationPressure.
+                example: 1011.72
+              windSpeed:
+                type: number
+                description: The wind speed.
+                example: 14.07
+              windGust:
+                type: number
+                description: The wind gust speed.
+                example: 23.52
+              windGustTime:
+                type: integer
+                format: int32
+                description: The time when the maximum wind gust occurs in UNIX format.
+                example: 1762714800
+              windBearing:
+                type: integer
+                format: int32
+                description: The direction of the wind in degrees.
+                example: 327
+              cloudCover:
+                type: number
+                description: The fraction of the sky covered by clouds.
+                example: 0.43
+              uvIndex:
+                type: number
+                description: The max UV index during that day.
+                example: 3.52
+              uvIndexTime:
+                type: integer
+                format: int32
+                description: The time when the maximum UV index occurs in UNIX format.
+                example: 1762714800
+              visibility:
+                type: number
+                description: The visibility in kilometers.
+                example: 9.68
+              airQualityIndex:
+                type: number
+                description: The air quality index for the requested location. The scale follows aqiunits when supplied; otherwise us/default uses US EPA AQI, ca uses ECCC AQHI, uk uses UK DAQI, and si uses normalized EAQI on the legacy CAQI scale. Only returned when version>1.
+                example: 42
+              airQualityIndexMax:
+                type: number
+                description: The maximum air quality index forecasted for the day. The scale follows aqiunits when supplied, otherwise the requested units. Only returned when version>1.
+                example: 58
+              airQualityIndexMaxTime:
+                type: integer
+                format: int64
+                description: The time when the maximum air quality index occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789704000
+              airQualityIndexMin:
+                type: number
+                description: The minimum air quality index forecasted for the day. The scale follows aqiunits when supplied, otherwise the requested units. Only returned when version>1.
+                example: 31
+              airQualityIndexMinTime:
+                type: integer
+                format: int64
+                description: The time when the minimum air quality index occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789740000
+              temperatureMin:
+                type: number
+                description: The minimum temperature.
+                example: 29.77
+              temperatureMinTime:
+                type: integer
+                format: int32
+                description: The time when the minimum temperature occurs in UNIX format.
+                example: 1762750800
+              temperatureMax:
+                type: number
+                description: The maximum temperature.
+                example: 51.69
+              temperatureMaxTime:
+                type: integer
+                format: int32
+                description: The time when the maximum temperature occurs in UNIX format.
+                example: 1762668000
+              apparentTemperatureMin:
+                type: number
+                description: The minimum apparent temperature (feels like).
+                example: 19.21
+              apparentTemperatureMinTime:
+                type: integer
+                format: int32
+                description: The time when the minimum apparent temperature occurs in UNIX format.
+                example: 1762747200
+              apparentTemperatureMax:
+                type: number
+                description: The maximum apparent temperature (feels like).
+                example: 43.62
+              apparentTemperatureMaxTime:
+                type: integer
+                format: int32
+                description: The time when the maximum apparent temperature occurs in UNIX format.
+                example: 1762668000
+              smokeMax:
+                type: number
+                description: The maximum amount of near-surface smoke in ug/m^3. Only returned when version>1.
+                example: 0.66
+              smokeMaxTime:
+                type: integer
+                format: int32
+                description: The time when the maximum near-surface smoke occurs in UNIX format. Only returned when version>1.
+                example: 1762714800
+              liquidAccumulation:
+                type: number
+                description: The amount of liquid precipitation expected. Only returned when version>1.
+                example: 0
+              snowAccumulation:
+                type: number
+                description: The amount of snow precipitation expected. Only returned when version>1.
+                example: 0
+              iceAccumulation:
+                type: number
+                description: The amount of ice precipitation expected. Only returned when version>1.
+                example: 0
+              fireIndexMax:
+                type: number
+                description: The maximum hourly Fosberg Fire Weather Index for the day. Only returned when version>1.
+                example: 29.2
+              fireIndexMaxTime:
+                type: integer
+                format: int32
+                description: The time when the maximum hourly Fosberg Fire Weather Index occurs in UNIX format. Only returned when version>1.
+                example: 1762732800
+              solarMax:
+                type: number
+                description: The maximum hourly downward short-wave radiation flux for the day, in W/m^2. Only returned when version>1.
+                example: 757.88
+              solarMaxTime:
+                type: integer
+                format: int64
+                description: The time when the maximum solar radiation occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789750800
+              capeMax:
+                type: integer
+                format: int32
+                description: The maximum hourly Convective Available Potential Energy for the day, in J/kg. Only returned when version>1.
+                example: 20
+              capeMaxTime:
+                type: integer
+                format: int64
+                description: The time when the maximum CAPE occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789747200
+              liftedIndexMin:
+                type: integer
+                format: int32
+                description: The minimum hourly lifted index (LI) for the day, in °C. Only returned when version>1.
+                example: 15
+              liftedIndexMinTime:
+                type: integer
+                format: int64
+                description: The time when the minimum LI occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789747200
+              kIndexMax:
+                type: integer
+                format: int32
+                description: The maximum hourly K-Index (KI) for the day, in °C. Only returned when version>1.
+                example: 42
+              kIndexMaxTime:
+                type: integer
+                format: int64
+                description: The time when the maximum KI occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789747200
+              verticalVelocityMin:
+                type: number
+                description: The minimum hourly vertical pressure velocity (VVEL) for the day, in Pa/s. Negative values indicate upward motion; positive values indicate downward motion. Only returned when version>1.
+                example: 0.09
+              verticalVelocityMinTime:
+                type: integer
+                format: int64
+                description: The time when the minimum VVEL occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789747200
+              convectiveInhibitionMax:
+                type: integer
+                format: int32
+                description: The maximum hourly convective inhibition (CIN) for the day, in J/kg. Only returned when version>1.
+                example: 0
+              convectiveInhibitionMaxTime:
+                type: integer
+                format: int64
+                description: The time when the maximum CIN occurs, in UNIX seconds. Only returned when version>1.
+                example: 1789747200
+    alerts:
+      type: array
+      description: A block containing any severe weather alerts for the current location.
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+            description: A brief description of the alert.
+            example: Flood Warning
+          regions:
+            type: array
+            description: An array of strings containing all regions included in the weather alert.
+            items:
+              type: string
+              example: Alexander, IL
+          severity:
+            type: string
+            description: The severity of the weather alert.
+            example: Severe
+          time:
+            type: integer
+            format: int32
+            description: The time the alert was issued in UNIX format.
+            example: 1715357220
+          expires:
+            type: integer
+            format: int32
+            description: The time the alert expires in UNIX format.
+            example: 1715451300
+          description:
+            type: string
+            description: A detailed description of the alert.
+            example: "...The Flood Warning is extended for the following river in Illinois...Missouri...Kentucky...  Mississippi River at Cape Girardeau, Thebes, and Hickman.  .With recent heavy rainfall, waters are rising on the Mississippi River with crests in minor flood at Cape Girardeau, Thebes, and Hickman early next week.  For the Mississippi River...including Cape Girardeau, Thebes, Hickman...Minor flooding is forecast.  * WHAT...Minor flooding is occurring and minor flooding is forecast.  * WHERE...Mississippi River at Cape Girardeau.  * WHEN...Until Friday, May 17.  * IMPACTS...At 36.0 feet, The flood gate on Themis Street closes.  * ADDITIONAL DETAILS... - At 11:00 AM CDT Friday the stage was 34.4 feet. - Forecast...The river is expected to rise to a crest of 36.0 feet Monday morning. It will then fall below flood stage late Thursday evening. - Flood stage is 32.0 feet."
+          uri:
+            type: string
+            description: A HTTP(S) URL for more information about the alert.
+            example: https://alerts.weather.gov/search?id=urn:oid:2.49.0.1.840.0.f24c2a5f205f53c0f443861ac62244cc6aecfc9c.002.1
+    flags:
+      type: object
+      description: A block containing miscellaneous data for the API request.
+      properties:
+        sources:
+          type: array
+          description: The models available to the request. This list does not identify which source supplied each forecast element and timestamp.
+          items:
+            type: string
+            example: ETOPO1
+        sourceTimes:
+          type: object
+          description: The times in UTC when the models were last updated.
+          properties:
+            hrrr_subh:
+              type: string
+              description: The time the HRRR sub-hourly model was last updated.
+              example: 2025-11-09 18Z
+            rtma_ru:
+              type: string
+              description: The time the RTMA-RU model was last updated.
+              example: 2025-11-09 20:15Z
+            hrrr_0-18:
+              type: string
+              description: The time the HRRR model for 0-18 hours was last updated.
+              example: 2025-11-09 18Z
+            nbm:
+              type: string
+              description: The time the NBM model was last updated.
+              example: 2025-11-09 17Z
+            nbm_fire:
+              type: string
+              description: The time the NBM fire model was last updated.
+              example: 2025-11-09 12Z
+            dwd_mosmix:
+              type: string
+              description: The time the DWD MOSMIX model was last updated.
+              example: 2025-11-09 13Z
+            ecmwf_ifs:
+              type: string
+              description: The time the ECMWF IFS model was last updated.
+              example: 2025-11-09 00Z
+            ecmwf_aifs:
+              type: string
+              description: The time the AIFS model was last updated.
+              example: 2025-11-09 00Z
+            hrrr_18-48:
+              type: string
+              description: The time the HRRR model for 18-48 hours was last updated.
+              example: 2025-11-09 18Z
+            gfs:
+              type: string
+              description: The time the GFS model was last updated.
+              example: 2025-11-09 12Z
+            aigfs:
+              type: string
+              description: The time the AIGFS model was last updated.
+              example: 2025-11-09 12Z
+            gefs:
+              type: string
+              description: The time the GEFS model was last updated.
+              example: 2025-11-09 12Z
+            aigefs:
+              type: string
+              description: The time the AIGEFS model was last updated.
+              example: 2025-11-09 12Z
+            hrdps:
+              type: string
+              description: The time the HRDPS model was last updated.
+              example: 2026-09-18 12Z
+            gdps:
+              type: string
+              description: The time the GDPS model was last updated.
+              example: 2026-09-18 12Z
+            geps:
+              type: string
+              description: The time the GEPS model was last updated.
+              example: 2026-09-18 00Z
+            reps:
+              type: string
+              description: The time the REPS model was last updated.
+              example: 2026-09-18 12Z
+            raqdps:
+              type: string
+              description: The time the RAQDPS model was last updated.
+              example: 2026-09-18 12Z
+            silam:
+              type: string
+              description: The time the SILAM model was last updated.
+              example: 2026-09-16 00Z
+        nearest-station:
+          type: number
+          description: Distance to the closest DWD MOSMIX station to your location in kilometres or miles depending on the units. If there are no stations for your location this will return -999.
+          example: 15.68
+        units:
+          type: string
+          description: The units used in the forecasts.
+          example: us
+        version:
+          type: string
+          description: The version of Pirate Weather used to generate the forecast.
+          example: V2.10.3
+        sourceIDX:
+          type: object
+          description: The grid indices and latitude/longitude for available model data, or station metadata for DWD MOSMIX. Only returned when version>1.
+          properties:
+            hrrr:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the HRRR model.
+                  example: 1134
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the HRRR model.
+                  example: 495
+                lat:
+                  type: number
+                  description: The latitude coordinate for the HRRR model.
+                  example: 37.31
+                lon:
+                  type: number
+                  description: The longitude coordinate for the HRRR model.
+                  example: -89.53
+            nbm:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the NBM model.
+                  example: 1483
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the NBM model.
+                  example: 651
+                lat:
+                  type: number
+                  description: The latitude coordinate for the NBM model.
+                  example: 37.31
+                lon:
+                  type: number
+                  description: The longitude coordinate for the NBM model.
+                  example: -89.53
+            ecmwf_ifs:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the ECMWF IFS model.
+                  example: 362
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the ECMWF IFS model.
+                  example: 211
+                lat:
+                  type: number
+                  description: The latitude coordinate for the ECMWF IFS model.
+                  example: 37.25
+                lon:
+                  type: number
+                  description: The longitude coordinate for the ECMWF IFS model.
+                  example: -89.5
+            ecmwf_aifs:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the AIFS model.
+                  example: 362
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the AIFS model.
+                  example: 211
+                lat:
+                  type: number
+                  description: The latitude coordinate for the AIFS model.
+                  example: 37.25
+                lon:
+                  type: number
+                  description: The longitude coordinate for the AIFS model.
+                  example: -89.5
+            dwd_mosmix:
+              type: object
+              properties:
+                stations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: The id of the DWD MOSMIX station.
+                        example: "72530"
+                      name:
+                        type: string
+                        description: The name of the DWD MOSMIX station.
+                        example: "CHICAGO"
+                      lat:
+                        type: number
+                        description: The latitude coordinate for the DWD MOSMIX station.
+                        example: 41.98
+                      lon:
+                        type: number
+                        description: The longitude coordinate for the DWD MOSMIX station.
+                        example: -87.9
+            rtma_ru:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the RTMA-RU model.
+                  example: 1483
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the RTMA-RU model.
+                  example: 651
+                lat:
+                  type: number
+                  description: The latitude coordinate for the RTMA-RU model.
+                  example: 37.31
+                lon:
+                  type: number
+                  description: The longitude coordinate for the RTMA-RU model.
+                  example: -89.53
+            gfs:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the GFS model.
+                  example: 1082
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the GFS model.
+                  example: 509
+                lat:
+                  type: number
+                  description: The latitude coordinate for the GFS model.
+                  example: 37.25
+                lon:
+                  type: number
+                  description: The longitude coordinate for the GFS model.
+                  example: -89.5
+            aigfs:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the AIGFS model.
+                  example: 1082
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the AIGFS model.
+                  example: 509
+                lat:
+                  type: number
+                  description: The latitude coordinate for the AIGFS model.
+                  example: 37.25
+                lon:
+                  type: number
+                  description: The longitude coordinate for the AIGFS model.
+                  example: -89.5
+            aigefs:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the AIGEFS model.
+                  example: 1082
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the AIGEFS model.
+                  example: 509
+                lat:
+                  type: number
+                  description: The latitude coordinate for the AIGEFS model.
+                  example: 37.25
+                lon:
+                  type: number
+                  description: The longitude coordinate for the AIGEFS model.
+                  example: -89.5
+            hrdps:
+              $ref: "#/components/schemas/modelGridPoint"
+              description: The grid point used for HRDPS.
+              example:
+                x: 1852
+                y: 488
+                lat: 45.01
+                lon: -75.0
+            gdps:
+              $ref: "#/components/schemas/modelGridPoint"
+              description: The grid point used for GDPS.
+              example:
+                x: 1900
+                y: 900
+                lat: 45.0
+                lon: -75.0
+            geps:
+              $ref: "#/components/schemas/modelGridPoint"
+              description: The grid point used for GEPS.
+              example:
+                x: 570
+                y: 270
+                lat: 45.0
+                lon: -75.0
+            reps:
+              $ref: "#/components/schemas/modelGridPoint"
+              description: The grid point used for REPS.
+              example:
+                x: 657
+                y: 364
+                lat: 44.96
+                lon: -75.01
+            raqdps:
+              $ref: "#/components/schemas/modelGridPoint"
+              description: The grid point used for RAQDPS.
+              example:
+                x: 578
+                y: 225
+                lat: 45.01
+                lon: -74.98
+            silam:
+              $ref: "#/components/schemas/modelGridPoint"
+              description: The grid point used for SILAM.
+              example:
+                x: 524
+                y: 673
+                lat: 45.0
+                lon: -75.0
+            etopo:
+              type: object
+              properties:
+                x:
+                  type: integer
+                  format: int32
+                  description: The X coordinate for the ETOPO model.
+                  example: 5429
+                y:
+                  type: integer
+                  format: int32
+                  description: The Y coordinate for the ETOPO model.
+                  example: 7638
+                lat:
+                  type: number
+                  description: The latitude coordinate for the ETOPO model.
+                  example: 37.3
+                lon:
+                  type: number
+                  description: The longitude coordinate for the ETOPO model.
+                  example: -89.5166
+        processTime:
+          type: integer
+          format: int32
+          description: Processing-time diagnostic in microseconds. API 2.10.0 returns the microseconds component of the elapsed duration, excluding whole seconds. Only returned when version>1.
+          example: 12026
+        ingestVersion:
+          type: string
+          description: The ingest version of Pirate Weather used to generate the forecast. Only returned when version>1.
+          example: v30
+        nearestCity:
+          type: [string, "null"]
+          description: The name of the closest city to your location, or null if unavailable. Only returned when version>1.
+          example: Cape Girardeau
+        nearestCountry:
+          type: [string, "null"]
+          description: The name of the closest country to your location, or null if unavailable. Only returned when version>1.
+          example: United States
+        nearestSubNational:
+          type: [string, "null"]
+          description: The name of the closest state or province to your location, or null if unavailable. Only returned when version>1.
+
+          example: Missouri
+    modelGridPoint:
+      type: object
+      description: The selected model grid point for the requested location.
+      properties:
+        x:
+          type: integer
+          format: int32
+          description: The X grid index.
+        y:
+          type: integer
+          format: int32
+          description: The Y grid index.
+        lat:
+          type: number
+          description: The grid point latitude in degrees.
+        lon:
+          type: number
+          description: The grid point longitude in degrees.

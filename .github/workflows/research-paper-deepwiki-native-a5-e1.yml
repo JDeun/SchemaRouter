@@ -1,0 +1,81 @@
+name: Research Paper DeepWiki MCP Native A5 E1
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/paper_deepwiki_registration.py"
+      - "src/schemarouter/__init__.py"
+      - "scripts/research_paper_deepwiki_native_e1.py"
+      - "tests/test_paper_deepwiki_native_a5_e1.py"
+      - "tests/test_native_graph_host_root.py"
+      - "research/autoresearch/paper-deepwiki-mcp-native-a5-e1-design.md"
+      - "research/autoresearch/paper-deepwiki-mcp-native-a5-e1-plan.md"
+      - ".github/workflows/research-paper-deepwiki-native-a5-e1.yml"
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Inspect untrusted live MCP schema or run fingerprint-pinned native A5"
+        type: choice
+        options:
+          - probe
+          - run
+        default: probe
+        required: true
+      expected_source_fingerprint:
+        description: "For run: separately host-reviewed MCP tools/list digest"
+        type: string
+        required: false
+      host_repo:
+        description: "For run: an independently host-selected public repository"
+        type: string
+        default: "modelcontextprotocol/servers"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  deepwiki-native-mcp-mock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install native MCP adapter and verification tools
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1" "pyright>=1.1.400"
+      - name: Verify scalar-only G5 roots and source-reviewed A5 typing
+        run: |
+          ruff check src/schemarouter/native_graph_index.py src/schemarouter/paper_deepwiki_registration.py scripts/research_paper_deepwiki_native_e1.py tests/test_paper_deepwiki_native_a5_e1.py tests/test_native_graph_host_root.py
+          pyright src/schemarouter/paper_deepwiki_registration.py scripts/research_paper_deepwiki_native_e1.py
+          python -m pytest -q tests/test_paper_deepwiki_native_a5_e1.py tests/test_native_graph_host_root.py tests/test_research_paper_heterogeneous_native_e1.py tests/test_mcp_transport.py tests/test_public_api.py
+
+  keyless-live-deepwiki-manual-only:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install native MCP runtime
+        run: python -m pip install ".[mcp]"
+      - name: Discover untrusted public tools/list for separate host review
+        if: inputs.phase == 'probe'
+        run: python -m scripts.research_paper_deepwiki_native_e1 probe
+      - name: Execute separately host-approved keyless read-only MCP source
+        if: inputs.phase == 'run'
+        env:
+          EXPECTED_FINGERPRINT: ${{ inputs.expected_source_fingerprint }}
+          HOST_REPO: ${{ inputs.host_repo }}
+        run: |
+          test -n "$EXPECTED_FINGERPRINT"
+          test -n "$HOST_REPO"
+          python -m scripts.research_paper_deepwiki_native_e1 run --expected-source-fingerprint "$EXPECTED_FINGERPRINT" --host-repo "$HOST_REPO"

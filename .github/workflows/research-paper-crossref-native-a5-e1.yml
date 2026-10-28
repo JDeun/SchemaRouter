@@ -1,0 +1,84 @@
+name: Research Paper Crossref Native A5 E1
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/provider_profiles.py"
+      - "src/schemarouter/paper_crossref_registration.py"
+      - "src/schemarouter/__init__.py"
+      - "scripts/research_paper_crossref_native_e1.py"
+      - "tests/test_paper_crossref_native_a5_e1.py"
+      - "tests/test_provider_profiles.py"
+      - "tests/test_http_json_adapter.py"
+      - "tests/test_public_api.py"
+      - "research/autoresearch/paper-a5-crossref-native-e1-*.md"
+      - ".github/workflows/research-paper-crossref-native-a5-e1.yml"
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Inspect curated declaration or run fingerprint-pinned native Crossref A5"
+        type: choice
+        options:
+          - probe
+          - run
+        default: probe
+        required: true
+      expected_source_fingerprint:
+        description: "For run only: host-approved prior local declaration fingerprint"
+        type: string
+        required: false
+      host_doi:
+        description: "For run: an independently host-selected public DOI"
+        type: string
+        default: "10.1038/nature12373"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  typed-crossref-native-a5-mock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install paper runtime and verification dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1" "pyright>=1.1.400"
+      - name: Lint and type-check new registration and runner
+        run: |
+          ruff check src/schemarouter/provider_profiles.py src/schemarouter/paper_crossref_registration.py scripts/research_paper_crossref_native_e1.py tests/test_paper_crossref_native_a5_e1.py
+          pyright src/schemarouter/paper_crossref_registration.py scripts/research_paper_crossref_native_e1.py
+      - name: Verify Crossref native A5 P2, HTTP projection, failure cases and public API
+        run: |
+          python -m pytest -q tests/test_paper_crossref_native_a5_e1.py tests/test_provider_profiles.py tests/test_http_json_adapter.py tests/test_research_paper_heterogeneous_native_e1.py tests/test_public_api.py
+
+  keyless-live-crossref-manual-only:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install opt-in Crossref paper runner
+        run: python -m pip install ".[mcp]"
+      - name: Inspect local source declaration without provider I/O
+        if: inputs.phase == 'probe'
+        run: python -m scripts.research_paper_crossref_native_e1 probe
+      - name: Execute externally approved, keyless, read-only Crossref GET
+        if: inputs.phase == 'run'
+        env:
+          EXPECTED_FINGERPRINT: ${{ inputs.expected_source_fingerprint }}
+          HOST_DOI: ${{ inputs.host_doi }}
+        run: |
+          test -n "$EXPECTED_FINGERPRINT"
+          test -n "$HOST_DOI"
+          python -m scripts.research_paper_crossref_native_e1 run --expected-source-fingerprint "$EXPECTED_FINGERPRINT" --host-doi "$HOST_DOI"

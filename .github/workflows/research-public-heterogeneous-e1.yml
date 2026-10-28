@@ -1,0 +1,80 @@
+name: Public Heterogeneous API and MCP Source E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_public_heterogeneous_live_e1.py"
+      - "tests/test_research_public_heterogeneous_live_e1.py"
+      - "research/autoresearch/public-anonymous-api-mcp-optimade-e1-design.md"
+      - "research/autoresearch/public-anonymous-api-mcp-optimade-e1-plan.md"
+      - ".github/workflows/research-public-heterogeneous-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-no-network-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install package and offline test dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Verify source-owned shapes and fail-closed pinned calls
+        run: |
+          ruff check scripts/research_public_heterogeneous_live_e1.py tests/test_research_public_heterogeneous_live_e1.py
+          python -m pytest -q tests/test_research_public_heterogeneous_live_e1.py
+      - name: State evidence boundary
+        run: |
+          echo "Offline source-shaped safety tests only. No public API/MCP network success, semantic gold, E2 quality or release authorization is claimed." >> "$GITHUB_STEP_SUMMARY"
+
+  optin-actual-public-source-e1:
+    if: github.event_name == 'workflow_dispatch'
+    needs: deterministic-no-network-contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install actual public source protocol SDK
+        run: python -m pip install ".[mcp]"
+      - name: Execute one real fixed anonymous REST OPTIMADE remote MCP source matrix
+        run: python -m scripts.research_public_heterogeneous_live_e1 --live > "$RUNNER_TEMP/public-source-e1.json"
+      - name: Verify measured evidence boundaries and summarize without original payloads
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads((Path(os.environ['RUNNER_TEMP']) / 'public-source-e1.json').read_text())
+          assert report['status'] == 'success'
+          assert report['evidence_tier'] == 'E1_LIVE_SOURCE_SHAPED_NO_INDEPENDENT_E2'
+          assert report['live'] is True
+          assert report['registry_tool_count'] == 3
+          assert report['registered_access_modes'] == ['http_json', 'mcp', 'optimade']
+          assert report['native_execution_count'] == 3
+          assert report['task_endpoint_invocations'] == 4
+          assert report['model_selected_calls'] == 0
+          assert report['independent_gold_e2'] is False
+          assert set(report['tasks']) == {
+              'crossref_europe_pmc_doi_match',
+              'cod_optimade_si_o_structure',
+              'deepwiki_remote_mcp_structure',
+          }
+          assert all(task['passed'] is True for task in report['tasks'].values())
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as out:
+              out.write('## Real public mixed-protocol source E1\n\n')
+              out.write('Three real registered sources: Crossref REST, COD OPTIMADE, remote DeepWiki MCP. One additional public Europe PMC cross-check. All source-specific checks passed.\n\n')
+              out.write('Actual fixed host-selected read-only tasks, **NOT independent semantic gold/E2, model route quality, production permission or release evidence**.\n')
+          PY

@@ -33,6 +33,11 @@ from .field_group_retrieval import (
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
 from .native_semantic_index import NativeSchemaPostingIndex
+from .paper_native_rank import (
+    PaperNativeRankPolicy,
+    rank_authorized_paper_graph_one_hop,
+    rank_authorized_paper_graph_two_hop,
+)
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
@@ -43,6 +48,7 @@ if TYPE_CHECKING:
 STRICT_K = 5
 # Absolute research-only model exposure cap; never silently widen fixed K5.
 MAX_RESEARCH_RANKABLE_PATHS = 32
+MAX_OWNER_RANKABLE_PATHS = 5_000
 
 
 def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
@@ -57,7 +63,14 @@ def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
         if (
             not param.required
             or param.location in {"header", "body_root"}
-            or not _scalar_contract(param.json_schema)
+            or not (
+                _scalar_contract(param.json_schema)
+                or (
+                    param.name == "id"
+                    and param.location == "path"
+                    and param.json_schema == {"type": "string", "minLength": 1}
+                )
+            )
         ):
             return None
     names = tuple(param.name for param in endpoint.parameters)
@@ -65,7 +78,11 @@ def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
     if (
         len(set(names)) != len(names)
         or type(schema) is not dict
-        or set(schema) != {"type", "properties", "required"}
+        or set(schema) not in (
+            {"type", "properties", "required"},
+            {"type", "properties", "required", "additionalProperties"},
+        )
+        or schema.get("additionalProperties", False) is not False
         or schema.get("type") != "object"
         or schema.get("properties")
         != {param.name: param.json_schema for param in endpoint.parameters}
@@ -110,7 +127,11 @@ def _native_required_inputs(
     schema = endpoint.input_schema
     if schema and (
         type(schema) is not dict
-        or set(schema) != {"type", "properties", "required"}
+        or set(schema) not in (
+            {"type", "properties", "required"},
+            {"type", "properties", "required", "additionalProperties"},
+        )
+        or schema.get("additionalProperties", False) is not False
         or schema.get("type") != "object"
         or schema.get("properties")
         != {param.name: param.json_schema for param in endpoint.parameters}
@@ -198,6 +219,10 @@ class NativeIndexedGraphCandidate:
     consumer_output_fields: tuple[str, ...]
     parameter_bindings: tuple[tuple[str, str], ...] = ()
     source_root_parameters: tuple[str, ...] = ()
+    # Counts reflect current principal-scoped source views; never raw
+    # provider schemas, denied output fields or unscoped graph metadata.
+    producer_visible_field_count: int | None = None
+    consumer_visible_field_count: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,7 +230,7 @@ class NativeIndexedGraphResult:
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
         "ranked_unverified", "ranker_abstained_unverified",
-        "internal_fork_arm",
+        "internal_fork_arm", "budget_unsatisfied",
     ]
     index_snapshot_id: str
     registry_version: int
@@ -216,6 +241,7 @@ class NativeIndexedGraphResult:
     calibrated_no_fit: bool = False
     executable_authority: bool = False
     experimental_ranked: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 
@@ -229,11 +255,15 @@ class NativeIndexedTwoHopCandidate:
     intermediate_to_target: tuple[tuple[str, str], ...]
     target_output_fields: tuple[str, ...]
     source_root_parameters: tuple[str, ...]
+    visible_field_counts: tuple[int, int, int] | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class NativeIndexedTwoHopResult:
-    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "budget_unsatisfied",
+    ]
     index_snapshot_id: str
     registry_version: int
     requested_k: int
@@ -242,6 +272,7 @@ class NativeIndexedTwoHopResult:
     independent_quality_evidence: bool = False
     calibrated_no_fit: bool = False
     executable_authority: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 def _source_native_graph_contracts(
@@ -264,6 +295,35 @@ def _source_native_graph_contracts(
             empty_root or _host_source_input_names(endpoint) is None
         ):
             raise ValueError("G5 invalid explicit host-approved source route")
+        if host_root and tool.source_type == "optimade":
+            # A provider-discovered OPTIMADE ID is not automatically a trusted
+            # graph root: only the host review receipt may authorize this
+            # bounded minLength=1 ID contract for original-paper planning.
+            review = tool.metadata.get("paper_optimade_review")
+            output_fields = {field.name: field for field in endpoint.output_fields}
+            identifier = next(
+                (parameter for parameter in endpoint.parameters if parameter.name == "id"),
+                None,
+            )
+            if (
+                not isinstance(review, dict)
+                or not isinstance(review.get("source_tool_fingerprint"), str)
+                or not review.get("source_tool_fingerprint")
+                or review.get("source_base_url") != tool.metadata.get("versioned_base_url")
+                or review.get("entry_type") != endpoint.execution_metadata.get("entry_type")
+                or not isinstance(review.get("reviewed_fields"), dict)
+                or any(
+                    name not in output_fields
+                    or output_fields[name].semantic_id != semantic_id
+                    for name, semantic_id in review["reviewed_fields"].items()
+                )
+                or not review.get("identifier_semantic_id")
+                or identifier is None
+                or identifier.semantic_id != review.get("identifier_semantic_id")
+                or output_fields.get("id") is None
+                or output_fields["id"].semantic_id != review.get("identifier_semantic_id")
+            ):
+                raise ValueError("G5 invalid explicit host-approved source route")
         if empty_root or host_root:
             produced = [
                 contract
@@ -282,7 +342,22 @@ def _source_native_graph_contracts(
                 if host_root:
                     accepted.add(route)
             elif host_root:
-                raise ValueError("G5 host-approved source has no typed output")
+                # A reviewed remote source may expose a genuine scalar value
+                # (for example MCP `result: string`) without an identifier.
+                # Such a route is eligible for source-owned *direct* P2
+                # lookup, but MUST NOT become a dependency producer: graph
+                # consumers can bind only genuine identifier fields.
+                scalar_output = any(
+                    field.unit is None and field.unit_normalization is None
+                    and _scalar_contract(field.json_schema)
+                    and CapabilityFieldContract.from_field(field) is not None
+                    for field in endpoint.output_fields
+                )
+                if not scalar_output:
+                    raise ValueError("G5 host-approved source has no typed output")
+                contracts.append(CapabilityContract(capability_id=route))
+                roots += 1
+                accepted.add(route)
         else:
             required = _native_required_inputs(endpoint)
             if required is not None:
@@ -375,6 +450,102 @@ class NativeSchemaGraphIndex:
         edge_consumers = frozenset(edge.consumer_id for edge in graph.edges)
         return cls(
             field_index, graph, roots, consumers, edge_consumers,
+            approved_host_roots,
+            tuple(sorted(contracts, key=lambda item: item.capability_id)),
+        )
+
+    def revise_host_roots(
+        self, *, approved_host_roots: frozenset[str],
+    ) -> NativeSchemaGraphIndex:
+        """Atomically reproject owner-approved roots on the SAME native source.
+
+        Only tools owning added or revoked roots are reopened. Reuse the
+        canonical graph edge delta updater; leave the old index immutable.
+        This is source metadata review, never provider authorization/execution.
+        """
+        if (
+            type(approved_host_roots) is not frozenset
+            or len(approved_host_roots) > 64
+            or any(type(route) is not str or not route for route in approved_host_roots)
+        ):
+            raise ValueError("G5 exact bounded host-approved route set required")
+
+        posting = self.field_index
+        registry = posting.registry_ref
+        try:
+            source_version = registry.version
+        except Exception:
+            raise PolicyViolationError("G5 host revision source verification failed") from None
+        if source_version != posting.registry_version:
+            raise PolicyViolationError("G5 host revision source changed")
+        if (
+            {contract.capability_id for contract in self._source_contracts}
+            != set(self.graph.capability_ids)
+            or not self.approved_host_roots.issubset(posting.route_locations)
+        ):
+            raise PolicyViolationError("G5 host revision prior graph invalid")
+        if approved_host_roots == self.approved_host_roots:
+            return self
+
+        changed_routes = approved_host_roots ^ self.approved_host_roots
+        if not changed_routes.issubset(posting.route_locations):
+            raise PolicyViolationError("G5 host revision unknown original route")
+        changed_keys = {
+            posting.route_locations[route][0] for route in changed_routes
+        }
+        contracts = [
+            contract.model_copy(deep=True)
+            for contract in self._source_contracts
+            if posting.route_locations.get(contract.capability_id, ("", ""))[0]
+            not in changed_keys
+        ]
+        accepted = {
+            route for route in approved_host_roots
+            if posting.route_locations[route][0] not in changed_keys
+        }
+        try:
+            for key in sorted(changed_keys):
+                tool = registry.get(key)
+                fingerprint = tool.fingerprint
+                if (tool.key != key or posting.tool_fingerprints.get(key) != fingerprint):
+                    raise PolicyViolationError("G5 host revision source fingerprint drift")
+                for endpoint in tool.endpoints:
+                    route = f"{key}.{endpoint.name}"
+                    if posting.route_fingerprints.get(route) != (
+                        fingerprint, endpoint.fingerprint,
+                    ):
+                        raise PolicyViolationError("G5 host revision endpoint drift")
+                part, _, _, approved = _source_native_graph_contracts(
+                    tool, approved_host_roots,
+                )
+                contracts.extend(part)
+                accepted.update(approved)
+        except Exception:
+            # Registry errors can contain private source schema fragments.
+            raise PolicyViolationError("G5 host revision source review failed") from None
+
+        if accepted != set(approved_host_roots):
+            raise PolicyViolationError("G5 host revision route not accepted")
+        updated = update_capability_dependency_graph(
+            self.graph, list(self._source_contracts), contracts,
+        )
+        try:
+            source_version = registry.version
+        except Exception:
+            raise PolicyViolationError("G5 host revision source verification failed") from None
+        if source_version != posting.registry_version:
+            raise PolicyViolationError("G5 host revision source changed")
+        roots = sum(
+            not contract.requires and (
+                bool(contract.produces)
+                or contract.capability_id in approved_host_roots
+            )
+            for contract in contracts
+        )
+        consumers = sum(bool(contract.requires) for contract in contracts)
+        return NativeSchemaGraphIndex(
+            posting, updated, roots, consumers,
+            frozenset(edge.consumer_id for edge in updated.edges),
             approved_host_roots,
             tuple(sorted(contracts, key=lambda item: item.capability_id)),
         )
@@ -545,7 +716,7 @@ class NativeSchemaGraphIndex:
             route for route in previous.approved_host_roots
             if old.route_locations.get(route, ("", ""))[0] in changed
         }
-        roots = sum(bool(contract.produces) for contract in kept)
+        roots = sum(bool(contract.produces) and not contract.requires for contract in kept)
         consumers = sum(bool(contract.requires) for contract in kept)
         for key in changed_tool_keys:
             if key not in field_index.tool_fingerprints:
@@ -590,15 +761,21 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        allowed_target_routes: frozenset[str] | None = None,
         _research_ranker: Callable[
             [str, tuple[NativeIndexedGraphCandidate, ...], int],
             tuple[int, ...],
         ] | None = None,
+        _paper_rank_policy: PaperNativeRankPolicy | None = None,
+        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
     ) -> NativeIndexedGraphResult:
         """Public G5 lookup: strict K5, never exposes private fork arms."""
         return self._lookup_native_paths(
             router, query, group=group, principal=principal, k=k,
+            allowed_target_routes=allowed_target_routes,
             _research_ranker=_research_ranker,
+            _paper_rank_policy=_paper_rank_policy,
+            _paper_rank_aliases=_paper_rank_aliases,
         )
 
     def _lookup_native_paths(
@@ -609,10 +786,13 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        allowed_target_routes: frozenset[str] | None = None,
         _research_ranker: Callable[
             [str, tuple[NativeIndexedGraphCandidate, ...], int],
             tuple[int, ...],
         ] | None = None,
+        _paper_rank_policy: PaperNativeRankPolicy | None = None,
+        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
         _fork_arm_internal: bool = False,
         _fork_root_filter: frozenset[str] | None = None,
         _fork_target_filter: frozenset[str] | None = None,
@@ -627,8 +807,26 @@ class NativeSchemaGraphIndex:
         """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 strict fixed K5 required")
+        if allowed_target_routes is not None and (
+            type(allowed_target_routes) is not frozenset
+            or len(allowed_target_routes) > (
+                MAX_OWNER_RANKABLE_PATHS if _paper_rank_policy is not None
+                else MAX_RESEARCH_RANKABLE_PATHS
+            )
+            or any(
+                type(route) is not str or not 1 <= len(route) <= 320
+                for route in allowed_target_routes
+            )
+        ):
+            raise ValueError("G5 invalid bounded target route prefilter")
         if _research_ranker is not None and not callable(_research_ranker):
             raise ValueError("G5 experimental ranker must be callable")
+        if _paper_rank_policy is not None and (
+            not isinstance(_paper_rank_policy, PaperNativeRankPolicy)
+            or _research_ranker is not None
+            or _fork_arm_internal
+        ):
+            raise ValueError("G5 owner Rank must be exclusive and source-reviewed")
         if type(_fork_arm_internal) is not bool or (
             _fork_arm_internal and _research_ranker is not None
         ):
@@ -663,6 +861,21 @@ class NativeSchemaGraphIndex:
         if _alias_key(query) not in {_alias_key(a) for a in demand.aliases}:
             raise ValueError("G5 query lacks approved semantic edge")
         self.field_index._assert_source(router)
+        owner_rank: PaperNativeRankPolicy | None = None
+        original_owner_rank: str | None = None
+        if _paper_rank_policy is not None:
+            try:
+                original_owner_rank = _paper_rank_policy.model_dump_json()
+                owner_rank = PaperNativeRankPolicy.model_validate(
+                    _paper_rank_policy.model_dump(mode="python"), strict=True,
+                )
+            except Exception:
+                raise PolicyViolationError("G5 invalid owner Rank policy") from None
+            if owner_rank.snapshot_id != self.field_index.snapshot_id or not (
+                set(owner_rank.route_domains) | set(owner_rank.route_priorities)
+                | set(owner_rank.web_route_ids)
+            ) <= self.field_index.route_locations.keys():
+                raise PolicyViolationError("G5 owner Rank source mismatch")
         if router.authorization_policy is None:
             raise PolicyViolationError("G5 explicit policy required")
         witness = router._retrieval_authority_witness()
@@ -684,6 +897,10 @@ class NativeSchemaGraphIndex:
         # Every surviving target AND its original source root still gets
         # current authorization, hidden-field and availability checks.
         targets.intersection_update(self.edge_consumer_routes)
+        if allowed_target_routes is not None:
+            # Model/host target IDs only NARROW graph structure before K;
+            # normal principal, scope, source and typed checks still apply.
+            targets.intersection_update(allowed_target_routes)
         if _fork_target_filter is not None:
             # Candidate-only optimization; current authorization is NEVER
             # inferred from route IDs supplied to the private collector.
@@ -753,6 +970,13 @@ class NativeSchemaGraphIndex:
                 if root is None:
                     continue
                 _root_tool, root_endpoint = root
+                if owner_rank is not None and (
+                    demand.source_type is not None
+                    and _root_tool.source_type != demand.source_type
+                    or demand.license is not None
+                    and _root_tool.license != demand.license
+                ):
+                    continue
                 root_required: tuple[str, ...] = ()
                 if not _root_envelope_empty(root_endpoint):
                     if root_id not in self.approved_host_roots:
@@ -802,7 +1026,22 @@ class NativeSchemaGraphIndex:
                     consumer_output_fields=names,
                     parameter_bindings=tuple(bindings),
                     source_root_parameters=root_required,
+                    producer_visible_field_count=(
+                        len(root_endpoint.output_fields) if owner_rank is not None
+                        else None
+                    ),
+                    consumer_visible_field_count=(
+                        len(endpoint.output_fields) if owner_rank is not None
+                        else None
+                    ),
                 ))
+                if owner_rank is not None and len(found) > MAX_OWNER_RANKABLE_PATHS:
+                    # No partial count or source names leave an oversized cohort.
+                    # Bound expansion before any 5001+ path memory growth.
+                    return NativeIndexedGraphResult(
+                        "budget_unsatisfied", self.field_index.snapshot_id,
+                        self.field_index.registry_version, k, 0, (),
+                    )
         # The availability predicate can be the SAME callable while its
         # underlying live health set changes during a multi-route lookup.
         # Revalidate *all* qualified paths before publishing either a
@@ -830,6 +1069,13 @@ class NativeSchemaGraphIndex:
                 }))
                 if visible_names != candidate.consumer_output_fields:
                     raise PolicyViolationError("G5 candidate projection changed")
+                if owner_rank is not None and (
+                    candidate.producer_visible_field_count
+                    != len(root_ep_now.output_fields)
+                    or candidate.consumer_visible_field_count
+                    != len(target_ep_now.output_fields)
+                ):
+                    raise PolicyViolationError("G5 candidate visible breadth changed")
                 # A later health/scope callback may keep source identities
                 # stable while withdrawing a previously proven typed join.
                 # The default (unranked) K5 path needs the same binding proof
@@ -871,6 +1117,27 @@ class NativeSchemaGraphIndex:
             policy.default_effect, repr(policy.rules), repr(policy.data_rules),
         ) != original_policy:
             raise PolicyViolationError("G5 authorization rules changed during lookup")
+        if original_owner_rank is not None:
+            try:
+                if (
+                    _paper_rank_policy is None
+                    or _paper_rank_policy.model_dump_json() != original_owner_rank
+                ):
+                    raise PolicyViolationError("G5 Rank owner declaration changed")
+            except Exception:
+                raise PolicyViolationError("G5 Rank owner declaration changed") from None
+        if owner_rank is not None:
+            positions = rank_authorized_paper_graph_one_hop(
+                tuple(found), concept_aliases=_paper_rank_aliases,
+                policy=owner_rank, k=k,
+            )
+            return NativeIndexedGraphResult(
+                "ranked_unverified" if len(found) > k
+                else "complete" if found else "no_proven_hit",
+                self.field_index.snapshot_id, self.field_index.registry_version,
+                k, len(found), tuple(found[i] for i in positions),
+                deterministic_paper_ranked=bool(found),
+            )
         if len(found) > k:
             # Source-private composition mode: authorize and recheck each
             # one-hop witness exactly as in ordinary G5, but do NOT apply
@@ -1015,6 +1282,9 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        allowed_target_routes: frozenset[str] | None = None,
+        _paper_rank_policy: PaperNativeRankPolicy | None = None,
+        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
     ) -> NativeIndexedTwoHopResult:
         """Opt-in E0: root -> typed intermediary -> target, without execution.
 
@@ -1025,6 +1295,18 @@ class NativeSchemaGraphIndex:
         """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 two-hop strict fixed K5 required")
+        if allowed_target_routes is not None and (
+            type(allowed_target_routes) is not frozenset
+            or len(allowed_target_routes) > (
+                MAX_OWNER_RANKABLE_PATHS if _paper_rank_policy is not None
+                else MAX_RESEARCH_RANKABLE_PATHS
+            )
+            or any(
+                type(route) is not str or not 1 <= len(route) <= 320
+                for route in allowed_target_routes
+            )
+        ):
+            raise ValueError("G5 two-hop invalid bounded target route prefilter")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 two-hop invalid bounded query")
         if not isinstance(group, NativeDeclaredFieldGroup):
@@ -1043,6 +1325,21 @@ class NativeSchemaGraphIndex:
         if _alias_key(query) not in {_alias_key(a) for a in demand.aliases}:
             raise ValueError("G5 two-hop query lacks approved semantic edge")
         self.field_index._assert_source(router)
+        owner_rank: PaperNativeRankPolicy | None = None
+        original_owner_rank: str | None = None
+        if _paper_rank_policy is not None:
+            try:
+                original_owner_rank = _paper_rank_policy.model_dump_json()
+                owner_rank = PaperNativeRankPolicy.model_validate(
+                    _paper_rank_policy.model_dump(mode="python"), strict=True,
+                )
+            except Exception:
+                raise PolicyViolationError("G5 two-hop invalid owner Rank policy") from None
+            if owner_rank.snapshot_id != self.field_index.snapshot_id or not (
+                set(owner_rank.route_domains) | set(owner_rank.route_priorities)
+                | set(owner_rank.web_route_ids)
+            ) <= self.field_index.route_locations.keys():
+                raise PolicyViolationError("G5 two-hop owner Rank source mismatch")
         if router.authorization_policy is None:
             raise PolicyViolationError("G5 two-hop explicit authorization policy required")
         witness = router._retrieval_authority_witness()
@@ -1117,6 +1414,8 @@ class NativeSchemaGraphIndex:
         ]
         targets = set.intersection(*wanted) if wanted else set()
         targets.intersection_update(self.edge_consumer_routes)
+        if allowed_target_routes is not None:
+            targets.intersection_update(allowed_target_routes)
         qualified: list[NativeIndexedTwoHopCandidate] = []
 
         # Query the indexed predecessor lists only. This does not enumerate
@@ -1149,6 +1448,13 @@ class NativeSchemaGraphIndex:
                     if middle is None or middle_id == target_id:
                         continue
                     middle_tool, middle_ep = middle
+                    if owner_rank is not None and (
+                        demand.source_type is not None
+                        and middle_tool.source_type != demand.source_type
+                        or demand.license is not None
+                        and middle_tool.license != demand.license
+                    ):
+                        continue
                     # An intermediary must genuinely consume source inputs
                     # and produce the typed identifier needed by the target.
                     if _native_required_inputs(middle_ep) is None:
@@ -1163,6 +1469,13 @@ class NativeSchemaGraphIndex:
                         if root is None:
                             continue
                         root_tool, root_ep = root
+                        if owner_rank is not None and (
+                            demand.source_type is not None
+                            and root_tool.source_type != demand.source_type
+                            or demand.license is not None
+                            and root_tool.license != demand.license
+                        ):
+                            continue
                         external_inputs = root_inputs(root_id, root_tool, root_ep)
                         if external_inputs is None:
                             continue
@@ -1180,8 +1493,22 @@ class NativeSchemaGraphIndex:
                             intermediate_to_target=second,
                             target_output_fields=names,
                             source_root_parameters=external_inputs,
+                            visible_field_counts=(
+                                len(root_ep.output_fields),
+                                len(middle_ep.output_fields),
+                                len(target_ep.output_fields),
+                            ) if owner_rank is not None else None,
                         ))
-                        if len(qualified) > MAX_RESEARCH_RANKABLE_PATHS:
+                        if len(qualified) > (
+                            MAX_OWNER_RANKABLE_PATHS if owner_rank is not None
+                            else MAX_RESEARCH_RANKABLE_PATHS
+                        ):
+                            if owner_rank is not None:
+                                return NativeIndexedTwoHopResult(
+                                    "budget_unsatisfied",
+                                    self.field_index.snapshot_id,
+                                    self.field_index.registry_version, k, 0, (),
+                                )
                             raise PolicyViolationError(
                                 "G5 two-hop source expansion exceeds E0 limit"
                             )
@@ -1225,6 +1552,12 @@ class NativeSchemaGraphIndex:
                 }))
                 if latest_names != candidate.target_output_fields:
                     raise PolicyViolationError("G5 two-hop output scope changed")
+                if owner_rank is not None and candidate.visible_field_counts != (
+                    len(root_ep.output_fields),
+                    len(middle_ep.output_fields),
+                    len(target_ep.output_fields),
+                ):
+                    raise PolicyViolationError("G5 two-hop visible breadth changed")
         except Exception:
             # Provider/host callbacks may throw messages containing private
             # source fields; only generic failure reaches an external agent.
@@ -1241,7 +1574,31 @@ class NativeSchemaGraphIndex:
             raise PolicyViolationError(
                 "G5 two-hop authorization policy changed during lookup"
             )
+        if original_owner_rank is not None:
+            try:
+                if (
+                    _paper_rank_policy is None
+                    or _paper_rank_policy.model_dump_json() != original_owner_rank
+                ):
+                    raise PolicyViolationError("G5 two-hop Rank owner declaration changed")
+            except Exception:
+                raise PolicyViolationError(
+                    "G5 two-hop Rank owner declaration changed"
+                ) from None
         count = len(qualified)
+        if owner_rank is not None:
+            offsets = rank_authorized_paper_graph_two_hop(
+                tuple(qualified), concept_aliases=_paper_rank_aliases,
+                policy=owner_rank, k=k,
+            )
+            return NativeIndexedTwoHopResult(
+                "ranked_unverified" if count > k
+                else "complete" if count else "no_proven_hit",
+                self.field_index.snapshot_id,
+                self.field_index.registry_version,
+                k, count, tuple(qualified[i] for i in offsets),
+                deterministic_paper_ranked=bool(count),
+            )
         return NativeIndexedTwoHopResult(
             "over_k_unranked" if count > k else
             "complete" if count else "no_proven_hit",

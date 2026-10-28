@@ -1,0 +1,48 @@
+name: Original Paper Public Pipeline E0 Profile
+
+on:
+  pull_request:
+    paths:
+      - "scripts/benchmark_paper_public_pipeline_e0.py"
+      - "tests/test_benchmark_paper_public_pipeline_e0.py"
+      - "src/schemarouter/paper_understood_graph_plan.py"
+      - "src/schemarouter/paper_understood_direct_plan.py"
+      - "src/schemarouter/paper_query_understanding.py"
+      - "src/schemarouter/paper_native_rank.py"
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/field_routing_session.py"
+      - ".github/workflows/paper-public-pipeline-profile-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-owned-public-route-e0:
+    name: "E0 public plan ${{ matrix.routes }} routes / ${{ matrix.hops }} hops"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        routes: [500, 5000]
+        hops: [1, 2]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install native routing and pinned test dependencies
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Audit E0 public-profile source and exact route oracle
+        run: |
+          ruff check scripts/benchmark_paper_public_pipeline_e0.py tests/test_benchmark_paper_public_pipeline_e0.py
+          python -m pytest -q tests/test_benchmark_paper_public_pipeline_e0.py -k 'rejects_invalid or rejects_unbounded'
+      - name: Benchmark same public prepared source on one process
+        run: |
+          python -m scripts.benchmark_paper_public_pipeline_e0 --routes ${{ matrix.routes }} --hops ${{ matrix.hops }} --warmup 1 --repeats 3
+      - name: Assert public 500-route contract at both depths
+        if: matrix.routes == 500 && matrix.hops == 1
+        run: python -m pytest -q tests/test_benchmark_paper_public_pipeline_e0.py

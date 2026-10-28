@@ -4,7 +4,7 @@ import asyncio
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -150,6 +150,10 @@ from .state_retrieval import (
 )
 from .trace_redaction import TraceRedactor
 from .traces import RunTraceStore, append_run_event_async
+
+if TYPE_CHECKING:
+    from .concept_retrieval import NativeConceptCatalog
+    from .field_routing_session import SchemaFieldRoutingSession
 
 _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
@@ -621,6 +625,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
             if (
                 mapped_field in hidden_field_names
+                or _scoped_echoes_denied_label(parameter.name, denied_markers)
                 or (
                     parameter.name.startswith("filter__")
                     and mapped_field not in scope.visible_fields
@@ -803,6 +808,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
                 if (
                     mapped_field in hidden_field_names
+                    or _scoped_echoes_denied_label(parameter.name, denied_markers)
                     or (
                         parameter.name.startswith("filter__")
                         and mapped_field not in scope.visible_fields
@@ -4171,6 +4177,26 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         projected = self._project_retrieval_data_scope(retrieval, principal)
         self._check_retrieval_authority_witness(witness)
         return projected
+
+    def prepare_field_routing(
+        self,
+        *,
+        catalog: NativeConceptCatalog | None = None,
+        approved_host_roots: frozenset[str] = frozenset(),
+    ) -> SchemaFieldRoutingSession:
+        """Prepare provider-agnostic, schema-only Algorithm 1 field routing.
+
+        Build a reusable original-source index, optionally before any concept
+        catalog exists. `session.inspect_visible_fields()` can then support
+        owner review; `session.revise_catalog(catalog=...)` enables routing
+        without rebuilding the index. No provider is called, no answer is
+        generated, and planner retrieval defaults are left unchanged.
+        """
+        from .field_routing_session import SchemaFieldRoutingSession
+
+        return SchemaFieldRoutingSession.prepare(
+            self, catalog=catalog, approved_host_roots=approved_host_roots,
+        )
 
     def retrieve_authorized(
         self,

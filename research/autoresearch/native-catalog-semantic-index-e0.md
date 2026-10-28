@@ -68,3 +68,29 @@ verifies complete-field lookup correctness at that catalog size, with
 no measured latency, RSS, independent data distribution or adversarial
 provider workload. Verify the default `retrieve_authorized()` output remains
 unchanged and registered tools are never executed.
+
+
+## Explicit canonical numeric postings follow-up (E0, 2026-10-25)
+
+The original posting index excluded every FieldSpec.unit_normalization
+field even if the source owner had already declared a numeric source unit,
+canonical target unit, finite scale, and dimension. This caused a
+false-negative semantic-index lookup for a reviewed OPTIMADE band gap in
+eV canonically represented in J. The canonical comparator was already
+capable of checking the reviewed field; only the source-versioned posting
+prefilter suppressed it.
+
+This change makes build and both verified delta paths share one scalar
+posting predicate. Bare scalar semantic fields retain their old behavior.
+A normalized field enters the posting only when it has an explicit
+original source unit, numeric scalar JSON type, semantic_id, and a
+UnitNormalizationSpec. The FieldSpec validator constrains scale,
+offset, source/canonical unit, and numeric source shape. There is **no**
+unit inference from strings or LLM/user query; source license and live
+policy/data scope/availability checks remain required at lookup time.
+
+Offline tests cover EN/KO/JA aliases, canonical J positive lookup,
+source eV / wrong dimension rejection, role-scoped hidden field,
+and source-journal refresh equivalence to the exhaustive rebuild.
+No ranking improvement, measured latency, independent scientific data
+accuracy, or production/default-route promotion is claimed.

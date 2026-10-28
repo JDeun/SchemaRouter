@@ -97,7 +97,6 @@ class NativeDeclaredFieldGroup(StrictModel):
 def _compatible_field(required: CapabilityFieldContract, field: FieldSpec) -> bool:
     if (
         field.semantic_id is None
-        or field.unit_normalization is not None
         or not _scalar_contract(field.json_schema)
     ):
         return False
