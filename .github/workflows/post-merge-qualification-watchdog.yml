@@ -93,6 +93,18 @@ jobs:
               if isinstance(head_sha, str):
                   runs_by_sha.setdefault(head_sha, []).append(run)
 
+          # The first integration push was cancelled by its original 30-minute
+          # limit. Its historical failure must remain visible, but a later
+          # successful qualification of a first-parent descendant tests that
+          # entire integrated tree under the corrected 90-minute limit.
+          # Never excuse the cancellation while the latest main run is pending
+          # or failed; never excuse an unrelated commit's failed run.
+          newest_main_sha = commits[0]["sha"]
+          newest_main_qualified = any(
+              run.get("status") == "completed" and run.get("conclusion") == "success"
+              for run in runs_by_sha.get(newest_main_sha, [])
+          )
+
           report: list[dict[str, object]] = []
           failures: list[str] = []
 
@@ -139,10 +151,19 @@ jobs:
 
               if latest.get("status") == "completed":
                   if latest.get("conclusion") != "success":
-                      failures.append(
-                          f"{sha}: qualification run {latest.get('id')} "
-                          f"completed as {latest.get('conclusion')!r}"
-                      )
+                      if (
+                          sha == baseline_sha
+                          and sha != newest_main_sha
+                          and latest.get("conclusion") == "cancelled"
+                          and newest_main_qualified
+                      ):
+                          record["qualification"] = "superseded_by_successful_main"
+                          record["superseded_by"] = newest_main_sha
+                      else:
+                          failures.append(
+                              f"{sha}: qualification run {latest.get('id')} "
+                              f"completed as {latest.get('conclusion')!r}"
+                          )
               elif age_minutes >= stale_run_minutes:
                   failures.append(
                       f"{sha}: qualification run {latest.get('id')} is still "
