@@ -514,6 +514,7 @@ def test_g5_rank_e0_benchmark_reports_independent_oracle_and_latency(hops):
 
 def test_one_hop_rank_uses_all_current_scoped_output_fields_not_only_matched_projection():
     from dataclasses import replace
+
     from schemarouter.paper_native_rank import rank_authorized_paper_graph_one_hop
 
     candidates = (
@@ -535,6 +536,7 @@ def test_one_hop_rank_uses_all_current_scoped_output_fields_not_only_matched_pro
 
 def test_two_hop_rank_uses_current_principal_scoped_route_width_for_each_hop():
     from dataclasses import replace
+
     from schemarouter.paper_native_rank import rank_authorized_paper_graph_two_hop
 
     candidates = (
