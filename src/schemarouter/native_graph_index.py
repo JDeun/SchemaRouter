@@ -219,6 +219,10 @@ class NativeIndexedGraphCandidate:
     consumer_output_fields: tuple[str, ...]
     parameter_bindings: tuple[tuple[str, str], ...] = ()
     source_root_parameters: tuple[str, ...] = ()
+    # Counts reflect current principal-scoped source views; never raw
+    # provider schemas, denied output fields or unscoped graph metadata.
+    producer_visible_field_count: int | None = None
+    consumer_visible_field_count: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,6 +255,7 @@ class NativeIndexedTwoHopCandidate:
     intermediate_to_target: tuple[tuple[str, str], ...]
     target_output_fields: tuple[str, ...]
     source_root_parameters: tuple[str, ...]
+    visible_field_counts: tuple[int, int, int] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1021,6 +1026,14 @@ class NativeSchemaGraphIndex:
                     consumer_output_fields=names,
                     parameter_bindings=tuple(bindings),
                     source_root_parameters=root_required,
+                    producer_visible_field_count=(
+                        len(root_endpoint.output_fields) if owner_rank is not None
+                        else None
+                    ),
+                    consumer_visible_field_count=(
+                        len(endpoint.output_fields) if owner_rank is not None
+                        else None
+                    ),
                 ))
                 if owner_rank is not None and len(found) > MAX_OWNER_RANKABLE_PATHS:
                     # No partial count or source names leave an oversized cohort.
@@ -1056,6 +1069,13 @@ class NativeSchemaGraphIndex:
                 }))
                 if visible_names != candidate.consumer_output_fields:
                     raise PolicyViolationError("G5 candidate projection changed")
+                if owner_rank is not None and (
+                    candidate.producer_visible_field_count
+                    != len(root_ep_now.output_fields)
+                    or candidate.consumer_visible_field_count
+                    != len(target_ep_now.output_fields)
+                ):
+                    raise PolicyViolationError("G5 candidate visible breadth changed")
                 # A later health/scope callback may keep source identities
                 # stable while withdrawing a previously proven typed join.
                 # The default (unranked) K5 path needs the same binding proof
@@ -1473,6 +1493,11 @@ class NativeSchemaGraphIndex:
                             intermediate_to_target=second,
                             target_output_fields=names,
                             source_root_parameters=external_inputs,
+                            visible_field_counts=(
+                                len(root_ep.output_fields),
+                                len(middle_ep.output_fields),
+                                len(target_ep.output_fields),
+                            ) if owner_rank is not None else None,
                         ))
                         if len(qualified) > (
                             MAX_OWNER_RANKABLE_PATHS if owner_rank is not None
@@ -1527,6 +1552,12 @@ class NativeSchemaGraphIndex:
                 }))
                 if latest_names != candidate.target_output_fields:
                     raise PolicyViolationError("G5 two-hop output scope changed")
+                if owner_rank is not None and candidate.visible_field_counts != (
+                    len(root_ep.output_fields),
+                    len(middle_ep.output_fields),
+                    len(target_ep.output_fields),
+                ):
+                    raise PolicyViolationError("G5 two-hop visible breadth changed")
         except Exception:
             # Provider/host callbacks may throw messages containing private
             # source fields; only generic failure reaches an external agent.
