@@ -743,3 +743,51 @@ def test_cross_depth_rank_obeys_explicit_single_hop_cap():
     assert tuple(c.route_id for c in plan.calls) == (
         "root_short.read", "target_short.read",
     )
+
+
+def test_cross_depth_owner_rank_combined_budget_abstains_without_path_names(monkeypatch):
+    from schemarouter import paper_understood_graph_plan
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 100},
+    )
+    # One individually eligible route in each depth, but the *global*
+    # qualified candidate count exceeds the host's combined budget.
+    monkeypatch.setattr(paper_understood_graph_plan, "MAX_OWNER_RANKABLE_PATHS", 1)
+    plan = _compile(
+        router, index=index, named_tools=("target_short", "target_long"),
+        rank_policy=policy,
+    )
+    assert plan.status == "budget_unsatisfied"
+    assert not plan.calls and not plan.bindings
+    assert "target_long" not in repr(plan)
+    assert not plan.executable_authority
+
+
+def test_public_session_owner_cross_depth_rank_selects_two_hop():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    session = router.prepare_field_routing(catalog=CATALOG)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_priorities={"target_long.read": 100},
+    )
+    plan = session.compile_understood(
+        PaperUnderstanding(
+            intent_id="case.lookup",
+            named_tools=("target_short", "target_long"),
+        ),
+        principal=ACTOR, intent_registry=INTENTS,
+        rank_policy=policy,
+    )
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root_long.read", "middle_long.read", "target_long.read",
+    )
+    assert plan.ranked_unverified and not plan.executable_authority
