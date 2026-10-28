@@ -176,27 +176,22 @@ def _rank_verified_graph_paths(
 
     web = set(policy.web_route_ids)
 
-    def key(index: int) -> tuple[int, int, bool, int, int, tuple[str, ...]]:
+    def key(index: int) -> tuple[int, int, bool, int, int, int, tuple[str, ...]]:
         route_ids, names, breadth = paths[index]
         exact, partial = _concept_match_strength(names, concept_aliases)
         return (
             -exact, -partial, bool(web.intersection(route_ids)),
             -policy.route_priorities.get(route_ids[-1], 0),
-            breadth, route_ids,
+            breadth, len(route_ids), route_ids,
         )
 
     return tuple(heapq.nsmallest(k, range(len(paths)), key=key))
 
 
-def rank_authorized_paper_graph_one_hop(
-    candidates: tuple[NativeIndexedGraphCandidate, ...],
-    *,
-    concept_aliases: tuple[tuple[str, ...], ...],
-    policy: PaperNativeRankPolicy,
-    k: int = 5,
-) -> tuple[int, ...]:
-    """Rank only original 1-hop complete DAG receipts after G5 proof."""
-    paths = tuple((
+def _one_hop_rank_receipt(
+    candidate: NativeIndexedGraphCandidate,
+) -> tuple[tuple[str, ...], tuple[str, ...], int]:
+    return (
         (candidate.producer_route_id, candidate.consumer_route_id),
         candidate.consumer_output_fields,
         (
@@ -208,21 +203,13 @@ def rank_authorized_paper_graph_one_hop(
             if candidate.consumer_visible_field_count is not None
             else len(candidate.consumer_output_fields)
         ) + len(candidate.parameter_bindings),
-    ) for candidate in candidates)
-    return _rank_verified_graph_paths(
-        paths, concept_aliases=concept_aliases, policy=policy, k=k,
     )
 
 
-def rank_authorized_paper_graph_two_hop(
-    candidates: tuple[NativeIndexedTwoHopCandidate, ...],
-    *,
-    concept_aliases: tuple[tuple[str, ...], ...],
-    policy: PaperNativeRankPolicy,
-    k: int = 5,
-) -> tuple[int, ...]:
-    """Rank only original 2-hop complete DAG receipts after G5 proof."""
-    paths = tuple((
+def _two_hop_rank_receipt(
+    candidate: NativeIndexedTwoHopCandidate,
+) -> tuple[tuple[str, ...], tuple[str, ...], int]:
+    return (
         candidate.route_ids, candidate.target_output_fields,
         (
             sum(candidate.visible_field_counts)
@@ -234,7 +221,61 @@ def rank_authorized_paper_graph_two_hop(
             )
         ) + len(candidate.root_to_intermediate)
         + len(candidate.intermediate_to_target),
-    ) for candidate in candidates)
+    )
+
+
+def rank_authorized_paper_graph_one_hop(
+    candidates: tuple[NativeIndexedGraphCandidate, ...],
+    *,
+    concept_aliases: tuple[tuple[str, ...], ...],
+    policy: PaperNativeRankPolicy,
+    k: int = 5,
+) -> tuple[int, ...]:
+    """Rank only complete source-authorized one-hop DAG receipts."""
     return _rank_verified_graph_paths(
+        tuple(_one_hop_rank_receipt(candidate) for candidate in candidates),
+        concept_aliases=concept_aliases, policy=policy, k=k,
+    )
+
+
+def rank_authorized_paper_graph_two_hop(
+    candidates: tuple[NativeIndexedTwoHopCandidate, ...],
+    *,
+    concept_aliases: tuple[tuple[str, ...], ...],
+    policy: PaperNativeRankPolicy,
+    k: int = 5,
+) -> tuple[int, ...]:
+    """Rank only complete source-authorized two-hop DAG receipts."""
+    return _rank_verified_graph_paths(
+        tuple(_two_hop_rank_receipt(candidate) for candidate in candidates),
+        concept_aliases=concept_aliases, policy=policy, k=k,
+    )
+
+
+def rank_authorized_paper_graph_mixed(
+    one_hop: tuple[NativeIndexedGraphCandidate, ...],
+    two_hop: tuple[NativeIndexedTwoHopCandidate, ...],
+    *,
+    concept_aliases: tuple[tuple[str, ...], ...],
+    policy: PaperNativeRankPolicy,
+    k: int = 5,
+) -> tuple[tuple[int, int], ...]:
+    """Global Top-K across fully verified DAGs; depth is a final tie-breaker.
+
+    The full qualified counts and the combined 5,000-path budget are checked
+    by the calling canonical G5 index planner BEFORE invoking this function.
+    Either cohort's exact K5 is sufficient for a global K5, because no route
+    beyond a local K5 can enter the combined K5. Paths are never mixed.
+    """
+    paths = (
+        tuple(_one_hop_rank_receipt(candidate) for candidate in one_hop)
+        + tuple(_two_hop_rank_receipt(candidate) for candidate in two_hop)
+    )
+    positions = _rank_verified_graph_paths(
         paths, concept_aliases=concept_aliases, policy=policy, k=k,
+    )
+    first_len = len(one_hop)
+    return tuple(
+        (1, pos) if pos < first_len else (2, pos - first_len)
+        for pos in positions
     )
