@@ -554,3 +554,52 @@ def test_two_hop_rank_uses_current_principal_scoped_route_width_for_each_hop():
         policy=PaperNativeRankPolicy(snapshot_id=SNAPSHOT),
     )
     assert ranked == (1, 0)
+
+
+def test_mixed_depth_rank_compares_full_path_owner_priority_before_depth():
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+
+    first = _graph_candidate("root_short.read", "target_short.read")
+    second = _two_hop_candidate(
+        "root_long.read", "middle_long.read", "target_long.read",
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=SNAPSHOT,
+        route_priorities={"target_long.read": 90},
+    )
+    selected = rank_authorized_paper_graph_mixed(
+        (first,), (second,), concept_aliases=(("case status",),),
+        policy=policy,
+    )
+    assert selected == ((2, 0), (1, 0))
+
+
+def test_mixed_depth_rank_uses_shortest_proved_dag_only_after_equal_scores():
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+
+    first = _graph_candidate("root_short.read", "target_short.read")
+    second = _two_hop_candidate(
+        "root_long.read", "middle_long.read", "target_long.read",
+    )
+    selected = rank_authorized_paper_graph_mixed(
+        (first,), (second,), concept_aliases=(("case status",),),
+        policy=PaperNativeRankPolicy(snapshot_id=SNAPSHOT),
+    )
+    assert selected == ((1, 0), (2, 0))
+
+
+def test_mixed_depth_rank_web_demotion_is_stronger_than_owner_priority():
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+
+    first = _graph_candidate("root_short.read", "target_short.read")
+    second = _two_hop_candidate(
+        "root_long.read", "middle_long.read", "target_long.read",
+    )
+    selected = rank_authorized_paper_graph_mixed(
+        (first,), (second,), concept_aliases=(("case status",),),
+        policy=PaperNativeRankPolicy(
+            snapshot_id=SNAPSHOT, web_route_ids=("middle_long.read",),
+            route_priorities={"target_long.read": 100},
+        ),
+    )
+    assert selected[0] == (1, 0)
