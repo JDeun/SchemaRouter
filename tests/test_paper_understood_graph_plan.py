@@ -614,3 +614,132 @@ def test_host_unnamed_g5_public_planner_selects_exact_k5_from_large_catalog(n_ta
     assert plan.ranked_unverified is True
     assert not plan.executable_authority
     assert len(plan.bindings) == 1
+
+
+def _mixed_depth_router():
+    """Source-native graph: target_short has one hop, target_long two."""
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(_node(
+        "root_short", output_semantic="crm.case_id", identifier=True,
+    ))
+    router.add_tool(_node(
+        "root_long", output_semantic="crm.contact_id", identifier=True,
+    ))
+    router.add_tool(_node(
+        "middle_long", input_semantic="crm.contact_id",
+        output_semantic="crm.account_id", identifier=True,
+    ))
+    router.add_tool(_node("target_short", input_semantic="crm.case_id"))
+    router.add_tool(_node("target_long", input_semantic="crm.account_id"))
+    return router
+
+
+def test_cross_depth_owner_rank_prefers_stronger_two_hop_target_over_valid_one_hop():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 90},
+    )
+    named = ("target_short", "target_long")
+    legacy = _compile(router, index=index, named_tools=named)
+    assert legacy.status == "requires_observation"
+    assert tuple(c.route_id for c in legacy.calls) == (
+        "root_short.read", "target_short.read",
+    )
+    ranked = _compile(router, index=index, named_tools=named, rank_policy=policy)
+    assert ranked.status == "requires_observation"
+    assert tuple(c.route_id for c in ranked.calls) == (
+        "root_long.read", "middle_long.read", "target_long.read",
+    )
+    assert len(ranked.bindings) == 2
+    assert ranked.ranked_unverified
+    assert ranked.executable_authority is False
+
+
+def test_cross_depth_unnamed_owner_rank_uses_same_full_dag_order():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 90},
+    )
+    ranked = _compile(
+        router, index=index, named_tools=(), rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert tuple(c.route_id for c in ranked.calls) == (
+        "root_long.read", "middle_long.read", "target_long.read",
+    )
+    assert ranked.ranked_unverified and not ranked.executable_authority
+
+
+def test_cross_depth_rank_tie_uses_shorter_complete_path_as_tiebreaker():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(snapshot_id=index.field_index.snapshot_id)
+    ranked = _compile(
+        router, index=index, named_tools=("target_short", "target_long"),
+        rank_policy=policy,
+    )
+    assert tuple(c.route_id for c in ranked.calls) == (
+        "root_short.read", "target_short.read",
+    )
+
+
+def test_cross_depth_rank_web_demotion_overrides_long_target_priority():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 100},
+        web_route_ids=("middle_long.read",),
+    )
+    ranked = _compile(
+        router, index=index, named_tools=("target_short", "target_long"),
+        rank_policy=policy,
+    )
+    assert tuple(c.route_id for c in ranked.calls) == (
+        "root_short.read", "target_short.read",
+    )
+
+
+def test_cross_depth_rank_obeys_explicit_single_hop_cap():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 100},
+    )
+    plan = _compile(
+        router, index=index, named_tools=("target_short", "target_long"),
+        rank_policy=policy, max_hops=1,
+    )
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root_short.read", "target_short.read",
+    )
