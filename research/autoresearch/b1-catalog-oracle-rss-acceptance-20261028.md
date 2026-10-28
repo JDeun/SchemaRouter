@@ -36,3 +36,12 @@ Implement one coherent test/benchmark PR first, then fix only reproducible failu
 - Typed one-/two-hop producer-consumer witness parity, live role/scope and availability flips, stale sessions, multilingual/OOD and malformed annotation scenarios.
 - Repeated Linux Python 3.12 benchmark runs (both 500 and 5000), explicit seeds, reproducibility and report artifact; one-run process peak is not a distribution.
 - Publisher E2 #1346, paired agent #1477 and release #1356 remain hard holds.
+
+
+## Additional direct candidate authorization coverage (2026-10-28)
+
+- Added a source-registry exhaustive direct-candidate oracle at both 500 and 5000 mixed-scope routes, explicitly not constructed from posting lists. The test checks `qualified_count` before Top-K, K5 abstention for overfull sets, and exact candidate route IDs when at most five are eligible.
+- Recomputes expected eligibility after an availability predicate changes, without rebuilding the pinned index.
+- Separate test revokes the authorization policy in place and asserts no candidate is returned, then unregisters a tool and asserts stale-index fail-closed and new snapshot rotation.
+- This is **not yet** a fully independent typed matching implementation: the oracle intentionally shares `_complete_fields` with production; the test cannot detect a defect shared by that comparator and the index. Typed graph hop parity and multi-principal source-scoped review receipts remain pending.
+- GitHub exact-head CI/CodeQL results must be observed before merging; no independent E2 evidence or release approval.
