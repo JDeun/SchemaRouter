@@ -105,3 +105,66 @@ def test_review_reverse_index_matches_independent_registered_source_oracle(
         index.review_cursor_anchors[_native_review_cursor(index.snapshot_id, route)]
         == route for route in expected
     )
+
+
+@pytest.mark.parametrize("route_count", (500, 5000))
+def test_indexed_conjunctive_candidates_match_live_authorized_source_scan(
+    route_count: int,
+) -> None:
+    """Compare pre-TopK qualified counts against a source-only eligibility scan.
+
+    This test deliberately never uses index.postings or index.route_semantic_ids
+    to construct the oracle; it reads the registered endpoint contracts.
+    """
+    from schemarouter.field_group_retrieval import _complete_fields
+    from scripts.benchmark_native_fork_fieldgroup_e0 import (
+        ACTOR, GROUP, ALIASES, build_fixture,
+    )
+
+    router = build_fixture(route_count, mixed_scope=True)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    permitted = router._authorization_predicate(ACTOR)
+    assert permitted is not None
+
+    def scan() -> set[str]:
+        eligible: set[str] = set()
+        for tool in router.registry.tools():
+            for endpoint in tool.endpoints:
+                if (
+                    tool.source_type != GROUP.source_type
+                    or tool.license != GROUP.license
+                    or endpoint.read_only is not True
+                    or endpoint.destructive is True
+                    or not permitted(tool, endpoint)
+                ):
+                    continue
+                availability = router.planner.availability_predicate
+                if availability is not None and not availability(tool, endpoint):
+                    continue
+                visible = router._data_scope_endpoint_view(ACTOR, tool, endpoint)
+                if visible is not None and _complete_fields(
+                    visible.output_fields, GROUP.required_fields,
+                ):
+                    eligible.add(f"{tool.key}.{endpoint.name}")
+        return eligible
+
+    expected = scan()
+    result = index.lookup(router, ALIASES[0], principal=ACTOR, group=GROUP)
+    assert result.qualified_count == len(expected)
+    if len(expected) <= 5:
+        assert {candidate.route_id for candidate in result.candidates} == expected
+    else:
+        assert result.status == "over_k_unranked"
+        assert result.candidates == ()
+
+    # A live availability change must affect lookup without rebuilding postings.
+    router.planner.availability_predicate = (
+        lambda tool, endpoint: tool.key != "fork_status"
+    )
+    changed = scan()
+    after = index.lookup(router, ALIASES[0], principal=ACTOR, group=GROUP)
+    assert after.qualified_count == len(changed)
+    if len(changed) <= 5:
+        assert {candidate.route_id for candidate in after.candidates} == changed
+    else:
+        assert after.status == "over_k_unranked"
