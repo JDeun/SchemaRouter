@@ -10,6 +10,8 @@ import pytest
 from schemarouter.native_semantic_index import (
     _native_review_cursor,
     _native_review_views,
+    NativeSchemaPostingIndex,
+    _indexable_semantic_field,
 )
 
 
@@ -64,3 +66,38 @@ def test_public_review_pages_cover_500_source_routes() -> None:
     assert report["reviewed_route_count"] > 0
     assert report["page_count"] >= 1
     assert report["serialized_page_bytes"] > 0
+
+
+@pytest.mark.parametrize("route_count", (500, 5000))
+def test_review_reverse_index_matches_independent_registered_source_oracle(
+    route_count: int,
+) -> None:
+    """Scan registered source schemas, not the index's own forward postings."""
+    from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
+
+    router = build_fixture(route_count, mixed_scope=True)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    expected: dict[str, frozenset[str]] = {}
+    total_routes = 0
+    for tool in router.registry.tools():
+        for endpoint in tool.endpoints:
+            total_routes += 1
+            if not tool.source_type or not tool.license:
+                continue
+            semantic_ids = frozenset(
+                field.semantic_id for field in endpoint.output_fields
+                if field.semantic_id is not None
+                and _indexable_semantic_field(field)
+            )
+            if semantic_ids:
+                expected[f"{tool.key}.{endpoint.name}"] = semantic_ids
+    assert total_routes == route_count
+    assert index.indexed_route_count == total_routes
+    assert dict(index.route_semantic_ids) == expected
+    assert index.review_route_ids == tuple(sorted(expected))
+    assert len(index.review_cursor_anchors) == len(expected)
+    assert set(index.review_cursor_anchors.values()) == set(expected)
+    assert all(
+        index.review_cursor_anchors[_native_review_cursor(index.snapshot_id, route)]
+        == route for route in expected
+    )
