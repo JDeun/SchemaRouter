@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import json
 import platform
-import resource
 import sys
 from dataclasses import asdict
 from math import ceil
@@ -20,6 +19,15 @@ from schemarouter import PrincipalContext, SchemaFieldRoutingSession
 from scripts.benchmark_native_fork_fieldgroup_e0 import ACTOR, build_fixture
 
 EVIDENCE = "SOURCE_OWNED_SYNTHETIC_REVIEW_B1_DEV"
+
+
+def _linux_peak_rss_kib() -> int | None:
+    """Linux ru_maxrss reports process-lifetime peak KiB; other OSes omit it."""
+    if sys.platform != "linux":
+        return None
+    import resource
+
+    return int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
 
 def _percentiles(samples: list[float]) -> dict[str, float]:
