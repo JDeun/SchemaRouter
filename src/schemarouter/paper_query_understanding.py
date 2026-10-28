@@ -89,6 +89,7 @@ async def compile_model_query(
     max_model_input_bytes: int = 32768,
     max_model_output_bytes: int = 4096,
     rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
 ) -> PaperTypedToolPlan:
     """Propose source-scoped intent IDs using a single caller-supplied model.
 
@@ -111,6 +112,15 @@ async def compile_model_query(
         raise ValueError("explicit model callback required")
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
+    if (
+        type(allow_unnamed_graph_discovery) is not bool
+        or allow_unnamed_graph_discovery and rank_policy is None
+    ):
+        # This authority comes only from the host call signature. Never
+        # allow an LLM to activate graph-wide target discovery.
+        raise ValueError(
+            "unnamed graph discovery requires host approval and owner Rank"
+        )
     if type(k) is not int or k != 5 or type(max_hops) is not int or max_hops not in (1, 2):
         raise ValueError("paper query requires K5 and one or two graph hops")
     if (
@@ -328,6 +338,7 @@ async def compile_model_query(
             understood, principal=principal, intent_registry=intent_registry,
             host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
             rank_policy=rank_policy,
+            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )
     except (ValueError, TypeError):
         verify()
