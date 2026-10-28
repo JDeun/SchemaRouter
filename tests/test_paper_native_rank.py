@@ -497,3 +497,16 @@ def test_owner_rank_refuses_more_than_5000_complete_path_receipts():
         paper_native_rank.rank_authorized_paper_graph_one_hop(
             candidates, concept_aliases=(("case status",),), policy=policy, k=5,
         )
+
+
+@pytest.mark.parametrize("hops", [1, 2])
+def test_g5_rank_e0_benchmark_reports_independent_oracle_and_latency(hops):
+    from scripts.research_paper_g5_rank_benchmark_e0 import benchmark
+
+    metrics = benchmark(n=500, hops=hops, samples=2)
+    assert metrics["tier"] == "E0-synthetic-comparator-only"
+    assert metrics["oracle_exact_top_k5"] is True
+    assert metrics["receipt_bytes"] > 0
+    assert metrics["wall_ms"]["p95"] >= 0
+    assert metrics["wall_ms"]["p99"] >= 0
+    assert metrics["cpu_ms"]["p95"] >= 0
