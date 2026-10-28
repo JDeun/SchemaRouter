@@ -44,3 +44,24 @@ def test_review_views_are_immutable_and_ignore_empty_semantics() -> None:
         inverse["injected"] = frozenset({"crm.id"})
     with pytest.raises(TypeError):
         anchors["injected"] = "visible"
+
+
+def test_public_review_pages_cover_500_source_routes() -> None:
+    """Exercise the public, scoped cursor path rather than only index helpers."""
+    from schemarouter import PrincipalContext
+    from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
+    from scripts.benchmark_native_review_pagination_b1 import benchmark_review_pages
+
+    router = build_fixture(500)
+    session = router.prepare_field_routing()
+    report = benchmark_review_pages(
+        session,
+        principal=PrincipalContext(subject="researcher", roles=("analyst",)),
+        limit=64,
+    )
+    assert report["source_snapshot"] == session.snapshot_id
+    assert report["source_route_count"] == session.indexed_route_count
+    assert report["reviewed_route_count"] <= report["source_route_count"]
+    assert report["reviewed_route_count"] > 0
+    assert report["page_count"] >= 1
+    assert report["serialized_page_bytes"] > 0
