@@ -17,6 +17,8 @@ from statistics import median
 from time import perf_counter_ns, process_time_ns
 from typing import Any
 
+from pydantic import TypeAdapter
+
 from schemarouter import (
     CapabilityFieldContract,
     EndpointSpec,
@@ -30,10 +32,12 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
+from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
 
 EVIDENCE_TIER = "E0_SYNTHETIC_PUBLIC_PLAN_ONLY_NOT_INDEPENDENT_E2"
+PLAN_SERIALIZER = TypeAdapter(PaperTypedToolPlan)
 ACTOR = PrincipalContext(subject="paper-public-e0", roles=("reader",))
 LICENSE = "host-reviewed-synthetic"
 
@@ -121,7 +125,7 @@ def _assert_plan(plan: Any, expected: tuple[str, ...]) -> int:
         or plan.ranked_unverified is not True
     ):
         raise AssertionError("public Algorithm 1 plan disagreed with source fixture")
-    return len(plan.model_dump_json().encode("utf-8"))
+    return len(PLAN_SERIALIZER.dump_json(plan))
 
 
 def _measure_sync(session: Any, understanding: Any, intents: Any, policy: Any,
