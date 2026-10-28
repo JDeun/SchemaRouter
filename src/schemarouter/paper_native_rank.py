@@ -17,8 +17,8 @@ from .field_group_retrieval import _alias_key
 from .models import StrictModel
 
 if TYPE_CHECKING:
-    from .native_semantic_index import IndexedNativeFieldCandidate
     from .native_graph_index import NativeIndexedGraphCandidate, NativeIndexedTwoHopCandidate
+    from .native_semantic_index import IndexedNativeFieldCandidate
 
 
 _DOMAIN_ID = re.compile(r"[a-zA-Z][a-zA-Z0-9._:-]{0,79}\Z")
