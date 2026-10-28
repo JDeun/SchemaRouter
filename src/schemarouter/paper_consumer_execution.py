@@ -15,8 +15,8 @@ from .errors import PolicyViolationError, SchemaValidationError
 from .models import ExecutionPlan, ToolResult
 from .native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
 from .native_graph_observation import _materialize_original_observed_edge
-from .paper_observed_binding import observe_and_bind_paper_plan
 from .paper_native_rank import PaperNativeRankPolicy
+from .paper_observed_binding import observe_and_bind_paper_plan
 from .paper_typed_tool_plan import (
     PaperTypedToolPlan,
     _check_current_call_scopes,
