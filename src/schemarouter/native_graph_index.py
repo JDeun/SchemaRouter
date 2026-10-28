@@ -264,10 +264,10 @@ class NativeIndexedTwoHopResult:
     requested_k: int
     qualified_path_count: int
     candidates: tuple[NativeIndexedTwoHopCandidate, ...]
-    deterministic_paper_ranked: bool = False
     independent_quality_evidence: bool = False
     calibrated_no_fit: bool = False
     executable_authority: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 def _source_native_graph_contracts(
