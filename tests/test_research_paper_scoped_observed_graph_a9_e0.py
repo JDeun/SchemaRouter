@@ -174,3 +174,59 @@ async def test_scoped_policy_change_during_middle_stops_target_and_receipt():
             lambda payload: _response(), **_args(_view(router), index),
         )
     assert [name for name, _ in seen] == ["root", "middle"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("hops", [1, 2])
+async def test_scoped_a9_explicit_owner_unnamed_graph_executes_pinned_path(hops):
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_paper_scoped_observed_graph_a9_e0 import (
+        run_paper_scoped_named_graph_a9_e0,
+    )
+    from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
+
+    router, index, seen = _ranked_fixture(hops=hops)
+    view = _view(router)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_5.read": 100},
+    )
+
+    def model(payload):
+        # Model chooses ONLY reviewed intent/concept. Host approves
+        # source-owning discovery and Rank; this is not a model permission.
+        return {
+            "intent_id": "case.lookup", "concept_ids": ["crm.status"],
+            "named_tools": [],
+        }
+
+    decision, receipt = await run_paper_scoped_named_graph_a9_e0(
+        model, **_args(view, index),
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert decision == "offer"
+    assert receipt is not None
+    assert receipt.plan.ranked_unverified
+    assert not receipt.executable_authority
+    assert [name for name, _ in seen] == (
+        ["root", "target_5"] if hops == 1
+        else ["root", "middle", "target_5"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_scoped_a9_unnamed_graph_requires_host_rank_before_model_call():
+    from scripts.research_paper_scoped_observed_graph_a9_e0 import (
+        run_paper_scoped_named_graph_a9_e0,
+    )
+
+    router, index, seen = _fixture()
+    def model(_payload):
+        pytest.fail("host proof preflight must precede model disclosure")
+
+    with pytest.raises(ValueError, match="owner|Rank|host"):
+        await run_paper_scoped_named_graph_a9_e0(
+            model, **_args(_view(router), index),
+            allow_unnamed_graph_discovery=True,
+        )
+    assert seen == []
