@@ -386,3 +386,40 @@ def test_owner_rank_filters_source_incompatible_upstream_before_selecting_top_pa
         "root.read", "target_0.read",
     )
     assert plan.ranked_unverified is True
+
+
+def test_owner_ranked_two_hop_graph_exceeds_legacy_research_32_path_cap():
+    from schemarouter import NativeDeclaredFieldGroup
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, n_targets=33)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    group = NativeDeclaredFieldGroup(
+        aliases=("case status",),
+        required_fields=CATALOG.concepts[0].required_fields,
+        source_type="crm", license="reviewed",
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_32.read": 100},
+    )
+
+    with pytest.raises(PolicyViolationError, match="source expansion"):
+        index.lookup_two_hop(
+            router, "case status", group=group, principal=ACTOR,
+        )
+    ranked = index.lookup_two_hop(
+        router, "case status", group=group, principal=ACTOR,
+        _paper_rank_policy=policy,
+        _paper_rank_aliases=(("case status",),),
+    )
+    assert ranked.status == "ranked_unverified"
+    assert ranked.qualified_path_count == 33
+    assert ranked.deterministic_paper_ranked
+    assert len(ranked.candidates) == 5
+    assert ranked.candidates[0].route_ids == (
+        "root.read", "middle.read", "target_32.read",
+    )
+    assert not ranked.executable_authority
