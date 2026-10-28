@@ -22,3 +22,17 @@ Parent: #1560. This is a scoped engineering checklist, **not** evidence of E2 su
 ## Work sequencing
 
 Implement one coherent test/benchmark PR first, then fix only reproducible failures in existing index code. No ranking optimization or product-default promotion in this PR.
+
+## Implemented on #1816 branch (2026-10-28; unverified exact-head CI)
+
+- Added a test-only exhaustive **registered source-schema** reverse-map oracle for both 500 and 5000 route mixed-scope synthetic fixtures. The oracle walks `registry.tools()` and endpoint output fields, not `index.postings`, then compares route→semantic sets, route ordering, snapshot-bound cursor anchors, and route counts. It shares the production scalar-field eligibility predicate, so this is **not** an independently implemented authorization/typed-matching oracle.
+- Added a 500-route test of actual public principal-scoped `inspect_visible_fields` pagination through the existing benchmark helper, checking cursor progression, snapshot identity, page bounds, serialized payload size and latency accounting.
+- Added Linux process-lifetime peak RSS before/after measurements to `scripts/benchmark_native_review_pagination_b1.py`; the probe returns null on non-Linux CI and does not imply isolated allocation cost. Existing wall/CPU page p50/p95/p99 and serialized page bytes remain.
+- These changes are committed to the draft branch. **No local pytest or GitHub exact-head CI pass is claimed**: the execution container cannot resolve github.com; require protected CI+CodeQL and separate merge eligibility review.
+
+### Still required
+
+- Independent exhaustive **authorized** candidate oracle, including source type/license, read-only, typed field matching, principal/DataScope and availability, compared **before** K5.
+- Typed one-/two-hop producer-consumer witness parity, live role/scope and availability flips, stale sessions, multilingual/OOD and malformed annotation scenarios.
+- Repeated Linux Python 3.12 benchmark runs (both 500 and 5000), explicit seeds, reproducibility and report artifact; one-run process peak is not a distribution.
+- Publisher E2 #1346, paired agent #1477 and release #1356 remain hard holds.
