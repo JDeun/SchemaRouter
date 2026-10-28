@@ -13,12 +13,12 @@ from schemarouter.field_routing_session import SchemaFieldRoutingSession
     "over_k_unranked", "budget_unsatisfied", "ambiguous_paths",
 ])
 async def test_direct_sdk_refuses_nonready_paper_receipts(monkeypatch, status):
-    import schemarouter.paper_typed_tool_plan as paper
+    import schemarouter.field_routing_session as paper
 
     session = object.__new__(SchemaFieldRoutingSession)
-    session._router = Mock()
-    session._index = Mock()
-    monkeypatch.setattr(session, "_require_catalog", lambda: Mock())
+    object.__setattr__(session, "_router", Mock())
+    object.__setattr__(session, "_index", Mock())
+    monkeypatch.setattr(SchemaFieldRoutingSession, "_require_catalog", lambda self: Mock())
     monkeypatch.setattr(
         paper, "compile_paper_typed_tool_plan",
         lambda *args, **kwargs: Mock(
