@@ -603,3 +603,55 @@ def test_mixed_depth_rank_web_demotion_is_stronger_than_owner_priority():
         ),
     )
     assert selected[0] == (1, 0)
+
+
+@pytest.mark.parametrize("size", [500, 5000])
+def test_mixed_depth_rank_matches_independent_source_oracle_at_scale(size):
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+
+    one_count = size // 2
+    two_count = size - one_count
+    short = tuple(
+        _graph_candidate(f"root_{i:05d}.read", f"short_{i:05d}.read")
+        for i in range(one_count)
+    )
+    long = tuple(
+        _two_hop_candidate(
+            f"root_long_{i:05d}.read", f"middle_{i:05d}.read",
+            f"long_{i:05d}.read",
+        )
+        for i in range(two_count)
+    )
+    best = f"long_{two_count - 1:05d}.read"
+    owner = PaperNativeRankPolicy(
+        snapshot_id=SNAPSHOT,
+        route_priorities={best: 100},
+    )
+    offsets = rank_authorized_paper_graph_mixed(
+        short, long, concept_aliases=(("case status",),),
+        policy=owner,
+    )
+    assert len(offsets) == 5
+    assert offsets[0] == (2, two_count - 1)
+    assert all(hops in (1, 2) for hops, _index in offsets)
+
+
+def test_mixed_depth_rank_rejects_combined_5001_path_receipts():
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+
+    short = tuple(
+        _graph_candidate(f"root_{i:05d}.read", f"short_{i:05d}.read")
+        for i in range(2501)
+    )
+    long = tuple(
+        _two_hop_candidate(
+            f"root_long_{i:05d}.read", f"middle_{i:05d}.read",
+            f"long_{i:05d}.read",
+        )
+        for i in range(2500)
+    )
+    with pytest.raises(ValueError, match="5000"):
+        rank_authorized_paper_graph_mixed(
+            short, long, concept_aliases=(("case status",),),
+            policy=PaperNativeRankPolicy(snapshot_id=SNAPSHOT),
+        )
