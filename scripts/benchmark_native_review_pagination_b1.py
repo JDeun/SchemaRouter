@@ -95,7 +95,7 @@ def benchmark_review_pages(
         "provenance": EVIDENCE,
         "source_snapshot": session.snapshot_id,
         "process_peak_rss_before_kib": peak_rss_before_kib,
-        "process_peak_rss_after_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        "process_peak_rss_after_kib": _linux_peak_rss_kib(),
         "source_route_count": session.indexed_route_count,
         "reviewed_route_count": len(seen),
         "requested_page_size": limit,
