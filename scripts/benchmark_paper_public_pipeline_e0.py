@@ -12,7 +12,6 @@ import argparse
 import asyncio
 import json
 import platform
-import sys
 from math import ceil
 from statistics import median
 from time import perf_counter_ns, process_time_ns
@@ -24,10 +23,10 @@ from schemarouter import (
     FieldSpec,
     NativeConceptCatalog,
     NativeDeclaredConcept,
-    ParameterSpec,
     PaperIntentDeclaration,
     PaperIntentRegistry,
     PaperNativeRankPolicy,
+    ParameterSpec,
     PrincipalContext,
     ToolSpec,
 )
@@ -86,7 +85,6 @@ def build_synthetic_public_case(routes: int, hops: int) -> tuple[Any, Any, Any, 
         ))
     semantic = "crm.status" if hops == 1 else "crm.resolution"
     phrase = "case status" if hops == 1 else "case resolution"
-    target = "case_service.read" if hops == 1 else "case_followup.read"
     expected = (
         ("contact_directory.read", "case_service.read") if hops == 1
         else ("contact_directory.read", "case_middle.read", "case_followup.read")
