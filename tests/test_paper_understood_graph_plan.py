@@ -406,7 +406,7 @@ def test_owner_ranked_two_hop_graph_exceeds_legacy_research_32_path_cap():
         route_priorities={"target_32.read": 100},
     )
 
-    with pytest.raises(PolicyViolationError, match="source expansion"):
+    with pytest.raises(PolicyViolationError, match="source eligibility changed"):
         index.lookup_two_hop(
             router, "case status", group=group, principal=ACTOR,
         )
