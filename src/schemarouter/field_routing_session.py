@@ -567,6 +567,7 @@ class SchemaFieldRoutingSession:
         k: int = 5,
         max_hops: int = 2,
         rank_policy: PaperNativeRankPolicy | None = None,
+        allow_unnamed_graph_discovery: bool = False,
     ) -> PaperTypedToolPlan:
         """Compile untrusted structured Understand(q) hints to a source-proven plan.
 
@@ -581,6 +582,7 @@ class SchemaFieldRoutingSession:
             index=self._index, host_source_arguments=host_source_arguments,
             k=k, max_hops=max_hops,
             rank_policy=rank_policy,
+            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )
 
     async def acompile_query(
@@ -599,6 +601,7 @@ class SchemaFieldRoutingSession:
         max_model_input_bytes: int = 32768,
         max_model_output_bytes: int = 4096,
         rank_policy: PaperNativeRankPolicy | None = None,
+        allow_unnamed_graph_discovery: bool = False,
     ) -> PaperTypedToolPlan:
         """Use a caller-owned model to suggest IDs, then prove source fields.
 
@@ -616,4 +619,5 @@ class SchemaFieldRoutingSession:
             max_model_input_bytes=max_model_input_bytes,
             max_model_output_bytes=max_model_output_bytes,
             rank_policy=rank_policy,
+            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )
