@@ -56,7 +56,7 @@ def benchmark_review_pages(
     seen: set[str] = set()
     last_route: str | None = None
     # Linux ru_maxrss is process peak KiB, not an isolated allocation delta.
-    peak_rss_before_kib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    peak_rss_before_kib = _linux_peak_rss_kib()
     wall_ms: list[float] = []
     cpu_ms: list[float] = []
     serialized_bytes = 0
