@@ -791,3 +791,56 @@ def test_public_session_owner_cross_depth_rank_selects_two_hop():
         "root_long.read", "middle_long.read", "target_long.read",
     )
     assert plan.ranked_unverified and not plan.executable_authority
+
+
+def test_cross_depth_mutable_availability_revocation_fails_before_returning_plan():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 100},
+    )
+    state = {"short_available": True}
+
+    def check_availability(tool, _endpoint):
+        if tool.key == "middle_long":
+            state["short_available"] = False
+        if tool.key == "root_short":
+            return state["short_available"]
+        return True
+
+    router.planner.availability_predicate = check_availability
+    # The second-depth lookup revokes a previously qualified 1-hop root.
+    # Only re-proving the *full* original cohort prevents a stale Top-K
+    # proof from being published even when the winner is in depth two.
+    with pytest.raises(PolicyViolationError, match="source|proof|eligibility"):
+        _compile(
+            router, index=index,
+            named_tools=("target_short", "target_long"),
+            rank_policy=policy,
+        )
+
+
+def test_cross_depth_model_named_target_does_not_discover_other_tool_names():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _mixed_depth_router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_long.read": 100},
+    )
+    only_short = _compile(
+        router, index=index, named_tools=("target_short",),
+        rank_policy=policy,
+    )
+    assert tuple(c.route_id for c in only_short.calls) == (
+        "root_short.read", "target_short.read",
+    )
+    assert "target_long" not in repr(only_short)
