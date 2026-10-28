@@ -107,7 +107,7 @@ def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
 
 def _compile(router, *, named_tools=("target_0",), max_hops=2,
              hints=None, index=None, source_type=None, host_source_arguments=None,
-             rank_policy=None):
+             rank_policy=None, allow_unnamed_graph_discovery=False):
     return compile_paper_understood_graph_plan(
         router, PaperUnderstanding(
             intent_id="case.lookup", named_tools=named_tools,
@@ -120,6 +120,7 @@ def _compile(router, *, named_tools=("target_0",), max_hops=2,
         max_hops=max_hops,
         host_source_arguments=host_source_arguments,
         rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )
 
 
@@ -450,3 +451,95 @@ def test_public_prepared_session_uses_owner_rank_for_full_named_graph():
     assert result.ranked_unverified
     assert result.executable_authority is False
     assert len(result.bindings) == 2
+
+
+@pytest.mark.parametrize("hops", [1, 2])
+def test_host_opt_in_discovers_unnamed_source_proven_dependency(hops):
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=hops, n_targets=6)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_5.read": 10},
+    )
+    traditional = _compile(router, index=index, named_tools=(), rank_policy=policy)
+    assert traditional.status == "requires_arguments"
+    assert traditional.bindings == ()
+
+    ranked = _compile(
+        router, index=index, named_tools=(), rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert ranked.status == "requires_observation"
+    assert tuple(call.route_id for call in ranked.calls) == (
+        ("root.read", "target_5.read") if hops == 1
+        else ("root.read", "middle.read", "target_5.read")
+    )
+    assert len(ranked.bindings) == hops
+    assert ranked.ranked_unverified is True
+    assert ranked.executable_authority is False
+
+
+def test_host_opt_in_unnamed_graph_reaches_targets_beyond_model_five_name_limit():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=33)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_32.read": 100},
+    )
+    plan = _compile(
+        router, index=index, named_tools=(), rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert tuple(call.route_id for call in plan.calls) == (
+        "root.read", "target_32.read",
+    )
+    assert plan.ranked_unverified and not plan.executable_authority
+
+
+def test_unnamed_graph_discovery_requires_host_approval_and_current_owner_rank():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router()
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    with pytest.raises(ValueError, match="rank|owner|approved"):
+        _compile(
+            router, index=index, named_tools=(),
+            allow_unnamed_graph_discovery=True,
+        )
+    stale = PaperNativeRankPolicy(snapshot_id="0" * 64)
+    with pytest.raises(PolicyViolationError, match="source|snapshot|rank"):
+        _compile(
+            router, index=index, named_tools=(), rank_policy=stale,
+            allow_unnamed_graph_discovery=True,
+        )
+
+
+def test_unnamed_graph_discovery_does_not_resurrect_hidden_or_denied_root():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    for hidden in (True, False):
+        router = _router(hops=2, hidden_middle=hidden, deny_middle=not hidden)
+        index = NativeSchemaGraphIndex.build(
+            NativeSchemaPostingIndex.build(router.registry),
+        )
+        policy = PaperNativeRankPolicy(snapshot_id=index.field_index.snapshot_id)
+        plan = _compile(
+            router, index=index, named_tools=(), rank_policy=policy,
+            allow_unnamed_graph_discovery=True,
+        )
+        # An incomplete direct shape remains available; no unauthorized
+        # graph path or hidden middle route may appear.
+        assert plan.status == "requires_arguments"
+        assert tuple(c.route_id for c in plan.calls) == ("target_0.read",)
+        assert plan.bindings == ()
+        assert "middle.read" not in repr(plan)
