@@ -245,3 +245,72 @@ async def test_bounded_final_observation_and_model_answer():
         await run_paper_scoped_answered_graph_a9_e0(
             _model, agent, **_args(_view(router), index),
         )
+
+
+@pytest.mark.asyncio
+async def test_scoped_unnamed_ranked_a9_execution_reaches_tool_free_finalizer():
+    from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
+
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_paper_scoped_answered_graph_a9_e0 import (
+        run_paper_scoped_answered_graph_a9_e0,
+    )
+
+    router, index, seen = _ranked_fixture(hops=2, n_targets=6)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_5.read": 100},
+    )
+    agent = FixedFinalizer()
+    decision, answer = await run_paper_scoped_answered_graph_a9_e0(
+        lambda payload: {
+            "intent_id": "case.lookup", "concept_ids": ["crm.status"],
+            "named_tools": [],
+        },
+        agent, **_args(_view(router), index), rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert decision == "offer" and answer is not None
+    assert answer.answer == "The case status is open."
+    assert answer.observed_tool_calls == 3
+    assert not answer.answer_verified and not answer.independent_e2
+    assert [n for n, _ in seen] == ["root", "middle", "target_5"]
+    assert len(agent.calls) == 1
+    messages, tools = agent.calls[0]
+    assert tools == []
+    assert json.loads(messages[1]["content"]) == {
+        "question": QUERY, "observation": {"status": "open"},
+    }
+    assert "case-42" not in str(messages)
+    assert "root.read" not in str(messages)
+
+
+@pytest.mark.asyncio
+async def test_scoped_ranked_finalizer_mutating_owner_policy_aborts_answer():
+    from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
+
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_paper_scoped_answered_graph_a9_e0 import (
+        run_paper_scoped_answered_graph_a9_e0,
+    )
+
+    router, index, seen = _ranked_fixture(hops=1)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_5.read": 100},
+    )
+    def mutate_rank():
+        policy.route_priorities["target_5.read"] = 0
+
+    agent = FixedFinalizer(on_generate=mutate_rank)
+    with pytest.raises(PolicyViolationError, match="source|Rank|owner"):
+        await run_paper_scoped_answered_graph_a9_e0(
+            lambda payload: {
+                "intent_id": "case.lookup", "concept_ids": ["crm.status"],
+                "named_tools": [],
+            },
+            agent, **_args(_view(router), index), rank_policy=policy,
+            allow_unnamed_graph_discovery=True,
+        )
+    assert [name for name, _ in seen] == ["root", "target_5"]
+    assert len(agent.calls) == 1
