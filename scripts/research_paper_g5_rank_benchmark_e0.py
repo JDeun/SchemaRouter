@@ -11,7 +11,7 @@ import json
 import statistics
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from schemarouter.native_graph_index import (
     NativeIndexedGraphCandidate,
@@ -83,17 +83,17 @@ def benchmark(*, n: int, hops: int, samples: int = 7) -> dict[str, Any]:
     for _ in range(samples):
         t0, c0 = time.perf_counter(), time.process_time()
         if hops == 1:
-            assert all(isinstance(p, NativeIndexedGraphCandidate) for p in candidates)
+            one_hop = cast(tuple[NativeIndexedGraphCandidate, ...], candidates)
             selected = rank_authorized_paper_graph_one_hop(
-                candidates, concept_aliases=aliases, policy=policy,
+                one_hop, concept_aliases=aliases, policy=policy,
             )
-            output = tuple(candidates[i].consumer_route_id for i in selected)
+            output = tuple(one_hop[i].consumer_route_id for i in selected)
         else:
-            assert all(isinstance(p, NativeIndexedTwoHopCandidate) for p in candidates)
+            two_hop = cast(tuple[NativeIndexedTwoHopCandidate, ...], candidates)
             selected = rank_authorized_paper_graph_two_hop(
-                candidates, concept_aliases=aliases, policy=policy,
+                two_hop, concept_aliases=aliases, policy=policy,
             )
-            output = tuple(candidates[i].route_ids[-1] for i in selected)
+            output = tuple(two_hop[i].route_ids[-1] for i in selected)
         wall_times.append(time.perf_counter() - t0)
         cpu_times.append(time.process_time() - c0)
         # Independent fixed fixture oracle: every concept match and field
