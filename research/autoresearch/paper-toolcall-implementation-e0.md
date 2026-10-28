@@ -1121,7 +1121,61 @@ docs-only handoff revision; do not inherit green from an earlier head.
 - [ ] **C3** Update this checklist and next actionable item, source/commit evidence, issue #1560 and Draft #1755 description when material work changes. Mark checkboxes only when their stated acceptance is proven.
 - [ ] **C4** Preserve cross-session safety boundaries: source ownership, permissions, no untrusted parameters, no new agent/executor, no E2 or release promotion.
 
-## ACTIVE CROSS-SESSION RESUME — 2026-10-25 (supersedes older next-step notes below)
+## CURRENT INTEGRATION RESUME — 2026-10-28 (supersedes earlier checkpoints)
+
+Original Algorithm 1's bounded, **host-opt-in** B1/A5/A7/A8/A9 and G5
+source-native implementation now reaches cumulative branch
+`integrate/1811-algorithm1-native-core-20261028`, HEAD
+`966f3b98ea964a90daabb5d42cffe871234de784`. The main-target
+[PR #1812](https://github.com/JDeun/SchemaRouter/pull/1812) tracks
+[issue #1811](https://github.com/JDeun/SchemaRouter/issues/1811):
+247 commits ahead of protected main `61fecf541a71fa26d884d25b966be72a3ede0594`,
+zero behind, 263 changed files and no Git merge conflict at this checkpoint.
+Do **not** cherry-pick each stacked Draft or mark them independently merged.
+The exact-head protected GitHub checks, the main branch ruleset and the
+actual merged commit must all be rechecked before saying it landed.
+
+The latest direct owner Rank, intent-domain Filter, unnamed G5 global
+one-/two-hop DAG Rank, prepared sync/async model query and A9 observed
+execution are in the integration branch. The 500/5,000 public E0 pipeline
+profile in `scripts/benchmark_paper_public_pipeline_e0.py` uses the real
+prepared API and deterministic model response, never a provider or real LLM.
+On a clean clone of the integration HEAD, 112 focused G5/model/A9/benchmark
+tests passed. The local 5,000-route/two-hop profile selected the exact
+three source-approved routes, with no provider calls (cold prepare ~1.15s,
+sync median ~10.21ms, async stub median ~22.89ms; exploratory machine
+measurements, **not** calibrated p95/p99, external E2 or product SLO).
+
+**Next work after #1812 qualifies and merges:** the separate opt-in
+public cold-build versus source-journal incremental-refresh E0 profile,
+designed in `paper-public-pipeline-refresh-e0-design-20261028.md` and
+planned in `paper-public-pipeline-refresh-e0-plan-20261028.md`. It adds no
+native routing algorithm or default behavior. Its initial local RED→GREEN
+focused 7/7 and broader 119/119 tests and Ruff were observed on a
+separate work branch, **not** on the protected integration PR head;
+new-head exact CI remains necessary before any follow-up merge.
+Read-only follow-up code review found that equal posting snapshots do not
+prove equal typed G5 graphs. A deliberately corrupted refresh graph with
+unchanged posting snapshot and CRM DAG first passed the benchmark (RED),
+then was rejected (GREEN) after comparing the canonical graph, native
+root/consumer counts, edge consumer set, approved roots and source-contract
+sidecar outside both timing regions. The local full-repository suite
+attempt reached ~9% in 240 seconds and timed out (exit 124); do not claim
+that this follow-up passed the full suite. Its narrower suites and hosted
+new-head CI are separate gates.
+
+**Cleanup guard:** historical Draft PR heads #1745 and #1747 are not exact
+ancestors of this integration head; research #1749/#1751/#1752 are likewise
+separate. Do not close/delete these by mere number proximity. For actual
+ancestor stacked Drafts, preserve their review/source evidence and only
+mark superseded after the **main** integration merge is confirmed; never
+force-delete unmerged work or discard externally managed worktrees.
+
+Independent publisher-authorized #1346 and paired external-agent #1477
+remain blocked; release PR #1356 stays **HARD HOLD**. Neither synthetic
+source-only E0 nor a green protected CI substitutes for independent E2.
+
+## HISTORICAL CROSS-SESSION RESUME — 2026-10-25 (superseded above)
 
 **Canonical continuation:** Original-paper Algorithm 1 is now beyond the P2
 typed plan and observed-execution slice described in this historical handoff.
