@@ -700,3 +700,35 @@ async def test_a9_cross_depth_policy_mutation_at_root_blocks_other_hops():
             rank_policy=policy,
         )
     assert seen == ["root_long"]
+
+
+@pytest.mark.asyncio
+async def test_a9_unnamed_g5_never_invokes_wrong_intent_domain_even_if_high_priority():
+    from test_paper_understood_graph_plan import DOMAIN_INTENTS
+
+    from schemarouter.paper_consumer_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router, index, seen = _ranked_fixture(hops=2, n_targets=6)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_domains={
+            "target_0.read": ("finance",),
+            "target_5.read": ("cases",),
+            "root.read": ("finance",),
+            "middle.read": ("finance",),
+        },
+        route_priorities={"target_0.read": 100},
+    )
+    receipt = await observe_and_execute_paper_understood_graph(
+        router, PaperUnderstanding(intent_id="case.lookup", named_tools=()),
+        principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+        catalog=CATALOG, intent_registry=DOMAIN_INTENTS, index=index,
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert [name for name, _ in seen] == ["root", "middle", "target_5"]
+    assert len(receipt.results) == 3
+    assert receipt.plan.ranked_unverified and not receipt.executable_authority
+    assert not receipt.independent_e2
