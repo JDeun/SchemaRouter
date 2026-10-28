@@ -12,6 +12,7 @@ from typing import Any
 from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_consumer_execution import (
     PaperUnderstoodExecutedGraph,
     observe_and_execute_paper_understood_graph,
@@ -41,6 +42,8 @@ async def run_paper_scoped_named_graph_a9_e0(
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     review_model_root_arguments: PaperRootArgumentReviewer | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
 ) -> tuple[Decision, PaperUnderstoodExecutedGraph | None]:
     """Execute an exact source-approved 1-/2-hop named graph, if available.
 
@@ -53,6 +56,39 @@ async def run_paper_scoped_named_graph_a9_e0(
         raise ValueError("captured principal-scoped source view required")
     if not isinstance(index, NativeSchemaGraphIndex):
         raise ValueError("pinned original G5 index required")
+    if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
+        raise ValueError("reviewed paper A9 owner Rank required")
+    if (
+        type(allow_unnamed_graph_discovery) is not bool
+        or allow_unnamed_graph_discovery and rank_policy is None
+    ):
+        raise ValueError("paper A9 unnamed G5 needs host-approved owner Rank")
+    try:
+        original_rank = (
+            rank_policy.model_dump_json() if rank_policy is not None else None
+        )
+        if rank_policy is not None and (
+            rank_policy.snapshot_id != index.field_index.snapshot_id
+            or not (
+                set(rank_policy.route_domains)
+                | set(rank_policy.route_priorities)
+                | set(rank_policy.web_route_ids)
+            ) <= index.field_index.route_locations.keys()
+        ):
+            raise ValueError("Rank snapshot or annotations not current")
+    except Exception:
+        raise PolicyViolationError("paper A9 owner Rank preflight failed") from None
+
+    def check_rank() -> None:
+        try:
+            if (
+                rank_policy.model_dump_json() if rank_policy is not None else None
+            ) != original_rank:
+                raise ValueError("owner mutation")
+        except Exception:
+            raise PolicyViolationError("paper A9 owner Rank changed") from None
+
+    check_rank()
     view.assert_source_unchanged()
     understood = await analyze_paper_understanding_scoped(
         model,
@@ -61,14 +97,18 @@ async def run_paper_scoped_named_graph_a9_e0(
         model_visible_concept_ids=model_visible_concept_ids,
     )
     view.assert_source_unchanged()
+    check_rank()
     if understood is None:
         return "abstain", None
     plan = compile_paper_understood_graph_plan(
         view.router, understood, principal=view._principal, catalog=catalog,
         intent_registry=intent_registry, index=index,
         host_source_arguments=host_source_arguments,
+        rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )
     view.assert_source_unchanged()
+    check_rank()
     approved_inputs = host_source_arguments
     if (
         review_model_root_arguments is not None
@@ -88,8 +128,11 @@ async def run_paper_scoped_named_graph_a9_e0(
                 view.router, understood, principal=view._principal,
                 catalog=catalog, intent_registry=intent_registry, index=index,
                 host_source_arguments=approved_inputs,
+                rank_policy=rank_policy,
+                allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
             )
             view.assert_source_unchanged()
+            check_rank()
     if plan.executable_authority:
         raise PolicyViolationError("paper named graph is not an execution grant")
     if plan.status != "requires_observation":
@@ -109,9 +152,11 @@ async def run_paper_scoped_named_graph_a9_e0(
     receipt = await observe_and_execute_paper_understood_graph(
         view.router, understood, principal=view._principal, catalog=catalog,
         intent_registry=intent_registry, index=index,
-        host_source_arguments=approved_inputs,
+        host_source_arguments=approved_inputs, rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )
     view.assert_source_unchanged()
+    check_rank()
     if receipt.executable_authority or receipt.independent_e2:
         raise PolicyViolationError("paper observed graph cannot assert E2 authority")
     return "offer", receipt
