@@ -288,13 +288,13 @@ async def test_model_unnamed_query_preserves_host_only_intent_domain_g5_filter()
 
 @pytest.mark.asyncio
 async def test_async_model_preflight_offers_only_source_proven_two_hop_intent_without_tools():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
     from scripts.benchmark_paper_public_pipeline_e0 import (
         ACTOR as PROFILE_ACTOR,
     )
     from scripts.benchmark_paper_public_pipeline_e0 import (
         build_synthetic_public_case,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
 
     router, catalog, intents, expected = build_synthetic_public_case(500, 2)
     session = router.prepare_field_routing(catalog=catalog)
@@ -331,13 +331,13 @@ async def test_async_model_preflight_offers_only_source_proven_two_hop_intent_wi
 
 @pytest.mark.asyncio
 async def test_async_model_two_hop_concept_requires_host_graph_optin_before_model_call():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
     from scripts.benchmark_paper_public_pipeline_e0 import (
         ACTOR as PROFILE_ACTOR,
     )
     from scripts.benchmark_paper_public_pipeline_e0 import (
         build_synthetic_public_case,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
 
     router, catalog, intents, expected = build_synthetic_public_case(500, 2)
     session = router.prepare_field_routing(catalog=catalog)
