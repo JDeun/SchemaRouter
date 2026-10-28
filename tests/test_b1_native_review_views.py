@@ -8,10 +8,10 @@ from __future__ import annotations
 import pytest
 
 from schemarouter.native_semantic_index import (
-    _native_review_cursor,
-    _native_review_views,
     NativeSchemaPostingIndex,
     _indexable_semantic_field,
+    _native_review_cursor,
+    _native_review_views,
 )
 
 
@@ -118,7 +118,10 @@ def test_indexed_conjunctive_candidates_match_live_authorized_source_scan(
     """
     from schemarouter.field_group_retrieval import _complete_fields
     from scripts.benchmark_native_fork_fieldgroup_e0 import (
-        ACTOR, GROUP, ALIASES, build_fixture,
+        ACTOR,
+        ALIASES,
+        GROUP,
+        build_fixture,
     )
 
     router = build_fixture(route_count, mixed_scope=True)
