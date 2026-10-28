@@ -423,3 +423,30 @@ def test_owner_ranked_two_hop_graph_exceeds_legacy_research_32_path_cap():
         "root.read", "middle.read", "target_32.read",
     )
     assert not ranked.executable_authority
+
+
+def test_public_prepared_session_uses_owner_rank_for_full_named_graph():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=2, n_targets=2)
+    session = router.prepare_field_routing(catalog=CATALOG)
+    rank_policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_priorities={"target_1.read": 100},
+    )
+    result = session.compile_understood(
+        PaperUnderstanding(
+            intent_id="case.lookup",
+            named_tools=("target_0", "target_1"),
+        ),
+        principal=ACTOR,
+        intent_registry=INTENTS,
+        rank_policy=rank_policy,
+    )
+    assert result.status == "requires_observation"
+    assert tuple(call.route_id for call in result.calls) == (
+        "root.read", "middle.read", "target_1.read",
+    )
+    assert result.ranked_unverified
+    assert result.executable_authority is False
+    assert len(result.bindings) == 2
