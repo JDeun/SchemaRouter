@@ -969,6 +969,7 @@ def test_unnamed_graph_domain_filters_target_not_required_dependency_root():
 
 def test_unnamed_graph_direct_and_dependency_domain_filters_choose_same_target():
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from schemarouter.paper_understood_direct_plan import compile_paper_understood_direct_plan
 
     router = _router(hops=1, n_targets=2)
     idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
