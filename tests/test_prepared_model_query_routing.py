@@ -284,3 +284,79 @@ async def test_model_unnamed_query_preserves_host_only_intent_domain_g5_filter()
     assert "allow_unnamed_graph_discovery" not in json.dumps(disclosed[0])
     assert ROOT not in json.dumps(disclosed[0])
     assert RIGHT not in json.dumps(disclosed[0])
+
+
+@pytest.mark.asyncio
+async def test_async_model_preflight_offers_only_source_proven_two_hop_intent_without_tools():
+    from scripts.benchmark_paper_public_pipeline_e0 import (
+        ACTOR as PROFILE_ACTOR,
+    )
+    from scripts.benchmark_paper_public_pipeline_e0 import (
+        build_synthetic_public_case,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router, catalog, intents, expected = build_synthetic_public_case(500, 2)
+    session = router.prepare_field_routing(catalog=catalog)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_domains={expected[-1]: ("case",)},
+        route_priorities={expected[-1]: 90},
+    )
+    visible = []
+
+    async def model(payload):
+        visible.append(payload)
+        return {
+            "intent_id": "case.lookup", "concept_ids": ["crm.resolution"],
+            "named_tools": [],
+        }
+
+    plan = await session.acompile_query(
+        "Find case resolution", principal=PROFILE_ACTOR, model=model,
+        intent_registry=intents,
+        model_visible_intent_ids=("case.lookup",),
+        model_visible_concept_ids=("crm.resolution",),
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert tuple(call.route_id for call in plan.calls) == expected
+    assert plan.status == "requires_observation"
+    assert plan.ranked_unverified and not plan.executable_authority
+    assert len(visible) == 1
+    assert visible[0]["offered_intents"][0]["intent_id"] == "case.lookup"
+    assert visible[0]["offered_concepts"][0]["concept_id"] == "crm.resolution"
+    assert visible[0]["offered_tool_keys"] == []
+    assert all(route not in json.dumps(visible[0]) for route in expected)
+
+
+@pytest.mark.asyncio
+async def test_async_model_two_hop_concept_requires_host_graph_optin_before_model_call():
+    from scripts.benchmark_paper_public_pipeline_e0 import (
+        ACTOR as PROFILE_ACTOR,
+    )
+    from scripts.benchmark_paper_public_pipeline_e0 import (
+        build_synthetic_public_case,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router, catalog, intents, expected = build_synthetic_public_case(500, 2)
+    session = router.prepare_field_routing(catalog=catalog)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_domains={expected[-1]: ("case",)},
+    )
+    seen = []
+
+    async def model(payload):
+        seen.append(payload)
+        return {"intent_id": "case.lookup", "concept_ids": [], "named_tools": []}
+
+    plan = await session.acompile_query(
+        "Find case resolution", principal=PROFILE_ACTOR, model=model,
+        intent_registry=intents,
+        model_visible_intent_ids=("case.lookup",),
+        model_visible_concept_ids=("crm.resolution",),
+        rank_policy=policy, allow_unnamed_graph_discovery=False,
+    )
+    assert plan.status == "no_proven_hit"
+    assert seen == []
