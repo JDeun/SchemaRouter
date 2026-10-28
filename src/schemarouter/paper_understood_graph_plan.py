@@ -46,6 +46,7 @@ def compile_paper_understood_graph_plan(
     max_hops: int = 2,
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
 ) -> PaperTypedToolPlan:
     """Compile one exact model-named target path without source execution.
 
@@ -57,6 +58,13 @@ def compile_paper_understood_graph_plan(
         raise ValueError("paper named graph plan requires exact K5")
     if type(max_hops) is not int or max_hops not in (1, 2):
         raise ValueError("paper named graph plan accepts one or two edges")
+    if (
+        type(allow_unnamed_graph_discovery) is not bool
+        or allow_unnamed_graph_discovery and rank_policy is None
+    ):
+        raise ValueError(
+            "unnamed graph discovery requires explicit host approval and owner Rank"
+        )
     if not isinstance(index, NativeSchemaGraphIndex):
         raise ValueError("paper named graph plan requires original graph index")
     if not isinstance(principal, PrincipalContext):
@@ -117,9 +125,10 @@ def compile_paper_understood_graph_plan(
         verify_host_inputs()
     elif host_inputs and direct.status == "ready":
         raise ValueError("paper graph host arguments do not match direct proof")
+    discover_unnamed = allow_unnamed_graph_discovery and not approved.named_tools
     if (
         direct.status not in {"no_proven_hit", "requires_arguments"}
-        or not approved.named_tools
+        or not approved.named_tools and not discover_unnamed
         or approved.source_type is not None
         and approved.source_type != group.source_type
     ):
@@ -161,14 +170,36 @@ def compile_paper_understood_graph_plan(
             registry_version=witness[1], requested_k=k,
         )
 
-    # Source structure is only a prefilter, not proof or visibility. All
-    # named targets must pass the ordinary principal-scoped G5 lookup.
-    target_routes = frozenset(
-        route_id for route_id, (tool_key, _) in index.field_index.route_locations.items()
-        if tool_key in approved.named_tools
-    )
-    if not target_routes:
+    # Structure is only an index prefilter, never authorization or proof.
+    # Unnamed dependency discovery is host-only and uses the *existing*
+    # required-field inverted index AND canonical graph consumers. It never
+    # scans the global registry or trusts model-proposed tool names.
+    if discover_unnamed:
+        required_postings = [
+            set(index.field_index.postings.get(field.semantic_id, ()))
+            for field in group.required_fields
+        ]
+        candidate_targets = (
+            set.intersection(*required_postings) if required_postings else set()
+        )
+        candidate_targets.intersection_update(index.edge_consumer_routes)
+        target_routes = frozenset(candidate_targets)
+    else:
+        target_routes = frozenset(
+            route_id for route_id, (tool_key, _) in index.field_index.route_locations.items()
+            if tool_key in approved.named_tools
+        )
+
+    def no_graph_hit() -> PaperTypedToolPlan:
+        # Retain the previously verified incomplete direct plan if this
+        # additional owner-authorized graph search has no valid dependency.
+        if discover_unnamed and direct.status == "requires_arguments":
+            verify_current()
+            return direct
         return empty("no_proven_hit")
+
+    if not target_routes:
+        return no_graph_hit()
     # Do not expose the cardinality of registry-only/denied named tools via
     # the structural target budget. Project current principal eligibility
     # BEFORE the 32-route G5 prefilter cap; the G5 lookup still independently
@@ -219,7 +250,7 @@ def compile_paper_understood_graph_plan(
             return empty("budget_unsatisfied")
     target_routes = frozenset(scoped_targets)
     if not target_routes:
-        return empty("no_proven_hit")
+        return no_graph_hit()
 
     # Only host-reviewed concept aliases, never model text, affect Rank.
     intent = next(
@@ -255,6 +286,8 @@ def compile_paper_understood_graph_plan(
             "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
         }:
             raise PolicyViolationError("paper named graph returned unverified status")
+        if result.status == "no_proven_hit":
+            return no_graph_hit()
         return empty(result.status)
 
     # PaperTypedToolPlan expresses a SINGLE dependency DAG, not a bag of
