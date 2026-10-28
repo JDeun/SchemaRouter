@@ -15,7 +15,6 @@ from unittest.mock import patch
 from urllib.parse import urlparse
 from urllib.request import Request
 
-
 WORKFLOW = (
     Path(__file__).resolve().parents[1]
     / ".github/workflows/post-merge-qualification-watchdog.yml"
