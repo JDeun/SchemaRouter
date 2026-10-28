@@ -313,9 +313,11 @@ async def test_before_hook_time_is_interrupted_by_elapsed_budget() -> None:
 @pytest.mark.asyncio
 async def test_after_hook_time_is_interrupted_by_elapsed_budget() -> None:
     registry, call = build_registry()
+    after_started = asyncio.Event()
 
     async def after(tool, endpoint, hook_call, result):
-        await asyncio.sleep(1.0)
+        after_started.set()
+        await asyncio.sleep(20.0)
 
     executor = RegistryExecutor(
         registry,
@@ -333,14 +335,17 @@ async def test_after_hook_time_is_interrupted_by_elapsed_budget() -> None:
     ) as exc_info:
         await executor.execute_call(
             call,
-            budget=ExecutionBudget(max_elapsed_seconds=0.1),
+            # Under whole-suite coverage a loaded runner can spend >0.1s
+            # validating inputs before the post-invocation hook starts.
+            budget=ExecutionBudget(max_elapsed_seconds=2.0),
         )
     elapsed = time.monotonic() - started
 
+    assert after_started.is_set()
     assert exc_info.value.execution_succeeded is True
     assert exc_info.value.result.data == {"value": 2}
     assert isinstance(exc_info.value.__cause__, ExecutionBudgetExceededError)
-    assert elapsed < 0.75
+    assert elapsed < 10.0
 
 
 @pytest.mark.asyncio
