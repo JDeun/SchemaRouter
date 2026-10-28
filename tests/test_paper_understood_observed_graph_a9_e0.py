@@ -466,3 +466,146 @@ def test_named_graph_execution_api_is_explicitly_exported():
 
     assert PaperUnderstoodExecutedGraph.__name__ == "PaperUnderstoodExecutedGraph"
     assert callable(observe_and_execute_paper_understood_graph)
+
+
+def _ranked_fixture(*, hops: int = 2, n_targets: int = 6, on_step=None):
+    router, _index, seen = _fixture(hops=hops, on_step=on_step)
+    for i in range(1, n_targets):
+        name = f"target_{i}"
+        def invoke(_endpoint, arguments, *, target=name):
+            seen.append((target, dict(arguments)))
+            return {"status": "open"}
+        router.add_bound_tool(
+            _node(name, input_semantic="crm.case_id"), invoke,
+        )
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    return router, index, seen
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("hops", [1, 2])
+async def test_ranked_unnamed_g5_executes_only_one_original_complete_dag(hops):
+    from schemarouter.paper_consumer_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router, index, seen = _ranked_fixture(hops=hops)
+    winner = "target_5.read"
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={winner: 100},
+    )
+    receipt = await observe_and_execute_paper_understood_graph(
+        router, PaperUnderstanding(intent_id="case.lookup", named_tools=()),
+        principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+        catalog=CATALOG, intent_registry=INTENTS, index=index,
+        rank_policy=policy, allow_unnamed_graph_discovery=True,
+    )
+    assert [name for name, _ in seen] == (
+        ["root", "target_5"] if hops == 1
+        else ["root", "middle", "target_5"]
+    )
+    assert receipt.plan.ranked_unverified
+    assert receipt.plan.status == "ready"
+    assert len(receipt.results) == hops + 1
+    assert receipt.executable_authority is False
+    assert receipt.independent_e2 is False
+
+
+@pytest.mark.asyncio
+async def test_ranked_named_six_target_g5_executes_top_owner_path_only():
+    from schemarouter.paper_consumer_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router, index, seen = _ranked_fixture(hops=1)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_4.read": 80},
+    )
+    receipt = await observe_and_execute_paper_understood_graph(
+        router, PaperUnderstanding(
+            intent_id="case.lookup",
+            named_tools=tuple(f"target_{i}" for i in range(6)),
+        ),
+        principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+        catalog=CATALOG, intent_registry=INTENTS, index=index,
+        rank_policy=policy,
+    )
+    assert [name for name, _ in seen] == ["root", "target_4"]
+    assert len(receipt.results) == 2
+    assert receipt.plan.ranked_unverified
+
+
+@pytest.mark.asyncio
+async def test_ranked_unnamed_g5_requires_owner_policy_before_any_provider_call():
+    from schemarouter.paper_consumer_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
+
+    router, index, seen = _ranked_fixture()
+    with pytest.raises(ValueError, match="owner|Rank|host approval"):
+        await observe_and_execute_paper_understood_graph(
+            router, PaperUnderstanding(intent_id="case.lookup"),
+            principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+            catalog=CATALOG, intent_registry=INTENTS, index=index,
+            allow_unnamed_graph_discovery=True,
+        )
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_ranked_unnamed_g5_owner_policy_mutation_after_root_fails_closed():
+    from schemarouter.paper_consumer_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    policy_holder = {}
+    def mutate(_router, step):
+        if step == "root":
+            policy_holder["policy"].route_priorities["target_4.read"] = 200
+
+    router, index, seen = _ranked_fixture(hops=2, on_step=mutate)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_5.read": 100},
+    )
+    policy_holder["policy"] = policy
+    with pytest.raises(PolicyViolationError, match="owner|rank|changed"):
+        await observe_and_execute_paper_understood_graph(
+            router, PaperUnderstanding(intent_id="case.lookup"),
+            principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+            catalog=CATALOG, intent_registry=INTENTS, index=index,
+            rank_policy=policy, allow_unnamed_graph_discovery=True,
+        )
+    assert seen == [("root", {})]
+
+
+@pytest.mark.asyncio
+async def test_ranked_unnamed_g5_changed_live_policy_blocks_downstream_execution():
+    from schemarouter.paper_consumer_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    def revoke(router, step):
+        if step == "middle":
+            router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+    router, index, seen = _ranked_fixture(hops=2, on_step=revoke)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={"target_5.read": 100},
+    )
+    with pytest.raises(PolicyViolationError):
+        await observe_and_execute_paper_understood_graph(
+            router, PaperUnderstanding(intent_id="case.lookup"),
+            principal=PrincipalContext(subject="reader-a", roles=("reader",)),
+            catalog=CATALOG, intent_registry=INTENTS, index=index,
+            rank_policy=policy, allow_unnamed_graph_discovery=True,
+        )
+    assert [name for name, _ in seen] == ["root", "middle"]
