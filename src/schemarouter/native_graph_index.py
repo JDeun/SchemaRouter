@@ -255,7 +255,10 @@ class NativeIndexedTwoHopCandidate:
 
 @dataclass(frozen=True, slots=True)
 class NativeIndexedTwoHopResult:
-    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "budget_unsatisfied",
+    ]
     index_snapshot_id: str
     registry_version: int
     requested_k: int
@@ -1258,6 +1261,8 @@ class NativeSchemaGraphIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         allowed_target_routes: frozenset[str] | None = None,
+        _paper_rank_policy: PaperNativeRankPolicy | None = None,
+        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
     ) -> NativeIndexedTwoHopResult:
         """Opt-in E0: root -> typed intermediary -> target, without execution.
 
@@ -1270,7 +1275,10 @@ class NativeSchemaGraphIndex:
             raise ValueError("G5 two-hop strict fixed K5 required")
         if allowed_target_routes is not None and (
             type(allowed_target_routes) is not frozenset
-            or len(allowed_target_routes) > MAX_RESEARCH_RANKABLE_PATHS
+            or len(allowed_target_routes) > (
+                MAX_OWNER_RANKABLE_PATHS if _paper_rank_policy is not None
+                else MAX_RESEARCH_RANKABLE_PATHS
+            )
             or any(
                 type(route) is not str or not 1 <= len(route) <= 320
                 for route in allowed_target_routes
@@ -1295,6 +1303,21 @@ class NativeSchemaGraphIndex:
         if _alias_key(query) not in {_alias_key(a) for a in demand.aliases}:
             raise ValueError("G5 two-hop query lacks approved semantic edge")
         self.field_index._assert_source(router)
+        owner_rank: PaperNativeRankPolicy | None = None
+        original_owner_rank: str | None = None
+        if _paper_rank_policy is not None:
+            try:
+                original_owner_rank = _paper_rank_policy.model_dump_json()
+                owner_rank = PaperNativeRankPolicy.model_validate(
+                    _paper_rank_policy.model_dump(mode="python"), strict=True,
+                )
+            except Exception:
+                raise PolicyViolationError("G5 two-hop invalid owner Rank policy") from None
+            if owner_rank.snapshot_id != self.field_index.snapshot_id or not (
+                set(owner_rank.route_domains) | set(owner_rank.route_priorities)
+                | set(owner_rank.web_route_ids)
+            ) <= self.field_index.route_locations.keys():
+                raise PolicyViolationError("G5 two-hop owner Rank source mismatch")
         if router.authorization_policy is None:
             raise PolicyViolationError("G5 two-hop explicit authorization policy required")
         witness = router._retrieval_authority_witness()
@@ -1403,6 +1426,13 @@ class NativeSchemaGraphIndex:
                     if middle is None or middle_id == target_id:
                         continue
                     middle_tool, middle_ep = middle
+                    if owner_rank is not None and (
+                        demand.source_type is not None
+                        and middle_tool.source_type != demand.source_type
+                        or demand.license is not None
+                        and middle_tool.license != demand.license
+                    ):
+                        continue
                     # An intermediary must genuinely consume source inputs
                     # and produce the typed identifier needed by the target.
                     if _native_required_inputs(middle_ep) is None:
@@ -1417,6 +1447,13 @@ class NativeSchemaGraphIndex:
                         if root is None:
                             continue
                         root_tool, root_ep = root
+                        if owner_rank is not None and (
+                            demand.source_type is not None
+                            and root_tool.source_type != demand.source_type
+                            or demand.license is not None
+                            and root_tool.license != demand.license
+                        ):
+                            continue
                         external_inputs = root_inputs(root_id, root_tool, root_ep)
                         if external_inputs is None:
                             continue
@@ -1435,7 +1472,16 @@ class NativeSchemaGraphIndex:
                             target_output_fields=names,
                             source_root_parameters=external_inputs,
                         ))
-                        if len(qualified) > MAX_RESEARCH_RANKABLE_PATHS:
+                        if len(qualified) > (
+                            MAX_OWNER_RANKABLE_PATHS if owner_rank is not None
+                            else MAX_RESEARCH_RANKABLE_PATHS
+                        ):
+                            if owner_rank is not None:
+                                return NativeIndexedTwoHopResult(
+                                    "budget_unsatisfied",
+                                    self.field_index.snapshot_id,
+                                    self.field_index.registry_version, k, 0, (),
+                                )
                             raise PolicyViolationError(
                                 "G5 two-hop source expansion exceeds E0 limit"
                             )
@@ -1495,7 +1541,31 @@ class NativeSchemaGraphIndex:
             raise PolicyViolationError(
                 "G5 two-hop authorization policy changed during lookup"
             )
+        if original_owner_rank is not None:
+            try:
+                if (
+                    _paper_rank_policy is None
+                    or _paper_rank_policy.model_dump_json() != original_owner_rank
+                ):
+                    raise PolicyViolationError("G5 two-hop Rank owner declaration changed")
+            except Exception:
+                raise PolicyViolationError(
+                    "G5 two-hop Rank owner declaration changed"
+                ) from None
         count = len(qualified)
+        if owner_rank is not None:
+            offsets = rank_authorized_paper_graph_two_hop(
+                tuple(qualified), concept_aliases=_paper_rank_aliases,
+                policy=owner_rank, k=k,
+            )
+            return NativeIndexedTwoHopResult(
+                "ranked_unverified" if count > k
+                else "complete" if count else "no_proven_hit",
+                self.field_index.snapshot_id,
+                self.field_index.registry_version,
+                k, count, tuple(qualified[i] for i in offsets),
+                deterministic_paper_ranked=bool(count),
+            )
         return NativeIndexedTwoHopResult(
             "over_k_unranked" if count > k else
             "complete" if count else "no_proven_hit",
