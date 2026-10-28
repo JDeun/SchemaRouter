@@ -13,7 +13,7 @@ from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
-from .native_graph_index import NativeSchemaGraphIndex
+from .native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
@@ -88,6 +88,7 @@ def compile_paper_understood_graph_plan(
         understanding, catalog, intent_registry,
     )
     try:
+        original_rank = rank_policy.model_dump_json() if rank_policy is not None else None
         original_understanding = understanding.model_dump_json()
         original_intents = intent_registry.model_dump_json()
         original_catalog = catalog.model_dump_json()
@@ -133,6 +134,12 @@ def compile_paper_understood_graph_plan(
 
     def verify_current() -> None:
         verify_host_inputs()
+        try:
+            current_rank = (
+                rank_policy.model_dump_json() if rank_policy is not None else None
+            )
+        except Exception:
+            raise PolicyViolationError("paper named graph owner Rank changed") from None
         index.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
         if (
@@ -142,6 +149,7 @@ def compile_paper_understood_graph_plan(
             or catalog.model_dump_json() != original_catalog
             or intent_registry.model_dump_json() != original_intents
             or understanding.model_dump_json() != original_understanding
+            or current_rank != original_rank
         ):
             raise PolicyViolationError("paper named graph source or declaration changed")
 
@@ -170,6 +178,9 @@ def compile_paper_understood_graph_plan(
         raise PolicyViolationError("paper named graph lacks current source policy")
     available = router.planner.availability_predicate
     scoped_targets: set[str] = set()
+    target_limit = (
+        MAX_OWNER_RANKABLE_PATHS if rank_policy is not None else 32
+    )
     for route_id in sorted(target_routes):
         tool_key, endpoint_name = index.field_index.route_locations[route_id]
         tool = router.registry.get(tool_key)
@@ -204,21 +215,34 @@ def compile_paper_understood_graph_plan(
         ):
             continue
         scoped_targets.add(route_id)
-        if len(scoped_targets) > 32:
+        if len(scoped_targets) > target_limit:
             return empty("budget_unsatisfied")
     target_routes = frozenset(scoped_targets)
     if not target_routes:
         return empty("no_proven_hit")
+
+    # Only host-reviewed concept aliases, never model text, affect Rank.
+    intent = next(
+        item for item in intent_registry.intents
+        if item.intent_id == approved.intent_id
+    )
+    concepts = {concept.concept_id: concept for concept in catalog.concepts}
+    rank_aliases = tuple(
+        tuple(concepts[cid].aliases)
+        for cid in sorted(set(intent.required_concept_ids) | set(approved.concept_ids))
+    )
 
     def lookup(hops: int) -> Any:
         if hops == 1:
             return index.lookup(
                 router, group.aliases[0], group=group, principal=principal,
                 k=k, allowed_target_routes=target_routes,
+                _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
             )
         return index.lookup_two_hop(
             router, group.aliases[0], group=group, principal=principal,
             k=k, allowed_target_routes=target_routes,
+            _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
         )
 
     hops = 1
@@ -226,14 +250,16 @@ def compile_paper_understood_graph_plan(
     if result.status == "no_proven_hit" and max_hops == 2:
         hops = 2
         result = lookup(hops)
-    if result.status != "complete":
-        if result.status not in {"no_proven_hit", "over_k_unranked"}:
+    if result.status not in {"complete", "ranked_unverified"}:
+        if result.status not in {
+            "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
+        }:
             raise PolicyViolationError("paper named graph returned unverified status")
         return empty(result.status)
 
     # PaperTypedToolPlan expresses a SINGLE dependency DAG, not a bag of
     # unrelated alternative paths whose bindings could be mixed accidentally.
-    if len(result.candidates) != 1:
+    if len(result.candidates) != 1 and not result.deterministic_paper_ranked:
         route_sets = [
             (c.producer_route_id, c.consumer_route_id) if hops == 1
             else c.route_ids for c in result.candidates
@@ -242,6 +268,8 @@ def compile_paper_understood_graph_plan(
             return empty("over_k_unranked")
         return empty("ambiguous_paths")
 
+    if not result.candidates:
+        return empty("no_proven_hit")
     candidate = result.candidates[0]
     if hops == 1:
         route_ids = (candidate.producer_route_id, candidate.consumer_route_id)
@@ -341,4 +369,5 @@ def compile_paper_understood_graph_plan(
         status="requires_observation", snapshot_id=result.index_snapshot_id,
         registry_version=result.registry_version, requested_k=k,
         calls=first_calls, bindings=first_edges,
+        ranked_unverified=result.deterministic_paper_ranked,
     )
