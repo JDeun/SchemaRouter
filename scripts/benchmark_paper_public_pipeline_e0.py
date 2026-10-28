@@ -124,7 +124,12 @@ def _assert_plan(plan: Any, expected: tuple[str, ...]) -> int:
         or plan.executable_authority is not False
         or plan.ranked_unverified is not True
     ):
-        raise AssertionError("public Algorithm 1 plan disagreed with source fixture")
+        raise AssertionError(
+            "public Algorithm 1 plan disagreed with source fixture: "
+            f"status={plan.status!r}, route_ids={routes!r}, "
+            f"edges={len(plan.bindings)}, ranked={plan.ranked_unverified!r}, "
+            f"expected={expected!r}"
+        )
     return len(PLAN_SERIALIZER.dump_json(plan))
 
 
