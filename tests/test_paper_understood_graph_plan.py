@@ -588,3 +588,29 @@ def test_unnamed_graph_discovery_never_discards_unproved_host_root_arguments():
     )
     assert plan.status == "no_proven_hit"
     assert plan.calls == () and plan.bindings == ()
+
+
+@pytest.mark.parametrize("n_targets", [500, 5000])
+def test_host_unnamed_g5_public_planner_selects_exact_k5_from_large_catalog(n_targets):
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=1, n_targets=n_targets)
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    winning_target = f"target_{n_targets - 1}.read"
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id,
+        route_priorities={winning_target: 100},
+    )
+    plan = _compile(
+        router, index=index, named_tools=(), rank_policy=policy,
+        allow_unnamed_graph_discovery=True,
+    )
+    assert plan.status == "requires_observation"
+    assert tuple(c.route_id for c in plan.calls) == (
+        "root.read", winning_target,
+    )
+    assert plan.ranked_unverified is True
+    assert not plan.executable_authority
+    assert len(plan.bindings) == 1
