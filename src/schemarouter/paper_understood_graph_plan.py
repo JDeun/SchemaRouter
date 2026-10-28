@@ -191,9 +191,26 @@ def compile_paper_understood_graph_plan(
         )
 
     def no_graph_hit() -> PaperTypedToolPlan:
-        # Retain the previously verified incomplete direct plan if this
-        # additional owner-authorized graph search has no valid dependency.
+        # Never silently discard host-supplied root arguments that lack a
+        # source-proven DAG. No parameter from the model can authorize a root.
+        if host_inputs:
+            return empty("no_proven_hit")
+        # A graph probe may revoke the health of an earlier incomplete
+        # direct candidate through the SAME availability callable. Re-prove
+        # the original direct receipt rather than returning stale evidence.
         if discover_unnamed and direct.status == "requires_arguments":
+            try:
+                current_direct = compile_paper_understood_direct_plan(
+                    router, understanding, principal=principal,
+                    catalog=catalog, intent_registry=intent_registry,
+                    index=index, k=k, rank_policy=rank_policy,
+                )
+                if current_direct != direct:
+                    raise PolicyViolationError("unnamed graph direct proof changed")
+            except Exception:
+                raise PolicyViolationError(
+                    "unnamed graph direct source eligibility changed"
+                ) from None
             verify_current()
             return direct
         return empty("no_proven_hit")
