@@ -168,3 +168,37 @@ def test_indexed_conjunctive_candidates_match_live_authorized_source_scan(
         assert {candidate.route_id for candidate in after.candidates} == changed
     else:
         assert after.status == "over_k_unranked"
+
+
+def test_live_policy_revocation_and_snapshot_rebuild_fail_closed() -> None:
+    """Current authority is rechecked even when the source index is pinned."""
+    from schemarouter import AuthorizationPolicy, PrincipalContext
+    from schemarouter.errors import PolicyViolationError
+    from scripts.benchmark_native_fork_fieldgroup_e0 import (
+        ACTOR, GROUP, ALIASES, build_fixture,
+    )
+
+    router = build_fixture(500, mixed_scope=True)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    initial = index.lookup(router, ALIASES[0], principal=ACTOR, group=GROUP)
+    assert initial.registry_version == index.registry_version
+    assert initial.index_snapshot_id == index.snapshot_id
+
+    # The same immutable source snapshot cannot grant access after revocation.
+    router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+    revoked = index.lookup(router, ALIASES[0], principal=ACTOR, group=GROUP)
+    assert revoked.qualified_count == 0
+    assert revoked.candidates == ()
+    stranger = PrincipalContext(subject="unauthorized", roles=("outsider",))
+    denied = index.lookup(router, ALIASES[0], principal=stranger, group=GROUP)
+    assert denied.qualified_count == 0
+    assert denied.candidates == ()
+
+    # Registry mutations invalidate the old index, rather than silently
+    # returning candidates from the stale snapshot.
+    router.registry.unregister("fork_status")
+    with pytest.raises(PolicyViolationError, match="stale"):
+        index.lookup(router, ALIASES[0], principal=ACTOR, group=GROUP)
+    rebuilt = NativeSchemaPostingIndex.build(router.registry)
+    assert rebuilt.snapshot_id != index.snapshot_id
+    assert "fork_status.read" not in rebuilt.route_locations
