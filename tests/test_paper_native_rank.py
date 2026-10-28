@@ -510,3 +510,45 @@ def test_g5_rank_e0_benchmark_reports_independent_oracle_and_latency(hops):
     assert metrics["wall_ms"]["p95"] >= 0
     assert metrics["wall_ms"]["p99"] >= 0
     assert metrics["cpu_ms"]["p95"] >= 0
+
+
+def test_one_hop_rank_uses_all_current_scoped_output_fields_not_only_matched_projection():
+    from dataclasses import replace
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_one_hop
+
+    candidates = (
+        replace(
+            _graph_candidate("root_a.read", "target_a.read"),
+            producer_visible_field_count=10, consumer_visible_field_count=10,
+        ),
+        replace(
+            _graph_candidate("root_z.read", "target_z.read"),
+            producer_visible_field_count=1, consumer_visible_field_count=1,
+        ),
+    )
+    ranked = rank_authorized_paper_graph_one_hop(
+        candidates, concept_aliases=(("case status",),),
+        policy=PaperNativeRankPolicy(snapshot_id=SNAPSHOT),
+    )
+    assert ranked == (1, 0)
+
+
+def test_two_hop_rank_uses_current_principal_scoped_route_width_for_each_hop():
+    from dataclasses import replace
+    from schemarouter.paper_native_rank import rank_authorized_paper_graph_two_hop
+
+    candidates = (
+        replace(
+            _two_hop_candidate("root_a.read", "middle_a.read", "target_a.read"),
+            visible_field_counts=(8, 9, 10),
+        ),
+        replace(
+            _two_hop_candidate("root_z.read", "middle_z.read", "target_z.read"),
+            visible_field_counts=(1, 1, 1),
+        ),
+    )
+    ranked = rank_authorized_paper_graph_two_hop(
+        candidates, concept_aliases=(("case status",),),
+        policy=PaperNativeRankPolicy(snapshot_id=SNAPSHOT),
+    )
+    assert ranked == (1, 0)
