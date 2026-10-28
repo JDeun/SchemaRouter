@@ -170,6 +170,15 @@ def compile_paper_understood_graph_plan(
             registry_version=witness[1], requested_k=k,
         )
 
+    # The host-reviewed intent domain is an owner-only Filter step.
+    # As with direct Rank, it applies to *unnamed target candidates*, not
+    # producer/intermediate dependencies; explicitly named tools override
+    # this discovery filter without overriding any source authorization.
+    intent = next(
+        item for item in intent_registry.intents
+        if item.intent_id == approved.intent_id
+    )
+
     # Structure is only an index prefilter, never authorization or proof.
     # Unnamed dependency discovery is host-only and uses the *existing*
     # required-field inverted index AND canonical graph consumers. It never
@@ -183,7 +192,13 @@ def compile_paper_understood_graph_plan(
             set.intersection(*required_postings) if required_postings else set()
         )
         candidate_targets.intersection_update(index.edge_consumer_routes)
-        target_routes = frozenset(candidate_targets)
+        # Filter before principal-scoped callbacks and before the target
+        # budget. No model-supplied intent string can add a route domain.
+        assert rank_policy is not None
+        target_routes = frozenset(
+            route_id for route_id in candidate_targets
+            if rank_policy.permits_domain(route_id, intent.domains)
+        )
     else:
         target_routes = frozenset(
             route_id for route_id, (tool_key, _) in index.field_index.route_locations.items()
@@ -270,10 +285,6 @@ def compile_paper_understood_graph_plan(
         return no_graph_hit()
 
     # Only host-reviewed concept aliases, never model text, affect Rank.
-    intent = next(
-        item for item in intent_registry.intents
-        if item.intent_id == approved.intent_id
-    )
     concepts = {concept.concept_id: concept for concept in catalog.concepts}
     rank_aliases = tuple(
         tuple(concepts[cid].aliases)
