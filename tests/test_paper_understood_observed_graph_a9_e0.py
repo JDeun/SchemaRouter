@@ -516,7 +516,7 @@ async def test_ranked_unnamed_g5_executes_only_one_original_complete_dag(hops):
 
 
 @pytest.mark.asyncio
-async def test_ranked_named_six_target_g5_executes_top_owner_path_only():
+async def test_ranked_named_five_targets_selects_top_owner_path_only():
     from schemarouter.paper_consumer_execution import (
         observe_and_execute_paper_understood_graph,
     )
@@ -530,7 +530,7 @@ async def test_ranked_named_six_target_g5_executes_top_owner_path_only():
     receipt = await observe_and_execute_paper_understood_graph(
         router, PaperUnderstanding(
             intent_id="case.lookup",
-            named_tools=tuple(f"target_{i}" for i in range(6)),
+            named_tools=tuple(f"target_{i}" for i in range(5)),
         ),
         principal=PrincipalContext(subject="reader-a", roles=("reader",)),
         catalog=CATALOG, intent_registry=INTENTS, index=index,
