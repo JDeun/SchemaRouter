@@ -28,3 +28,54 @@ async def test_direct_sdk_refuses_nonready_paper_receipts(monkeypatch, status):
     with pytest.raises(PolicyViolationError, match="one ready independent route"):
         await session.aexecute_direct("query", principal=Mock())
     session._router.execute.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_direct_sdk_dispatches_one_host_proven_native_call(monkeypatch):
+    from contextlib import nullcontext
+    from unittest.mock import AsyncMock
+
+    import schemarouter.field_routing_session as module
+
+    session = object.__new__(SchemaFieldRoutingSession)
+    router = Mock()
+    router.execute = AsyncMock(return_value=["native-result"])
+    router.registry.get.return_value.endpoint.return_value.read_only = True
+    router.registry.get.return_value.endpoint.return_value.destructive = False
+    router.planner.availability_predicate = None
+    binding = Mock(invoker=Mock(), generation=1)
+    router.executor._binding_snapshot.return_value = binding
+    object.__setattr__(session, "_router", router)
+    index = Mock()
+    object.__setattr__(session, "_index", index)
+    monkeypatch.setattr(SchemaFieldRoutingSession, "_require_catalog", lambda self: Mock())
+    call = Mock(
+        executable=True, missing_required_arguments=(),
+        tool="native", endpoint="get",
+    )
+    call.model_copy.return_value = call
+    selected = Mock(call=call)
+    plan = Mock(
+        status="ready", executable_authority=False,
+        bindings=(), calls=(selected,), registry_version=1,
+    )
+    monkeypatch.setattr(
+        module, "compile_paper_typed_tool_plan",
+        lambda *args, **kwargs: plan,
+    )
+    monkeypatch.setattr(module, "_check_current_call_scopes", Mock(), raising=False)
+    import schemarouter.paper_typed_tool_plan as typed
+    monkeypatch.setattr(typed, "_check_current_call_scopes", Mock())
+    import schemarouter.executor as executor
+    monkeypatch.setattr(
+        executor, "_require_bound_invoker_generation",
+        lambda *args, **kwargs: nullcontext(),
+    )
+    principal = Mock()
+    result = await session.aexecute_direct("query", principal=principal)
+    assert result == ["native-result"]
+    router.execute.assert_awaited_once()
+    execution_plan = router.execute.await_args.args[0]
+    assert len(execution_plan.calls) == 1
+    assert execution_plan.calls[0] is call
+    index.field_index._assert_source.assert_called()
