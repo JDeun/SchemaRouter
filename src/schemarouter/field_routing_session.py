@@ -653,7 +653,22 @@ class SchemaFieldRoutingSession:
             availability = self._router.planner.availability_predicate
             if availability is not None and not availability(tool, endpoint):
                 raise PolicyViolationError("paper direct route unavailable")
+            # Availability is host-supplied executable code. It may mutate
+            # policy, source declarations or bindings while returning True.
             self._index.field_index._assert_source(self._router)
+            if (
+                compile_paper_typed_tool_plan(
+                    self._router, query, principal=principal,
+                    catalog=catalog, index=self._index,
+                    alternative_index=alternative_index,
+                    host_source_arguments=deepcopy(host_inputs), k=k,
+                    experimental_indexed_direct=True,
+                ) != plan
+                or self._router.executor is not executor
+                or executor._binding_snapshot(selected.call.tool) != binding
+            ):
+                raise PolicyViolationError("paper direct source changed during availability")
+            _check_current_call_scopes(self._router, principal, [selected])
 
         revalidate()
         with _require_bound_invoker_generation(
