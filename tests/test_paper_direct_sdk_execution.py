@@ -149,3 +149,43 @@ async def test_direct_sdk_rejects_unsafe_execution_shapes(monkeypatch, case):
     with pytest.raises(PolicyViolationError):
         await session.aexecute_direct("query", principal=Mock())
     router.execute.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_direct_sdk_real_registered_native_invoker_end_to_end():
+    """Public SDK must reach the real registered executor, not a mocked execute."""
+    from test_research_paper_scoped_agent_real_e0 import CATALOG, QUERY
+    from test_research_paper_scoped_native_direct_e1 import _fixture
+
+    from schemarouter import PrincipalContext
+
+    view, _index, seen = _fixture(requires_input=False)
+    principal = PrincipalContext(subject="native-e1", roles=("viewer",))
+    session = view.router.prepare_field_routing(catalog=CATALOG)
+    results = await session.aexecute_direct(QUERY, principal=principal)
+    assert seen == [{}]
+    assert len(results) == 1
+    assert results[0].tool == "complete"
+    assert results[0].endpoint == "read"
+    assert results[0].data["status"] == "open"
+
+
+@pytest.mark.asyncio
+async def test_direct_sdk_real_native_invoker_uses_only_host_arguments():
+    from test_research_paper_scoped_agent_real_e0 import CATALOG, QUERY
+    from test_research_paper_scoped_native_direct_e1 import _fixture
+
+    from schemarouter import PrincipalContext
+
+    view, _index, seen = _fixture()
+    principal = PrincipalContext(subject="native-e1", roles=("viewer",))
+    session = view.router.prepare_field_routing(
+        catalog=CATALOG, approved_host_roots=frozenset({"complete.read"}),
+    )
+    results = await session.aexecute_direct(
+        QUERY, principal=principal,
+        host_source_arguments={"complete.read": {"case_id": "host-7"}},
+    )
+    assert seen == [{"case_id": "host-7"}]
+    assert len(results) == 1
+    assert results[0].data["case_id"] == "host-7"
