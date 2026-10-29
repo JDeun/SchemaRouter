@@ -82,3 +82,35 @@ async def test_direct_sdk_dispatches_one_host_proven_native_call(monkeypatch):
     assert len(execution_plan.calls) == 1
     assert execution_plan.calls[0] is call
     index.field_index._assert_source.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_direct_sdk_refuses_binding_mutated_by_availability(monkeypatch):
+    from unittest.mock import AsyncMock
+
+    import schemarouter.field_routing_session as module
+    import schemarouter.paper_typed_tool_plan as typed
+
+    session = object.__new__(SchemaFieldRoutingSession)
+    router = Mock()
+    router.execute = AsyncMock()
+    object.__setattr__(session, "_router", router)
+    object.__setattr__(session, "_index", Mock())
+    monkeypatch.setattr(SchemaFieldRoutingSession, "_require_catalog", lambda self: Mock())
+    call = Mock(executable=True, missing_required_arguments=(), tool="native", endpoint="get")
+    plan = Mock(
+        status="ready", executable_authority=False, bindings=(),
+        calls=(Mock(call=call),), registry_version=1,
+    )
+    monkeypatch.setattr(module, "compile_paper_typed_tool_plan", lambda *a, **kw: plan)
+    monkeypatch.setattr(typed, "_check_current_call_scopes", Mock())
+    endpoint = router.registry.get.return_value.endpoint.return_value
+    endpoint.read_only = True
+    endpoint.destructive = False
+    initial = Mock(invoker=Mock(), generation=1)
+    changed = Mock(invoker=Mock(), generation=2)
+    router.executor._binding_snapshot.side_effect = [initial, initial, changed]
+    router.planner.availability_predicate = lambda tool, endpoint: True
+    with pytest.raises(PolicyViolationError, match="source changed during availability"):
+        await session.aexecute_direct("query", principal=Mock())
+    router.execute.assert_not_called()
