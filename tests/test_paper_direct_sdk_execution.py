@@ -114,3 +114,38 @@ async def test_direct_sdk_refuses_binding_mutated_by_availability(monkeypatch):
     with pytest.raises(PolicyViolationError, match="source changed during availability"):
         await session.aexecute_direct("query", principal=Mock())
     router.execute.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["dependent", "unbound", "not_read_only"])
+async def test_direct_sdk_rejects_unsafe_execution_shapes(monkeypatch, case):
+    """Never dispatch a dependent, unbound or mutating paper route."""
+    from unittest.mock import AsyncMock
+
+    import schemarouter.field_routing_session as module
+
+    session = object.__new__(SchemaFieldRoutingSession)
+    router = Mock()
+    router.execute = AsyncMock()
+    object.__setattr__(session, "_router", router)
+    object.__setattr__(session, "_index", Mock())
+    monkeypatch.setattr(SchemaFieldRoutingSession, "_require_catalog", lambda self: Mock())
+    call = Mock(
+        executable=True, missing_required_arguments=(), tool="native", endpoint="get",
+    )
+    plan = Mock(
+        status="ready", executable_authority=False,
+        bindings=(Mock(),) if case == "dependent" else (),
+        calls=(Mock(call=call),), registry_version=1,
+    )
+    monkeypatch.setattr(module, "compile_paper_typed_tool_plan", lambda *a, **kw: plan)
+    binding = Mock(invoker=None if case == "unbound" else Mock(), generation=1)
+    router.executor._binding_snapshot.return_value = binding
+    endpoint = router.registry.get.return_value.endpoint.return_value
+    endpoint.read_only = case != "not_read_only"
+    endpoint.destructive = False
+    import schemarouter.paper_typed_tool_plan as typed
+    monkeypatch.setattr(typed, "_check_current_call_scopes", Mock())
+    with pytest.raises(PolicyViolationError):
+        await session.aexecute_direct("query", principal=Mock())
+    router.execute.assert_not_called()
