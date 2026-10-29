@@ -71,8 +71,8 @@ async def test_direct_sdk_dispatches_one_host_proven_native_call(monkeypatch):
         executor, "_require_bound_invoker_generation",
         lambda *args, **kwargs: nullcontext(),
     )
-    from schemarouter.authorization import PrincipalContext
     import schemarouter.models as models
+    from schemarouter.authorization import PrincipalContext
     monkeypatch.setattr(models, "ExecutionPlan", lambda **kwargs: Mock(**kwargs))
     principal = PrincipalContext(subject="test-direct-sdk")
     result = await session.aexecute_direct("query", principal=principal)
