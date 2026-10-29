@@ -16,6 +16,7 @@ from .canonical_json import canonical_json_sha256
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
+from .models import ToolResult
 from .native_graph_index import NativeSchemaGraphIndex
 from .native_semantic_index import (
     NativeSchemaPostingIndex,
@@ -593,7 +594,7 @@ class SchemaFieldRoutingSession:
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         alternative_index: int = 0,
         k: int = 5,
-    ) -> list["ToolResult"]:
+    ) -> list[ToolResult]:
         """Opt-in, single read-only P2 direct route via the existing executor.
 
         A paper receipt never grants execution. Recompile against current
@@ -620,7 +621,9 @@ class SchemaFieldRoutingSession:
             plan.status != "ready" or plan.executable_authority
             or plan.bindings or len(plan.calls) != 1
         ):
-            raise PolicyViolationError("paper direct execution requires one ready independent route")
+            raise PolicyViolationError(
+                "paper direct execution requires one ready independent route"
+            )
         selected = plan.calls[0]
         if not selected.call.executable or selected.call.missing_required_arguments:
             raise PolicyViolationError("paper direct execution has unresolved inputs")
