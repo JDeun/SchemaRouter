@@ -27,7 +27,7 @@
     {
       "id": "router.python.callable.sync",
       "public_entrypoint": "schemarouter.SchemaRouter.invoke",
-      "implementation": "src/schemarouter/router.py",
+      "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
       "planning": "src/schemarouter/planner.py",
@@ -46,7 +46,7 @@
     {
       "id": "router.sqlite.select",
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
-      "implementation": "src/schemarouter/router.py",
+      "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
       "planning": "src/schemarouter/planner.py",
