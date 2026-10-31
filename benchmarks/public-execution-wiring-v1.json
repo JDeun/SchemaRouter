@@ -23,6 +23,44 @@
       ],
       "qualification": "DEV_ONLY",
       "notes": "Read-only single native invocation; no independent external-provider E2 qualification."
+    },
+    {
+      "id": "router.python.callable.sync",
+      "public_entrypoint": "schemarouter.SchemaRouter.invoke",
+      "implementation": "src/schemarouter/router.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/python.py",
+      "test_file": "tests/test_python_adapter.py",
+      "real_invoker_tests": [
+        "test_add_callable_uses_decorator_metadata_and_executes"
+      ],
+      "denial_tests": [
+        "test_callable_argument_types_are_runtime_validated"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Registered local Python callable; PlanRequest via public invoke; schema validation negative."
+    },
+    {
+      "id": "router.sqlite.select",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/router.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/sqlite_database.py",
+      "test_file": "tests/test_sqlite_database_adapter.py",
+      "real_invoker_tests": [
+        "test_sqlite_execution_is_projected_parameterized_and_bounded"
+      ],
+      "denial_tests": [
+        "test_database_tools_compose_with_employee_and_executive_authorization"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Registered local SQLite real SELECT execution; parameterized query and principal authorization tests."
     }
   ]
 }
