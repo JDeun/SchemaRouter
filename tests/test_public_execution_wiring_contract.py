@@ -54,8 +54,9 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
             fn = funcs[name]
             body = ast.get_source_segment(tests.read_text(encoding="utf-8"), fn) or ""
             assert "monkeypatch" not in body
-            assert "aexecute_direct(" in body
-            assert "_fixture(" in body
+            assert method + "(" in body
+            if row["id"] == "paper.direct.native.read":
+                assert "_fixture(" in body
             assert "assert " in body
 
 
@@ -64,3 +65,5 @@ def test_paper_direct_sdk_wiring_is_not_silently_removed():
     paths = {row["id"]: row for row in data["paths"]}
     assert "paper.direct.native.read" in paths
     assert paths["paper.direct.native.read"]["qualification"] == "DEV_ONLY"
+    assert "router.python.callable.sync" in paths
+    assert "router.sqlite.select" in paths
