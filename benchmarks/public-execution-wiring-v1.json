@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "verified_public_execution_paths_only",
+  "paths": [
+    {
+      "id": "paper.direct.native.read",
+      "public_entrypoint": "schemarouter.SchemaFieldRoutingSession.aexecute_direct",
+      "implementation": "src/schemarouter/field_routing_session.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/paper_typed_tool_plan.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/native_registration.py",
+      "test_file": "tests/test_paper_direct_sdk_execution.py",
+      "real_invoker_tests": [
+        "test_direct_sdk_real_registered_native_invoker_end_to_end",
+        "test_direct_sdk_real_native_invoker_uses_only_host_arguments"
+      ],
+      "denial_tests": [
+        "test_direct_sdk_refuses_nonready_paper_receipts",
+        "test_direct_sdk_refuses_binding_mutated_by_availability",
+        "test_direct_sdk_rejects_unsafe_execution_shapes"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Read-only single native invocation; no independent external-provider E2 qualification."
+    }
+  ]
+}
