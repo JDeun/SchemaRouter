@@ -206,7 +206,7 @@
       "invoker": "src/schemarouter/adapters/vector_native.py",
       "test_file": "tests/test_vector_native_adapters.py",
       "real_invoker_tests": [
-        "test_qdrant_adapter_discovers_schema_and_normalizes_query"
+        "test_qdrant_public_router_executes_registered_native_backend"
       ],
       "denial_tests": [
         "test_qdrant_named_vector_requires_explicit_selection"
