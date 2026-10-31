@@ -61,6 +61,82 @@
       ],
       "qualification": "DEV_ONLY",
       "notes": "Registered local SQLite real SELECT execution; parameterized query and principal authorization tests."
+    },
+    {
+      "id": "router.http_json.get",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/http_json.py",
+      "test_file": "tests/test_http_json_adapter.py",
+      "real_invoker_tests": [
+        "test_declarative_http_tool_executes_crossref_style_get"
+      ],
+      "denial_tests": [
+        "test_declarative_http_tool_requires_method_and_path"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.graphql.query",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/graphql.py",
+      "test_file": "tests/test_graphql_adapter.py",
+      "real_invoker_tests": [
+        "test_graphql_selected_fields_become_selection_set"
+      ],
+      "denial_tests": [
+        "test_graphql_mutation_remains_policy_gated"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.openrpc.method",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/openrpc.py",
+      "test_file": "tests/test_openrpc_adapter.py",
+      "real_invoker_tests": [
+        "test_openrpc_url_discovery_and_jsonrpc_execution"
+      ],
+      "denial_tests": [
+        "test_openrpc_positional_params_fail_on_ambiguous_optional_gap"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.odata.select",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/odata.py",
+      "test_file": "tests/test_odata_adapter.py",
+      "real_invoker_tests": [
+        "test_odata_selected_fields_become_select_and_project_records"
+      ],
+      "denial_tests": [
+        "test_odata_service_url_validation"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
     }
   ]
 }
