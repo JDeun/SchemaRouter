@@ -793,7 +793,7 @@ async def test_qdrant_public_router_executes_registered_native_backend() -> None
 
     client = FakeQdrantClient()
     router = SchemaRouter()
-    keys = router.add_qdrant_vector_store(
+    keys = await router.aadd_qdrant_vector_store(
         client,
         lambda query: [0.1, 0.2, 0.3],
         database_name="qdrant",
