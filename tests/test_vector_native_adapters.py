@@ -797,6 +797,9 @@ async def test_qdrant_public_router_executes_registered_native_backend() -> None
         client,
         lambda query: [0.1, 0.2, 0.3],
         database_name="qdrant",
+        metadata_fields_by_collection={
+            "docs": (VectorMetadataField(name="title", json_schema={"type": "string"}),)
+        },
         remote=False,
     )
     tool = router.registry.get(keys[0])
