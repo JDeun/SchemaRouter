@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "scope": "verified_public_execution_paths_only",
+  "paths": [
+    {
+      "id": "paper.direct.native.read",
+      "public_entrypoint": "schemarouter.SchemaFieldRoutingSession.aexecute_direct",
+      "implementation": "src/schemarouter/field_routing_session.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/paper_typed_tool_plan.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/native_registration.py",
+      "test_file": "tests/test_paper_direct_sdk_execution.py",
+      "real_invoker_tests": [
+        "test_direct_sdk_real_registered_native_invoker_end_to_end",
+        "test_direct_sdk_real_native_invoker_uses_only_host_arguments"
+      ],
+      "denial_tests": [
+        "test_direct_sdk_refuses_nonready_paper_receipts",
+        "test_direct_sdk_refuses_binding_mutated_by_availability",
+        "test_direct_sdk_rejects_unsafe_execution_shapes"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Read-only single native invocation; no independent external-provider E2 qualification."
+    },
+    {
+      "id": "router.python.callable.sync",
+      "public_entrypoint": "schemarouter.SchemaRouter.invoke",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/python.py",
+      "test_file": "tests/test_python_adapter.py",
+      "real_invoker_tests": [
+        "test_add_callable_uses_decorator_metadata_and_executes"
+      ],
+      "denial_tests": [
+        "test_callable_argument_types_are_runtime_validated"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Registered local Python callable; PlanRequest via public invoke; schema validation negative."
+    },
+    {
+      "id": "router.sqlite.select",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/sqlite_database.py",
+      "test_file": "tests/test_sqlite_database_adapter.py",
+      "real_invoker_tests": [
+        "test_sqlite_execution_is_projected_parameterized_and_bounded"
+      ],
+      "denial_tests": [
+        "test_database_tools_compose_with_employee_and_executive_authorization"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Registered local SQLite real SELECT execution; parameterized query and principal authorization tests."
+    },
+    {
+      "id": "router.http_json.get",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/http_json.py",
+      "test_file": "tests/test_http_json_adapter.py",
+      "real_invoker_tests": [
+        "test_declarative_http_tool_executes_crossref_style_get"
+      ],
+      "denial_tests": [
+        "test_declarative_http_tool_requires_method_and_path"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.graphql.query",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/graphql.py",
+      "test_file": "tests/test_graphql_adapter.py",
+      "real_invoker_tests": [
+        "test_graphql_selected_fields_become_selection_set"
+      ],
+      "denial_tests": [
+        "test_graphql_mutation_remains_policy_gated"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.openrpc.method",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/openrpc.py",
+      "test_file": "tests/test_openrpc_adapter.py",
+      "real_invoker_tests": [
+        "test_openrpc_url_discovery_and_jsonrpc_execution"
+      ],
+      "denial_tests": [
+        "test_openrpc_positional_params_fail_on_ambiguous_optional_gap"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.odata.select",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/odata.py",
+      "test_file": "tests/test_odata_adapter.py",
+      "real_invoker_tests": [
+        "test_odata_selected_fields_become_select_and_project_records"
+      ],
+      "denial_tests": [
+        "test_odata_service_url_validation"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.mcp.http",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/mcp.py",
+      "test_file": "tests/test_mcp_integration.py",
+      "real_invoker_tests": [
+        "test_real_streamable_http_mcp_discovery_and_execution"
+      ],
+      "denial_tests": [
+        "test_real_stdio_mcp_discovery_and_execution"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local MCP server fixture; network and subprocess tests require explicit integration runner."
+    },
+    {
+      "id": "router.graph.neo4j",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/graph_native.py",
+      "test_file": "tests/test_graph_native_adapters.py",
+      "real_invoker_tests": [
+        "test_neo4j_native_adapter_discovers_and_executes_parameterized_traversal"
+      ],
+      "denial_tests": [
+        "test_neo4j_trusted_filter_scope_fails_before_vendor_traversal"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+    },
+    {
+      "id": "router.record.mongodb",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/record_native.py",
+      "test_file": "tests/test_record_native_adapters.py",
+      "real_invoker_tests": [
+        "test_mongodb_native_adapter_discovers_and_executes_bounded_find"
+      ],
+      "denial_tests": [
+        "test_native_record_backend_receives_hidden_principal_filter"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+    },
+    {
+      "id": "router.vector.qdrant",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/vector_native.py",
+      "test_file": "tests/test_vector_native_adapters.py",
+      "real_invoker_tests": [
+        "test_qdrant_public_router_executes_registered_native_backend"
+      ],
+      "denial_tests": [
+        "test_qdrant_named_vector_requires_explicit_selection"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+    }
+  ]
+}
