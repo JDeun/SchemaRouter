@@ -232,10 +232,10 @@
     {
       "id": "E02",
       "priority": "P1",
-      "owner_issue": 1428,
+      "owner_issue": 1477,
       "status": "DEV_ONLY",
       "blocker": "CPU DEV scale does not jointly qualify task success and p95/p99/RSS.",
-      "next_action": "Measure identical-task K5 schema tokens, CPU tail latency and RSS.",
+      "next_action": "Under #1477 fixed-K5 integrated qualification, measure identical-task schema tokens, CPU p95/p99 and RSS; retain prior synthetic DEV negative evidence.",
       "evidence_links": [],
       "qualification": null
     },
@@ -252,10 +252,10 @@
     {
       "id": "I02",
       "priority": "P2",
-      "owner_issue": 1428,
+      "owner_issue": 1560,
       "status": "NOT_VERIFIED",
       "blocker": "1000-tool stress, hot swap, invalidation and concurrent-principal coverage incomplete.",
-      "next_action": "Test indexed parity and absence of concurrency leaks.",
+      "next_action": "Under #1560 native graph index, verify 1000-tool indexed parity, hot swap, invalidation and concurrent-principal isolation.",
       "evidence_links": [],
       "qualification": null
     }
