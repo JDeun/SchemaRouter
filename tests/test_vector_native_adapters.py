@@ -784,3 +784,38 @@ def test_router_milvus_discovery_budget_reaches_native_backend() -> None:
 
     assert router.registry.keys() == ()
 
+
+
+@pytest.mark.asyncio
+async def test_qdrant_public_router_executes_registered_native_backend() -> None:
+    """Exercise the actual public executor through Qdrant's registered adapter."""
+    from schemarouter import ExecutionPlan, ToolCall
+
+    client = FakeQdrantClient()
+    router = SchemaRouter()
+    keys = router.add_qdrant_vector_store(
+        client,
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="qdrant",
+        remote=False,
+    )
+    tool = router.registry.get(keys[0])
+    endpoint = tool.endpoint("search")
+    plan = ExecutionPlan(
+        query="search Qdrant documents",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                arguments={"query": "routing", "top_k": 2},
+                fields=["id", "score", "title"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
+    )
+    results = await router.execute(plan)
+    assert len(results) == 1
+    assert results[0].data[0]["id"] == "p1"
+    assert client.query_kwargs["collection_name"] == "docs"
