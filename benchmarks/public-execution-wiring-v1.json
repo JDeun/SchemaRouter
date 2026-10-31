@@ -137,6 +137,82 @@
       ],
       "qualification": "DEV_ONLY",
       "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+    },
+    {
+      "id": "router.mcp.http",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/mcp.py",
+      "test_file": "tests/test_mcp_integration.py",
+      "real_invoker_tests": [
+        "test_real_streamable_http_mcp_discovery_and_execution"
+      ],
+      "denial_tests": [
+        "test_real_stdio_mcp_discovery_and_execution"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Local MCP server fixture; network and subprocess tests require explicit integration runner."
+    },
+    {
+      "id": "router.graph.neo4j",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/graph_native.py",
+      "test_file": "tests/test_graph_native_adapters.py",
+      "real_invoker_tests": [
+        "test_neo4j_native_adapter_discovers_and_executes_parameterized_traversal"
+      ],
+      "denial_tests": [
+        "test_neo4j_trusted_filter_scope_fails_before_vendor_traversal"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+    },
+    {
+      "id": "router.record.mongodb",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/record_native.py",
+      "test_file": "tests/test_record_native_adapters.py",
+      "real_invoker_tests": [
+        "test_mongodb_native_adapter_discovers_and_executes_bounded_find"
+      ],
+      "denial_tests": [
+        "test_native_record_backend_receives_hidden_principal_filter"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+    },
+    {
+      "id": "router.vector.qdrant",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/vector_native.py",
+      "test_file": "tests/test_vector_native_adapters.py",
+      "real_invoker_tests": [
+        "test_qdrant_adapter_discovers_schema_and_normalizes_query"
+      ],
+      "denial_tests": [
+        "test_qdrant_named_vector_requires_explicit_selection"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
     }
   ]
 }
