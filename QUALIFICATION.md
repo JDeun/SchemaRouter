@@ -83,17 +83,17 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Blocker: Frozen #432 SR-5 29.19% vs FULL 49.62% failed original gate.
   - Next action: Preregister independent paired E2 without altering frozen negatives.
   - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/38501112190)
-- [ ] **E02 P1** — `DEV_ONLY` — [owner #1428](https://github.com/JDeun/SchemaRouter/issues/1428)
+- [ ] **E02 P1** — `DEV_ONLY` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: CPU DEV scale does not jointly qualify task success and p95/p99/RSS.
-  - Next action: Measure identical-task K5 schema tokens, CPU tail latency and RSS.
+  - Next action: Under #1477 fixed-K5 integrated qualification, measure identical-task schema tokens, CPU p95/p99 and RSS; retain prior synthetic DEV negative evidence.
   - Evidence: No qualifying independent evidence registered
 - [ ] **I01 P2** — `ENGINEERING_ONLY` — [owner #1346](https://github.com/JDeun/SchemaRouter/issues/1346)
   - Blocker: SDK integration smokes do not qualify native agent approval/execute parity.
   - Next action: Run source-pinned framework-native guarded acceptance.
   - Evidence: No qualifying independent evidence registered
-- [ ] **I02 P2** — `NOT_VERIFIED` — [owner #1428](https://github.com/JDeun/SchemaRouter/issues/1428)
+- [ ] **I02 P2** — `NOT_VERIFIED` — [owner #1560](https://github.com/JDeun/SchemaRouter/issues/1560)
   - Blocker: 1000-tool stress, hot swap, invalidation and concurrent-principal coverage incomplete.
-  - Next action: Test indexed parity and absence of concurrency leaks.
+  - Next action: Under #1560 native graph index, verify 1000-tool indexed parity, hot swap, invalidation and concurrent-principal isolation.
   - Evidence: No qualifying independent evidence registered
 
 ## Separately reviewed release and promotion decisions
