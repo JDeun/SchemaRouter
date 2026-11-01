@@ -45,7 +45,8 @@ class _FakeResponse:
 
 
 def _run_watchdog(
-    *, new_status: str, unrelated_failure: bool = False, newer_failed_run: bool = False,\n    head_age_minutes: int = 3
+    *, new_status: str, unrelated_failure: bool = False, newer_failed_run: bool = False,
+    head_age_minutes: int = 3
 ) -> dict:
     now = datetime.now(timezone.utc)
     old_date = (now - timedelta(hours=3)).isoformat()
