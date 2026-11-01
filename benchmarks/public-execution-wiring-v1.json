@@ -44,6 +44,25 @@
       "notes": "Registered local Python callable; PlanRequest via public invoke; schema validation negative."
     },
     {
+      "id": "router.python.callable.async",
+      "public_entrypoint": "schemarouter.SchemaRouter.ainvoke",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "invoker": "src/schemarouter/adapters/python.py",
+      "test_file": "tests/test_python_adapter.py",
+      "real_invoker_tests": [
+        "test_add_callable_supports_async_functions"
+      ],
+      "denial_tests": [
+        "test_async_registered_callable_rejects_invalid_arguments"
+      ],
+      "qualification": "DEV_ONLY",
+      "notes": "Dedicated async invalid-argument denial through public ainvoke; independent E2 remains HOLD."
+    },
+    {
       "id": "router.sqlite.select",
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "implementation": "src/schemarouter/runtime.py",
@@ -213,25 +232,6 @@
       ],
       "qualification": "DEV_ONLY",
       "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
-    },
-    {
-      "id": "router.python.callable.async",
-      "public_entrypoint": "schemarouter.SchemaRouter.ainvoke",
-      "implementation": "src/schemarouter/runtime.py",
-      "registry": "src/schemarouter/registry.py",
-      "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
-      "executor": "src/schemarouter/executor.py",
-      "invoker": "src/schemarouter/adapters/python.py",
-      "test_file": "tests/test_python_adapter.py",
-      "real_invoker_tests": [
-        "test_add_callable_supports_async_functions"
-      ],
-      "denial_tests": [
-        "test_async_registered_callable_rejects_invalid_arguments"
-      ],
-      "qualification": "DEV_ONLY",
-      "notes": "Dedicated async invalid-argument denial through public ainvoke; independent E2 remains HOLD."
     }
   ]
 }
