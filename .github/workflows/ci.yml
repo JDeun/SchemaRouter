@@ -50,6 +50,21 @@ jobs:
               python scripts/ci_scope.py --github-output >> "$GITHUB_OUTPUT"
           fi
 
+  execution-wiring-fast:
+    name: public execution wiring contract (fast)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "pytest>=8.2"
+      - name: Validate public execution manifest and method inventory
+        run: >-
+          pytest -q
+          tests/test_public_execution_wiring_contract.py
+          tests/test_public_execution_method_inventory.py
+
   test:
     name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
