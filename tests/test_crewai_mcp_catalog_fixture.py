@@ -1,5 +1,6 @@
 """Contract tests for deterministic CrewAI MCP catalog fixture."""
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,6 @@ FIXTURE = (
 )
 spec = importlib.util.spec_from_file_location("crewai_catalog_fixture", FIXTURE)
 assert spec is not None and spec.loader is not None
-import sys
 module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = module
 spec.loader.exec_module(module)
