@@ -31,7 +31,7 @@ jobs:
           ref: 8ada7f1f392f3dd2800e825dac8d245dfd53944a
           path: clicshopping-repin
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12.14"
       - name: Install local benchmark dependencies
