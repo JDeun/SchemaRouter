@@ -60,10 +60,29 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
             assert "assert " in body
 
 
-def test_paper_direct_sdk_wiring_is_not_silently_removed():
+# These are the adapter families already attested in the initial manifest.
+# Pinning the complete set prevents a deleted row from escaping validation:
+# the generic source/test checks above only iterate rows that still exist.
+REQUIRED_EXECUTION_PATHS = frozenset({
+    "paper.direct.native.read",
+    "router.python.callable.sync",
+    "router.sqlite.select",
+    "router.http_json.get",
+    "router.graphql.query",
+    "router.openrpc.method",
+    "router.odata.select",
+    "router.mcp.http",
+    "router.graph.neo4j",
+    "router.record.mongodb",
+    "router.vector.qdrant",
+})
+
+
+def test_verified_execution_adapter_families_cannot_silently_disappear():
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     paths = {row["id"]: row for row in data["paths"]}
-    assert "paper.direct.native.read" in paths
-    assert paths["paper.direct.native.read"]["qualification"] == "DEV_ONLY"
-    assert "router.python.callable.sync" in paths
-    assert "router.sqlite.select" in paths
+    missing = REQUIRED_EXECUTION_PATHS - paths.keys()
+    assert not missing, f"Missing previously attested execution paths: {sorted(missing)}"
+    # Preserve the actual status: a local invoker test is not independent E2.
+    for path_id in REQUIRED_EXECUTION_PATHS:
+        assert paths[path_id]["qualification"] == "DEV_ONLY", path_id
