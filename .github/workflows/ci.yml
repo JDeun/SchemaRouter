@@ -58,6 +58,13 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/ci.yml
+            examples/external_validation/pydanticai-tool-search/requirements.txt
+            examples/external_validation/openai_agents_mcp_filter/requirements.txt
+            examples/external_validation/mcp_agent_catalog/requirements.txt
       - run: python -m pip install "pytest>=8.2" "pytest-asyncio>=0.23"
       - name: Validate public execution manifest and method inventory
         run: >-
