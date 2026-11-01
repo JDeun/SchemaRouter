@@ -231,7 +231,7 @@
         "test_async_registered_callable_rejects_invalid_arguments"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered async Python callable via public ainvoke, with dedicated invalid-argument denial test; independent E2 remains HOLD."
+      "notes": "Dedicated async invalid-argument denial through public ainvoke; independent E2 remains HOLD."
     }
   ]
 }
