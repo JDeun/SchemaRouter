@@ -109,3 +109,14 @@ def test_positional_only_callable_requires_explicit_contract() -> None:
 
     with pytest.raises(RegistrationError, match="positional-only"):
         tool_from_callable(positional)
+
+
+@pytest.mark.asyncio
+async def test_async_registered_callable_rejects_invalid_arguments() -> None:
+    async def lookup(user_id: int) -> dict[str, str]:
+        return {"user_id": str(user_id)}
+
+    router = SchemaRouter()
+    router.add_callable(lookup, read_only=True)
+    with pytest.raises(SchemaValidationError):
+        await router.ainvoke(PlanRequest(query="lookup user", arguments={"user_id": "invalid"}))
