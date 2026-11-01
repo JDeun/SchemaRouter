@@ -159,9 +159,16 @@ class PostMergeQualificationWatchdogTests(unittest.TestCase):
         self.assertEqual(report["commits"][1]["qualification"], "superseded_by_successful_main")
         self.assertEqual(report["commits"][1]["conclusion"], "cancelled")
 
-    def test_known_cancelled_baseline_still_fails_without_completed_descendant(self) -> None:
+    def test_known_cancelled_baseline_waits_for_active_descendant(self) -> None:
         report = _run_watchdog(new_status="in_progress")
+        self.assertEqual(report["failures"], [])
+        self.assertEqual(report["commits"][1]["qualification"], "awaiting_descendant_qualification")
+        self.assertEqual(report["commits"][1]["conclusion"], "cancelled")
+
+    def test_known_cancelled_baseline_fails_if_descendant_is_stale(self) -> None:
+        report = _run_watchdog(new_status="in_progress", head_age_minutes=106)
         self.assertTrue(any(BASELINE in failure for failure in report["failures"]))
+        self.assertTrue(any(HEAD in failure for failure in report["failures"]))
 
     def test_other_failed_main_commit_is_not_excused(self) -> None:
         report = _run_watchdog(new_status="success", unrelated_failure=True)
