@@ -45,11 +45,11 @@ class _FakeResponse:
 
 
 def _run_watchdog(
-    *, new_status: str, unrelated_failure: bool = False, newer_failed_run: bool = False
+    *, new_status: str, unrelated_failure: bool = False, newer_failed_run: bool = False,\n    head_age_minutes: int = 3
 ) -> dict:
     now = datetime.now(timezone.utc)
     old_date = (now - timedelta(hours=3)).isoformat()
-    new_date = (now - timedelta(minutes=3)).isoformat()
+    new_date = (now - timedelta(minutes=head_age_minutes)).isoformat()
     commits = {
         HEAD: {
             "sha": HEAD,
