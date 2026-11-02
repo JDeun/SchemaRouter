@@ -131,7 +131,8 @@ jobs:
   verify-published:
     needs: [build, deploy]
     if: needs.deploy.result == 'success'
-    runs-on: ubuntu-latest
+    # Playwright 1.55.0 has no ubuntu26.04 browser/dependency support.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
