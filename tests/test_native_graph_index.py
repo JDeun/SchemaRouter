@@ -1119,3 +1119,76 @@ def test_default_native_g5_rechecks_typed_bindings_after_scope_changes(
     assert changed
     assert router.registry.version == index.field_index.registry_version
     assert router.planner.availability_predicate is health
+
+
+@pytest.mark.parametrize("n_targets", [500, 5000])
+def test_owner_ranked_g5_path_lookup_ranks_entire_qualified_cohort(n_targets):
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(n_targets=n_targets)
+    idx = _index(router)
+    winner = f"cases_{n_targets - 1}.read_case"
+    policy = PaperNativeRankPolicy(
+        snapshot_id=idx.field_index.snapshot_id,
+        route_priorities={winner: 100},
+    )
+
+    result = idx.lookup(
+        router, ALIASES[0], group=GROUP, principal=ANALYST,
+        _paper_rank_policy=policy,
+        _paper_rank_aliases=(("case status",),),
+    )
+
+    assert result.status == ("ranked_unverified" if n_targets > 5 else "complete")
+    assert result.deterministic_paper_ranked is True
+    assert result.qualified_path_count == n_targets
+    assert len(result.candidates) == 5
+    assert result.candidates[0].consumer_route_id == winner
+    assert tuple(candidate.consumer_route_id for candidate in result.candidates[1:]) == tuple(
+        sorted(
+            f"cases_{i}.read_case" for i in range(n_targets - 1)
+        )[:4]
+    )
+    assert result.executable_authority is False
+    assert result.independent_quality_evidence is False
+
+
+def test_owner_ranked_g5_path_budget_overflow_returns_no_partial_receipts(monkeypatch):
+    from schemarouter import native_graph_index
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    monkeypatch.setattr(native_graph_index, "MAX_OWNER_RANKABLE_PATHS", 5)
+    router = _router(n_targets=6)
+    idx = _index(router)
+    policy = PaperNativeRankPolicy(snapshot_id=idx.field_index.snapshot_id)
+
+    result = idx.lookup(
+        router, ALIASES[0], group=GROUP, principal=ANALYST,
+        _paper_rank_policy=policy,
+        _paper_rank_aliases=(("case status",),),
+    )
+
+    assert result.status == "budget_unsatisfied"
+    assert result.qualified_path_count == 0
+    assert result.candidates == ()
+
+
+def test_owner_ranked_g5_policy_mutation_during_health_check_fails_closed():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(n_targets=6)
+    idx = _index(router)
+    policy = PaperNativeRankPolicy(snapshot_id=idx.field_index.snapshot_id)
+
+    def mutate_on_candidate(tool, _endpoint):
+        if tool.key == "cases_5":
+            policy.route_priorities["cases_5.read_case"] = 50
+        return True
+
+    router.planner.availability_predicate = mutate_on_candidate
+    with pytest.raises(PolicyViolationError, match="Rank owner declaration changed"):
+        idx.lookup(
+            router, ALIASES[0], group=GROUP, principal=ANALYST,
+            _paper_rank_policy=policy,
+            _paper_rank_aliases=(("case status",),),
+        )

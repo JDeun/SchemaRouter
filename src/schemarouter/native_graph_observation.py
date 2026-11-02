@@ -67,6 +67,26 @@ def materialize_native_observed_arguments(
     )
     if current.status != "complete" or candidate not in current.candidates:
         raise PolicyViolationError("G5 current permitted graph edge changed")
+    values = _materialize_original_observed_edge(index, router, candidate, observation)
+    # A concurrent registry/scope/policy change invalidates an observed edge.
+    check = index.lookup(router, query, group=group, principal=principal)
+    if check.status != "complete" or candidate not in check.candidates:
+        raise PolicyViolationError("G5 authority changed during value validation")
+    return values
+
+
+def _materialize_original_observed_edge(
+    index: NativeSchemaGraphIndex,
+    router: SchemaRouter,
+    candidate: NativeIndexedGraphCandidate,
+    observation: ToolResult,
+) -> NativeObservedArgumentEvidence:
+    """Scalar checks shared by the public and private source-verified paths.
+
+    INTERNAL ONLY. Caller MUST first and finally prove the exact original
+    native graph edge under the current principal, policy, K5 and source.
+    This helper alone has NO authorization/provenance/execution authority.
+    """
     producer_key, producer_endpoint_name = index.field_index.route_locations[
         candidate.producer_route_id
     ]
@@ -149,10 +169,6 @@ def materialize_native_observed_arguments(
         validate_json_schema_value(
             args, consumer.input_schema, context="G5 entire consumer arguments",
         )
-    # A concurrent registry/scope/policy change invalidates an observed edge.
-    check = index.lookup(router, query, group=group, principal=principal)
-    if check.status != "complete" or candidate not in check.candidates:
-        raise PolicyViolationError("G5 authority changed during value validation")
     return NativeObservedArgumentEvidence(
         producer_route_id=candidate.producer_route_id,
         consumer_route_id=candidate.consumer_route_id,

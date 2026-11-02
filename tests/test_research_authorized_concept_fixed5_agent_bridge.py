@@ -252,3 +252,117 @@ def test_valid_but_changed_concept_catalog_content_is_not_silently_reapproved():
     selector.catalog = replacement
     with pytest.raises(PolicyViolationError, match="catalog mutated"):
         selector(QUERY, view.visible_route_ids)
+
+
+def test_host_empty_menu_terminal_no_model_no_tool_and_strict_unsupported_pass():
+    router = _router()
+    view = _view(router, "No registered tool can export the document")
+    task = _task(view.original_query)
+    task.update(supported=False, required_routes=[], executor_fixture={"steps": []})
+
+    class MustNotGenerate:
+        def generate(self, messages, tools):
+            pytest.fail("host empty menu must terminate before model generation")
+
+    row = run_generated_episode(
+        MustNotGenerate(), router.registry, task,
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: [],
+        experimental_agent_tool_surface=view,
+        experimental_host_empty_menu_terminal=True,
+    )
+    assert row["passed"] is True  # strict fixture checks exact generic terminal
+    assert row["host_empty_menu_terminal"] is True
+    assert row["turns"] == row["tool_call_count"] == 0
+    assert row["input_tokens"] == row["output_tokens"] == 0
+    assert row["visible_candidate_counts"] == [0]
+    assert not any(k in row for k in ("final_text", "attempts", "query", "required_routes"))
+    assert view.public_trace({"host_empty_menu_terminal": "forged"}).get(
+        "host_empty_menu_terminal"
+    ) is None
+
+
+def test_host_empty_menu_terminal_supported_false_refusal_is_not_success():
+    router = _router()
+    view = _view(router)
+    task = _task()
+
+    class MustNotGenerate:
+        def generate(self, messages, tools):
+            pytest.fail("no model on empty menu")
+
+    row = run_generated_episode(
+        MustNotGenerate(), router.registry, task,
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: [],
+        experimental_agent_tool_surface=view,
+        experimental_host_empty_menu_terminal=True,
+    )
+    assert row["supported"] is True
+    assert row["passed"] is False and row["task_complete"] is False
+    assert row["host_empty_menu_terminal"] is True
+    assert row["tool_call_count"] == 0
+
+
+def test_host_empty_menu_terminal_nonempty_keeps_original_agent_turns():
+    router = _router()
+    view = _view(router)
+    agent = ScriptedAgent()
+    row = run_generated_episode(
+        agent, router.registry, _task(), EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: ["complete.read"],
+        experimental_agent_tool_surface=view,
+        experimental_host_empty_menu_terminal=True,
+    )
+    assert row["passed"] is True
+    assert row["host_empty_menu_terminal"] is False
+    assert row["tool_call_count"] == 1
+    assert len(agent.seen_tools) == 2
+
+
+def test_host_empty_menu_terminal_is_only_available_to_scoped_fixed5():
+    router = _router()
+    view = _view(router)
+    for flag in (1, "enabled"):
+        with pytest.raises(ValueError, match="host empty menu"):
+            run_generated_episode(
+                ScriptedAgent(), router.registry, _task(),
+                EXPERIMENTAL_FIXED5_CONDITION,
+                experimental_candidate_selector=lambda _query, _ids: [],
+                experimental_agent_tool_surface=view,
+                experimental_host_empty_menu_terminal=flag,
+            )
+    with pytest.raises(ValueError, match="host empty menu"):
+        run_generated_episode(
+            ScriptedAgent(), router.registry, _task(), "FULL",
+            experimental_candidate_selector=lambda _query, _ids: [],
+            experimental_agent_tool_surface=view,
+            experimental_host_empty_menu_terminal=True,
+        )
+    with pytest.raises(ValueError, match="host empty menu"):
+        run_generated_episode(
+            ScriptedAgent(), router.registry, _task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, _ids: [],
+            experimental_host_empty_menu_terminal=True,
+        )
+
+
+def test_host_empty_menu_terminal_cannot_hide_source_drift():
+    router = _router()
+    view = _view(router)
+
+    def revoke_before_empty(_query, _ids):
+        router.add_tool(ToolSpec(
+            name="another", endpoints=[EndpointSpec(name="read", read_only=True)],
+        ))
+        return []
+
+    with pytest.raises(PolicyViolationError):
+        run_generated_episode(
+            ScriptedAgent(), router.registry, _task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=revoke_before_empty,
+            experimental_agent_tool_surface=view,
+            experimental_host_empty_menu_terminal=True,
+        )

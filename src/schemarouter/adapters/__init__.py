@@ -46,7 +46,11 @@ from .mcp import (
 from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
 from .openrpc import OpenRPCRemoteInvoker, OpenRPCSourceAdapter, tool_from_openrpc
-from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter
+from .optimade import (
+    OPTIMADERemoteInvoker,
+    OPTIMADESourceAdapter,
+    review_optimade_paper_tool,
+)
 from .plugins import (
     ADAPTER_ENTRY_POINT_GROUP,
     AdapterPluginInfo,
@@ -187,6 +191,7 @@ __all__ = [
     "ODataSourceAdapter",
     "OPTIMADERemoteInvoker",
     "OPTIMADESourceAdapter",
+    "review_optimade_paper_tool",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
     "OpenAPIRemoteInvoker",

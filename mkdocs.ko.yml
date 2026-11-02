@@ -144,6 +144,7 @@ nav:
       - G5 통합 구현 기록:
           - 원본 개념 그래프 설계 (2026-10-22): superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md
           - 원본 G5 구현 계획 (2026-10-22): superpowers/plans/2026-10-22-g5-native-vertical-slice.md
+          - 인덱스 FieldGroup → 고정 K 에이전트 브리지 E0 계획 (2026-10-25): superpowers/plans/2026-10-25-indexed-agent-bridge-e0.md
       - 제품 지향점·통합 테스트 매트릭스: research/product-north-star-and-test-matrix.md
       - 연구 현황: research/routing-status.md
       - 전체 실험 인덱스: research/experiment-index.md

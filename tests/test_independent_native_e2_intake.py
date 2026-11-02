@@ -1,14 +1,19 @@
 """No-model synthetic abuse tests for external E2 unscored intake preflight."""
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
+import subprocess
+import sys
 from copy import deepcopy
 
 import pytest
 
 from scripts.inspect_independent_native_e2_intake import (
+    inspect_source_pinned_native_cohort,
     inspect_unscored_native_cohort,
+    inspect_witness_pinned_native_cohort,
 )
 from scripts.research_task_disposition_rubric_e0 import KINDS, LANGUAGES
 
@@ -67,6 +72,128 @@ def example() -> tuple[dict, dict, dict, dict]:
         "case_language_origin": "publisher_original_not_translated",
     }
     return manifest, cases, gold, development
+
+
+def witness_example() -> tuple[bytes, bytes, bytes, bytes, bytes, bytes, bytes]:
+    """Synthetic original-byte reference collections; never real publisher gold."""
+    m, c, g, d = example()
+    native_inventory = b'{"source":"synthetic-original-private-inventory"}'
+    m["native_tool_inventory_sha256"] = sha(native_inventory)
+    authorities = {"references": []}
+    gold_refs = {"references": []}
+    for record in g["cases"]:
+        ident = record["id"]
+        auth_bytes = f"Native principal authority {ident} {PRIVATE}".encode()
+        gold_bytes = f"Private original gold route/field {ident} {PRIVATE}".encode()
+        record["native_authority_sha256"] = sha(auth_bytes)
+        record["gold_reference_sha256"] = sha(gold_bytes)
+        authorities["references"].append({
+            "id": ident, "evidence_base64": base64.b64encode(auth_bytes).decode("ascii"),
+        })
+        gold_refs["references"].append({
+            "id": ident, "evidence_base64": base64.b64encode(gold_bytes).decode("ascii"),
+        })
+    m["gold_bytes_sha256"] = sha(raw(g))
+    return (
+        raw(m), raw(c), raw(g), raw(d), native_inventory,
+        raw(authorities), raw(gold_refs),
+    )
+
+
+def test_a6_all_source_native_and_gold_witness_bytes_are_exactly_bound():
+    report = inspect_witness_pinned_native_cohort(*witness_example())
+    assert report["case_count"] == 15
+    assert report["native_inventory_bytes_sha256_match"] is True
+    assert report["native_authority_witness_bytes_sha256_match"] is True
+    assert report["gold_reference_witness_bytes_sha256_match"] is True
+    assert report["case_witness_pairs_verified_structurally"] == 15
+    assert report["gold_independently_reviewed"] is False
+    assert report["source_author_license_verified"] is False
+    assert report["scoring_authorized"] is False
+    assert report["independent_e2_qualified"] is False
+    serialized = json.dumps(report)
+    assert "ind-01" not in serialized
+    assert PRIVATE not in serialized
+
+
+@pytest.mark.parametrize("which,mutation", (
+    (5, lambda rows: rows["references"].pop()),
+    (6, lambda rows: rows["references"].append(deepcopy(rows["references"][0]))),
+    (5, lambda rows: rows["references"][0].update(id="foreign-case")),
+    (6, lambda rows: rows["references"][0].update(evidence_base64="")),
+    (5, lambda rows: rows["references"][0].update(evidence_base64="!bad-base64!")),
+    (6, lambda rows: rows["references"][0].update(evidence_base64="QQ==\n")),
+    (5, lambda rows: rows["references"][0].update(evidence_base64="QQ==")),
+    (6, lambda rows: rows["references"][0].update(evidence_base64=1)),
+    (5, lambda rows: rows["references"][0].update(evidence_base64=
+               base64.b64encode(b"a" * 65537).decode("ascii"))),
+    (6, lambda rows: rows["references"][0].update(extra="untrusted")),
+))
+def test_a6_incomplete_forged_noncanonical_or_wrong_case_witness_rejected(which, mutation):
+    parts = list(witness_example())
+    payload = json.loads(parts[which])
+    mutation(payload)
+    parts[which] = raw(payload)
+    with pytest.raises(ValueError) as error:
+        inspect_witness_pinned_native_cohort(*parts)
+    assert PRIVATE not in str(error.value)
+
+
+def test_a6_cross_swapped_native_vs_gold_evidence_is_not_interchangeable():
+    parts = list(witness_example())
+    parts[5], parts[6] = parts[6], parts[5]
+    with pytest.raises(ValueError, match="witness"):
+        inspect_witness_pinned_native_cohort(*parts)
+
+
+def test_a6_every_private_case_hash_is_a_digest_of_supplied_original_bytes():
+    parts = list(witness_example())
+    gold = json.loads(parts[2])
+    gold["cases"][0]["native_authority_sha256"] = "f" * 64
+    parts[2] = raw(gold)
+    manifest = json.loads(parts[0])
+    manifest["gold_bytes_sha256"] = sha(parts[2])
+    parts[0] = raw(manifest)
+    with pytest.raises(ValueError, match="witness"):
+        inspect_witness_pinned_native_cohort(*parts)
+
+
+@pytest.mark.parametrize("index,payload", (
+    (5, b'\xff'),
+    (5, b'{"references":[],"references":[]}'),
+    (6, b'{"references":[]}'),
+    (5, b'{}'),
+    (5, b'x' * (5 * 1024 * 1024 + 1)),
+))
+def test_a6_malformed_or_oversized_private_witnesses_fail_closed(index, payload):
+    parts = list(witness_example())
+    parts[index] = payload
+    with pytest.raises(ValueError) as error:
+        inspect_witness_pinned_native_cohort(*parts)
+    assert PRIVATE not in str(error.value)
+
+
+def test_a6_seven_stream_cli_returns_no_private_case_or_native_bytes(tmp_path):
+    streams = witness_example()
+    args = []
+    for name, source_bytes in zip((
+        "manifest", "cases", "gold", "development", "native-inventory",
+        "native-authority-witnesses", "gold-reference-witnesses",
+    ), streams, strict=True):
+        path = tmp_path / f"{name}.json"
+        path.write_bytes(source_bytes)
+        args.extend((f"--{name}", str(path)))
+    cmd = [sys.executable, "-m", "scripts.inspect_independent_native_e2_intake", *args]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    report = json.loads(result.stdout)
+    assert report["case_witness_pairs_verified_structurally"] == 15
+    assert report["scoring_authorized"] is False
+    assert PRIVATE not in result.stdout
+    assert "ind-01" not in result.stdout
+
+    # Reject selecting only one witness collection, not silently fall back.
+    partial = subprocess.run(cmd[:-2], capture_output=True, text=True)
+    assert partial.returncode != 0
 
 
 def evaluate(parts: tuple[dict, dict, dict, dict]) -> dict:
@@ -167,6 +294,22 @@ def test_duplicate_manifest_json_key_is_never_last_wins():
         inspect_unscored_native_cohort(forged, raw(c), raw(g), raw(d))
 
 
+def test_non_utf8_inventory_manifest_preserves_source_neutral_legacy_parse_error():
+    m, c, g, d = example()
+    with pytest.raises(ValueError, match="malformed JSON contents"):
+        inspect_unscored_native_cohort(b"\xff", raw(c), raw(g), raw(d))
+
+
+def test_malformed_private_source_is_not_chained_as_exception_cause():
+    m, c, g, d = example()
+    malformed = b'{"private":"' + PRIVATE.encode("ascii") + b'",'
+    with pytest.raises(ValueError) as error:
+        inspect_unscored_native_cohort(malformed, raw(c), raw(g), raw(d))
+    assert PRIVATE not in str(error.value)
+    assert error.value.__cause__ is None
+    assert error.value.__suppress_context__ is True
+
+
 def test_bounded_holdout_rows_prevent_adversarial_pairwise_blowup():
     m, c, g, d = example()
     for i in range(16, 258):
@@ -203,3 +346,83 @@ def test_untrusted_duplicate_field_name_is_not_reflected_in_error():
     with pytest.raises(ValueError, match="malformed JSON contents") as error:
         inspect_unscored_native_cohort(raw(m), raw_case, raw(g), raw(d))
     assert PRIVATE not in str(error.value)
+
+
+def test_actual_native_inventory_bytes_must_match_manifest_before_structural_receipt():
+    m, c, g, d = example()
+    source = b'{"native_tool_spec":"' + PRIVATE.encode("utf-8") + b'"}'
+    m["native_tool_inventory_sha256"] = sha(source)
+    report = inspect_source_pinned_native_cohort(
+        raw(m), raw(c), raw(g), raw(d), source,
+    )
+    assert report["native_inventory_bytes_sha256_match"] is True
+    assert report["status"] == "STRUCTURAL_PREFLIGHT_ONLY"
+    assert report["source_author_license_verified"] is False
+    assert report["provider_native_permission_gold_verified"] is False
+    assert report["scoring_authorized"] is False
+    assert report["independent_e2_qualified"] is False
+    assert report["qualification_gate"] == "BLOCKED_EXTERNAL"
+    assert PRIVATE not in json.dumps(report)
+
+
+@pytest.mark.parametrize("submitted", (
+    b'{"native_tool_spec":"changed"}',
+    b"",
+    "not-native-source-bytes",
+    b"x" * (5 * 1024 * 1024 + 1),
+))
+def test_untrusted_or_mismatched_inventory_fails_without_source_leak(submitted):
+    m, c, g, d = example()
+    source = b'{"native_tool_spec":"' + PRIVATE.encode("utf-8") + b'"}'
+    m["native_tool_inventory_sha256"] = sha(source)
+    with pytest.raises(ValueError) as error:
+        inspect_source_pinned_native_cohort(
+            raw(m), raw(c), raw(g), raw(d), submitted,
+        )
+    assert PRIVATE not in str(error.value)
+
+
+def test_incorrect_manifest_source_digest_cannot_be_promoted_to_verified():
+    m, c, g, d = example()
+    with pytest.raises(ValueError, match="native inventory bytes mismatch"):
+        inspect_source_pinned_native_cohort(
+            raw(m), raw(c), raw(g), raw(d), b"actual provider inventory",
+        )
+
+
+def test_cli_native_inventory_opt_in_does_not_expose_private_source(tmp_path):
+    m, c, g, d = example()
+    source = b'{"native":"' + PRIVATE.encode("utf-8") + b'"}'
+    m["native_tool_inventory_sha256"] = sha(source)
+    files = {}
+    for name, value in (
+        ("manifest", raw(m)), ("cases", raw(c)),
+        ("gold", raw(g)), ("development", raw(d)),
+        ("native-inventory", source),
+    ):
+        path = tmp_path / f"{name}.json"
+        path.write_bytes(value)
+        files[name] = path
+    command = [sys.executable, "-m", "scripts.inspect_independent_native_e2_intake"]
+    for name in ("manifest", "cases", "gold", "development"):
+        command.extend((f"--{name}", str(files[name])))
+    legacy = subprocess.run(command, check=True, capture_output=True, text=True)
+    assert "native_inventory_bytes_sha256_match" not in legacy.stdout
+    pinned = subprocess.run(
+        [*command, "--native-inventory", str(files["native-inventory"])],
+        check=True, capture_output=True, text=True,
+    )
+    assert json.loads(pinned.stdout)["native_inventory_bytes_sha256_match"] is True
+    assert PRIVATE not in pinned.stdout + pinned.stderr
+
+    # A failed intake must not echo original source content in stdout or
+    # Python's command-line exception diagnostic on stderr.
+    files["native-inventory"].write_bytes(source + b"-tampered")
+    rejected = subprocess.run(
+        [*command, "--native-inventory", str(files["native-inventory"])],
+        check=False, capture_output=True, text=True,
+    )
+    assert rejected.returncode != 0
+    assert rejected.stdout == ""
+    assert "native inventory bytes mismatch" in rejected.stderr
+    assert PRIVATE not in rejected.stderr

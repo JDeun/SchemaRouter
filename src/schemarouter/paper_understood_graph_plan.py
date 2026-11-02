@@ -1,0 +1,481 @@
+"""Original-paper named tool → source-proven 1-/2-hop typed plans (E0).
+
+Only the existing canonical G5 graph may attest dependencies. This module
+does not execute calls, trust a language-model parameter, or grant authority.
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any
+
+from .authorization import PrincipalContext
+from .concept_retrieval import NativeConceptCatalog
+from .errors import PolicyViolationError
+from .host_field_contract import _policy_contents_digest
+from .native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
+from .paper_field_retrieval import PaperFieldRoute
+from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed
+from .paper_typed_tool_plan import (
+    PaperPlanBinding,
+    PaperPlanCall,
+    PaperTypedToolPlan,
+    _check_current_call_scopes,
+    _compile_one_route,
+)
+from .paper_understood_direct_plan import (
+    PaperIntentRegistry,
+    PaperUnderstanding,
+    _source_owned_understood_group,
+    compile_paper_understood_direct_plan,
+)
+
+if TYPE_CHECKING:
+    from .runtime import SchemaRouter
+
+
+def compile_paper_understood_graph_plan(
+    router: SchemaRouter,
+    understanding: PaperUnderstanding,
+    *,
+    principal: PrincipalContext,
+    catalog: NativeConceptCatalog,
+    intent_registry: PaperIntentRegistry,
+    index: NativeSchemaGraphIndex,
+    k: int = 5,
+    max_hops: int = 2,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
+) -> PaperTypedToolPlan:
+    """Compile one exact model-named target path without source execution.
+
+    A complete ready direct route takes precedence. Only explicitly named tools
+    can select a typed dependency target; several complete paths without
+    independent ranking produce an empty ``ambiguous_paths`` receipt.
+    """
+    if type(k) is not int or k != 5:
+        raise ValueError("paper named graph plan requires exact K5")
+    if type(max_hops) is not int or max_hops not in (1, 2):
+        raise ValueError("paper named graph plan accepts one or two edges")
+    if (
+        type(allow_unnamed_graph_discovery) is not bool
+        or allow_unnamed_graph_discovery and rank_policy is None
+    ):
+        raise ValueError(
+            "unnamed graph discovery requires explicit host approval and owner Rank"
+        )
+    if not isinstance(index, NativeSchemaGraphIndex):
+        raise ValueError("paper named graph plan requires original graph index")
+    if not isinstance(principal, PrincipalContext):
+        raise PolicyViolationError("paper named graph requires trusted principal")
+    if not isinstance(catalog, NativeConceptCatalog):
+        raise ValueError("paper named graph requires owner-reviewed catalog")
+    if not isinstance(intent_registry, PaperIntentRegistry):
+        raise ValueError("paper named graph requires host-approved intents")
+    if not isinstance(understanding, PaperUnderstanding):
+        raise ValueError("paper named graph requires structured hints")
+    if host_source_arguments is not None and (
+        type(host_source_arguments) is not dict
+        or any(
+            type(route) is not str or type(values) is not dict
+            for route, values in host_source_arguments.items()
+        )
+    ):
+        raise ValueError("invalid explicit paper host root inputs")
+    host_inputs = {
+        route: dict(values) for route, values in (host_source_arguments or {}).items()
+    }
+    original_host_inputs = deepcopy(host_source_arguments)
+
+    def verify_host_inputs() -> None:
+        if host_source_arguments != original_host_inputs:
+            raise PolicyViolationError("paper named graph host source inputs changed")
+
+    approved, group = _source_owned_understood_group(
+        understanding, catalog, intent_registry,
+    )
+    try:
+        original_rank = rank_policy.model_dump_json() if rank_policy is not None else None
+        original_understanding = understanding.model_dump_json()
+        original_intents = intent_registry.model_dump_json()
+        original_catalog = catalog.model_dump_json()
+        original_principal = principal.model_dump_json()
+    except (ValueError, TypeError, OverflowError, AttributeError) as exc:
+        raise ValueError("paper named graph declarations are invalid") from exc
+
+    # A source type suggestion may only NARROW an already owner-reviewed type.
+    direct = compile_paper_understood_direct_plan(
+        router, understanding, principal=principal, catalog=catalog,
+        intent_registry=intent_registry, index=index, k=k,
+        rank_policy=rank_policy,
+    )
+    verify_host_inputs()
+    direct_routes = {call.route_id for call in direct.calls}
+    if host_inputs and host_inputs.keys() <= direct_routes:
+        # A declared scalar root is a direct tool, not a graph dependency.
+        # Reuse the same exact original-source host-input validator, only
+        # after proving the complete principal-visible direct route.
+        direct = compile_paper_understood_direct_plan(
+            router, understanding, principal=principal, catalog=catalog,
+            intent_registry=intent_registry, index=index, k=k,
+            rank_policy=rank_policy,
+            host_source_arguments=host_source_arguments,
+        )
+        verify_host_inputs()
+    elif host_inputs and direct.status == "ready":
+        raise ValueError("paper graph host arguments do not match direct proof")
+    discover_unnamed = allow_unnamed_graph_discovery and not approved.named_tools
+    if (
+        direct.status not in {"no_proven_hit", "requires_arguments"}
+        or not approved.named_tools and not discover_unnamed
+        or approved.source_type is not None
+        and approved.source_type != group.source_type
+    ):
+        return direct
+
+    witness = router._retrieval_authority_witness()
+    index.field_index._assert_source(router)
+    policy = router.authorization_policy
+    if policy is None:
+        raise PolicyViolationError("paper named graph requires explicit source policy")
+    policy_digest = _policy_contents_digest(policy)
+
+    def verify_current() -> None:
+        verify_host_inputs()
+        try:
+            current_rank = (
+                rank_policy.model_dump_json() if rank_policy is not None else None
+            )
+        except Exception:
+            raise PolicyViolationError("paper named graph owner Rank changed") from None
+        index.field_index._assert_source(router)
+        router._check_retrieval_authority_witness(witness)
+        if (
+            router.authorization_policy is None
+            or _policy_contents_digest(router.authorization_policy) != policy_digest
+            or principal.model_dump_json() != original_principal
+            or catalog.model_dump_json() != original_catalog
+            or intent_registry.model_dump_json() != original_intents
+            or understanding.model_dump_json() != original_understanding
+            or current_rank != original_rank
+        ):
+            raise PolicyViolationError("paper named graph source or declaration changed")
+
+    def empty(status: str) -> PaperTypedToolPlan:
+        verify_current()
+        return PaperTypedToolPlan(
+            status=status,  # type: ignore[arg-type]
+            snapshot_id=index.field_index.snapshot_id,
+            registry_version=witness[1], requested_k=k,
+        )
+
+    # The host-reviewed intent domain is an owner-only Filter step.
+    # As with direct Rank, it applies to *unnamed target candidates*, not
+    # producer/intermediate dependencies; explicitly named tools override
+    # this discovery filter without overriding any source authorization.
+    intent = next(
+        item for item in intent_registry.intents
+        if item.intent_id == approved.intent_id
+    )
+
+    # Structure is only an index prefilter, never authorization or proof.
+    # Unnamed dependency discovery is host-only and uses the *existing*
+    # required-field inverted index AND canonical graph consumers. It never
+    # scans the global registry or trusts model-proposed tool names.
+    if discover_unnamed:
+        required_postings = [
+            set(index.field_index.postings.get(field.semantic_id, ()))
+            for field in group.required_fields
+        ]
+        candidate_targets = (
+            set.intersection(*required_postings) if required_postings else set()
+        )
+        candidate_targets.intersection_update(index.edge_consumer_routes)
+        # Filter before principal-scoped callbacks and before the target
+        # budget. No model-supplied intent string can add a route domain.
+        assert rank_policy is not None
+        target_routes = frozenset(
+            route_id for route_id in candidate_targets
+            if rank_policy.permits_domain(route_id, intent.domains)
+        )
+    else:
+        target_routes = frozenset(
+            route_id for route_id, (tool_key, _) in index.field_index.route_locations.items()
+            if tool_key in approved.named_tools
+        )
+
+    def no_graph_hit() -> PaperTypedToolPlan:
+        # Never silently discard host-supplied root arguments that lack a
+        # source-proven DAG. No parameter from the model can authorize a root.
+        if host_inputs:
+            return empty("no_proven_hit")
+        # A graph probe may revoke the health of an earlier incomplete
+        # direct candidate through the SAME availability callable. Re-prove
+        # the original direct receipt rather than returning stale evidence.
+        if discover_unnamed and direct.status == "requires_arguments":
+            try:
+                current_direct = compile_paper_understood_direct_plan(
+                    router, understanding, principal=principal,
+                    catalog=catalog, intent_registry=intent_registry,
+                    index=index, k=k, rank_policy=rank_policy,
+                )
+                if current_direct != direct:
+                    raise PolicyViolationError("unnamed graph direct proof changed")
+            except Exception:
+                raise PolicyViolationError(
+                    "unnamed graph direct source eligibility changed"
+                ) from None
+            verify_current()
+            return direct
+        return empty("no_proven_hit")
+
+    if not target_routes:
+        return no_graph_hit()
+    # Do not expose the cardinality of registry-only/denied named tools via
+    # the structural target budget. Project current principal eligibility
+    # BEFORE the 32-route G5 prefilter cap; the G5 lookup still independently
+    # verifies its original typed graph proof and all route permissions.
+    permitted_targets = router._authorization_predicate(principal)
+    if permitted_targets is None:
+        raise PolicyViolationError("paper named graph lacks current source policy")
+    available = router.planner.availability_predicate
+    scoped_targets: set[str] = set()
+    target_limit = (
+        MAX_OWNER_RANKABLE_PATHS if rank_policy is not None else 32
+    )
+    for route_id in sorted(target_routes):
+        tool_key, endpoint_name = index.field_index.route_locations[route_id]
+        tool = router.registry.get(tool_key)
+        endpoint = tool.endpoint(endpoint_name)
+        if (
+            tool.source_type != group.source_type
+            or tool.license != group.license
+            or not permitted_targets(tool, endpoint)
+            or endpoint.read_only is not True
+            or endpoint.destructive is True
+        ):
+            continue
+        # Availability is a host callback and can contain private provider
+        # diagnostics. Never propagate its exception text (including errors
+        # thrown by truth-value conversion) to an untrusted planner caller.
+        try:
+            if available is not None and not available(tool, endpoint):
+                continue
+        except Exception:
+            raise PolicyViolationError("paper named graph availability check failed") from None
+        visible = router._data_scope_endpoint_view(principal, tool, endpoint)
+        if visible is None:
+            continue
+        # A partially visible endpoint with none of the requested semantic
+        # outputs cannot be a G5 target. Exclude it BEFORE the 32-route cap,
+        # or hidden/unrelated routes can crowd out a valid field proof.
+        # Exact type/edge compatibility is still checked by native G5.
+        if not all(
+            any(field.semantic_id == required.semantic_id
+                for field in visible.output_fields)
+            for required in group.required_fields
+        ):
+            continue
+        scoped_targets.add(route_id)
+        if len(scoped_targets) > target_limit:
+            return empty("budget_unsatisfied")
+    target_routes = frozenset(scoped_targets)
+    if not target_routes:
+        return no_graph_hit()
+
+    # Only host-reviewed concept aliases, never model text, affect Rank.
+    concepts = {concept.concept_id: concept for concept in catalog.concepts}
+    rank_aliases = tuple(
+        tuple(concepts[cid].aliases)
+        for cid in sorted(set(intent.required_concept_ids) | set(approved.concept_ids))
+    )
+
+    def lookup(hops: int) -> Any:
+        if hops == 1:
+            return index.lookup(
+                router, group.aliases[0], group=group, principal=principal,
+                k=k, allowed_target_routes=target_routes,
+                _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
+            )
+        return index.lookup_two_hop(
+            router, group.aliases[0], group=group, principal=principal,
+            k=k, allowed_target_routes=target_routes,
+            _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
+        )
+
+    hops = 1
+    result = lookup(hops)
+    selected_index = 0
+    # With an explicit host-pinned policy, one-hop precedence must not hide
+    # a better complete two-hop DAG. Compare source-proven cohort Top-K5
+    # receipts, never individually ranked nodes or unverified join fragments.
+    cross_depth = rank_policy is not None and max_hops == 2
+    original_cohorts: tuple[Any, Any] | None = None
+    if cross_depth:
+        first = result
+        if first.status == "budget_unsatisfied":
+            return empty("budget_unsatisfied")
+        second = lookup(2)
+        if second.status == "budget_unsatisfied":
+            return empty("budget_unsatisfied")
+        if any(
+            cohort.status not in {
+                "complete", "ranked_unverified", "no_proven_hit",
+            }
+            or cohort.candidates and not cohort.deterministic_paper_ranked
+            for cohort in (first, second)
+        ):
+            raise PolicyViolationError("paper cross-depth G5 proof unverified")
+        # A separate 5,000 limit per depth would expose up to 10,000
+        # qualified DAGs as a global K5 cohort. Check the combined *fully
+        # qualified* count before comparing any returned candidate.
+        if first.qualified_path_count + second.qualified_path_count > (
+            MAX_OWNER_RANKABLE_PATHS
+        ):
+            return empty("budget_unsatisfied")
+        assert rank_policy is not None
+        mixed = rank_authorized_paper_graph_mixed(
+            first.candidates, second.candidates,
+            concept_aliases=rank_aliases, policy=rank_policy, k=k,
+        )
+        if not mixed:
+            return no_graph_hit()
+        hops, selected_index = mixed[0]
+        result = first if hops == 1 else second
+        original_cohorts = (first, second)
+    elif result.status == "no_proven_hit" and max_hops == 2:
+        hops = 2
+        result = lookup(hops)
+
+    if result.status not in {"complete", "ranked_unverified"}:
+        if result.status not in {
+            "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
+        }:
+            raise PolicyViolationError("paper named graph returned unverified status")
+        if result.status == "no_proven_hit":
+            return no_graph_hit()
+        return empty(result.status)
+
+    # PaperTypedToolPlan expresses a SINGLE dependency DAG, not a bag of
+    # unrelated alternative paths whose bindings could be mixed accidentally.
+    if len(result.candidates) != 1 and not result.deterministic_paper_ranked:
+        route_sets = [
+            (c.producer_route_id, c.consumer_route_id) if hops == 1
+            else c.route_ids for c in result.candidates
+        ]
+        if len(set(route for path in route_sets for route in path)) > k:
+            return empty("over_k_unranked")
+        return empty("ambiguous_paths")
+
+    if not result.candidates:
+        return empty("no_proven_hit")
+    candidate = result.candidates[selected_index]
+    if hops == 1:
+        route_ids = (candidate.producer_route_id, candidate.consumer_route_id)
+        binding_maps = (
+            (),
+            tuple((param, route_ids[0], source_field)
+                  for param, source_field in candidate.parameter_bindings),
+        )
+        visible_fields = (
+            tuple(field for _, field in candidate.parameter_bindings),
+            candidate.consumer_output_fields,
+        )
+        pinned = (
+            (candidate.producer_tool_fingerprint,
+             candidate.producer_endpoint_fingerprint),
+            (candidate.consumer_tool_fingerprint,
+             candidate.consumer_endpoint_fingerprint),
+        )
+    else:
+        route_ids = candidate.route_ids
+        binding_maps = (
+            (),
+            tuple((param, route_ids[0], field)
+                  for param, field in candidate.root_to_intermediate),
+            tuple((param, route_ids[1], field)
+                  for param, field in candidate.intermediate_to_target),
+        )
+        visible_fields = (
+            tuple(field for _, field in candidate.root_to_intermediate),
+            tuple(field for _, field in candidate.intermediate_to_target),
+            candidate.target_output_fields,
+        )
+        pinned = candidate.route_fingerprints
+
+    if (
+        len(route_ids) != len(set(route_ids))
+        or len(route_ids) > k
+        or len(route_ids) != len(binding_maps)
+    ):
+        raise PolicyViolationError("paper named graph produced invalid typed routes")
+    if host_source_arguments is not None and set(host_inputs) != {route_ids[0]}:
+        raise PolicyViolationError("paper named graph host inputs are not its source root")
+    # G5 proves typed links, but its target FieldGroup qualifier does not
+    # constrain upstream source/license. Do not weaken an explicit model
+    # source constraint or the owner-reviewed license along dependencies.
+    for route_id in route_ids:
+        location = index.field_index.route_locations.get(route_id)
+        if location is None:
+            raise PolicyViolationError("paper named graph original route missing")
+        source_tool = router.registry.get(location[0])
+        if (
+            source_tool.license != group.license
+            or approved.source_type is not None
+            and source_tool.source_type != approved.source_type
+        ):
+            return empty("no_proven_hit")
+    route_receipts = tuple(PaperFieldRoute(
+        route_id=route_id, tool_fingerprint=fingerprints[0],
+        endpoint_fingerprint=fingerprints[1],
+        output_fields=tuple(dict.fromkeys(names)),
+        covered_semantic_ids=(
+            tuple(field.semantic_id for field in group.required_fields)
+            if pos == len(route_ids) - 1 else ()
+        ),
+        input_bindings=tuple(binding_maps[pos]),
+    ) for pos, (route_id, fingerprints, names) in enumerate(
+        zip(route_ids, pinned, visible_fields, strict=True)
+    ))
+
+    permitted = router._authorization_predicate(principal)
+    if permitted is None:
+        raise PolicyViolationError("paper named graph lacks current source policy")
+
+    def materialize() -> tuple[tuple[PaperPlanCall, ...], tuple[PaperPlanBinding, ...]]:
+        positions = {route.route_id: i for i, route in enumerate(route_receipts)}
+        by_route = {route.route_id: route for route in route_receipts}
+        edges: list[PaperPlanBinding] = []
+        calls = tuple(_compile_one_route(
+            router, principal, index, route, pos, positions, by_route,
+            edges, permitted,
+            host_inputs.get(route.route_id) if pos == 0 else None,
+        ) for pos, route in enumerate(route_receipts))
+        _check_current_call_scopes(router, principal, list(calls))
+        if len(edges) != len(tuple(b for pairs in binding_maps for b in pairs)):
+            raise PolicyViolationError("paper named graph original bindings incomplete")
+        return calls, tuple(edges)
+
+    try:
+        first_calls, first_edges = materialize()
+        # The second-depth probe can call a mutable host availability
+        # predicate. Re-attest BOTH entire qualified cohorts, not just the
+        # winning branch, before publishing a selected proof.
+        if original_cohorts is not None:
+            if (lookup(1), lookup(2)) != original_cohorts:
+                raise PolicyViolationError("paper cross-depth G5 proof changed")
+        elif lookup(hops) != result:
+            raise PolicyViolationError("paper named graph source proof changed")
+        if materialize() != (first_calls, first_edges):
+            raise PolicyViolationError("paper named graph source proof changed")
+        _check_current_call_scopes(router, principal, list(first_calls))
+    except Exception:
+        raise PolicyViolationError("paper named graph source eligibility changed") from None
+    verify_current()
+    return PaperTypedToolPlan(
+        status="requires_observation", snapshot_id=result.index_snapshot_id,
+        registry_version=result.registry_version, requested_k=k,
+        calls=first_calls, bindings=first_edges,
+        ranked_unverified=result.deterministic_paper_ranked,
+    )

@@ -1,6 +1,8 @@
 """E0: whole registry semantic postings with live principal-scoped verification."""
 from __future__ import annotations
 
+from hashlib import sha256
+
 import pytest
 
 from schemarouter import (
@@ -13,12 +15,15 @@ from schemarouter import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     NativeDeclaredFieldGroup,
+    ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    UnitNormalizationSpec,
 )
 from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
 
 ANALYST = PrincipalContext(subject="researcher", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -115,6 +120,80 @@ def _router(*, many_partial=0, many_complete=0):
     return router
 
 
+def test_native_review_reverse_index_preserves_exact_original_semantics_and_cursors():
+    """Missing reverse postings force global source inversion on every page."""
+    router = _router()
+    router.add_tool(_tool(
+        "no_source", [_field("status", "crm.status")], source=None,
+    ))
+    router.add_tool(_tool(
+        "no_semantic", [FieldSpec(name="plain", json_schema={"type": "string"})],
+    ))
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.route_semantic_ids["complete.read"] == frozenset({
+        "crm.status", "crm.priority",
+    })
+    assert index.route_semantic_ids["partial.read"] == frozenset({"crm.status"})
+    assert "no_source.read" not in index.route_semantic_ids
+    assert "no_semantic.read" not in index.route_semantic_ids
+    assert "no_source.read" in index.route_locations
+    assert index.review_route_ids == tuple(sorted(index.route_semantic_ids))
+    assert len(index.review_route_ids) == len(set(index.review_route_ids))
+    expected_cursor = "sr1:" + sha256(
+        f"{index.snapshot_id}:complete.read".encode(),
+    ).hexdigest()
+    assert index.review_cursor_anchors[expected_cursor] == "complete.read"
+    assert len(expected_cursor) == 68
+
+
+def test_native_review_reverse_index_journal_delta_rotates_cursor_and_matches_clean_build():
+    router = _router()
+    old = NativeSchemaPostingIndex.build(router.registry)
+    old_cursor = "sr1:" + sha256(
+        f"{old.snapshot_id}:complete.read".encode(),
+    ).hexdigest()
+    router.registry.unregister("complete")
+    removed = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        old, router.registry,
+    )
+    removed_oracle = NativeSchemaPostingIndex.build(router.registry)
+    assert dict(removed.route_semantic_ids) == dict(removed_oracle.route_semantic_ids)
+    assert removed.review_route_ids == removed_oracle.review_route_ids
+    assert dict(removed.review_cursor_anchors) == dict(removed_oracle.review_cursor_anchors)
+    assert "complete.read" not in removed.route_semantic_ids
+    assert old_cursor not in removed.review_cursor_anchors
+
+    router.add_tool(_tool(
+        "complete", [_field("status", "crm.status"),
+                     _field("priority", "crm.priority")],
+    ))
+    restored = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        removed, router.registry,
+    )
+    oracle = NativeSchemaPostingIndex.build(router.registry)
+    assert dict(restored.route_semantic_ids) == dict(oracle.route_semantic_ids)
+    assert restored.review_route_ids == oracle.review_route_ids
+    assert dict(restored.review_cursor_anchors) == dict(oracle.review_cursor_anchors)
+    assert restored.snapshot_id != old.snapshot_id
+    assert restored.route_semantic_ids["complete.read"] == frozenset({
+        "crm.status", "crm.priority",
+    })
+
+
+def test_native_review_reverse_index_5000_matches_independent_forward_posting_oracle():
+    router = build_fixture(5000, mixed_scope=True)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    oracle: dict[str, set[str]] = {}
+    for semantic_id, routes in index.postings.items():
+        for route_id in routes:
+            oracle.setdefault(route_id, set()).add(semantic_id)
+    assert {
+        route: set(ids) for route, ids in index.route_semantic_ids.items()
+    } == oracle
+    assert index.review_route_ids == tuple(sorted(oracle))
+    assert len(index.review_cursor_anchors) == len(oracle)
+
+
 @pytest.mark.parametrize("query", ALIASES)
 def test_native_postings_resolve_complete_fields_before_k_with_live_policy(query):
     router = _router(many_partial=120)
@@ -149,6 +228,36 @@ def test_indexed_concept_resolution_in_longer_natural_sentences(query):
     assert [candidate.route_id for candidate in actual.candidates] == [
         "complete.read",
     ]
+
+
+def test_indexed_concept_direct_only_excludes_unbound_required_input_before_k():
+    """A typed required-input consumer cannot masquerade as a direct tool."""
+    router = _router()
+    router.add_tool(ToolSpec(
+        name="bound", source_type="crm", license="reviewed",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name="case_id", required=True, json_schema={"type": "string"},
+            )],
+            input_schema={"type": "object", "properties": {
+                "case_id": {"type": "string"},
+            }, "required": ["case_id"]},
+            output_fields=[_field("status", "crm.status")],
+        )],
+    ))
+    index = NativeSchemaPostingIndex.build(router.registry)
+    query = "show case status"
+    all_matches = index.lookup_concepts(
+        router, query, principal=ANALYST, catalog=CATALOG,
+    )
+    direct = index.lookup_concepts(
+        router, query, principal=ANALYST, catalog=CATALOG,
+        input_free_only=True,
+    )
+    assert "bound.read" in {c.route_id for c in all_matches.candidates}
+    assert "bound.read" not in {c.route_id for c in direct.candidates}
+    assert "complete.read" in {c.route_id for c in direct.candidates}
 
 
 def test_hidden_required_field_is_not_leaked_or_satisfied():
@@ -186,6 +295,54 @@ def test_over_k_is_explicit_unranked_and_does_not_publish_arbitrary_five():
     assert outcome.status == "over_k_unranked"
     assert outcome.qualified_count == 7
     assert outcome.candidates == ()
+
+
+def test_indexed_named_sixth_tool_is_filtered_before_k():
+    """The explicit original tool, not an arbitrary first-five sibling, wins."""
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    ).status == "over_k_unranked"
+
+    chosen = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+        allowed_tool_keys=("full_5",),
+    )
+    assert chosen.status == "complete"
+    assert chosen.qualified_count == 1
+    assert [c.route_id for c in chosen.candidates] == ["full_5.read"]
+
+
+def test_indexed_named_unknown_or_hidden_tool_does_not_expose_candidates():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    for tool_names, actor in (
+        (("does_not_exist",), ANALYST),
+        (("denied",), ANALYST),
+        (("complete",), VIEWER),
+    ):
+        result = index.lookup(
+            router, ALIASES[0], principal=actor, group=GROUP,
+            allowed_tool_keys=tool_names,
+        )
+        assert result.status == "no_proven_hit"
+        assert result.candidates == ()
+        assert result.qualified_count == 0
+
+
+@pytest.mark.parametrize("bad", [
+    (), ("complete", "complete"), "complete", (" complete",),
+    ("complete", ""), tuple(f"candidate_{i}" for i in range(6)),
+])
+def test_indexed_named_tool_filter_rejects_malformed_keys(bad):
+    router = _router()
+    index = NativeSchemaPostingIndex.build(router.registry)
+    with pytest.raises(ValueError, match="named tool"):
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            allowed_tool_keys=bad,
+        )
 
 
 def test_index_itself_is_immutable_and_cannot_add_a_route():
@@ -681,3 +838,239 @@ def test_native_postings_first_availability_failure_redacts_private_error(
     assert private_marker not in str(caught.value)
     assert caught.value.__suppress_context__
     assert router.registry.version == index.registry_version
+
+
+
+def _normalized_material_tool():
+    return ToolSpec(
+        name="materials", source_type="optimade", license="reviewed",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            output_fields=[FieldSpec(
+                name="band_gap", semantic_id="materials.band_gap",
+                json_schema={"type": "number"}, unit="eV",
+                unit_normalization=UnitNormalizationSpec(
+                    dimension="energy", canonical_unit="J",
+                    scale=1.602176634e-19,
+                ),
+            )],
+        )],
+    )
+
+
+def _normalized_material_group(*, unit="J", dimension="energy"):
+    return NativeDeclaredFieldGroup(
+        aliases=("material band gap", "재료 밴드갭", "材料のバンドギャップ"),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="materials.band_gap",
+            json_schema={"type": "number"}, unit=unit,
+            dimension=dimension,
+        ),),
+        source_type="optimade", license="reviewed",
+    )
+
+
+def test_indexed_normalized_numeric_field_respects_canonical_units_and_scope():
+    """Owner-declared normalization creates a posting, never an inferred factor."""
+    group = _normalized_material_group()
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="materials.read",
+            roles_any=("analyst", "viewer"),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.read", roles_any=("viewer",),
+            hidden_fields=("band_gap",),
+        ),),
+    ))
+    router.add_tool(_normalized_material_tool())
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.postings["materials.band_gap"] == ("materials.read",)
+    for query in group.aliases:
+        selected = index.lookup(router, query, principal=ANALYST, group=group)
+        assert selected.status == "complete"
+        assert selected.qualified_count == 1
+        assert selected.candidates[0].required_output_fields == ("band_gap",)
+    hidden = index.lookup(
+        router, group.aliases[0], principal=VIEWER, group=group,
+    )
+    assert hidden.status == "no_proven_hit"
+    assert hidden.candidates == ()
+    for invalid_group in (
+        _normalized_material_group(unit="eV"),
+        _normalized_material_group(dimension="pressure"),
+    ):
+        refused = index.lookup(
+            router, invalid_group.aliases[0], principal=ANALYST,
+            group=invalid_group,
+        )
+        assert refused.status == "no_proven_hit"
+
+
+def test_normalized_numeric_posting_journal_delta_matches_full_rebuild():
+    """Canonicalized semantic postings are removed and added by trusted deltas."""
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="materials.read",
+            roles_any=("analyst",),
+        ),),
+    ))
+    router.add_tool(_normalized_material_tool())
+    original = NativeSchemaPostingIndex.build(router.registry)
+    group = _normalized_material_group()
+    assert original.lookup(
+        router, group.aliases[0], principal=ANALYST, group=group,
+    ).qualified_count == 1
+
+    replacement = _normalized_material_tool()
+    replacement.endpoint("read").output_fields[0].semantic_id = "materials.other"
+    router.registry.register(replacement, replace=True)
+    with pytest.raises(PolicyViolationError, match="stale"):
+        original.lookup(router, group.aliases[0], principal=ANALYST, group=group)
+    updated = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        original, router.registry,
+    )
+    rebuilt = NativeSchemaPostingIndex.build(router.registry)
+    assert updated.snapshot_id == rebuilt.snapshot_id
+    assert dict(updated.postings) == dict(rebuilt.postings)
+    assert "materials.band_gap" not in updated.postings
+    assert updated.lookup(
+        router, group.aliases[0], principal=ANALYST, group=group,
+    ).status == "no_proven_hit"
+
+
+
+@pytest.mark.parametrize("query", ALIASES)
+def test_research_ranker_returns_exact_five_authorized_source_candidates(query):
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    seen = []
+
+    def choose(q, offered, k):
+        assert q == query and k == 5
+        seen.extend(candidate.route_id for candidate in offered)
+        assert len(offered) == 7
+        assert all(candidate.required_output_fields == ("priority", "status")
+                   for candidate in offered)
+        return (6, 5, 4, 3, 2)
+
+    chosen = index.lookup(
+        router, query, principal=ANALYST, group=GROUP,
+        _research_ranker=choose,
+    )
+    assert chosen.status == "ranked_unverified"
+    assert chosen.experimental_ranked is True
+    assert chosen.qualified_count == 7
+    assert [candidate.route_id for candidate in chosen.candidates] == [
+        "full_5.read", "full_4.read", "full_3.read", "full_2.read", "full_1.read",
+    ]
+    assert seen == ["complete.read", *(f"full_{i}.read" for i in range(6))]
+    assert index.lookup(
+        router, query, principal=ANALYST, group=GROUP,
+    ).status == "over_k_unranked"
+
+
+@pytest.mark.parametrize("selection", (
+    (0, 1), (0, 0, 1, 2, 3), (0, 1, 2, 3, 7),
+    (True, 1, 2, 3, 4), ["0", "1", "2", "3", "4"],
+    ("complete.read", "full_0.read", "full_1.read", "full_2.read", "full_3.read"),
+    None,
+))
+def test_research_ranker_refuses_partial_duplicate_forged_or_nontuple(selection):
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    with pytest.raises(PolicyViolationError, match="forged, partial or duplicate"):
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            _research_ranker=lambda _q, _offered, _k: selection,
+        )
+
+
+def test_research_ranker_may_explicitly_abstain_without_disclosing_candidates():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+        _research_ranker=lambda _q, _offered, _k: (),
+    )
+    assert result.status == "ranker_abstained_unverified"
+    assert result.experimental_ranked is True
+    assert result.qualified_count == 7
+    assert result.candidates == ()
+
+
+def test_research_ranker_private_exception_is_sanitized():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+
+    def leaking_ranker(_query, _offered, _k):
+        raise RuntimeError("private-source-credentials-must-not-leak")
+
+    with pytest.raises(PolicyViolationError, match="indexed research ranking failed") as exc:
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            _research_ranker=leaking_ranker,
+        )
+    assert "private-source-credentials" not in str(exc.value)
+    assert exc.value.__cause__ is None
+
+
+def test_research_ranker_is_not_called_when_candidate_menu_exceeds_32():
+    router = _router(many_complete=33)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+        _research_ranker=lambda *_: pytest.fail("unbounded ranker menu"),
+    )
+    assert result.status == "over_k_unranked"
+    assert result.qualified_count == 34
+    assert result.candidates == ()
+    assert result.experimental_ranked is False
+
+
+def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    current = {"full_0.read": True}
+
+    def available(tool, endpoint):
+        return current.get(f"{tool.key}.{endpoint.name}", True)
+
+    router.planner.availability_predicate = available
+
+    def withdraw(_q, _offered, _k):
+        current["full_0.read"] = False
+        return (6, 5, 4, 3, 2)
+
+    with pytest.raises(PolicyViolationError, match="eligibility changed"):
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            _research_ranker=withdraw,
+        )
+
+    router.planner.availability_predicate = None
+    live = PrincipalContext(subject="researcher", roles=("analyst",))
+
+    def swap_identity(_q, _offered, _k):
+        object.__setattr__(live, "subject", "another-subject")
+        return (6, 5, 4, 3, 2)
+
+    with pytest.raises(PolicyViolationError, match="declarations changed"):
+        index.lookup(
+            router, ALIASES[0], principal=live, group=GROUP,
+            _research_ranker=swap_identity,
+        )
+
+
+def test_research_ranker_on_concept_lookup_reuses_indexed_field_proof():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup_concepts(
+        router, "show case status and priority", principal=ANALYST, catalog=CATALOG,
+        _research_ranker=lambda _q, _offered, _k: (0, 1, 2, 3, 4),
+    )
+    assert result.status == "ranked_unverified"
+    assert len(result.candidates) == 5
+    assert result.qualified_count == 7

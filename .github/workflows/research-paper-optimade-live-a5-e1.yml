@@ -1,0 +1,74 @@
+name: Research Paper OPTIMADE Native A5 E1
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/paper_optimade_registration.py"
+      - "src/schemarouter/adapters/optimade.py"
+      - "src/schemarouter/__init__.py"
+      - "scripts/research_paper_optimade_live_e1.py"
+      - "tests/test_paper_optimade_live_a5_e1.py"
+      - "tests/test_public_api.py"
+      - "research/autoresearch/paper-a5-optimade-live-e1-*.md"
+      - ".github/workflows/research-paper-optimade-live-a5-e1.yml"
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Keyless COD source schema probe or fingerprint-pinned native A5 GET"
+        type: choice
+        options:
+          - probe
+          - run
+        default: probe
+        required: true
+      expected_source_fingerprint:
+        description: "For run only: independently reviewed fingerprint from an earlier probe"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  reviewed-optimade-a5-mock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install opt-in E1 source and test tools
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Lint and static check registration and runner
+        run: |
+          ruff check src/schemarouter/adapters/optimade.py src/schemarouter/paper_optimade_registration.py scripts/research_paper_optimade_live_e1.py tests/test_paper_optimade_live_a5_e1.py
+          pyright src/schemarouter/adapters/optimade.py src/schemarouter/paper_optimade_registration.py scripts/research_paper_optimade_live_e1.py
+      - name: Prove discovery, pin, host ID, native GET, and failure boundaries
+        run: python -m pytest -q tests/test_paper_optimade_live_a5_e1.py tests/test_optimade_paper_contract.py tests/test_research_paper_heterogeneous_native_e1.py tests/test_public_api.py
+
+  keyless-live-cod-manual-only:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install opt-in read-only COD runner
+        run: python -m pip install ".[mcp]"
+      - name: Probe unreviewed real COD schema via read-only GET
+        if: inputs.phase == 'probe'
+        run: python -m scripts.research_paper_optimade_live_e1 probe
+      - name: Execute externally pinned original A5 direct native GET
+        if: inputs.phase == 'run'
+        env:
+          EXPECTED_FINGERPRINT: ${{ inputs.expected_source_fingerprint }}
+        run: |
+          test -n "$EXPECTED_FINGERPRINT"
+          python -m scripts.research_paper_optimade_live_e1 run --expected-source-fingerprint "$EXPECTED_FINGERPRINT"

@@ -8,8 +8,9 @@ an execution engine, graph path planner, or new lexical ranker.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, replace
+from dataclasses import field as dataclass_field
 from hashlib import sha256
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
@@ -24,13 +25,60 @@ from .field_group_retrieval import (
     _root_envelope_empty,
     _scalar_contract,
 )
-from .models import ToolSpec
+from .models import FieldSpec, ToolSpec
+from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 STRICT_K = 5
+# Non-production research rankers never receive an unbounded private candidate menu.
+MAX_RESEARCH_RANKABLE_POSTINGS = 32
+
+
+def _native_review_cursor(snapshot_id: str, route_id: str) -> str:
+    """Legacy fixed-size review cursor, now materialized per source revision."""
+    digest = sha256(f"{snapshot_id}:{route_id}".encode()).hexdigest()
+    return f"sr1:{digest}"
+
+
+def _native_review_views(
+    route_semantics: Mapping[str, set[str]], snapshot_id: str,
+) -> tuple[
+    Mapping[str, frozenset[str]], tuple[str, ...], Mapping[str, str],
+]:
+    """Build immutable, authorization-neutral review accelerators only once."""
+    inverse = {
+        route: frozenset(semantic_ids)
+        for route, semantic_ids in route_semantics.items() if semantic_ids
+    }
+    ordered = tuple(sorted(inverse))
+    anchors = {
+        _native_review_cursor(snapshot_id, route): route for route in ordered
+    }
+    if len(anchors) != len(ordered):
+        raise PolicyViolationError("native review cursor collision")
+    return MappingProxyType(inverse), ordered, MappingProxyType(anchors)
+
+
+def _indexable_semantic_field(field: FieldSpec) -> bool:
+    """Index only declared scalar semantics, including explicit numeric normalization.
+
+    A provider unit string alone cannot create a conversion. Canonicalized fields
+    must carry a source unit and a locally declared UnitNormalizationSpec; the
+    source tool and license remain mandatory in build/refresh. Actual candidate
+    qualification still uses the original scoped canonical comparator.
+    """
+    if field.semantic_id is None or not _scalar_contract(field.json_schema):
+        return False
+    normalization = field.unit_normalization
+    if normalization is None:
+        return True
+    return (
+        field.unit is not None
+        and field.json_schema.get("type") in {"number", "integer"}
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,12 +93,17 @@ class IndexedNativeFieldCandidate:
 
 @dataclass(frozen=True, slots=True)
 class IndexedNativeFieldResult:
-    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "ranker_abstained_unverified",
+    ]
     registry_version: int
     index_snapshot_id: str
     requested_k: int
     qualified_count: int
     candidates: tuple[IndexedNativeFieldCandidate, ...]
+    experimental_ranked: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,11 +124,22 @@ class NativeSchemaPostingIndex:
     route_locations: Mapping[str, tuple[str, str]]
     # Include even zero-endpoint tools for exact omitted-change detection.
     tool_fingerprints: Mapping[str, str]
+    # Immutable source-owned reverse inventory; still NOT authorized evidence.
+    # Defaults support legacy explicit construction solely for stale/journal
+    # rejection; public review refuses incomplete derived projections.
+    route_semantic_ids: Mapping[str, frozenset[str]] = dataclass_field(
+        default_factory=lambda: MappingProxyType({}),
+    )
+    review_route_ids: tuple[str, ...] = ()
+    review_cursor_anchors: Mapping[str, str] = dataclass_field(
+        default_factory=lambda: MappingProxyType({}),
+    )
 
     @classmethod
     def build(cls, registry: ToolRegistry) -> NativeSchemaPostingIndex:
         version = registry.version
         semantic: dict[str, set[str]] = {}
+        reverse_semantic: dict[str, set[str]] = {}
         revisions: dict[str, tuple[str, str]] = {}
         locations: dict[str, tuple[str, str]] = {}
         tool_fingerprints: dict[str, str] = {}
@@ -100,10 +164,9 @@ class NativeSchemaPostingIndex:
                 if not tool.source_type or not tool.license:
                     continue
                 for field in endpoint.output_fields:
-                    if (field.semantic_id is not None
-                            and field.unit_normalization is None
-                            and _scalar_contract(field.json_schema)):
+                    if field.semantic_id is not None and _indexable_semantic_field(field):
                         semantic.setdefault(field.semantic_id, set()).add(route)
+                        reverse_semantic.setdefault(route, set()).add(field.semantic_id)
         if registry.version != version:
             raise PolicyViolationError("native index source changed during build")
         ordered = {key: tuple(sorted(items)) for key, items in sorted(semantic.items())}
@@ -112,15 +175,22 @@ class NativeSchemaPostingIndex:
              "postings": ordered},
             ensure_ascii=False, sort_keys=True, separators=(",", ":"),
         )
+        snapshot_id = sha256(receipt.encode("utf-8")).hexdigest()
+        reverse, review_routes, cursor_anchors = _native_review_views(
+            reverse_semantic, snapshot_id,
+        )
         return cls(
             registry_ref=registry,
             registry_version=version,
-            snapshot_id=sha256(receipt.encode("utf-8")).hexdigest(),
+            snapshot_id=snapshot_id,
             indexed_route_count=count,
             postings=MappingProxyType(ordered),
             route_fingerprints=MappingProxyType(revisions),
             route_locations=MappingProxyType(locations),
             tool_fingerprints=MappingProxyType(tool_fingerprints),
+            route_semantic_ids=reverse,
+            review_route_ids=review_routes,
+            review_cursor_anchors=cursor_anchors,
         )
 
     @classmethod
@@ -293,6 +363,13 @@ class NativeSchemaPostingIndex:
             name: set(routes) - stale_routes
             for name, routes in previous.postings.items()
         }
+        if previous.postings and not previous.route_semantic_ids:
+            raise PolicyViolationError("native posting delta missing reverse index")
+        reverse_semantic = {
+            route: set(ids)
+            for route, ids in previous.route_semantic_ids.items()
+            if route not in stale_routes
+        }
         for key, tool in changed_tools.items():
             tool_fingerprint = fresh_fingerprints[key]
             for endpoint in tool.endpoints:
@@ -303,12 +380,9 @@ class NativeSchemaPostingIndex:
                 locations[route] = (key, endpoint.name)
                 if tool.source_type and tool.license:
                     for field in endpoint.output_fields:
-                        if (
-                            field.semantic_id is not None
-                            and field.unit_normalization is None
-                            and _scalar_contract(field.json_schema)
-                        ):
+                        if field.semantic_id is not None and _indexable_semantic_field(field):
                             semantic.setdefault(field.semantic_id, set()).add(route)
+                            reverse_semantic.setdefault(route, set()).add(field.semantic_id)
         if registry.version != version:
             raise PolicyViolationError("native posting refresh source changed")
         ordered = {
@@ -320,15 +394,22 @@ class NativeSchemaPostingIndex:
              "postings": ordered},
             ensure_ascii=False, sort_keys=True, separators=(",", ":"),
         )
+        snapshot_id = sha256(receipt.encode("utf-8")).hexdigest()
+        reverse, review_routes, cursor_anchors = _native_review_views(
+            reverse_semantic, snapshot_id,
+        )
         return cls(
             registry_ref=registry,
             registry_version=version,
-            snapshot_id=sha256(receipt.encode("utf-8")).hexdigest(),
+            snapshot_id=snapshot_id,
             indexed_route_count=len(revisions),
             postings=MappingProxyType(ordered),
             route_fingerprints=MappingProxyType(revisions),
             route_locations=MappingProxyType(locations),
             tool_fingerprints=MappingProxyType(fresh_fingerprints),
+            route_semantic_ids=reverse,
+            review_route_ids=review_routes,
+            review_cursor_anchors=cursor_anchors,
         )
 
     def _assert_source(self, router: SchemaRouter) -> None:
@@ -347,14 +428,56 @@ class NativeSchemaPostingIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         input_free_only: bool = False,
+        allowed_tool_keys: tuple[str, ...] | None = None,
+        _research_ranker: Callable[
+            [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
+        ] | None = None,
+        _paper_rank_policy: PaperNativeRankPolicy | None = None,
+        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
+        _paper_rank_domains: tuple[str, ...] = (),
     ) -> IndexedNativeFieldResult:
-        """Conjunctive source-owned FieldGroup lookup with strict no-rank K5.
+        """Conjunctive source-owned lookup with optional bounded E0 ranking.
 
-        An optional direct-only filter rejects consumers with unbound native
-        inputs BEFORE candidate budgeting, never after a Top-K truncation.
+        The default >K result abstains. An explicit research callback can
+        choose *offsets* among at most 32 fully authorized, visible candidates.
+        Such a choice is tagged unverified and confers no execution authority.
+        An optional direct-only filter runs BEFORE candidate budgeting.
         """
         if type(input_free_only) is not bool:
             raise ValueError("indexed direct-only flag must be boolean")
+        if allowed_tool_keys is not None and (
+            type(allowed_tool_keys) is not tuple
+            or not 1 <= len(allowed_tool_keys) <= k
+            or any(
+                type(key) is not str or not 1 <= len(key) <= 160
+                or key != key.strip()
+                or any(ord(char) < 32 or ord(char) == 127 for char in key)
+                for key in allowed_tool_keys
+            )
+            or len(set(allowed_tool_keys)) != len(allowed_tool_keys)
+        ):
+            raise ValueError("invalid bounded named tool override")
+        if _research_ranker is not None and not callable(_research_ranker):
+            raise ValueError("indexed research ranker must be callable")
+        if _paper_rank_policy is not None and not isinstance(
+            _paper_rank_policy, PaperNativeRankPolicy,
+        ):
+            raise ValueError("original paper Rank needs a reviewed policy")
+        if _paper_rank_policy is not None and _research_ranker is not None:
+            raise ValueError("original paper Rank cannot share a model ranker")
+        if _paper_rank_domains and _paper_rank_policy is None:
+            raise ValueError("paper intent domains need a reviewed rank policy")
+        if (
+            type(_paper_rank_aliases) is not tuple
+            or len(_paper_rank_aliases) > 8
+            or any(type(group) is not tuple or not 1 <= len(group) <= 16
+                   or any(type(alias) is not str or not alias or len(alias) > 160
+                          for alias in group) for group in _paper_rank_aliases)
+            or type(_paper_rank_domains) is not tuple
+            or len(_paper_rank_domains) > 8
+            or any(type(domain) is not str for domain in _paper_rank_domains)
+        ):
+            raise ValueError("invalid bounded original paper Rank declarations")
         if type(k) is not int or k != STRICT_K:
             raise ValueError("native indexed lookup requires exact K5")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
@@ -372,11 +495,31 @@ class NativeSchemaPostingIndex:
             )
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError("invalid current indexed declarations") from exc
+        try:
+            principal_claims = principal.model_dump_json()
+            group_claims = group.model_dump_json()
+        except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError("cannot attest indexed lookup declarations") from exc
         if _alias_key(query) not in {_alias_key(a) for a in declaration.aliases}:
             raise ValueError("no host-approved query-to-FieldGroup edge")
         if router.authorization_policy is None:
             raise PolicyViolationError("explicit authorization policy required")
         self._assert_source(router)
+        original_paper_policy: str | None = None
+        rank_policy = _paper_rank_policy
+        if rank_policy is not None:
+            original_paper_policy = rank_policy.model_dump_json()
+            rank_policy = PaperNativeRankPolicy.model_validate(
+                rank_policy.model_dump(mode="python"), strict=True,
+            )
+            if rank_policy.snapshot_id != self.snapshot_id:
+                raise PolicyViolationError("paper Rank source snapshot mismatch")
+            annotated = (
+                set(rank_policy.route_domains) | set(rank_policy.route_priorities)
+                | set(rank_policy.web_route_ids)
+            )
+            if not annotated <= self.route_locations.keys():
+                raise PolicyViolationError("paper Rank contains unregistered routes")
         witness = router._retrieval_authority_witness()
         original_policy = (
             router.authorization_policy.default_effect,
@@ -393,6 +536,8 @@ class NativeSchemaPostingIndex:
             raise PolicyViolationError("explicit authorization required")
         availability = router.planner.availability_predicate
         qualified: list[IndexedNativeFieldCandidate] = []
+        visible_field_counts: dict[str, int] = {}
+        use_paper_rank = rank_policy is not None and allowed_tool_keys is None
         for route in sorted(matched):
             # Key is an opaque exact registered route; never parse a route ID
             # with split because tool namespaces may contain separators.
@@ -403,6 +548,11 @@ class NativeSchemaPostingIndex:
             if location is None:
                 raise PolicyViolationError("indexed registered route missing")
             tool_key, endpoint_name = location
+            if allowed_tool_keys is not None and tool_key not in allowed_tool_keys:
+                continue
+            if (use_paper_rank and rank_policy is not None
+                    and not rank_policy.permits_domain(route, _paper_rank_domains)):
+                continue
             tool = router.registry.get(tool_key)
             endpoint = tool.endpoint(endpoint_name)
             if (tool.fingerprint, endpoint.fingerprint) != revisions:
@@ -450,6 +600,41 @@ class NativeSchemaPostingIndex:
                 endpoint_fingerprint=endpoint.fingerprint,
                 required_output_fields=tuple(sorted(set(matched_names))),
             ))
+            if use_paper_rank:
+                visible_field_counts[route] = len(visible.output_fields)
+        count = len(qualified)
+        ranked_offsets: tuple[int, ...] | None = None
+        if use_paper_rank and rank_policy is not None:
+            ranked_offsets = rank_authorized_paper_direct(
+                tuple(qualified), concept_aliases=_paper_rank_aliases,
+                visible_field_count=visible_field_counts,
+                policy=rank_policy, k=k,
+            )
+        elif (
+            count > k and _research_ranker is not None
+            and count <= MAX_RESEARCH_RANKABLE_POSTINGS
+        ):
+            # Pass detached read-only-shaped records to an UNTRUSTED ranker.
+            # Never trust returned candidate objects, route names or arbitrary
+            # ranking values: only unique indices into our verified snapshot.
+            offered = tuple(replace(candidate) for candidate in qualified)
+            try:
+                proposed = _research_ranker(query, offered, k)
+            except Exception:
+                raise PolicyViolationError("indexed research ranking failed") from None
+            if (
+                type(proposed) is not tuple
+                or len(proposed) not in (0, k)
+                or any(
+                    type(offset) is not int or not 0 <= offset < count
+                    for offset in proposed
+                )
+                or len(set(proposed)) != len(proposed)
+            ):
+                raise PolicyViolationError(
+                    "indexed ranker returned forged, partial or duplicate offsets"
+                )
+            ranked_offsets = proposed
         # A live availability callable may keep its identity while a
         # later candidate's health probe revokes an earlier candidate.
         # Recheck every already-qualified route, even when >K ultimately
@@ -492,6 +677,9 @@ class NativeSchemaPostingIndex:
                 }))
                 if current_names != candidate.required_output_fields:
                     raise PolicyViolationError("indexed candidate projection changed")
+                if (use_paper_rank and
+                        len(scoped.output_fields) != visible_field_counts[candidate.route_id]):
+                    raise PolicyViolationError("paper Rank visible field count changed")
         except Exception:
             # Avoid leaking provider/private schema details in callback errors.
             raise PolicyViolationError(
@@ -499,6 +687,16 @@ class NativeSchemaPostingIndex:
             ) from None
         self._assert_source(router)
         router._check_retrieval_authority_witness(witness)
+        if original_paper_policy is not None:
+            try:
+                if _paper_rank_policy is None or (
+                    _paper_rank_policy.model_dump_json() != original_paper_policy
+                ):
+                    raise PolicyViolationError("paper Rank owner declaration changed")
+            except Exception:
+                raise PolicyViolationError(
+                    "paper Rank owner declaration changed"
+                ) from None
         current_policy = router.authorization_policy
         if (
             current_policy.default_effect,
@@ -506,17 +704,41 @@ class NativeSchemaPostingIndex:
             repr(current_policy.data_rules),
         ) != original_policy:
             raise PolicyViolationError("authorization policy changed during indexed lookup")
-        count = len(qualified)
+        try:
+            if (
+                principal.model_dump_json() != principal_claims
+                or group.model_dump_json() != group_claims
+            ):
+                raise PolicyViolationError("indexed lookup declarations changed")
+        except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError(
+                "cannot attest current indexed lookup declarations"
+            ) from exc
+        status: Literal[
+            "complete", "no_proven_hit", "over_k_unranked",
+            "ranked_unverified", "ranker_abstained_unverified",
+        ]
+        if count > k:
+            status = (
+                "over_k_unranked" if ranked_offsets is None else
+                "ranked_unverified" if ranked_offsets else
+                "ranker_abstained_unverified"
+            )
+        else:
+            status = "complete" if count else "no_proven_hit"
         return IndexedNativeFieldResult(
-            status=(
-                "over_k_unranked" if count > k else
-                "complete" if count else "no_proven_hit"
-            ),
+            status=status,
             registry_version=self.registry_version,
             index_snapshot_id=self.snapshot_id,
             requested_k=k,
             qualified_count=count,
-            candidates=tuple(qualified) if count <= k else (),
+            candidates=(
+                tuple(qualified[offset] for offset in ranked_offsets)
+                if ranked_offsets is not None else
+                tuple(qualified) if count <= k else ()
+            ),
+            experimental_ranked=ranked_offsets is not None,
+            deterministic_paper_ranked=use_paper_rank,
         )
 
     def lookup_concepts(
@@ -527,9 +749,14 @@ class NativeSchemaPostingIndex:
         catalog: NativeConceptCatalog,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        input_free_only: bool = False,
+        _research_ranker: Callable[
+            [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
+        ] | None = None,
     ) -> IndexedNativeFieldResult:
         """Original query → declared concepts → typed field intersection."""
         resolved = resolve_native_concepts(query, catalog=catalog)
         return self.lookup(
-            router, query, group=resolved.field_group, principal=principal, k=k,
+            router, query, group=resolved.field_group, principal=principal,
+            k=k, input_free_only=input_free_only, _research_ranker=_research_ranker,
         )

@@ -5,7 +5,9 @@ import inspect
 import math
 import threading
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
@@ -66,6 +68,23 @@ from .validation import (
 )
 
 _MISSING = object()
+
+# Opt-in task-local host witness, checked at the actual executor binding lookup
+# even when awaited before-call hooks mutate the registered invoker.
+_required_bound_invoker_generation: ContextVar[tuple[object, str, int] | None] = ContextVar(
+    "schemarouter_required_bound_invoker_generation", default=None,
+)
+
+
+@contextmanager
+def _require_bound_invoker_generation(
+    executor: RegistryExecutor, tool_key: str, generation: int,
+) -> Iterator[None]:
+    token = _required_bound_invoker_generation.set((executor, tool_key, generation))
+    try:
+        yield
+    finally:
+        _required_bound_invoker_generation.reset(token)
 
 
 class _OffloadedSyncCapacityUnavailable(InvocationUnavailableError):
@@ -1206,6 +1225,14 @@ class RegistryExecutor:
         """Return one coherent binding snapshot for an already-validated contract."""
 
         binding = self._binding_snapshot(tool_key)
+        required = _required_bound_invoker_generation.get()
+        if required is not None and (
+            self is not required[0]
+            or (tool_key, binding.generation) != required[1:]
+        ):
+            raise PolicyViolationError(
+                "native invoker binding changed during host-pinned execution"
+            )
         if binding.invoker is None:
             raise ExecutionError(f"no invoker bound for tool {tool_key!r}")
         if binding.fingerprint != tool_fingerprint:

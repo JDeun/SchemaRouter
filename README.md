@@ -138,6 +138,150 @@ for candidate in candidates.candidates:
 Use `retrieve_executable(...)` when the shortlist must also have a currently valid execution
 binding.
 
+For the original paper's **field-only routing** (which schema fields and typed
+dependencies a caller would need, without fetching provider records), register
+your source schemas and opt into `router.prepare_field_routing()` **without a
+concept catalog** to begin owner review. Call
+`session.inspect_visible_fields(principal=reader, limit=32)` first. After the
+owner explicitly approves `NativeConceptCatalog`, call
+`session = session.revise_catalog(catalog=reviewed_concepts)`; this activates
+field routing **without rebuilding the registered-source index**. Alternatively
+start with `router.prepare_field_routing(catalog=reviewed_concepts)` if your
+application already has an approved catalog. Then call
+`session.discover(query, principal=reader)` for field-complete alternatives or
+`session.compile(query, principal=reader)` for typed, non-executing call shapes
+and source/unit/license field metadata. Each compiled route also provides
+`parameters_meta` (safe input names, required flags, locations, JSON type
+labels), without exposing raw schema annotations or supplying argument values.
+For registered sources needing an explicit host-supplied scalar (for example,
+an owner-reviewed lookup identifier), first inspect that native input shape,
+then approve it alongside the concept mapping:
+`session = session.revise_catalog(catalog=reviewed_concepts,
+approved_host_roots=frozenset({"directory.lookup"}))`. Omit the argument to
+retain existing root approvals, or pass `frozenset()` to revoke all of them.
+These are exact registered route IDs, not model-suggested values. Revision
+reprojects only original tools affected by added/revoked roots through the
+existing canonical graph updater; no source-wide index rebuild, provider call
+or implicit execution grant occurs. An approved root can yield a typed plan
+with `requires_arguments`; only separately supplied valid host values may
+produce a `ready` **non-executing** receipt.
+Each bounded page contains only currently authorized and visible scalar
+field names, semantic IDs, type labels, units, safe source input parameter
+shapes (`parameters_meta`: canonical name, required flag, location and basic
+JSON types), and (when not scope-restricted) source/license labels. The input
+projection uses the same live principal/data-scope rules as the guarded typed
+plan; it excludes descriptions, wire aliases, raw JSON schemas, defaults and
+argument values. At most 512 parameters per route and 2,048 per page share
+the conservative 256 KiB review budget with output field metadata; oversized
+routes fail explicitly. Follow
+the fixed-size opaque `next_after_route` token by passing it as `after_route`
+until it is `None`. That token is tied to the source snapshot and works even
+when registered route names are unusually long or contain control characters.
+The prepared native index now materializes its route→semantic reverse inventory,
+sorted review routes and original-format `sr1:` cursor anchors **once per
+verified source revision**. Review pages use an indexed cursor or binary-search
+seek instead of rebuilding and sorting the entire posting catalog on each
+page. This does **not** replace live source fingerprint, principal permission,
+field-scope or availability checks; pages may still scan forward past denied
+or unavailable sources. An opaque cursor is also rechecked against the
+**current principal's live visibility** before it can be used as an anchor:
+unknown, hidden and revoked anchors are rejected indistinguishably. The
+reverse index stays private on the trusted host
+and must never be served as an authorized route listing. Measure synthetic
+500/5,000-route page CPU/latency and serialized metadata bytes with
+`python -m scripts.benchmark_native_review_pagination_b1 --routes 5000
+--limit 64` from the repository root. This is not an independently measured
+ranking or E2 improvement.
+This does not auto-author a `NativeConceptCatalog`, guess aliases or fetch
+records: the host still reviews and explicitly declares concept meanings.
+On a review-only session, `discover`, `compile`, `compile_understood`,
+`acompile_query` and `catalog_revision_id` fail closed until catalog approval.
+Recheck current authorization when using this inventory; a cursor is not
+permission and different pages are not a policy-stable snapshot. The complete
+operator-oriented Schema Explorer intentionally remains a separate interface
+and is **not** a principal-safe substitute for this review API.
+Keep the prepared session object **on the trusted host**: properties such as
+`indexed_route_count` intentionally describe the full registered index, not
+one principal's visibility. Expose only the principal-scoped page receipts to
+consumer UIs. Pages have strict route (64), field (512 per route / 2,048 per
+page), and conservative byte budgets; unusually wide or huge registered
+schemas fail explicitly rather than silently omitting reviewable fields.
+Those schemas require host-side splitting or a future field-granular paging
+interface. Live, internally stateful availability callbacks are not an atomic
+permission snapshot: owners must supply stable/versioned availability state
+when they need transaction-like consistency and reauthorize later actions.
+If your application already has structured `Understand(q)` hints, use
+`session.compile_understood(PaperUnderstanding(...), principal=reader,
+intent_registry=reviewed_intents)` to reuse the same prepared index and the
+original source-proven direct/one-/two-hop graph compiler. The host must
+review intent→concept contracts; model-proposed `parameter_hints` are never
+used as call arguments. `compile_understood` does **not** call an LLM or any
+provider. For natural-language paraphrases, the separate opt-in async method
+`await session.acompile_query(query, principal=reader, model=host_callback,
+intent_registry=reviewed_intents, model_visible_intent_ids=(...),
+model_visible_concept_ids=(...), model_visible_tool_keys=(...))` invokes
+**one host-owned model callback** with only explicitly disclosed, currently
+field-proven intent/concept IDs and scoped tool keys. It strictly validates
+the returned IDs, and delegates to that same source-proven direct/one-/two-hop
+compiler. The caller is responsible for model privacy and deciding what to
+disclose; the router never fetches provider rows, promotes model suggestions
+to source authority, or binds model-proposed parameter values. An independent
+model-understanding benchmark is still required.
+
+For original-paper **Algorithm 1 `Rank(Tcand, C)`**, a trusted host can
+optionally declare `PaperNativeRankPolicy(snapshot_id=session.snapshot_id,
+route_priorities={"already.reviewed.route": 2})` and pass it as
+`rank_policy=...` to `compile_understood` or `acompile_query`. Annotated
+route IDs must be currently registered and the source snapshot must match;
+the policy also supports owner-assigned domain tags (`PaperIntentDeclaration`
+`domains`) and web-route demotion. The index first checks the **entire**
+eligible native FieldGroup cohort against live principal authorization,
+field scope, source contract, health and fingerprints, then locally ranks
+only those already-qualified routes to Top-K5 (including >32 and 5,000-route
+catalogs). Direct plans report `ranked_unverified=True` and always
+`executable_authority=False`; no model/provider is invoked by Rank. Named
+tool overrides continue through their original scoped source proof without
+implicit ranking. Without an explicit rank policy, the original
+`over_k_unranked` refusal at >K remains unchanged. Dependency-path G5
+ranking, quality evidence, independently reviewed E2 and default promotion
+are **not** implemented by this opt-in direct route feature. Synthetic
+CPU/byte evidence: `python -m scripts.benchmark_paper_native_rank_b1
+--routes 5000 --repeats 3`; this is not an E2 accuracy benchmark.
+
+After registered schemas change, the original prepared session becomes stale.
+Call `new_session = session.refresh()` to create a new immutable field-routing
+snapshot using the built-in in-memory/SQLite registry's verified change journal.
+For a custom registry, pass `changed_tool_keys=(...)` to the same method; the
+full native manifest is checked before accepting those hints. A missing,
+expired or inconsistent delta fails closed (reprepare explicitly if needed).
+Refreshing does not fetch provider records, invoke tool executors, or grant a
+model permission to supply query arguments. The old session stays stale.
+If **only the host-reviewed concept/field catalog changes** while registered
+schemas stay at the same revision, call
+`new_session = session.revise_catalog(catalog=updated_reviewed_concepts)`.
+This revalidates and detaches the owner's bounded catalog while reusing the
+same pinned posting/G5 graph, including host-approved roots; there is **no
+schema rescan** or provider execution. Use `(new_session.snapshot_id,
+new_session.catalog_revision_id)` to **partition host schema/semantic caches**:
+the source-only `snapshot_id` intentionally stays unchanged across a catalog
+revision. With nonempty explicit root approvals, `catalog_revision_id` also
+commits to the sorted root list; changing only that list changes the semantic
+cache key. **Do not use this pair alone to cache or replay authorized
+`discover()`/`compile()` results.** Those results depend on the live principal,
+authorization policy, allowed scopes and availability, and require current
+source and authorization rechecks at use time. The application must atomically
+replace and retire its old handle
+after approving new meanings: independently retained old sessions are **not
+automatically revoked** by this API. Source changes still require `refresh()`;
+a stale source refuses catalog-only revision.
+The caller supplies an explicit authorization policy; a reviewed semantic
+concept catalog is required **to route**, not to inspect source fields.
+Undeclared or conflicting concept aliases raise `ValueError`
+(no guessed mapping). Changes require a fresh session, either through verified
+`refresh()`, catalog-only `revise_catalog()` or an explicit new
+`prepare_field_routing` build; none grants execution permission. See the runnable
+[provider-neutral field-routing example](examples/schema_only_field_routing.py).
+
 ## Connect tools and data
 
 SchemaRouter supports several ingress families behind the same capability model.

@@ -266,3 +266,67 @@ def test_remote_source_schema_drift_refuses_old_semantic_receipt():
     }
     with pytest.raises(ValueError, match="source-owned|changed|differs"):
         apply_host_semantic_attestation(original, attestation=attestation)
+
+
+@pytest.mark.parametrize("scoped", [False, True], ids=("authorized", "hidden-id"))
+@pytest.mark.parametrize(
+    "change",
+    ("semantic-id", "source-type", "license", "read-only", "description"),
+)
+def test_real_adapter_journal_churn_revocation_and_restore(change, scoped):
+    """Source-converted contracts must track journal revisions, not cache grants."""
+    router, original_graph = _catalog(hide_contact=scoped)
+    original = router.registry.get("case_service")
+    amended = original.model_copy(deep=True)
+    endpoint = amended.endpoint("read_case")
+    if change == "semantic-id":
+        endpoint.parameters[0].semantic_id = "crm.other_contact_id"
+    elif change == "source-type":
+        amended.source_type = "unrelated"
+    elif change == "license":
+        amended.license = "other-license"
+    elif change == "read-only":
+        endpoint.read_only = False
+    else:
+        endpoint.description = "new reviewed native schema revision"
+    router.registry.register(amended, replace=True)
+
+    with pytest.raises(PolicyViolationError):
+        original_graph.lookup(router, ALIASES[0], group=GROUP, principal=READER)
+    refreshed = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+        original_graph, router.registry,
+    )
+    rebuilt = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+
+    def check_pair(left, right, expected):
+        assert left.field_index.snapshot_id == right.field_index.snapshot_id
+        assert left.field_index.registry_version == right.field_index.registry_version
+        assert left.native_root_count == right.native_root_count
+        assert left.native_consumer_count == right.native_consumer_count
+        assert tuple(sorted(
+            (edge.producer_id, edge.consumer_id) for edge in left.graph.edges
+        )) == tuple(sorted(
+            (edge.producer_id, edge.consumer_id) for edge in right.graph.edges
+        ))
+        for query in ALIASES:
+            for principal in (READER, SCOPED):
+                lhs = left.lookup(router, query, group=GROUP, principal=principal)
+                rhs = right.lookup(router, query, group=GROUP, principal=principal)
+                assert lhs == rhs
+                want = expected and (principal is READER or not scoped)
+                assert lhs.status == ("complete" if want else "no_proven_hit")
+                assert len(lhs.candidates) == int(want)
+
+    check_pair(refreshed, rebuilt, expected=change == "description")
+    router.registry.register(original, replace=True)
+    with pytest.raises(PolicyViolationError):
+        refreshed.lookup(router, ALIASES[0], group=GROUP, principal=READER)
+    restored = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+        refreshed, router.registry,
+    )
+    restored_rebuilt = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    check_pair(restored, restored_rebuilt, expected=True)

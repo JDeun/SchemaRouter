@@ -7,6 +7,8 @@ on:
       - "scripts/inspect_independent_native_e2_intake.py"
       - "tests/test_independent_native_e2_intake.py"
       - "research/autoresearch/independent-native-e2-intake-preflight.md"
+      - "research/autoresearch/paper-a6-per-case-witness-intake-design.md"
+      - "research/autoresearch/paper-a6-per-case-witness-intake-plan.md"
       - ".github/workflows/research-independent-native-intake.yml"
 
 permissions:
@@ -33,6 +35,8 @@ jobs:
         run: |
           ruff check scripts/inspect_independent_native_e2_intake.py tests/test_independent_native_e2_intake.py
           python -m pytest -q tests/test_independent_native_e2_intake.py tests/test_clicshopping_maintainer_holdout_intake.py
+      - name: Check seven-stream A6 per-case witness boundary
+        run: python -m pytest -q tests/test_independent_native_e2_intake.py -k 'a6_'
       - name: Fail closed on qualification representation
         run: |
           echo "All rows in this workflow are researcher-authored synthetic E0 tests, NOT publisher E2." >> "$GITHUB_STEP_SUMMARY"

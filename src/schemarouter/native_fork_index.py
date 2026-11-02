@@ -1,11 +1,12 @@
-"""#1560 E0: strictly source-attested two-branch shared-root field evidence.
+"""#1560 E0: strictly source-attested shared-root field evidence.
 
-This is a bounded, nonexecuting AND over TWO already-authorized one-hop
+This is a bounded, nonexecuting AND over 2–4 already-authorized one-hop
 native G5 results. A common source schema is not a runtime row join.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import product
 from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
@@ -31,19 +32,22 @@ MAX_FORK_SHARD_LOOKUPS = 64
 # cohorts; it does not attest a single route or replace scoped validation.
 MAX_FORK_PREFORK_TARGETS = 128
 MIN_FORK_PREFORK_BUDGET = 16
+# Never enumerate an unbounded Cartesian product of individually attested
+# consumers. Exhaustion is an unranked abstention, NOT a negative result.
+MAX_FORK_COMBINATIONS = 4096
 
 
 @dataclass(frozen=True, slots=True)
 class NativeIndexedSharedRootForkCandidate:
-    """Both single-field consumers bind the SAME flat, source-owned root ID."""
+    """All single-field consumers bind the SAME flat, source-owned root ID."""
 
     root_route_id: str
-    branch_route_ids: tuple[str, str]
+    branch_route_ids: tuple[str, ...]
     root_fingerprints: tuple[str, str]
-    branch_fingerprints: tuple[tuple[str, str], tuple[str, str]]
+    branch_fingerprints: tuple[tuple[str, str], ...]
     root_identifier_field: str
-    branch_input_parameters: tuple[str, str]
-    branch_output_fields: tuple[tuple[str, ...], tuple[str, ...]]
+    branch_input_parameters: tuple[str, ...]
+    branch_output_fields: tuple[tuple[str, ...], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,10 +72,10 @@ def lookup_native_shared_root_forks(
     principal: PrincipalContext,
     k: int = STRICT_K,
 ) -> NativeIndexedSharedRootForkResult:
-    """Conservative two-field, two-consumer fork evidence before strict K5.
+    """Conservative 2–4-field same-record fork evidence before strict K5.
 
     No inferred multi-output, concatenated rows, cross-source equality, or
-    execution: both branches must have one identical original source root and
+    execution: all branches must have one identical original source root and
     one *same-named* scalar root identifier, required at the original root
     object schema. Each scoped leaf must independently prove ONE demanded
     field via the existing authorized/typed one-hop native G5 path.
@@ -93,8 +97,8 @@ def lookup_native_shared_root_forks(
         )
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError("G5 fork invalid current host declarations") from exc
-    if len(declared.required_fields) != 2:
-        raise ValueError("G5 fork supports exactly two declared semantic fields")
+    if not 2 <= len(declared.required_fields) <= k - 1:
+        raise ValueError("G5 fork supports two to four declared semantic fields")
     if _alias_key(query) not in {_alias_key(a) for a in declared.aliases}:
         raise ValueError("G5 fork has no approved query-to-field edge")
 
@@ -122,7 +126,9 @@ def lookup_native_shared_root_forks(
             for root_id in index.graph.predecessors(target_id)
         }
 
-    shared_structural_roots = frozenset(potential_roots(0) & potential_roots(1))
+    shared_structural_roots = frozenset(set.intersection(*(
+        potential_roots(i) for i in range(len(declared.required_fields))
+    )))
 
     def authorized_leaf(
         required_field_index: int,
@@ -245,26 +251,25 @@ def lookup_native_shared_root_forks(
 
         return collect(shared_structural_roots)
 
-    def compatible_pair(
-        left: NativeIndexedGraphCandidate,
-        right: NativeIndexedGraphCandidate,
+    def compatible_group(
+        branches: tuple[NativeIndexedGraphCandidate, ...],
     ) -> NativeIndexedSharedRootForkCandidate | None:
+        first = branches[0]
         if (
-            left.producer_route_id != right.producer_route_id
-            or left.consumer_route_id == right.consumer_route_id
-            or left.source_root_parameters
-            or right.source_root_parameters
-            or len(left.parameter_bindings) != 1
-            or len(right.parameter_bindings) != 1
-            or left.parameter_bindings[0][1]
-            != right.parameter_bindings[0][1]
-            or left.producer_tool_fingerprint
-            != right.producer_tool_fingerprint
-            or left.producer_endpoint_fingerprint
-            != right.producer_endpoint_fingerprint
+            len({item.consumer_route_id for item in branches}) != len(branches)
+            or any(
+                item.producer_route_id != first.producer_route_id
+                or item.source_root_parameters
+                or len(item.parameter_bindings) != 1
+                or item.parameter_bindings[0][1] != first.parameter_bindings[0][1]
+                or item.producer_tool_fingerprint != first.producer_tool_fingerprint
+                or item.producer_endpoint_fingerprint
+                != first.producer_endpoint_fingerprint
+                for item in branches
+            )
         ):
             return None
-        root_id = left.producer_route_id
+        root_id = first.producer_route_id
         where = index.field_index.route_locations.get(root_id)
         pinned = index.field_index.route_fingerprints.get(root_id)
         if where is None or pinned is None:
@@ -275,7 +280,7 @@ def lookup_native_shared_root_forks(
             raise PolicyViolationError("G5 fork root source drift")
         # A common identifier does not authorize an unreviewed cross-owner
         # join. Even when the host leaves FieldGroup qualifiers unspecified,
-        # the root and BOTH consumers must share a reviewed provenance and
+        # the root and ALL consumers must share reviewed provenance and
         # license. Cross-publisher joins need a separate explicit contract.
         owner = (root_tool.source_type, root_tool.license)
         if (
@@ -287,13 +292,12 @@ def lookup_native_shared_root_forks(
         ):
             return None
         # A source field NAME is not a semantic identifier by itself.
-        # Both consumers must require the same original semantic contract,
+        # All consumers must require the same original semantic contract,
         # not two unrelated semantic IDs mapped onto an identical spelling.
         required_identifiers = []
-        for leaf_id, required_parameter in (
-            (left.consumer_route_id, left.parameter_bindings[0][0]),
-            (right.consumer_route_id, right.parameter_bindings[0][0]),
-        ):
+        for branch in branches:
+            leaf_id = branch.consumer_route_id
+            required_parameter = branch.parameter_bindings[0][0]
             leaf_where = index.field_index.route_locations.get(leaf_id)
             leaf_pinned = index.field_index.route_fingerprints.get(leaf_id)
             if leaf_where is None or leaf_pinned is None:
@@ -311,9 +315,9 @@ def lookup_native_shared_root_forks(
             ):
                 return None
             required_identifiers.append(inputs[0][1])
-        if required_identifiers[0] != required_identifiers[1]:
+        if any(value != required_identifiers[0] for value in required_identifiers[1:]):
             return None
-        source_identifier = left.parameter_bindings[0][1]
+        source_identifier = first.parameter_bindings[0][1]
         source_fields = [
             field for field in root_ep.output_fields
             if field.name == source_identifier
@@ -335,51 +339,56 @@ def lookup_native_shared_root_forks(
             return None
         return NativeIndexedSharedRootForkCandidate(
             root_route_id=root_id,
-            branch_route_ids=(
-                left.consumer_route_id, right.consumer_route_id,
-            ),
+            branch_route_ids=tuple(branch.consumer_route_id for branch in branches),
             root_fingerprints=pinned,
-            branch_fingerprints=(
-                (left.consumer_tool_fingerprint,
-                 left.consumer_endpoint_fingerprint),
-                (right.consumer_tool_fingerprint,
-                 right.consumer_endpoint_fingerprint),
+            branch_fingerprints=tuple(
+                (branch.consumer_tool_fingerprint,
+                 branch.consumer_endpoint_fingerprint)
+                for branch in branches
             ),
             root_identifier_field=source_identifier,
-            branch_input_parameters=(
-                left.parameter_bindings[0][0], right.parameter_bindings[0][0],
+            branch_input_parameters=tuple(
+                branch.parameter_bindings[0][0] for branch in branches
             ),
-            branch_output_fields=(
-                left.consumer_output_fields, right.consumer_output_fields,
+            branch_output_fields=tuple(
+                branch.consumer_output_fields for branch in branches
             ),
         )
 
     try:
-        left = authorized_leaf(0)
-        right = authorized_leaf(1)
+        arms = tuple(authorized_leaf(i) for i in range(len(declared.required_fields)))
         # Each private query retains the original 32-arm cap; disjoint root
         # shards can be combined after full validation, within a bounded
         # number of source queries. Public K5 applies ONLY to joined forks.
-        overflowing = left is None or right is None
+        overflowing = any(arm is None for arm in arms)
         pairs: set[NativeIndexedSharedRootForkCandidate] = set()
-        if left is not None and right is not None:
-            right_by_root: dict[str, list[NativeIndexedGraphCandidate]] = {}
-            for candidate in right:
-                right_by_root.setdefault(candidate.producer_route_id, []).append(
-                    candidate
-                )
-            for first in left:
-                for second in right_by_root.get(first.producer_route_id, ()):
-                    qualified = compatible_pair(first, second)
+        if not overflowing:
+            by_root: list[dict[str, list[NativeIndexedGraphCandidate]]] = []
+            for arm in arms:
+                current: dict[str, list[NativeIndexedGraphCandidate]] = {}
+                assert arm is not None
+                for candidate in arm:
+                    current.setdefault(candidate.producer_route_id, []).append(candidate)
+                by_root.append(current)
+            attempted = 0
+            shared_roots = set.intersection(*(set(arm) for arm in by_root))
+            for root in sorted(shared_roots):
+                for joined in product(*(arm[root] for arm in by_root)):
+                    attempted += 1
+                    if attempted > MAX_FORK_COMBINATIONS:
+                        overflowing = True
+                        break
+                    qualified = compatible_group(joined)
                     if qualified is not None:
                         pairs.add(qualified)
-        # Two separate G5 queries may span a live health/scope mutation.
-        # Repeat BOTH original projections before publishing fork identities
+                if overflowing:
+                    break
+        # Separate G5 queries may span a live health/scope mutation.
+        # Repeat ALL original projections before publishing fork identities
         # or even the count. This is conservative but not a transaction or
         # proof of linearizable provider revocation across hosts.
-        fresh_left = authorized_leaf(0)
-        fresh_right = authorized_leaf(1)
-        if fresh_left != left or fresh_right != right:
+        refreshed = tuple(authorized_leaf(i) for i in range(len(arms)))
+        if refreshed != arms:
             raise PolicyViolationError("G5 fork source eligibility changed")
     except Exception:
         raise PolicyViolationError(
