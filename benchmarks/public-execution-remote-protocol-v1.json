@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "scope": "public-registered-local-protocol-execution-not-provider-e2",
+  "qualification": "DEV_ONLY",
+  "paths": [
+    {
+      "id": "router.openrpc.public-execute",
+      "family": "OpenRPC",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "test_file": "tests/test_public_remote_protocol_execution_wiring.py",
+      "positive_test": "test_openrpc_public_execute_denies_guest_and_bad_input_before_http",
+      "denial_test": "test_openrpc_public_execute_denies_guest_and_bad_input_before_http",
+      "checked": [
+        "registered-jsonrpc-post",
+        "denied-principal-no-http",
+        "invalid-input-no-http",
+        "stale-tool-no-http"
+      ],
+      "evidence": "local-httpx-mocktransport"
+    },
+    {
+      "id": "router.odata.public-execute",
+      "family": "OData",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "test_file": "tests/test_public_remote_protocol_execution_wiring.py",
+      "positive_test": "test_odata_public_execute_denies_guest_and_stale_plan_before_http",
+      "denial_test": "test_odata_public_execute_denies_guest_and_stale_plan_before_http",
+      "checked": [
+        "registered-odata-get",
+        "denied-principal-no-http",
+        "stale-tool-no-http",
+        "read-only-source"
+      ],
+      "evidence": "local-httpx-mocktransport"
+    }
+  ]
+}

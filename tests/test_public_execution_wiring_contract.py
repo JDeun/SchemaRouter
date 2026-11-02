@@ -50,6 +50,11 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
         for name in row["real_invoker_tests"] + row["denial_tests"]:
             assert name.startswith("test_") and name in funcs, (row["id"], name)
         assert row["real_invoker_tests"] and row["denial_tests"]
+        assert set(row["real_invoker_tests"]).isdisjoint(row["denial_tests"]), (
+            row["id"], "positive and denial evidence must be distinct"
+        )
+        assert len(set(row["real_invoker_tests"])) == len(row["real_invoker_tests"])
+        assert len(set(row["denial_tests"])) == len(row["denial_tests"])
         for name in row["real_invoker_tests"]:
             fn = funcs[name]
             body = ast.get_source_segment(tests.read_text(encoding="utf-8"), fn) or ""
@@ -66,7 +71,10 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
 REQUIRED_EXECUTION_PATHS = frozenset({
     "paper.direct.native.read",
     "router.python.callable.sync",
+    "router.python.callable.async",
     "router.sqlite.select",
+    "router.openapi.get",
+    "router.sqlalchemy.select",
     "router.http_json.get",
     "router.graphql.query",
     "router.openrpc.method",
@@ -86,3 +94,21 @@ def test_verified_execution_adapter_families_cannot_silently_disappear():
     # Preserve the actual status: a local invoker test is not independent E2.
     for path_id in REQUIRED_EXECUTION_PATHS:
         assert paths[path_id]["qualification"] == "DEV_ONLY", path_id
+
+
+
+def test_openapi_sqlalchemy_gap_receipts_are_in_canonical_execution_matrix():
+    """Consolidate the two supplemental real-source tests without losing source provenance."""
+    gap = ROOT / "benchmarks/public-execution-adapter-gaps-v1.json"
+    assert gap.is_file()
+    supplement = json.loads(gap.read_text(encoding="utf-8"))
+    paths = json.loads(MANIFEST.read_text(encoding="utf-8"))["paths"]
+    canonical = {row["id"]: row for row in paths}
+    assert len(paths) >= 14
+    for case in supplement["paths"]:
+        item = canonical[case["id"]]
+        assert case["public_entrypoint"] == item["public_entrypoint"]
+        assert case["test_file"] == item["test_file"]
+        assert case["test"] in item["real_invoker_tests"]
+        assert item["denial_tests"]
+        assert item["qualification"] == "DEV_ONLY"

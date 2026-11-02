@@ -136,3 +136,43 @@ async def test_openapi_registered_http_public_execute_checks_authorization_and_i
         assert len(result) == 1
         assert result[0].data == {"id": 7, "label": "verified"}
         assert wire_calls == [("GET", "/items/7")]
+
+
+
+@pytest.mark.asyncio
+async def test_openapi_denied_principal_never_reaches_http() -> None:
+    """A denied user cannot produce a registered data GET after schema discovery."""
+    wire_calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/openapi.json":
+            return httpx.Response(200, json=_source_document(), request=request)
+        wire_calls.append(str(request.url))
+        raise AssertionError("denied request reached HTTP data endpoint")
+
+    authorization = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="inventory.get_item",
+                roles_any=("reader",),
+            ),
+        ),
+        default_effect="deny",
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://inventory.example.test/openapi.json",
+            kind="openapi",
+            name="inventory",
+            base_url="https://inventory.example.test",
+            http_client=client,
+            authorization_policy=authorization,
+            policy=ExecutionPolicy(allow_unclassified_remote=True),
+        )
+        guest = RunConfig(
+            principal=PrincipalContext(subject="denied", roles=("guest",))
+        )
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            await router.execute(_plan(router, "inventory", arguments={"item_id": 7}), config=guest)
+        assert wire_calls == []
