@@ -9,7 +9,18 @@ from pathlib import Path
 
 import pytest
 
-from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    ExecutionPolicy,
+    PlanRequest,
+    PolicyViolationError,
+    PrincipalContext,
+    RunConfig,
+    SchemaRouter,
+    SchemaValidationError,
+)
+from schemarouter.errors import SchemaRouterError
 
 pytestmark = pytest.mark.mcp_integration
 
@@ -133,3 +144,67 @@ async def test_real_stdio_mcp_discovery_and_execution() -> None:
 
     results = await router.execute(plan)
     assert results[0].data == {"result": 15}
+
+
+@pytest.mark.asyncio
+async def test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Real MCP subprocess: denied requests do not reach its source tool."""
+    audited = tmp_path / "stdio-tool-calls.txt"
+    monkeypatch.setenv("SCHEMAROUTER_MCP_STDIO_CALL_AUDIT", str(audited))
+    server = Path(__file__).parent / "fixtures" / "mcp_stdio_server.py"
+    admin = PrincipalContext(subject="owner", roles=("admin",))
+    denied = PrincipalContext(subject="guest", roles=("guest",))
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True),
+        authorization_policy=AuthorizationPolicy(
+            rules=(AuthorizationRule(
+                effect="allow",
+                operation="*",
+                roles_any=("admin",),
+            ),),
+            default_effect="deny",
+        ),
+    )
+    try:
+        tool = await router.add_mcp_stdio(
+            sys.executable,
+            args=[str(server)],
+            allowed_commands=[sys.executable],
+            name="stdio-negative-fixture",
+        )
+        assert tool.metadata["transport"] == "stdio"
+        request = PlanRequest(
+            query="add result", preferred_tools=[tool.key],
+            arguments={"a": 7, "b": 8},
+        )
+        plan = router.plan_authorized(request, principal=admin)
+        assert plan.executable and plan.calls
+
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            await router.execute(plan, config=RunConfig(principal=denied))
+        assert not audited.exists(), "Guest executed an MCP subprocess tool"
+
+        malformed = plan.model_copy(deep=True)
+        malformed.calls[0].arguments["a"] = "not-an-integer"
+        with pytest.raises(SchemaValidationError):
+            await router.execute(malformed, config=RunConfig(principal=admin))
+        assert not audited.exists(), "Invalid MCP input crossed source boundary"
+
+        missing_required = plan.model_copy(deep=True)
+        missing_required.calls[0].arguments.pop("b")
+        with pytest.raises(SchemaValidationError):
+            await router.execute(missing_required, config=RunConfig(principal=admin))
+        assert not audited.exists(), "Missing MCP input crossed source boundary"
+
+        output = await router.execute(plan, config=RunConfig(principal=admin))
+        assert output[0].data == {"result": 15}
+        assert audited.read_text(encoding="utf-8").splitlines() == ["7,8"]
+
+        await router.aremove_tool(tool.key)
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=RunConfig(principal=admin))
+        assert audited.read_text(encoding="utf-8").splitlines() == ["7,8"]
+    finally:
+        await router.aclose()
