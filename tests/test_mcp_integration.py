@@ -173,6 +173,7 @@ async def test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch(
             sys.executable,
             args=[str(server)],
             allowed_commands=[sys.executable],
+            env={"SCHEMAROUTER_MCP_STDIO_CALL_AUDIT": str(audited)},
             name="stdio-negative-fixture",
         )
         assert tool.metadata["transport"] == "stdio"
