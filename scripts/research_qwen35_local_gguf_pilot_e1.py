@@ -251,8 +251,13 @@ async def evaluate_qwen35_local_pilot(
         raise ValueError("immutable source repository revision required")
     if not gguf_path.is_file() or gguf_path.name != MODELS[model_variant][1]:
         raise ValueError("source-qualified GGUF filename required")
+    # Python 3.10 compatibility: hashlib.file_digest was added in 3.11.
+    # Stream the exact GGUF bytes without loading multi-GB model weights.
+    file_hash = hashlib.sha256()
     with gguf_path.open("rb") as stream:
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            file_hash.update(chunk)
+    digest = file_hash.hexdigest()
     result = await run_local_multiroute_codegraph_e1(
         agent, language=language, condition="joined", catalog_size=4,
         diagnose_model_actions=True,

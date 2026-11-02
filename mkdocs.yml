@@ -233,6 +233,7 @@ nav:
           - Source-native G5 implementation plan (2026-10-22): superpowers/plans/2026-10-22-g5-native-vertical-slice.md
           - Indexed FieldGroup to fixed-K agent bridge E0 plan (2026-10-25): superpowers/plans/2026-10-25-indexed-agent-bridge-e0.md
       - Product north star and integrated test matrix: research/product-north-star-and-test-matrix.md
+      - Original paper Algorithm 1 parity (2026-10-24 audit): research/original-paper-algorithm1-parity.md
       - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
       - Routing break-even result: research/realistic-break-even-result.md
