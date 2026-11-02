@@ -14,7 +14,9 @@
     "denied_principal_zero_source_invocations",
     "invalid_type_zero_source_invocations",
     "missing_required_zero_source_invocations",
+    "unavailable_source_zero_source_invocations",
+    "availability_recovery_single_source_invocation",
     "stale_unregistered_plan_zero_additional_invocations"
   ],
-  "notes": "Separate from router.mcp.http in canonical public execution manifest. Test-only subprocess audit captures actual handler calls; does not establish vendor-hosted MCP E2, independent task quality, or source owner approval."
+  "notes": "Separate MCP stdio registered subprocess route. Live subprocess handler call-audit verifies principal/type/missing input and temporary source-unavailable cases cause zero invocations; availability recovery permits exactly one call; removal rejects stale replay. Deterministic DEV_ONLY, not hosted independent E2."
 }
