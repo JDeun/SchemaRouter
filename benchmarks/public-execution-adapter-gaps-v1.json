@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "qualification": "DEV_ONLY",
+  "prior_adapter_matrix": "benchmarks/public-execution-wiring-v1.json",
+  "notes": "Supplement to 12-path manifest pending protected merge; registered deterministic local OpenAPI HTTP and SQLAlchemy SQLite driver, not independent E2. Restricted remote production/provider claim.",
+  "paths": [
+    {
+      "id": "router.openapi.get",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "test_file": "tests/test_public_openapi_execution_wiring.py",
+      "test": "test_openapi_registered_http_public_execute_checks_authorization_and_inputs",
+      "positive": true,
+      "denial": true,
+      "invalid_arguments": true,
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "id": "router.sqlalchemy.select",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "test_file": "tests/test_public_sqlalchemy_execution_wiring.py",
+      "test": "test_sqlalchemy_registered_public_execute_denies_before_driver_and_blocks_sql",
+      "positive": true,
+      "denial": true,
+      "invalid_arguments": true,
+      "qualification": "DEV_ONLY"
+    }
+  ]
+}
