@@ -1,0 +1,580 @@
+{
+  "schema_version": 1,
+  "scope": "conservative_execution_negative_gap_register",
+  "owner_issue": 1821,
+  "product_qualified": false,
+  "independent_e2_qualified": false,
+  "companion_manifest_paths": [
+    "benchmarks/public-execution-wiring-v1.json",
+    "benchmarks/public-source-family-wiring-v1.json",
+    "benchmarks/public-execution-mcp-stdio-v1.json",
+    "benchmarks/public-execution-entrypoints-v1.json"
+  ],
+  "wrapper_public_entrypoints": 22,
+  "notes": "Conservative evidence ledger for 19 source execution routes (not 22 public wrapper rows): NOT_TESTED requires independent scenario-specific public registered zero-I/O proof; NOT_APPLICABLE requires an explicit source-level read-only certificate. Neither constitutes provider-independent E2. Do not close #1821 until reviewed. Lines anchored to main 2004d38.",
+  "paths": [
+    {
+      "id": "paper.direct.native.read",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaFieldRoutingSession.aexecute_direct",
+      "execution_location": {
+        "file": "src/schemarouter/field_routing_session.py",
+        "line": 589
+      },
+      "observed_test_file": "tests/test_paper_direct_sdk_execution.py",
+      "observed_test_names": [
+        "test_direct_sdk_real_registered_native_invoker_end_to_end",
+        "test_direct_sdk_real_native_invoker_uses_only_host_arguments",
+        "test_direct_sdk_refuses_nonready_paper_receipts",
+        "test_direct_sdk_refuses_binding_mutated_by_availability",
+        "test_direct_sdk_rejects_unsafe_execution_shapes"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_paper_direct_sdk_execution.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.python.callable.sync",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.invoke",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4621
+      },
+      "observed_test_file": "tests/test_python_adapter.py",
+      "observed_test_names": [
+        "test_add_callable_uses_decorator_metadata_and_executes",
+        "test_callable_argument_types_are_runtime_validated"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "write_effect_policy",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.python.callable.async",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.ainvoke",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4610
+      },
+      "observed_test_file": "tests/test_python_adapter.py",
+      "observed_test_names": [
+        "test_add_callable_supports_async_functions",
+        "test_async_registered_callable_rejects_invalid_arguments"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "write_effect_policy",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.sqlite.select",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_sqlite_database_adapter.py",
+      "observed_test_names": [
+        "test_sqlite_execution_is_projected_parameterized_and_bounded",
+        "test_database_tools_compose_with_employee_and_executive_authorization"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_sqlite_database_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_sqlite_database_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.http_json.get",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_http_json_adapter.py",
+      "observed_test_names": [
+        "test_declarative_http_tool_executes_crossref_style_get",
+        "test_declarative_http_denies_changed_principal_before_registered_get"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_http_json_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_http_json_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.graphql.query",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_graphql_adapter.py",
+      "observed_test_names": [
+        "test_graphql_selected_fields_become_selection_set",
+        "test_graphql_mutation_remains_policy_gated"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_graphql_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_graphql_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "denied_principal",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_graphql_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.openrpc.method",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_openrpc_adapter.py",
+      "observed_test_names": [
+        "test_openrpc_url_discovery_and_jsonrpc_execution",
+        "test_openrpc_positional_params_fail_on_ambiguous_optional_gap"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_openrpc_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.odata.select",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_odata_adapter.py",
+      "observed_test_names": [
+        "test_odata_selected_fields_become_select_and_project_records",
+        "test_odata_denies_changed_principal_before_registered_get"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_odata_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "unrecognized_input",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_odata_adapter.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.mcp.http",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_mcp_integration.py",
+      "observed_test_names": [
+        "test_real_streamable_http_mcp_discovery_and_execution",
+        "test_real_http_mcp_rejects_invalid_arguments_before_execution",
+        "test_real_http_mcp_denies_revoked_principal_before_execution"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_mcp_integration.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_mcp_integration.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.graph.neo4j",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_graph_native_adapters.py",
+      "observed_test_names": [
+        "test_neo4j_native_adapter_discovers_and_executes_parameterized_traversal",
+        "test_neo4j_trusted_filter_scope_fails_before_vendor_traversal"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_graph_native_adapters.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_graph_native_adapters.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.record.mongodb",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_record_native_adapters.py",
+      "observed_test_names": [
+        "test_mongodb_native_adapter_discovers_and_executes_bounded_find",
+        "test_mongodb_public_execute_denies_guest_before_native_query"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_record_native_adapters.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_record_native_adapters.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.vector.qdrant",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_vector_native_adapters.py",
+      "observed_test_names": [
+        "test_qdrant_public_router_executes_registered_native_backend",
+        "test_qdrant_public_execute_denies_guest_before_native_query"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_vector_native_adapters.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_vector_native_adapters.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.openapi.get",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_public_openapi_execution_wiring.py",
+      "observed_test_names": [
+        "test_openapi_registered_http_public_execute_checks_authorization_and_inputs",
+        "test_openapi_denied_principal_never_reaches_http"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_public_openapi_execution_wiring.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        },
+        {
+          "scenario": "stale_bound_invoker_generation",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_public_openapi_execution_wiring.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.sqlalchemy.select",
+      "inventory": "canonical",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_public_sqlalchemy_execution_wiring.py",
+      "observed_test_names": [
+        "test_sqlalchemy_registered_public_execute_denies_before_driver_and_blocks_sql",
+        "test_sqlalchemy_denied_principal_never_reaches_driver"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_public_sqlalchemy_execution_wiring.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.optimade.source",
+      "inventory": "supplemental",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_public_optimade_execution_wiring.py",
+      "observed_test_names": [
+        "test_optimade_public_execution_denies_before_remote_data_and_stale_reuse"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_public_optimade_execution_wiring.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    },
+    {
+      "id": "router.graph_store.generic",
+      "inventory": "supplemental",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_graph_store_adapter.py",
+      "observed_test_names": [
+        "test_graph_traversal_is_bounded_and_projected",
+        "test_graph_unknown_relationship_is_rejected_before_backend_call"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [],
+      "not_applicable": [
+        {
+          "scenario": "write_effect_policy",
+          "status": "NOT_APPLICABLE",
+          "reason": "This exact registered generic-store route exposes read_only=True/destructive=False endpoints only. Mutation authorization is not executable on this source registration. Other write-capable sources still require explicit mutation policy tests.",
+          "proof_file": "tests/test_public_generic_store_execution_negative.py",
+          "proof_function": "_registered",
+          "owner_issue": 1821
+        }
+      ]
+    },
+    {
+      "id": "router.vector_store.generic",
+      "inventory": "supplemental",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_vector_store_adapter.py",
+      "observed_test_names": [
+        "test_vector_store_search_embeds_projects_and_bounds_results",
+        "test_vector_dimension_mismatch_fails_closed"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [],
+      "not_applicable": [
+        {
+          "scenario": "write_effect_policy",
+          "status": "NOT_APPLICABLE",
+          "reason": "This exact registered generic-store route exposes read_only=True/destructive=False endpoints only. Mutation authorization is not executable on this source registration. Other write-capable sources still require explicit mutation policy tests.",
+          "proof_file": "tests/test_public_generic_store_execution_negative.py",
+          "proof_function": "_registered",
+          "owner_issue": 1821
+        }
+      ]
+    },
+    {
+      "id": "router.record_store.generic",
+      "inventory": "supplemental",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_record_store_adapter.py",
+      "observed_test_names": [
+        "test_document_query_is_bounded_filtered_and_projected",
+        "test_key_value_store_rejects_raw_query_dsl"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [],
+      "not_applicable": [
+        {
+          "scenario": "write_effect_policy",
+          "status": "NOT_APPLICABLE",
+          "reason": "This exact registered generic-store route exposes read_only=True/destructive=False endpoints only. Mutation authorization is not executable on this source registration. Other write-capable sources still require explicit mutation policy tests.",
+          "proof_file": "tests/test_public_generic_store_execution_negative.py",
+          "proof_function": "_registered",
+          "owner_issue": 1821
+        }
+      ]
+    },
+    {
+      "id": "router.mcp.stdio",
+      "inventory": "stdio",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "execution_location": {
+        "file": "src/schemarouter/runtime.py",
+        "line": 4601
+      },
+      "observed_test_file": "tests/test_mcp_integration.py",
+      "observed_test_names": [
+        "test_real_stdio_mcp_discovery_and_execution",
+        "test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch"
+      ],
+      "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
+      "unresolved": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "NOT_TESTED",
+          "owner_issue": 1821,
+          "baseline_command": "python -m pytest -q tests/test_mcp_integration.py",
+          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ]
+    }
+  ]
+}

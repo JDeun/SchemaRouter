@@ -19,6 +19,7 @@ from schemarouter import (
     SchemaRouter,
     ToolCall,
 )
+from schemarouter.errors import SchemaRouterError
 
 
 @pytest.mark.asyncio
@@ -97,3 +98,74 @@ async def test_optimade_public_execution_denies_before_remote_data_and_stale_reu
         with pytest.raises(PolicyViolationError):
             await router.execute(plan, config=allow)
         assert calls == ["/v1/structures"]
+
+
+
+@pytest.mark.asyncio
+async def test_optimade_source_unavailable_refuses_data_get_and_recovers_once() -> None:
+    """A registered OPTIMADE endpoint must not issue data I/O during cooldown."""
+    data_gets: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/info":
+            return httpx.Response(200, json=base_info(), request=request)
+        if request.url.path == "/v1/info/structures":
+            return httpx.Response(200, json=structures_info(), request=request)
+        if request.url.path == "/v1/info/references":
+            return httpx.Response(200, json=references_info(), request=request)
+        data_gets.append(request.url.path)
+        assert request.method == "GET" and request.url.path == "/v1/structures"
+        return httpx.Response(
+            200, json={"data": [{"id": "s-1", "type": "structures",
+                                   "attributes": {"chemical_formula_descriptive": "O2Si"}}],
+                       "meta": {"data_returned": 1}}, request=request,
+        )
+
+    policy = AuthorizationPolicy(
+        rules=(AuthorizationRule(
+            effect="allow",
+            operation="materials.example.search_structures",
+            roles_any=("reader",),
+        ),),
+        default_effect="deny",
+    )
+    reader = RunConfig(
+        principal=PrincipalContext(subject="reader", roles=("reader",))
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://materials.example/v1",
+            kind="optimade",
+            authorization_policy=policy,
+            http_client=client,
+        )
+        tool = router.registry.get("materials.example")
+        endpoint = tool.endpoint("search_structures")
+        assert endpoint.read_only is True
+        plan = ExecutionPlan(
+            query="search silicon oxide",
+            registry_version=router.registry.version,
+            calls=[ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                arguments={"page_limit": 1},
+                fields=["chemical_formula_descriptive"],
+                tool_fingerprint=tool.fingerprint,
+                schema_fingerprint=endpoint.fingerprint,
+            )],
+        )
+
+        router.mark_access_unavailable(tool.key, endpoint.name, cooldown_seconds=120)
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=reader)
+        assert data_gets == []
+
+        router.mark_access_available(tool.key, endpoint.name)
+        result = await router.execute(plan, config=reader)
+        assert result[0].data == [{"chemical_formula_descriptive": "O2Si"}]
+        assert data_gets == ["/v1/structures"]
+
+        await router.aremove_tool(tool.key)
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=reader)
+        assert data_gets == ["/v1/structures"]
