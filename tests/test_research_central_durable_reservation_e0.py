@@ -404,3 +404,40 @@ def test_no_synthetic_handoff_without_valid_prior_reservation(tmp_path):
         request, synthetic_sink=sink,
     ) == "synthetic_authority_unavailable"
     assert forwarded == []
+
+
+
+def test_reservation_count_closes_native_sqlite_handle_on_success_and_error(
+    tmp_path, monkeypatch,
+):
+    """The connection context commits/rolls back but does not itself close."""
+    path = tmp_path / "close-count.sqlite3"
+    store = _fixture(path)
+    assert store.reserve(_request("count")) == "synthetic_reservation"
+    closes: list[str] = []
+
+    class TrackedConnection(sqlite3.Connection):
+        def close(self) -> None:
+            closes.append("closed")
+            super().close()
+
+    class FaultyConnection(TrackedConnection):
+        def execute(self, sql, parameters=(), /):
+            if sql.startswith("SELECT COUNT(*)"):
+                raise sqlite3.OperationalError("synthetic query failure")
+            return super().execute(sql, parameters)
+
+    monkeypatch.setattr(
+        store, "_existing_connection",
+        lambda: sqlite3.connect(path, factory=TrackedConnection),
+    )
+    assert store.reserved_for_test("church", GEO) == 1
+    assert closes == ["closed"]
+
+    monkeypatch.setattr(
+        store, "_existing_connection",
+        lambda: sqlite3.connect(path, factory=FaultyConnection),
+    )
+    with pytest.raises(RuntimeError, match="synthetic central counts unavailable"):
+        store.reserved_for_test("church", GEO)
+    assert closes == ["closed", "closed"]
