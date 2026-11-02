@@ -43,6 +43,9 @@ jobs:
       - name: Benchmark same public prepared source on one process
         run: |
           python -m scripts.benchmark_paper_public_pipeline_e0 --routes ${{ matrix.routes }} --hops ${{ matrix.hops }} --warmup 1 --repeats 3
+      - name: Run opt-in source-journal refresh versus cold rebuild E0
+        run: |
+          python -m scripts.benchmark_paper_public_pipeline_e0 --routes ${{ matrix.routes }} --hops ${{ matrix.hops }} --warmup 1 --repeats 3 --measure-refresh
       - name: Assert public 500-route contract at both depths
         if: matrix.routes == 500 && matrix.hops == 1
         run: python -m pytest -q tests/test_benchmark_paper_public_pipeline_e0.py

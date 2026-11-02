@@ -21,6 +21,15 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import ACTOR, build_fixture
 EVIDENCE = "SOURCE_OWNED_SYNTHETIC_REVIEW_B1_DEV"
 
 
+def _linux_peak_rss_kib() -> int | None:
+    """Linux ru_maxrss reports process-lifetime peak KiB; other OSes omit it."""
+    if sys.platform != "linux":
+        return None
+    import resource
+
+    return int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+
+
 def _percentiles(samples: list[float]) -> dict[str, float]:
     if not samples:
         raise ValueError("no actual page measurements")
@@ -46,6 +55,8 @@ def benchmark_review_pages(
     cursor = None
     seen: set[str] = set()
     last_route: str | None = None
+    # Linux ru_maxrss is process peak KiB, not an isolated allocation delta.
+    peak_rss_before_kib = _linux_peak_rss_kib()
     wall_ms: list[float] = []
     cpu_ms: list[float] = []
     serialized_bytes = 0
@@ -83,6 +94,8 @@ def benchmark_review_pages(
     return {
         "provenance": EVIDENCE,
         "source_snapshot": session.snapshot_id,
+        "process_peak_rss_before_kib": peak_rss_before_kib,
+        "process_peak_rss_after_kib": _linux_peak_rss_kib(),
         "source_route_count": session.indexed_route_count,
         "reviewed_route_count": len(seen),
         "requested_page_size": limit,
@@ -106,6 +119,8 @@ def main() -> None:
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "evidence_tier": "E0_SYNTHETIC_NOT_PUBLISHER_E2",
+        "rss_unit": "KiB (Linux ru_maxrss; process lifetime peak)",
+        "measurement_runs": 1,
     }, ensure_ascii=False, sort_keys=True))
 
 
