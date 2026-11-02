@@ -113,6 +113,15 @@ jobs:
           # or failed; never excuse an unrelated commit's failed run.
           newest_main_sha = commits[0]["sha"]
           newest_main_run = latest_run(newest_main_sha)
+          newest_main_pending = (
+              newest_main_run is not None
+              and newest_main_run.get("status") in {"queued", "in_progress", "waiting", "pending", "requested"}
+          )
+          newest_main_age_minutes = (
+              now - datetime.fromisoformat(
+                  commits[0]["commit"]["committer"]["date"].replace("Z", "+00:00")
+              )
+          ).total_seconds() / 60.0
           newest_main_qualified = (
               newest_main_run is not None
               and newest_main_run.get("status") == "completed"
@@ -168,6 +177,15 @@ jobs:
                       ):
                           record["qualification"] = "superseded_by_successful_main"
                           record["superseded_by"] = newest_main_sha
+                      elif (
+                          sha == baseline_sha
+                          and sha != newest_main_sha
+                          and latest.get("conclusion") == "cancelled"
+                          and newest_main_pending
+                          and newest_main_age_minutes < stale_run_minutes
+                      ):
+                          record["qualification"] = "awaiting_descendant_qualification"
+                          record["pending_descendant"] = newest_main_sha
                       else:
                           failures.append(
                               f"{sha}: qualification run {latest.get('id')} "

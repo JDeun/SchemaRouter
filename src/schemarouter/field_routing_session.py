@@ -16,6 +16,7 @@ from .canonical_json import canonical_json_sha256
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
+from .models import ToolResult
 from .native_graph_index import NativeSchemaGraphIndex
 from .native_semantic_index import (
     NativeSchemaPostingIndex,
@@ -584,6 +585,108 @@ class SchemaFieldRoutingSession:
             rank_policy=rank_policy,
             allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )
+
+    async def aexecute_direct(
+        self,
+        query: str,
+        *,
+        principal: PrincipalContext,
+        host_source_arguments: dict[str, dict[str, Any]] | None = None,
+        alternative_index: int = 0,
+        k: int = 5,
+    ) -> list[ToolResult]:
+        """Opt-in, single read-only P2 direct route via the existing executor.
+
+        A paper receipt never grants execution. Recompile against current
+        principal/source state, refuse dependencies and incomplete arguments,
+        and pin the native invoker generation across the actual dispatch.
+        """
+        from copy import deepcopy
+
+        from .executor import _require_bound_invoker_generation
+        from .models import ExecutionPlan
+        from .paper_typed_tool_plan import _check_current_call_scopes
+        from .runs import ExecutionBudget, RunConfig
+
+        catalog = self._require_catalog()
+        host_inputs = deepcopy(host_source_arguments)
+        plan = compile_paper_typed_tool_plan(
+            self._router, query, principal=principal,
+            catalog=catalog, index=self._index,
+            alternative_index=alternative_index,
+            host_source_arguments=host_inputs, k=k,
+            experimental_indexed_direct=True,
+        )
+        if (
+            plan.status != "ready" or plan.executable_authority
+            or plan.bindings or len(plan.calls) != 1
+        ):
+            raise PolicyViolationError(
+                "paper direct execution requires one ready independent route"
+            )
+        selected = plan.calls[0]
+        if not selected.call.executable or selected.call.missing_required_arguments:
+            raise PolicyViolationError("paper direct execution has unresolved inputs")
+        executor = self._router.executor
+        binding = executor._binding_snapshot(selected.call.tool)
+        if binding.invoker is None or binding.generation is None:
+            raise PolicyViolationError("paper direct native invoker unavailable")
+
+        def revalidate() -> None:
+            self._index.field_index._assert_source(self._router)
+            current = compile_paper_typed_tool_plan(
+                self._router, query, principal=principal,
+                catalog=catalog, index=self._index,
+                alternative_index=alternative_index,
+                host_source_arguments=deepcopy(host_inputs), k=k,
+                experimental_indexed_direct=True,
+            )
+            if current != plan or self._router.executor is not executor:
+                raise PolicyViolationError("paper direct proof changed before dispatch")
+            if executor._binding_snapshot(selected.call.tool) != binding:
+                raise PolicyViolationError("paper direct invoker binding changed")
+            _check_current_call_scopes(self._router, principal, [selected])
+            tool = self._router.registry.get(selected.call.tool)
+            endpoint = tool.endpoint(selected.call.endpoint)
+            if endpoint.read_only is not True or endpoint.destructive is True:
+                raise PolicyViolationError("paper direct route is not read-only")
+            availability = self._router.planner.availability_predicate
+            if availability is not None and not availability(tool, endpoint):
+                raise PolicyViolationError("paper direct route unavailable")
+            # Availability is host-supplied executable code. It may mutate
+            # policy, source declarations or bindings while returning True.
+            self._index.field_index._assert_source(self._router)
+            if (
+                compile_paper_typed_tool_plan(
+                    self._router, query, principal=principal,
+                    catalog=catalog, index=self._index,
+                    alternative_index=alternative_index,
+                    host_source_arguments=deepcopy(host_inputs), k=k,
+                    experimental_indexed_direct=True,
+                ) != plan
+                or self._router.executor is not executor
+                or executor._binding_snapshot(selected.call.tool) != binding
+            ):
+                raise PolicyViolationError("paper direct source changed during availability")
+            _check_current_call_scopes(self._router, principal, [selected])
+
+        revalidate()
+        with _require_bound_invoker_generation(
+            executor, selected.call.tool, binding.generation,
+        ):
+            return await self._router.execute(
+                ExecutionPlan(
+                    query=query, registry_version=plan.registry_version,
+                    calls=[selected.call.model_copy(deep=True)],
+                ),
+                config=RunConfig(
+                    principal=principal.model_copy(deep=True),
+                    budget=ExecutionBudget(
+                        max_tool_calls=1, max_attempts=1,
+                        max_remote_attempts=1,
+                    ),
+                ),
+            )
 
     async def acompile_query(
         self,

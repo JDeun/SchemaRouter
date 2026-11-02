@@ -1,5 +1,26 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-28 — Algorithm 1 `Identifiers(t)` parity for approved inputful roots
+
+- A follow-up public-path audit identified a true P1 field-projection gap:
+  `SchemaFieldRoutingSession.discover()` selected the owner-reviewed required
+  field of an explicitly approved inputful root, but suppressed that root's
+  **otherwise principal-visible identifier field**. Original Algorithm 1
+  unions `Identifiers(t)` into every selected route's requested fields.
+  The named `compile_understood()` route already included visible identifiers;
+  only `paper_field_retrieval.py::project_route` excluded approved roots.
+- Added a source-owned regression using a registered typed `parameterized.read`
+  route and the public prepared session: it first failed on the missing
+  `case_id`, then passed after removing the approved-root-only exclusion.
+  The same regression denies `case_id` through a live DataScope rule and
+  verifies the hidden identifier is **not** added. No unscoped schema field,
+  forged model parameter, provider observation or execution grant is added.
+- The adjacent field, typed-plan, prepared model, named graph and A9 suite
+  passed **163 tests** locally; repository Ruff and `git diff --check` passed.
+  Exact-head GitHub CI is still a separate prerequisite for merging. This
+  corrects one source-only E0 parity omission, not the remaining independent
+  A6/A7/A8/A9/A10 E2 qualification, agent DAG scheduling or release HOLD.
+
 ### 2026-10-27 A5 Crossref native E1 — curated scalar fields and actual ToolCall wiring
 
 - The built-in Crossref REST `get_work` method previously returned only an
