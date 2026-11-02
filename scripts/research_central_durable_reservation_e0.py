@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from collections.abc import Callable, Mapping
+from contextlib import closing
 from pathlib import Path
 from typing import Literal
 
@@ -360,7 +361,7 @@ class DurableCentralReservationE0:
         if not _safe_label(tenant) or route not in _FIXED_ROUTES:
             raise ValueError("known E0 test labels required")
         try:
-            with self._existing_connection() as conn:
+            with closing(self._existing_connection()) as conn, conn:
                 row = conn.execute(
                     "SELECT COUNT(*) FROM reservation WHERE tenant=? AND route=?",
                     (tenant, route),
