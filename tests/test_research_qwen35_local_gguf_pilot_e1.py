@@ -1,6 +1,7 @@
 """Pure no-weights Qwen3.5 local GGUF E1 pilot boundary and receipt tests."""
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -172,6 +173,7 @@ async def test_qwen35_model_pilot_keeps_source_truth_and_masks_unknown_schema_su
     assert report["model_id"] == "Qwen/Qwen3.5-2B"
     assert report["gguf_file"] == path.name
     assert len(report["gguf_sha256"]) == 64
+    assert report["gguf_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
     assert all(row["tool_schema_tokens"] is None for row in report["outcomes"])
     assert called[0][1]["experimental_graph_frontier"] is True
     assert report["true_native_local_gguf_execution"] is True
@@ -199,7 +201,8 @@ async def test_qwen35_pilot_refuses_unregistered_source_revision_or_variant(tmp_
 def test_qwen35_template_items_filter_receives_native_argument_mapping():
     # Original upstream Qwen3.5 chat template loops over tool-call
     # function.arguments|items; a JSON STRING triggers TypeError.
-    from jinja2 import Environment
+    # Jinja2 is an optional dependency of the real GGUF runtime, not core.
+    Environment = pytest.importorskip("jinja2").Environment
 
     payload = pilot._to_native_chat([
         {"role": "user", "content": "query"},
@@ -222,7 +225,8 @@ def test_qwen35_template_items_filter_receives_native_argument_mapping():
 
 
 def test_qwen35_template_items_handles_zero_argument_root():
-    from jinja2 import Environment
+    # Jinja2 is an optional dependency of the real GGUF runtime, not core.
+    Environment = pytest.importorskip("jinja2").Environment
 
     payload = pilot._to_native_chat([
         {"role": "user", "content": "query"},
