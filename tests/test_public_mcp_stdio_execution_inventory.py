@@ -36,9 +36,14 @@ def test_mcp_stdio_has_distinct_registered_positive_and_negative_evidence() -> N
     assert "router.add_mcp_stdio(" in negative
     assert "router.execute(" in negative
     assert "audited.read_text" in negative
+    assert "router.mark_access_unavailable(" in negative
+    assert "router.mark_access_available(" in negative
+    assert "assert not audited.exists()" in negative
     assert set(row["negative_cases"]) == {
         "denied_principal_zero_source_invocations",
         "invalid_type_zero_source_invocations",
         "missing_required_zero_source_invocations",
+        "unavailable_source_zero_source_invocations",
+        "availability_recovery_single_source_invocation",
         "stale_unregistered_plan_zero_additional_invocations",
     }
