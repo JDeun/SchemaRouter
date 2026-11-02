@@ -21,7 +21,6 @@ from schemarouter import (
     SchemaRouter,
     SchemaValidationError,
 )
-
 from schemarouter.errors import SchemaRouterError
 
 pytestmark = pytest.mark.mcp_integration
