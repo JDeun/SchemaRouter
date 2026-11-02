@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "scope": "public-execution-entrypoints-with-authorized-and-denied-dispatch-evidence",
+  "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_INVOKER_NOT_INDEPENDENT_E2",
+  "reference_adapter_matrix": "benchmarks/public-execution-wiring-v1.json",
+  "notes": "Execution aliases/wrappers are separate from adapter-family rows. Registration, planning, retrieval and management methods are not execution entries. Existing direct-execute evidence is referenced; wrapper tests actually dispatch registered callable under allowed and denied principals.",
+  "paths": [
+    {
+      "owner": "SchemaRouter",
+      "method": "execute",
+      "category": "direct-execution",
+      "test_file": "tests/test_database_execution.py",
+      "test_name": "test_sqlite_execution_is_projected_parameterized_and_bounded",
+      "assertion": "existing registered SQLite public execute evidence",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaFieldRoutingSession",
+      "method": "aexecute_direct",
+      "category": "opt-in-direct",
+      "test_file": "tests/test_paper_direct_sdk_execution.py",
+      "test_name": "test_direct_sdk_real_registered_native_invoker_end_to_end",
+      "assertion": "existing registered direct native source evidence",
+      "public_entrypoint": "schemarouter.SchemaFieldRoutingSession.aexecute_direct",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "invoke",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_sync_wrappers_check_auth_at_dispatch",
+      "case": "invoke",
+      "public_entrypoint": "schemarouter.SchemaRouter.invoke",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "batch",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_sync_wrappers_check_auth_at_dispatch",
+      "case": "batch",
+      "public_entrypoint": "schemarouter.SchemaRouter.batch",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "batch_as_completed",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_sync_wrappers_check_auth_at_dispatch",
+      "case": "batch_as_completed",
+      "public_entrypoint": "schemarouter.SchemaRouter.batch_as_completed",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "stream",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_sync_wrappers_check_auth_at_dispatch",
+      "case": "stream",
+      "public_entrypoint": "schemarouter.SchemaRouter.stream",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "ainvoke",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "ainvoke",
+      "public_entrypoint": "schemarouter.SchemaRouter.ainvoke",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "run",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "run",
+      "public_entrypoint": "schemarouter.SchemaRouter.run",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "arun",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "arun",
+      "public_entrypoint": "schemarouter.SchemaRouter.arun",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "abatch",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "abatch",
+      "public_entrypoint": "schemarouter.SchemaRouter.abatch",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "abatch_as_completed",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "abatch_as_completed",
+      "public_entrypoint": "schemarouter.SchemaRouter.abatch_as_completed",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "astream",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "astream",
+      "public_entrypoint": "schemarouter.SchemaRouter.astream",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "SchemaRouter",
+      "method": "astream_events",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_router_async_wrappers_check_auth_at_dispatch",
+      "case": "astream_events",
+      "public_entrypoint": "schemarouter.SchemaRouter.astream_events",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "invoke",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_sync_wrappers_check_auth_at_dispatch",
+      "case": "invoke",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.invoke",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "batch",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_sync_wrappers_check_auth_at_dispatch",
+      "case": "batch",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.batch",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "batch_as_completed",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_sync_wrappers_check_auth_at_dispatch",
+      "case": "batch_as_completed",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.batch_as_completed",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "stream",
+      "category": "synchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_sync_wrappers_check_auth_at_dispatch",
+      "case": "stream",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.stream",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "ainvoke",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_async_wrappers_check_auth_at_dispatch",
+      "case": "ainvoke",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.ainvoke",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "abatch",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_async_wrappers_check_auth_at_dispatch",
+      "case": "abatch",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.abatch",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "abatch_as_completed",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_async_wrappers_check_auth_at_dispatch",
+      "case": "abatch_as_completed",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.abatch_as_completed",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "astream",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_async_wrappers_check_auth_at_dispatch",
+      "case": "astream",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.astream",
+      "qualification": "DEV_ONLY"
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "method": "astream_events",
+      "category": "asynchronous-wrapper",
+      "test_file": "tests/test_public_execution_wrappers.py",
+      "test_name": "test_configured_async_wrappers_check_auth_at_dispatch",
+      "case": "astream_events",
+      "public_entrypoint": "schemarouter.ConfiguredSchemaRouter.astream_events",
+      "qualification": "DEV_ONLY"
+    }
+  ]
+}
