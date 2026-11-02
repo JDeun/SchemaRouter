@@ -26,7 +26,6 @@ from schemarouter import (
     execute_selective_plan,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
 EXECUTION_EXPORTS = {
