@@ -15,8 +15,8 @@ from typing import Any
 
 from schemarouter.errors import PolicyViolationError
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
-from scripts.research_codegraph_native_envelope_e1 import strict_native_json_envelope
 from scripts.research_codegraph_final_answer_diagnostics_e1 import classify_strict_final_e1
+from scripts.research_codegraph_native_envelope_e1 import strict_native_json_envelope
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     materialize_scoped_original_schemas,
