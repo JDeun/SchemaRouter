@@ -9,7 +9,7 @@
       "owner": "SchemaRouter",
       "method": "execute",
       "category": "direct-execution",
-      "test_file": "tests/test_database_execution.py",
+      "test_file": "tests/test_sqlite_database_adapter.py",
       "test_name": "test_sqlite_execution_is_projected_parameterized_and_bounded",
       "assertion": "existing registered SQLite public execute evidence",
       "public_entrypoint": "schemarouter.SchemaRouter.execute",

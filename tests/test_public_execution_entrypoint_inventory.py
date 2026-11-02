@@ -61,6 +61,15 @@ def test_declared_public_execution_entrypoints_cannot_go_unmapped() -> None:
     assert data["evidence_tier"] == "DEV_ONLY_LOCAL_REGISTERED_INVOKER_NOT_INDEPENDENT_E2"
     assert (ROOT / data["reference_adapter_matrix"]).is_file()
 
+    init = ast.parse((ROOT / "src/schemarouter/__init__.py").read_text(encoding="utf-8"))
+    declared_exports = next(
+        ast.literal_eval(node.value)
+        for node in init.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "__all__" for target in node.targets)
+    )
+    assert SOURCES.keys() <= set(declared_exports), "Owner classes must remain public exports"
+
     declared = {
         f"schemarouter.{owner}.{method}"
         for owner, source in SOURCES.items()
