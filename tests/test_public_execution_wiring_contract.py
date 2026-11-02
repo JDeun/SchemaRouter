@@ -55,6 +55,40 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
         )
         assert len(set(row["real_invoker_tests"])) == len(row["real_invoker_tests"])
         assert len(set(row["denial_tests"])) == len(row["denial_tests"])
+        if row["id"] == "paper.direct.native.read":
+            registered = row["registered_denial_evidence"]
+            assert registered["evidence_level"] == (
+                "DEV_ONLY_REGISTERED_NATIVE_INVOKER"
+            )
+            assert registered["owner_issue"] == 1821
+            assert registered["test_file"] == (
+                "tests/test_public_direct_sdk_real_denials.py"
+            )
+            assert set(registered["test_names"]) == {
+                "test_direct_sdk_real_registered_native_denials_never_dispatch",
+                "test_direct_sdk_real_registered_native_recovers_from_temporary_unavailability",
+            }
+            assert set(registered["cases"]) == {
+                "missing_host_arguments",
+                "denied_principal",
+                "unavailable_source",
+                "policy_revoked",
+                "availability_recovery_one_bound_call",
+            }
+            registered_path = ROOT / registered["test_file"]
+            registered_text = registered_path.read_text(encoding="utf-8")
+            registered_functions = _functions(registered_path)
+            for registered_name in registered["test_names"]:
+                assert registered_name in registered_functions
+                body = ast.get_source_segment(
+                    registered_text, registered_functions[registered_name]
+                ) or ""
+                assert "session.aexecute_direct(" in body
+                assert "monkeypatch" not in body
+                assert "invoked == []" in body
+            assert "_fixture(" in registered_text
+            assert "mark_access_unavailable(" in registered_text
+            assert "mark_access_available(" in registered_text
         for name in row["real_invoker_tests"]:
             fn = funcs[name]
             body = ast.get_source_segment(tests.read_text(encoding="utf-8"), fn) or ""
