@@ -9,8 +9,6 @@ import ast
 import json
 from pathlib import Path
 
-import schemarouter
-
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/public-method-boundary-v1.json"
 EXECUTION_NAMES = frozenset({
@@ -38,6 +36,25 @@ def _actual_methods(owner: str, path: Path) -> dict[str, int]:
     return methods
 
 
+def _declared_public_exports() -> set[str]:
+    init = ROOT / "src/schemarouter/__init__.py"
+    source = ast.parse(init.read_text(encoding="utf-8"), filename=str(init))
+    definitions = [
+        node for node in source.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == "__all__"
+            for target in node.targets
+        )
+    ]
+    assert len(definitions) == 1
+    declared = ast.literal_eval(definitions[0].value)
+    assert isinstance(declared, list)
+    assert all(isinstance(value, str) for value in declared)
+    assert len(declared) == len(set(declared))
+    return set(declared)
+
+
 def test_owner_methods_are_all_classified_and_synchronized() -> None:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert data["schema_version"] == 1
@@ -47,10 +64,9 @@ def test_owner_methods_are_all_classified_and_synchronized() -> None:
     assert {row["owner"] for row in data["owners"]} == {
         "SchemaRouter", "ConfiguredSchemaRouter", "SchemaFieldRoutingSession",
     }
+    exports = _declared_public_exports()
     for row in data["owners"]:
-        assert row["owner"] in schemarouter.__all__
-        owner = getattr(schemarouter, row["owner"])
-        assert isinstance(owner, type)
+        assert row["owner"] in exports
         source = ROOT / row["source"]
         actual = _actual_methods(row["owner"], source)
         declared = row["methods"]
@@ -63,7 +79,6 @@ def test_owner_methods_are_all_classified_and_synchronized() -> None:
             name = entry["name"]
             assert entry["kind"] in KINDS
             assert entry["source_line"] >= 1
-            assert hasattr(owner, name)
             assert (
                 entry["kind"] == "registered-tool-execution"
             ) == (name in EXECUTION_NAMES), (row["owner"], name)
