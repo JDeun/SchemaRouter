@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "qualification": "DEV_ONLY_REGISTERED_SOURCE_NOT_INDEPENDENT_E2",
+  "public_entrypoint": "schemarouter.SchemaRouter.execute",
+  "notes": "Supplement to 14-family canonical execution matrix under pending PR #1832; adds one source discovery and generic graph/vector/record store. Explicit negatives are source-specific. Principal and other negative paths in existing test suites are not automatically counted as provider-independent qualification.",
+  "paths": [
+    {
+      "id": "router.optimade.source",
+      "family": "OPTIMADE",
+      "adapter": "src/schemarouter/adapters/optimade.py",
+      "test_file": "tests/test_public_optimade_execution_wiring.py",
+      "positive": "test_optimade_public_execution_denies_before_remote_data_and_stale_reuse",
+      "negative": "test_optimade_public_execution_denies_before_remote_data_and_stale_reuse",
+      "negative_categories": [
+        "denied_principal",
+        "undeclared_arguments",
+        "stale_registry"
+      ],
+      "evidence": "mocktransport-discovered-native-registered"
+    },
+    {
+      "id": "router.graph_store.generic",
+      "family": "GraphStore",
+      "adapter": "src/schemarouter/adapters/graph_store.py",
+      "test_file": "tests/test_graph_store_adapter.py",
+      "positive": "test_graph_traversal_is_bounded_and_projected",
+      "negative": "test_graph_unknown_relationship_is_rejected_before_backend_call",
+      "negative_categories": [
+        "invalid_relationship_before_backend",
+        "principal_denial_separately_tested"
+      ],
+      "evidence": "registered-fake-backend"
+    },
+    {
+      "id": "router.vector_store.generic",
+      "family": "VectorStore",
+      "adapter": "src/schemarouter/adapters/vector_store.py",
+      "test_file": "tests/test_vector_store_adapter.py",
+      "positive": "test_vector_store_search_embeds_projects_and_bounds_results",
+      "negative": "test_vector_dimension_mismatch_fails_closed",
+      "negative_categories": [
+        "invalid_dimension",
+        "principal_denial_separately_tested"
+      ],
+      "evidence": "registered-fake-backend"
+    },
+    {
+      "id": "router.record_store.generic",
+      "family": "RecordStore",
+      "adapter": "src/schemarouter/adapters/record_store.py",
+      "test_file": "tests/test_record_store_adapter.py",
+      "positive": "test_document_query_is_bounded_filtered_and_projected",
+      "negative": "test_key_value_store_rejects_raw_query_dsl",
+      "negative_categories": [
+        "untrusted_query_dsl",
+        "principal_denial_separately_tested"
+      ],
+      "evidence": "registered-fake-backend"
+    }
+  ]
+}

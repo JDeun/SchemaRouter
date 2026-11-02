@@ -107,3 +107,43 @@ async def test_sqlalchemy_registered_public_execute_denies_before_driver_and_blo
         assert len(driver_calls) == 1
     finally:
         engine.dispose()
+
+
+
+@pytest.mark.asyncio
+async def test_sqlalchemy_denied_principal_never_reaches_driver() -> None:
+    """Denied public execute must not send even a SELECT to the actual driver."""
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    try:
+        with engine.begin() as connection:
+            connection.exec_driver_sql(
+                "CREATE TABLE orders (id INTEGER PRIMARY KEY, customer TEXT NOT NULL)"
+            )
+        auth = AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    effect="allow",
+                    operation="warehouse.orders.select",
+                    roles_any=("reader",),
+                ),
+            ),
+            default_effect="deny",
+        )
+        router = SchemaRouter(authorization_policy=auth)
+        (key,) = router.add_sqlalchemy_database(
+            engine, database_name="warehouse", remote=False
+        )
+        driver_calls: list[str] = []
+
+        def track_execute(conn, cursor, statement, parameters, context, executemany):
+            driver_calls.append(statement)
+
+        event.listen(engine, "before_cursor_execute", track_execute)
+        guest = RunConfig(
+            principal=PrincipalContext(subject="denied", roles=("guest",))
+        )
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            await router.execute(_plan(router, key, {"id": 1}), config=guest)
+        assert driver_calls == []
+    finally:
+        engine.dispose()
