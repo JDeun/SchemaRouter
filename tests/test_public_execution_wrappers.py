@@ -13,7 +13,7 @@ from schemarouter import (
     PlanRequest,
     PrincipalContext,
     RunConfig,
-    SchemaDriftError,
+    PolicyViolationError,
     SchemaRouter,
 )
 
@@ -186,6 +186,6 @@ async def test_removed_registered_callable_cannot_execute_stale_plan() -> None:
     )
     assert plan.executable and len(plan.calls) == 1
     await router.aremove_tool("lookup")
-    with pytest.raises(SchemaDriftError):
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
         await router.execute(plan, config=allowed)
     assert calls == [], "Removed source must never be dispatched by stale receipt"
