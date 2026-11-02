@@ -30,8 +30,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install local public execution test dependencies
-        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1"
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1"
       - name: Check real registered generic store positive and negative paths
         run: |
           ruff check tests/test_public_generic_store_execution_negative.py tests/test_public_mcp_stdio_execution_inventory.py
-          python -m pytest -q tests/test_public_generic_store_execution_negative.py tests/test_public_mcp_stdio_execution_inventory.py
+          python -m pytest -q tests/test_public_generic_store_execution_negative.py tests/test_public_mcp_stdio_execution_inventory.py \
+            tests/test_mcp_integration.py::test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch
