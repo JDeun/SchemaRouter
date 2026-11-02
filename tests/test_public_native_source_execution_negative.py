@@ -71,7 +71,8 @@ async def _registered(kind: str) -> tuple[
             router, key, start_id="person-1", relationship_types=["MEMBER_OF"],
         )
         baseline = len(driver.calls)
-        count = lambda: len(driver.calls) - baseline
+        def count() -> int:
+            return len(driver.calls) - baseline
     elif kind == "record":
         database = FakeMongoDatabase()
         (registered_key,) = await router.aadd_mongodb_record_store(
@@ -84,7 +85,8 @@ async def _registered(kind: str) -> tuple[
             arguments={"query": "routing", "limit": 2},
         )
         collection = database.collections["documents"]
-        count = lambda: len(collection.calls)
+        def count() -> int:
+            return len(collection.calls)
     else:
         client = CountingQdrantClient()
         (registered_key,) = await router.aadd_qdrant_vector_store(
@@ -114,7 +116,8 @@ async def _registered(kind: str) -> tuple[
                 tool_fingerprint=tool.fingerprint,
             )],
         )
-        count = lambda: client.query_count
+        def count() -> int:
+            return client.query_count
     assert registered_key == key
     endpoint = router.registry.get(key).endpoint(operation)
     assert endpoint.read_only is True
