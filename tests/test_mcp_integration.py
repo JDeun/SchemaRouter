@@ -120,7 +120,7 @@ async def test_real_http_mcp_rejects_invalid_arguments_before_execution() -> Non
             trusted_headers={"X-SchemaRouter-Test": "integration"},
         )
         with pytest.raises(SchemaValidationError):
-            router.plan(
+            await router.ainvoke(
                 PlanRequest(
                     query="add result",
                     preferred_tools=[tool.key],
