@@ -293,7 +293,7 @@ def retrieve_paper_field_coverage(
         selected = tuple(
             field.name for field in visible.output_fields
             if (
-                (field.identifier and route_id not in index.approved_host_roots)
+                field.identifier
                 or field.name in matched
                 or field.name in required_source
             )

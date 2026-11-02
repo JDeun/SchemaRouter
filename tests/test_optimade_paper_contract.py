@@ -210,9 +210,16 @@ async def test_original_paper_plan_binds_exact_host_id_and_preserves_source_and_
             )
             assert plan.status == "ready" and plan.executable_authority is False
             assert plan.calls[0].route_id == ROOT
-            assert plan.calls[0].call.fields == ["_lab_band_gap"]
+            assert plan.calls[0].call.fields == ["id", "_lab_band_gap"]
             assert plan.calls[0].call.arguments == {"id": "db/42"}
-            field = plan.calls[0].fields_meta[0]
+            assert {meta.name: meta.semantic_id for meta in plan.calls[0].fields_meta} == {
+                "id": "materials.entry_id",
+                "_lab_band_gap": "materials.band_gap",
+            }
+            field = next(
+                meta for meta in plan.calls[0].fields_meta
+                if meta.name == "_lab_band_gap"
+            )
             assert (field.semantic_id, field.source_unit, field.unit) == (
                 "materials.band_gap", "eV", "J",
             )
@@ -247,6 +254,7 @@ async def test_standard_executor_applies_only_the_host_reviewed_unit_conversion(
             config={"principal": ACTOR.model_dump()},
         )
     assert len(seen_urls) == 1
+    assert results[0].data["id"] == "db/42"
     assert results[0].data["_lab_band_gap"] == pytest.approx(3.204353268e-19)
     contract = results[0].field_contracts["_lab_band_gap"]
     assert (contract.source_unit, contract.unit, contract.dimension) == ("eV", "J", "energy")
