@@ -33,3 +33,10 @@ No quality claim until a pinned real model report is visible from exact HEAD. Sy
 ### 2026-11-02 mainline migration context
 
 This historical synthetic E0-only experiment has been ported without the old `ResearchAuthorizedIndexedDecisionRanker` implementation. It uses the **already-current** `ResearchIndexedFieldDecisionRanker` from `main`, with its current minimal field-description contract, and does not replace production retrieval, grant execution, or claim independent publisher E2. Prior numeric results belong to the historical PR SHA only; run new exact-head CI before referring to current performance.
+
+
+### 2026-11-02 E0 historical-input comparability follow-up (pre-measurement)
+
+The first mainline migration at PR #1836 head `2a5e6ab0` measured pinned E5 synthetic DEV Recall@5 **EN 9/9, KO 6/9, JA 8/9**, with **3/3 unsupported queries given nonempty suggestions**, in Actions [41384051769](https://github.com/JDeun/SchemaRouter/actions/runs/41384051769). These outcomes must remain preserved as a **distinct observed experiment**, not overwritten by earlier stacked #1751's stronger KO 8/9 and JA 9/9.
+
+Source inspection found a controlled non-quality confound: original paired runner `research_indexed_direct_e5_paired_dev.py` set `omit_identical_descriptions=True` for the same-description synthetic menu, but migrated `research_indexed_e5_overflow_cpu_dev.py` had used the ranker's default `False`. This revision restores the **historical input contract for both model and first-five arms**, with a regression asserting empty identical descriptions. This is a post-result DEV diagnostic correction and must **not** be described as independent gain or validated performance improvement until exact-head CI/model reruns; preserve the original 23/27 observation in all reports. There is no production routing, K=5, source authority, no-fit calibration, or external E2 promotion. 

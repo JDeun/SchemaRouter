@@ -82,7 +82,7 @@ def test_injected_model_measures_only_public_synthetic_ranking():
     def answer(request):
         seen.append(request)
         assert len(request.options) == 24
-        assert all(option.description == "status"
+        assert all(option.description == ""
                    for option in request.options)
         assert all(option.metadata == {} for option in request.options)
         assert request.context["independent_quality_evidence"] is False

@@ -93,11 +93,17 @@ def _first_five(request):
 def run(semantic_backend: DecisionBackend | None = None) -> dict[str, Any]:
     """Score only public DEV recall; injected backends never attest model ID."""
     router, index, template = _source()
+    # Historical #1751 and the first-five control both omit identical
+    # field descriptions: the option labels already distinguish routes.
+    # This restores a pinned input contract, NOT a learned quality fix.
     first5 = ResearchIndexedFieldDecisionRanker(
         CallableDecisionBackend(_first_five),
+        omit_identical_descriptions=True,
     )
     semantic = (
-        ResearchIndexedFieldDecisionRanker(semantic_backend)
+        ResearchIndexedFieldDecisionRanker(
+            semantic_backend, omit_identical_descriptions=True,
+        )
         if semantic_backend is not None else None
     )
     supported = [
