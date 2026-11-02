@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import sqlite3
-from contextlib import closing
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from contextlib import closing
 from multiprocessing import get_context
 from pathlib import Path
 from threading import Event
