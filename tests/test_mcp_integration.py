@@ -14,6 +14,7 @@ from schemarouter import (
     AuthorizationRule,
     ExecutionPolicy,
     PlanRequest,
+    PlanValidationError,
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
@@ -194,7 +195,7 @@ async def test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch(
 
         missing_required = plan.model_copy(deep=True)
         missing_required.calls[0].arguments.pop("b")
-        with pytest.raises(SchemaValidationError):
+        with pytest.raises(PlanValidationError, match="missing required arguments"):
             await router.execute(missing_required, config=RunConfig(principal=admin))
         assert not audited.exists(), "Missing MCP input crossed source boundary"
 
