@@ -109,10 +109,10 @@
     {
       "id": "R03",
       "priority": "P1",
-      "owner_issue": 1444,
+      "owner_issue": 1535,
       "status": "DEV_ONLY",
       "blocker": "Typed required field, enum, unit, qualifier and input joint coverage unqualified.",
-      "next_action": "Evaluate source-native input/output/enum conjunctions.",
+      "next_action": "Independently qualify required FieldGroup and typed enum, unit, qualifier and input conjunctions before Top-K; measure no-fit and end-to-end coverage.",
       "evidence_links": [],
       "qualification": null
     },
