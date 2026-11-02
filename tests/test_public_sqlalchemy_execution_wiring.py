@@ -101,7 +101,7 @@ async def test_sqlalchemy_registered_public_execute_denies_before_driver_and_blo
         assert driver_calls[0].lstrip().upper().startswith("SELECT")
 
         # The public runtime must deny a stale receipt after deregistration.
-        router.remove_tool(keys[0])
+        await router.aremove_tool(keys[0])
         with pytest.raises(PolicyViolationError, match="authorization denied"):
             await router.execute(plan, config=reader)
         assert len(driver_calls) == 1
