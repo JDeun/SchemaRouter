@@ -14,11 +14,7 @@ PUBLIC_OWNERS = {
     "SchemaRouter": ROOT / "src/schemarouter/runtime.py",
     "SchemaFieldRoutingSession": ROOT / "src/schemarouter/field_routing_session.py",
 }
-# Known public async entrypoint not yet independently mapped to a real invoker
-# test in the execution manifest. Explicit debt is preferable to silent omission.
-NOT_TESTED = {
-    "schemarouter.SchemaRouter.ainvoke": "#1821: add an async registered invoker E2E mapping",
-}
+NOT_TESTED = {}
 
 
 def test_public_execution_methods_are_mapped_or_explicitly_not_tested():
