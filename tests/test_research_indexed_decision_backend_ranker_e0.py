@@ -9,6 +9,8 @@ from schemarouter import (
     CapabilityFieldContract,
     EndpointSpec,
     FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
     NativeDeclaredFieldGroup,
     PrincipalContext,
     SchemaRouter,
@@ -239,3 +241,107 @@ def test_model_backend_cannot_mutate_host_decision_option_set():
             router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
             _research_ranker=ranker,
         )
+
+def test_model_backend_error_omits_provider_secret_and_cause():
+    """An untrusted model exception must not expose credentials to callers."""
+    router, index = _source()
+    secret = "DO_NOT_LEAK_PRIVATE_PROVIDER_CREDENTIAL"
+
+    def failed_provider(_request):
+        raise RuntimeError(secret)
+
+    ranker = ResearchIndexedFieldDecisionRanker(
+        CallableDecisionBackend(failed_provider),
+    )
+    with pytest.raises(PolicyViolationError, match="indexed research ranking failed") as exc:
+        index.lookup(
+            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+            _research_ranker=ranker,
+        )
+    assert secret not in str(exc.value)
+    assert exc.value.__cause__ is None
+
+
+def test_model_backend_health_revocation_of_unselected_route_fails_closed():
+    """Revalidate all original qualified sources, not just the selected K5."""
+    router, index = _source()
+    availability = {"queue_0": True}
+    router.planner.availability_predicate = (
+        lambda tool, _endpoint: availability.get(tool.key, True)
+    )
+
+    def revoke_unselected(request):
+        availability["queue_0"] = False
+        return DecisionResult(selections=[
+            DecisionSelection(option_id=request.options[i].id)
+            for i in (2, 3, 4, 5, 6)
+        ])
+
+    ranker = ResearchIndexedFieldDecisionRanker(
+        CallableDecisionBackend(revoke_unselected),
+    )
+    with pytest.raises(PolicyViolationError, match="eligibility changed") as exc:
+        index.lookup(
+            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+            _research_ranker=ranker,
+        )
+    assert exc.value.__cause__ is None
+
+
+def test_model_backend_never_receives_over_limit_scoped_source_menu():
+    """A 33-route hit must abstain before invoking any model callback."""
+    router, _ = _source()
+    for i in range(7, 33):
+        router.add_tool(ToolSpec(
+            name=f"queue_{i}",
+            source_type="crm",
+            license="reviewed",
+            endpoints=[EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(
+                    name="status",
+                    semantic_id="crm.case_status",
+                    json_schema={"type": "string"},
+                )],
+            )],
+        ))
+    index = NativeSchemaPostingIndex.build(router.registry)
+    attempts = []
+    ranker = ResearchIndexedFieldDecisionRanker(
+        _backend(calls=attempts),
+    )
+    result = index.lookup(
+        router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+        _research_ranker=ranker,
+    )
+    assert result.status == "over_k_unranked"
+    assert result.qualified_count == 33
+    assert result.candidates == ()
+    assert attempts == []
+
+
+def test_model_backend_concept_lookup_requires_declared_source_semantics():
+    """The model gets only candidates resolved from a host-owned concept."""
+    router, index = _source()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.case_status",
+        aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type="crm",
+        license="reviewed",
+    ),))
+    calls = []
+    result = index.lookup_concepts(
+        router, GROUP.aliases[0], principal=PRINCIPAL, catalog=catalog,
+        _research_ranker=ResearchIndexedFieldDecisionRanker(
+            _backend(calls=calls),
+        ),
+    )
+    assert result.status == "ranked_unverified"
+    assert len(result.candidates) == 5
+    assert [candidate.route_id for candidate in result.candidates] == [
+        f"queue_{i}.read" for i in (6, 5, 4, 3, 2)
+    ]
+    assert len(calls) == 1
+    assert all(option.metadata == {} for option in calls[0].options)
