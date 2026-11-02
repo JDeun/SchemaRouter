@@ -11,9 +11,9 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     PlanRequest,
+    PolicyViolationError,
     PrincipalContext,
     RunConfig,
-    PolicyViolationError,
     SchemaRouter,
 )
 
