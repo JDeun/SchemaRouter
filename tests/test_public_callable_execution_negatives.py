@@ -10,7 +10,6 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
-    EndpointSpec,
     ExecutionPlan,
     PolicyViolationError,
     PrincipalContext,
