@@ -306,6 +306,14 @@ async def test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch(
             await router.execute(missing_required, config=RunConfig(principal=admin))
         assert not audited.exists(), "Missing MCP input crossed source boundary"
 
+        router.mark_access_unavailable(
+            tool.key, plan.calls[0].endpoint, cooldown_seconds=120,
+        )
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=RunConfig(principal=admin))
+        assert not audited.exists(), "Unavailable MCP stdio tool reached source handler"
+
+        router.mark_access_available(tool.key, plan.calls[0].endpoint)
         output = await router.execute(plan, config=RunConfig(principal=admin))
         assert output[0].data == {"result": 15}
         assert audited.read_text(encoding="utf-8").splitlines() == ["7,8"]
