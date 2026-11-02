@@ -9,8 +9,8 @@ from schemarouter import (
     AuthorizationRule,
     DataScopeRule,
     ExecutionPlan,
-    PrincipalContext,
     PolicyViolationError,
+    PrincipalContext,
     RunConfig,
     SchemaRouter,
     ToolCall,
@@ -588,6 +588,7 @@ async def test_mongodb_public_execute_denies_guest_before_native_query() -> None
     keys = await router.aadd_mongodb_record_store(
         database,
         database_name="mongo",
+        text_search_collections=["documents"],
         remote=False,
     )
     plan = _plan(
