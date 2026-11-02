@@ -7,7 +7,11 @@ on:
       - "src/schemarouter/retrieval_execution_gate.py"
       - "src/schemarouter/paper_consumer_execution.py"
       - "benchmarks/public-execution-export-inventory-v1.json"
+      - "benchmarks/public-method-boundary-v1.json"
+      - "src/schemarouter/runtime.py"
+      - "src/schemarouter/field_routing_session.py"
       - "tests/test_public_top_level_execution_exports.py"
+      - "tests/test_public_method_boundary_inventory.py"
       - ".github/workflows/public-top-level-execution-dev.yml"
   workflow_dispatch:
 
@@ -29,5 +33,5 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1"
       - name: Verify full public export inventory and real top-level tool execution
         run: |
-          ruff check tests/test_public_top_level_execution_exports.py
-          python -m pytest -q tests/test_public_top_level_execution_exports.py
+          ruff check tests/test_public_top_level_execution_exports.py tests/test_public_method_boundary_inventory.py
+          python -m pytest -q tests/test_public_top_level_execution_exports.py tests/test_public_method_boundary_inventory.py
