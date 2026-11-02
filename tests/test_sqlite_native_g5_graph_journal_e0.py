@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -225,7 +226,7 @@ def test_sqlite_journal_g5_rejects_corrupt_receipt(tmp_path):
         source.register(ToolSpec(
             name="new_native", endpoints=[EndpointSpec(name="read")],
         ))
-        with sqlite3.connect(path) as conn:
+        with closing(sqlite3.connect(path)) as conn, conn:
             conn.execute(
                 "UPDATE schemarouter_registry_mutations "
                 "SET changed_keys = ? WHERE version = ?",

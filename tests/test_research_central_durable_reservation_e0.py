@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import get_context
 from pathlib import Path
@@ -198,7 +199,7 @@ def test_local_racing_stop_never_reopens_lease_or_exceeds_quota(tmp_path):
 
 def test_empty_or_partial_schema_is_not_implicitly_repaired(tmp_path):
     path = tmp_path / "partial.sqlite3"
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         conn.execute("CREATE TABLE unrelated (id INTEGER)")
     store = DurableCentralReservationE0(path)
     assert store.reserve(_request("new")) == "synthetic_authority_unavailable"
@@ -244,7 +245,7 @@ def test_interrupted_provision_rolls_back_all_authority_and_registration(
             cap_per_tenant_route=1,
         )
     assert "PRIVATE_" not in str(failure.value)
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         names = {
             row[0] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'"
