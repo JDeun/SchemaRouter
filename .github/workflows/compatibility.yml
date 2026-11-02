@@ -324,8 +324,9 @@ jobs:
   mongodb-live:
     needs: changes
     if: ${{ needs.changes.outputs.record == 'true' }}
-    # Keep live MongoDB on a stable supported Linux runner.
-    runs-on: ubuntu-24.04
+    # SERVER-121912: MongoDB 8.0.32 refuses Linux >=6.19 on ubuntu-24.04/26.04.
+    # The ubuntu-22.04 runner retains a compatible kernel for this blocking smoke.
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
