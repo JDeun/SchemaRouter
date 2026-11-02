@@ -71,6 +71,11 @@ jobs:
           pytest -q
           tests/test_public_execution_wiring_contract.py
           tests/test_public_execution_method_inventory.py
+          tests/test_public_execution_entrypoint_inventory.py
+          tests/test_public_export_surface_static_inventory.py
+          tests/test_public_method_boundary_inventory.py
+          tests/test_public_source_family_wiring.py
+          tests/test_public_adapter_module_completeness.py
 
   test:
     name: test (${{ matrix.python-version }})

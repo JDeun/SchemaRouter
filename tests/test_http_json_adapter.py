@@ -4,10 +4,15 @@ import httpx
 import pytest
 
 from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
     PlanRequest,
+    PolicyViolationError,
+    PrincipalContext,
+    RunConfig,
     SchemaRouter,
     ToolSpec,
 )
@@ -319,3 +324,49 @@ def test_declarative_http_tool_requires_method_and_path() -> None:
             tool,
             base_url="https://example.test",
         )
+
+
+@pytest.mark.asyncio
+async def test_declarative_http_denies_changed_principal_before_registered_get() -> None:
+    """A valid registered GET plan must not be executable under a denied identity."""
+    requests: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(str(request.url))
+        return httpx.Response(
+            200,
+            json={"status": "ok", "message": {"DOI": "10.1234/test", "title": ["Example"]}},
+            request=request,
+        )
+
+    auth = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(effect="allow", operation="crossref.*", roles_any=("admin",)),
+        ),
+        default_effect="deny",
+    )
+    admin = PrincipalContext(subject="owner", roles=("admin",))
+    guest = PrincipalContext(subject="guest", roles=("guest",))
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client, authorization_policy=auth)
+        key = router.add_http_tool(
+            _crossref_tool(), base_url="https://api.crossref.test/v1", provider="crossref"
+        )
+        plan = router.plan_authorized(
+            PlanRequest(
+                query="crossref DOI",
+                preferred_tools=[key],
+                arguments={"doi": "10.1234/test"},
+            ),
+            principal=admin,
+        )
+        assert plan.executable and plan.calls
+
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            await router.execute(plan, config=RunConfig(principal=guest))
+        assert requests == []
+
+        result = await router.execute(plan, config=RunConfig(principal=admin))
+        assert result[0].data
+
+        assert len(requests) == 1

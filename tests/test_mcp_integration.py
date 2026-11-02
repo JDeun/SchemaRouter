@@ -21,6 +21,7 @@ from schemarouter import (
     SchemaRouter,
     SchemaValidationError,
 )
+
 from schemarouter.errors import SchemaRouterError
 
 pytestmark = pytest.mark.mcp_integration
@@ -145,6 +146,112 @@ async def test_real_stdio_mcp_discovery_and_execution() -> None:
 
     results = await router.execute(plan)
     assert results[0].data == {"result": 15}
+
+
+@pytest.mark.asyncio
+async def test_real_http_mcp_rejects_invalid_arguments_before_execution() -> None:
+    """Reject malformed arguments on a genuinely registered HTTP MCP route."""
+    port = _free_port()
+    env = dict(os.environ)
+    env["SCHEMAROUTER_MCP_TEST_PORT"] = str(port)
+    server = Path(__file__).parent / "fixtures" / "mcp_http_server.py"
+    process = subprocess.Popen(
+        [sys.executable, str(server)],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        await _wait_for_port(port, process)
+        router = SchemaRouter(policy=ExecutionPolicy(allow_unclassified_remote=True))
+        tool = await router.add_url(
+            f"http://127.0.0.1:{port}/mcp",
+            kind="mcp",
+            trusted_headers={"X-SchemaRouter-Test": "integration"},
+        )
+        with pytest.raises(SchemaValidationError):
+            await router.ainvoke(
+                PlanRequest(
+                    query="add result",
+                    preferred_tools=[tool.key],
+                    arguments={"a": "not-an-integer", "b": 3},
+                )
+            )
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
+
+
+@pytest.mark.asyncio
+async def test_real_http_mcp_denies_revoked_principal_before_execution() -> None:
+    """A valid plan cannot be reused by an unauthorized principal."""
+    port = _free_port()
+    env = dict(os.environ)
+    env["SCHEMAROUTER_MCP_TEST_PORT"] = str(port)
+    server = Path(__file__).parent / "fixtures" / "mcp_http_server.py"
+    process = subprocess.Popen(
+        [sys.executable, str(server)],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        await _wait_for_port(port, process)
+        router = SchemaRouter(
+            policy=ExecutionPolicy(allow_unclassified_remote=True),
+            authorization_policy=AuthorizationPolicy(
+                rules=(
+                    AuthorizationRule(
+                        effect="allow",
+                        operation="*",
+                        roles_any=("admin",),
+                    ),
+                ),
+                default_effect="deny",
+            ),
+        )
+        tool = await router.add_url(
+            f"http://127.0.0.1:{port}/mcp",
+            kind="mcp",
+            trusted_headers={"X-SchemaRouter-Test": "integration"},
+        )
+        admin = PrincipalContext(subject="owner", roles=("admin",))
+        denied = PrincipalContext(subject="guest", roles=("guest",))
+        plan = router.plan_authorized(
+            PlanRequest(
+                query="add result",
+                preferred_tools=[tool.key],
+                arguments={"a": 2, "b": 3},
+            ),
+            principal=admin,
+        )
+        assert plan.executable and plan.calls
+        result = await router.execute(plan, config=RunConfig(principal=admin))
+        assert result[0].data == {"result": 5}
+
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            await router.execute(plan, config=RunConfig(principal=denied))
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
 
 
 @pytest.mark.asyncio
