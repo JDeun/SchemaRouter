@@ -171,10 +171,10 @@
         "test_real_streamable_http_mcp_discovery_and_execution"
       ],
       "denial_tests": [
-        "test_real_stdio_mcp_discovery_and_execution"
+        "test_real_http_mcp_rejects_invalid_arguments_before_execution"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local MCP server fixture; network and subprocess tests require explicit integration runner."
+      "notes": "Registered streamable HTTP MCP invalid-input rejection; exact-head CI pending, DEV_ONLY."
     },
     {
       "id": "router.graph.neo4j",
