@@ -11,7 +11,7 @@
     "benchmarks/public-execution-entrypoints-v1.json"
   ],
   "wrapper_public_entrypoints": 22,
-  "notes": "A test function name establishes a candidate test, not semantic execution or independent E2. NOT_TESTED denotes remaining case-specific engineering evidence; do not auto-close #1821 until reviewed. Lines point to public execution entrypoints on source head 2004d38.",
+  "notes": "Conservative evidence ledger for 19 source execution routes (not 22 public wrapper rows): NOT_TESTED requires independent scenario-specific public registered zero-I/O proof; NOT_APPLICABLE requires an explicit source-level read-only certificate. Neither constitutes provider-independent E2. Do not close #1821 until reviewed. Lines anchored to main 2004d38.",
   "paths": [
     {
       "id": "paper.direct.native.read",
@@ -488,13 +488,15 @@
         "test_graph_unknown_relationship_is_rejected_before_backend_call"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "not_applicable": [
         {
           "scenario": "write_effect_policy",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_graph_store_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "status": "NOT_APPLICABLE",
+          "reason": "This exact registered generic-store route exposes read_only=True/destructive=False endpoints only. Mutation authorization is not executable on this source registration. Other write-capable sources still require explicit mutation policy tests.",
+          "proof_file": "tests/test_public_generic_store_execution_negative.py",
+          "proof_function": "_registered",
+          "owner_issue": 1821
         }
       ]
     },
@@ -512,13 +514,15 @@
         "test_vector_dimension_mismatch_fails_closed"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "not_applicable": [
         {
           "scenario": "write_effect_policy",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_vector_store_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "status": "NOT_APPLICABLE",
+          "reason": "This exact registered generic-store route exposes read_only=True/destructive=False endpoints only. Mutation authorization is not executable on this source registration. Other write-capable sources still require explicit mutation policy tests.",
+          "proof_file": "tests/test_public_generic_store_execution_negative.py",
+          "proof_function": "_registered",
+          "owner_issue": 1821
         }
       ]
     },
@@ -536,13 +540,15 @@
         "test_key_value_store_rejects_raw_query_dsl"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "not_applicable": [
         {
           "scenario": "write_effect_policy",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_record_store_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "status": "NOT_APPLICABLE",
+          "reason": "This exact registered generic-store route exposes read_only=True/destructive=False endpoints only. Mutation authorization is not executable on this source registration. Other write-capable sources still require explicit mutation policy tests.",
+          "proof_file": "tests/test_public_generic_store_execution_negative.py",
+          "proof_function": "_registered",
+          "owner_issue": 1821
         }
       ]
     },
