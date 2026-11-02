@@ -7,7 +7,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1] / "examples/external_validation/crewai_mcp_filter"
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location("crewai_benchmark_baselines", ROOT / "benchmark_baselines.py")
+spec = importlib.util.spec_from_file_location(
+    "crewai_benchmark_baselines", ROOT / "benchmark_baselines.py"
+)
 assert spec is not None and spec.loader is not None
 module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = module
