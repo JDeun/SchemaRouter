@@ -233,6 +233,44 @@
       ],
       "qualification": "DEV_ONLY",
       "notes": "Registered Qdrant fake-vendor client: public execute must deny guest before native vector query; positive same-plan employee succeeds; DEV ONLY."
+    },
+    {
+      "id": "router.openapi.get",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "qualification": "DEV_ONLY",
+      "invoker": "src/schemarouter/adapters/openapi.py",
+      "test_file": "tests/test_public_openapi_execution_wiring.py",
+      "real_invoker_tests": [
+        "test_openapi_registered_http_public_execute_checks_authorization_and_inputs"
+      ],
+      "denial_tests": [
+        "test_openapi_denied_principal_never_reaches_http"
+      ],
+      "notes": "Local deterministic discovery+registered HTTP GET with MockTransport and actual principal/argument denial. Not independent live provider E1/E2."
+    },
+    {
+      "id": "router.sqlalchemy.select",
+      "public_entrypoint": "schemarouter.SchemaRouter.execute",
+      "implementation": "src/schemarouter/runtime.py",
+      "registry": "src/schemarouter/registry.py",
+      "authorization": "src/schemarouter/authorization.py",
+      "planning": "src/schemarouter/planner.py",
+      "executor": "src/schemarouter/executor.py",
+      "qualification": "DEV_ONLY",
+      "invoker": "src/schemarouter/adapters/sqlalchemy_database.py",
+      "test_file": "tests/test_public_sqlalchemy_execution_wiring.py",
+      "real_invoker_tests": [
+        "test_sqlalchemy_registered_public_execute_denies_before_driver_and_blocks_sql"
+      ],
+      "denial_tests": [
+        "test_sqlalchemy_denied_principal_never_reaches_driver"
+      ],
+      "notes": "Actual in-memory SQLAlchemy SQLite engine; denied role and SQL injection input fail before native driver. DEV only."
     }
   ]
 }
