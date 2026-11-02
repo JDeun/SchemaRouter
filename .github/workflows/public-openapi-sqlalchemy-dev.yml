@@ -1,0 +1,37 @@
+name: Public OpenAPI SQLAlchemy DEV
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/runtime.py"
+      - "src/schemarouter/adapters/openapi.py"
+      - "src/schemarouter/adapters/sqlalchemy_database.py"
+      - "benchmarks/public-execution-adapter-gaps-v1.json"
+      - "tests/test_public_openapi_execution_wiring.py"
+      - "tests/test_public_sqlalchemy_execution_wiring.py"
+      - "tests/test_public_execution_adapter_gap_contract.py"
+      - ".github/workflows/public-openapi-sqlalchemy-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registered-native-and-remote-adapter-wiring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install actual SQLAlchemy driver and local transport fixture
+        run: python -m pip install . "sqlalchemy>=2,<3" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1"
+      - name: Verify public source/negative test manifest
+        run: |
+          ruff check tests/test_public_openapi_execution_wiring.py tests/test_public_sqlalchemy_execution_wiring.py tests/test_public_execution_adapter_gap_contract.py
+          python -m pytest -q tests/test_public_execution_adapter_gap_contract.py
+      - name: Verify registered HTTP OpenAPI and SQLAlchemy execute, denial and invalid input
+        run: python -m pytest -q tests/test_public_openapi_execution_wiring.py tests/test_public_sqlalchemy_execution_wiring.py
