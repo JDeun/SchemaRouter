@@ -7,6 +7,11 @@ import httpx
 import pytest
 
 from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    PolicyViolationError,
+    PrincipalContext,
+    RunConfig,
     ExecutionPlan,
     InvocationUnavailableError,
     NonRetryableInvocationError,
@@ -646,3 +651,63 @@ async def test_odata_does_not_double_decode_streamed_compressed_response() -> No
         result = (await router.execute(plan))[0]
 
     assert result.data == [{"ID": 1, "Name": "Bread"}]
+
+
+@pytest.mark.asyncio
+async def test_odata_denies_changed_principal_before_registered_get() -> None:
+    """A fresh OData plan cannot be replayed with a denied principal."""
+    data_requests: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/odata/$metadata":
+            return httpx.Response(
+                200,
+                content=METADATA,
+                headers={"content-type": "application/xml"},
+                request=request,
+            )
+        data_requests.append(str(request.url))
+        return httpx.Response(
+            200,
+            json={"value": [{"ID": 1, "Name": "Sample"}]},
+            request=request,
+        )
+
+    auth = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(effect="allow", operation="odata.example.*", roles_any=("admin",)),
+        ),
+        default_effect="deny",
+    )
+    admin = PrincipalContext(subject="owner", roles=("admin",))
+    guest = PrincipalContext(subject="guest", roles=("guest",))
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://odata.example/odata",
+            kind="odata",
+            http_client=client,
+            authorization_policy=auth,
+        )
+        tool = router.registry.get("odata.example")
+        endpoint = tool.endpoint("list_products")
+        plan = ExecutionPlan(
+            query="product ID",
+            registry_version=router.registry.version,
+            calls=[
+                ToolCall(
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                    arguments={"top": 1},
+                    fields=["ID"],
+                    schema_fingerprint=endpoint.fingerprint,
+                    tool_fingerprint=tool.fingerprint,
+                )
+            ],
+        )
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            await router.execute(plan, config=RunConfig(principal=guest))
+        assert data_requests == []
+
+        results = await router.execute(plan, config=RunConfig(principal=admin))
+        assert results[0].data == [{"ID": 1}]
+        assert len(data_requests) == 1

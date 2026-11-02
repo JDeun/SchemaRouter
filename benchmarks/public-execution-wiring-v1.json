@@ -95,10 +95,10 @@
         "test_declarative_http_tool_executes_crossref_style_get"
       ],
       "denial_tests": [
-        "test_declarative_http_tool_requires_method_and_path"
+        "test_declarative_http_denies_changed_principal_before_registered_get"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+      "notes": "Registered local deterministic HTTP MockTransport GET; protected public execute denies changed principal before dispatch. DEV only."
     },
     {
       "id": "router.graphql.query",
@@ -136,7 +136,7 @@
         "test_openrpc_positional_params_fail_on_ambiguous_optional_gap"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+      "notes": "Local deterministic OpenRPC JSON-RPC fixture; negative optional positional-gap now goes through public SchemaRouter.execute. DEV only."
     },
     {
       "id": "router.odata.select",
@@ -152,10 +152,10 @@
         "test_odata_selected_fields_become_select_and_project_records"
       ],
       "denial_tests": [
-        "test_odata_service_url_validation"
+        "test_odata_denies_changed_principal_before_registered_get"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+      "notes": "Registered OData discovery and local GET fixture; public execute denies changed principal before source data request. DEV only."
     },
     {
       "id": "router.mcp.http",
