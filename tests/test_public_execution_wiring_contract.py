@@ -50,6 +50,11 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
         for name in row["real_invoker_tests"] + row["denial_tests"]:
             assert name.startswith("test_") and name in funcs, (row["id"], name)
         assert row["real_invoker_tests"] and row["denial_tests"]
+        assert set(row["real_invoker_tests"]).isdisjoint(row["denial_tests"]), (
+            row["id"], "positive and denial evidence must be distinct"
+        )
+        assert len(set(row["real_invoker_tests"])) == len(row["real_invoker_tests"])
+        assert len(set(row["denial_tests"])) == len(row["denial_tests"])
         for name in row["real_invoker_tests"]:
             fn = funcs[name]
             body = ast.get_source_segment(tests.read_text(encoding="utf-8"), fn) or ""
@@ -66,6 +71,7 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
 REQUIRED_EXECUTION_PATHS = frozenset({
     "paper.direct.native.read",
     "router.python.callable.sync",
+    "router.python.callable.async",
     "router.sqlite.select",
     "router.http_json.get",
     "router.graphql.query",

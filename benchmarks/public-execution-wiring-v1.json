@@ -57,10 +57,10 @@
         "test_add_callable_supports_async_functions"
       ],
       "denial_tests": [
-        "test_callable_argument_types_are_runtime_validated"
+        "test_async_registered_callable_rejects_invalid_arguments"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered async Python callable via public ainvoke with real in-process invoker; independent E2 remains HOLD. Denial reference exercises shared callable validation through sync invoke; async-specific denial remains untested."
+      "notes": "Registered async Python callable via public ainvoke; invalid arguments denied through that same path. DEV only; independent E2 remains HOLD."
     },
     {
       "id": "router.sqlite.select",
@@ -171,10 +171,11 @@
         "test_real_streamable_http_mcp_discovery_and_execution"
       ],
       "denial_tests": [
-        "test_real_stdio_mcp_discovery_and_execution"
+        "test_real_http_mcp_rejects_invalid_arguments_before_execution",
+        "test_real_http_mcp_denies_revoked_principal_before_execution"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local MCP server fixture; network and subprocess tests require explicit integration runner."
+      "notes": "Registered streamable HTTP MCP: malformed-input denial and execution-time principal revocation against a real local MCP server; CI integration run required, DEV only."
     },
     {
       "id": "router.graph.neo4j",
