@@ -74,7 +74,31 @@ def test_public_execution_negative_gaps_are_explicit_and_owned() -> None:
         }
         assert row["observed_test_names"]
         assert set(row["observed_test_names"]) <= funcs, row["id"]
-        assert row["unresolved"], "Do not silently declare a complete adapter"
+        assert row["unresolved"] or row.get("not_applicable"), (
+            row["id"], "Never omit all negative dispositions"
+        )
+        for excluded in row.get("not_applicable", []):
+            assert row["id"] in {
+                "router.graph_store.generic",
+                "router.vector_store.generic",
+                "router.record_store.generic",
+            }
+            assert excluded["scenario"] == "write_effect_policy"
+            assert excluded["status"] == "NOT_APPLICABLE"
+            assert excluded["owner_issue"] == 1821
+            assert "read_only=True" in excluded["reason"]
+            assert "destructive=False" in excluded["reason"]
+            assert excluded["proof_file"] == (
+                "tests/test_public_generic_store_execution_negative.py"
+            )
+            assert excluded["proof_function"] == "_registered"
+            proof = (ROOT / excluded["proof_file"]).read_text(
+                encoding="utf-8"
+            )
+            assert (
+                "all(x.read_only is True and x.destructive is False for x in tool.endpoints)"
+                in proof
+            )
         for gap in row["unresolved"]:
             assert gap["status"] == "NOT_TESTED", row["id"]
             assert gap["owner_issue"] == 1821
