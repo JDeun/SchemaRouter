@@ -4,7 +4,7 @@
 **작성일:** 2026-10-24  
 **최상위 근거:** [원 논문의 LaTeX 본문](https://github.com/JDeun/paper_SchemaRouter/blob/main/paper/schemarouter.tex) (§1, §3–4 Algorithm 1, §6). 이후 CodeGraph 실험은 원래 사상의 대체 기준이 아님.  
 **대상:** 2026-10-24에 확인한 `SchemaRouter/main`의 실제 검색·계획 코드.  
-**기존 감사:** [#1530 코드 대조 기록](../../research/autoresearch/initial-paper-graph-retrieval-crosswalk-e0.md). 이 이슈의 종료는 **감사 종료**이지 논문 기능 완성 선언이 아님.
+**기존 감사:** [#1530 코드 대조 기록](https://github.com/JDeun/SchemaRouter/blob/main/research/autoresearch/initial-paper-graph-retrieval-crosswalk-e0.md). 이 이슈의 종료는 **감사 종료**이지 논문 기능 완성 선언이 아님.
 
 ## 일반인을 위한 결론
 
@@ -48,7 +48,7 @@
 | **11. 생산자→소비자 필드 의존 그래프** | `capability_graph.py`, `native_graph_index.py`, 선택형 `concept_graph_retrieval.py`와 최근 #1741–#1744 | **유효한 확장 연구.** 도구 결과 식별자가 다음 도구의 필수 입력을 채울 수 있다는 관계는 유익하지만 원 논문의 *질의 개념→응답 필드* 그래프와 목적이 다름. |
 | **12. 최종 답변 품질과 검색 비용의 동시 평가** | 원 논문: 재료 질의 110개, 최종 답변 정확도 0.71(상위 비교군 신뢰구간 겹침), 검색된 데이터 컨텍스트 227토큰 vs Fetch-all 2,066토큰, 출처 전용 라이선스 인용 62%. 최근 E0: 스키마 JSON 바이트 및 Qwen 토크나이저 토큰 | **현재 신제품의 독립 재현 미완성.** 서로 다른 과제·독자 모델·비용 단위입니다. 최근 약 30% *도구 설명 스키마* 토큰 감소는 원 논문의 *검색 결과 데이터 컨텍스트* 감소나 최종 답변 신뢰성 입증과 다릅니다. |
 
-## 서로 다른 세 가지 그래프를 혼동하지 않기
+### 서로 다른 세 가지 그래프를 혼동하지 않기
 
 1. **원 논문의 스키마 개념 그래프 — 최우선 목적.**
    자연어 개념·별칭을 정식 응답 필드와 필수 필드 그룹으로 연결하고 단위·출처·라이선스와 함께 필요한 엔드포인트를 선택합니다.

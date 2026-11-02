@@ -4,7 +4,7 @@
 **Date:** 2026-10-24  
 **Source of truth:** [original paper's actual LaTeX](https://github.com/JDeun/paper_SchemaRouter/blob/main/paper/schemarouter.tex) (§§1, 3–4, Algorithm 1, §6), not follow-up CodeGraph experiments.  
 **Code baseline:** `SchemaRouter/main` inspected 2026-10-24; exact public entrypoints and specific methods below.  
-**Earlier audit:** [#1530 E0 code crosswalk](../../research/autoresearch/initial-paper-graph-retrieval-crosswalk-e0.md), completed as an **audit only**, not completed feature parity.
+**Earlier audit:** [#1530 E0 code crosswalk](https://github.com/JDeun/SchemaRouter/blob/main/research/autoresearch/initial-paper-graph-retrieval-crosswalk-e0.md), completed as an **audit only**, not completed feature parity.
 
 ## Decision in ordinary language
 
