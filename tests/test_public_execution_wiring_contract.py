@@ -66,6 +66,7 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
 REQUIRED_EXECUTION_PATHS = frozenset({
     "paper.direct.native.read",
     "router.python.callable.sync",
+    "router.python.callable.async",
     "router.sqlite.select",
     "router.http_json.get",
     "router.graphql.query",
