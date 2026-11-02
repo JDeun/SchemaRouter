@@ -10,6 +10,7 @@ from schemarouter import (
     DataScopeRule,
     ExecutionPlan,
     PrincipalContext,
+    PolicyViolationError,
     RunConfig,
     SchemaRouter,
     ToolCall,
@@ -566,3 +567,42 @@ def test_dynamodb_catalog_budget_requests_only_limit_plus_one() -> None:
         backend.list_sources()
 
     assert client.calls == [{"Limit": 2}]
+
+
+@pytest.mark.asyncio
+async def test_mongodb_public_execute_denies_guest_before_native_query() -> None:
+    """Reject a different principal on an already registered MongoDB plan."""
+    database = FakeMongoDatabase()
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    effect="allow",
+                    operation="mongo.documents.*",
+                    roles_any=("employee",),
+                ),
+            ),
+            default_effect="deny",
+        ),
+    )
+    keys = await router.aadd_mongodb_record_store(
+        database,
+        database_name="mongo",
+        remote=False,
+    )
+    plan = _plan(
+        router,
+        keys[0],
+        fields=["_id", "title"],
+        arguments={"query": "routing", "limit": 2},
+    )
+    guest = PrincipalContext(subject="guest", roles=("guest",))
+    employee = PrincipalContext(subject="owner", roles=("employee",))
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(plan, config=RunConfig(principal=guest))
+    assert database.collections["documents"].calls == []
+
+    results = await router.execute(plan, config=RunConfig(principal=employee))
+    assert results[0].data == [{"_id": "doc-1", "title": "Routing"}]
+    assert len(database.collections["documents"].calls) == 1

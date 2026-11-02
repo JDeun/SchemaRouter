@@ -5,7 +5,17 @@ from typing import Any
 
 import pytest
 
-from schemarouter import SchemaRouter, VectorMetadataField
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    ExecutionPlan,
+    PolicyViolationError,
+    PrincipalContext,
+    RunConfig,
+    SchemaRouter,
+    ToolCall,
+    VectorMetadataField,
+)
 from schemarouter.adapters.vector_native import (
     ChromaVectorBackend,
     MilvusVectorBackend,
@@ -820,5 +830,55 @@ async def test_qdrant_public_router_executes_registered_native_backend() -> None
     )
     results = await router.execute(plan)
     assert len(results) == 1
+    assert results[0].data[0]["id"] == "p1"
+    assert client.query_kwargs["collection_name"] == "docs"
+
+
+@pytest.mark.asyncio
+async def test_qdrant_public_execute_denies_guest_before_native_query() -> None:
+    """Preserve vendor call isolation on the real registered Qdrant adapter."""
+    client = FakeQdrantClient()
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    effect="allow",
+                    operation="qdrant.docs.*",
+                    roles_any=("employee",),
+                ),
+            ),
+            default_effect="deny",
+        ),
+    )
+    keys = await router.aadd_qdrant_vector_store(
+        client,
+        lambda _query: [0.1, 0.2, 0.3],
+        database_name="qdrant",
+        remote=False,
+    )
+    tool = router.registry.get(keys[0])
+    endpoint = tool.endpoint("search")
+    plan = ExecutionPlan(
+        query="search documents",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                arguments={"query": "routing", "top_k": 2},
+                fields=["id", "score", "title"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
+    )
+    guest = PrincipalContext(subject="guest", roles=("guest",))
+    employee = PrincipalContext(subject="owner", roles=("employee",))
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(plan, config=RunConfig(principal=guest))
+    assert client.query_kwargs == {}
+
+    results = await router.execute(plan, config=RunConfig(principal=employee))
     assert results[0].data[0]["id"] == "p1"
     assert client.query_kwargs["collection_name"] == "docs"

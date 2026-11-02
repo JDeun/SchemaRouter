@@ -210,10 +210,10 @@
         "test_mongodb_native_adapter_discovers_and_executes_bounded_find"
       ],
       "denial_tests": [
-        "test_native_record_backend_receives_hidden_principal_filter"
+        "test_mongodb_public_execute_denies_guest_before_native_query"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+      "notes": "Registered MongoDB fake-vendor client: public execute must deny guest before the actual native find call; positive same-plan employee succeeds; DEV ONLY."
     },
     {
       "id": "router.vector.qdrant",
@@ -229,10 +229,10 @@
         "test_qdrant_public_router_executes_registered_native_backend"
       ],
       "denial_tests": [
-        "test_qdrant_named_vector_requires_explicit_selection"
+        "test_qdrant_public_execute_denies_guest_before_native_query"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+      "notes": "Registered Qdrant fake-vendor client: public execute must deny guest before native vector query; positive same-plan employee succeeds; DEV ONLY."
     }
   ]
 }
