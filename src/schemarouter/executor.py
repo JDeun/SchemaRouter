@@ -1438,6 +1438,18 @@ class RegistryExecutor:
             # approval authority, by contrast, must remain the immutable call snapshot.
             self._assert_execution_policy_snapshot(execution_policy)
 
+            # Planner and precompiled fallback selection already honor health
+            # cooldowns. Direct execution of an older, otherwise valid plan
+            # must honor the same source- and fingerprint-scoped gate before
+            # reaching any registered native or remote provider.
+            if not self.is_access_available_for_contract(
+                call.tool, call.endpoint, tool.fingerprint,
+            ):
+                raise InvocationUnavailableError(
+                    "registered access path is temporarily unavailable: "
+                    f"{call.tool}.{call.endpoint}"
+                )
+
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)

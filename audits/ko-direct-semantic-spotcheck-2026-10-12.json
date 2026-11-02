@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-23",
+  "review_date": "2026-11-02",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 157,
-  "total_page_pairs": 157,
+  "reviewed_page_pairs": 158,
+  "total_page_pairs": 158,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -14,7 +14,8 @@
     "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open.",
     "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open.",
     "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open.",
-    "2026-10-25 Indexed agent bridge E0 plan was compared with its Korean translation and pinned to exact Markdown blobs. Opt-in/no execution authority, fail-closed selection, no E2/no-fit promotion and release HOLD boundaries are preserved; independent human review remains open."
+    "2026-10-25 Indexed agent bridge E0 plan was compared with its Korean translation and pinned to exact Markdown blobs. Opt-in/no execution authority, fail-closed selection, no E2/no-fit promotion and release HOLD boundaries are preserved; independent human review remains open.",
+    "2026-11-02: Historical original-paper Algorithm 1 EN/KO source parity note rehomed with AI-assisted structural/semantic spotcheck and exact current Git blobs. It is not a new code-accuracy audit or independent bilingual human review."
   ],
   "reviews": [
     {
@@ -871,6 +872,12 @@
       "notes": "Matched 85/97/100/1 and p95 thresholds, all frozen DEV/fresh values, negative decision and sealed calibration/blind finals."
     },
     {
+      "path": "research/original-paper-algorithm1-parity.md",
+      "en_blob": "1799f1372d86f2613b07a887c0053724cb59cc36",
+      "ko_blob": "c77d10ee4c16f5ce14124fb7d25ae6a977d3256e",
+      "notes": "AI-assisted EN/KO paired source inspection of the archived 2026-10-24 original-paper Algorithm 1 parity audit: three graph distinctions, pre-K complete FieldGroup, provenance/authorization, preserved negative #432 evidence, and separate independent E2 and v0.18 release HOLD. Rehoused from #1745; editorial and independent human sign-off remain incomplete."
+    },
+    {
       "path": "research/paper-evidence-package.md",
       "en_blob": "661b0a4720746af855155cd452fda3e03ae17de3",
       "ko_blob": "b44ea29e0bf81f6cefc48abb024fe97a58572b2f",
@@ -975,6 +982,7 @@
   ],
   "directly_examined_across_branches": 147,
   "review_amendments": [
-    "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification."
+    "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification.",
+    "2026-11-02: Added preserved original-paper Algorithm 1 bilingual parity audit pair (#1846); recorded current source blobs without independent human translation sign-off."
   ]
 }
