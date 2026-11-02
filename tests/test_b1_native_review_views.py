@@ -178,7 +178,10 @@ def test_live_policy_revocation_and_snapshot_rebuild_fail_closed() -> None:
     from schemarouter import AuthorizationPolicy, PrincipalContext
     from schemarouter.errors import PolicyViolationError
     from scripts.benchmark_native_fork_fieldgroup_e0 import (
-        ACTOR, GROUP, ALIASES, build_fixture,
+        ACTOR,
+        ALIASES,
+        GROUP,
+        build_fixture,
     )
 
     router = build_fixture(500, mixed_scope=True)
