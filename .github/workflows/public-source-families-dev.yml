@@ -1,0 +1,42 @@
+name: Public OPTIMADE Graph Vector Record Store DEV
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/adapters/optimade.py"
+      - "src/schemarouter/adapters/graph_store.py"
+      - "src/schemarouter/adapters/vector_store.py"
+      - "src/schemarouter/adapters/record_store.py"
+      - "tests/test_public_optimade_execution_wiring.py"
+      - "tests/test_public_source_family_wiring.py"
+      - "tests/test_public_adapter_module_completeness.py"
+      - "benchmarks/public-source-family-wiring-v1.json"
+      - ".github/workflows/public-source-families-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-backed-adapter-execution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original public store adapter fixture dependencies
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1"
+      - name: Check source-backed 4 families, positive and applicable negatives
+        run: |
+          ruff check tests/test_public_optimade_execution_wiring.py tests/test_public_source_family_wiring.py tests/test_public_adapter_module_completeness.py
+          python -m pytest -q tests/test_public_optimade_execution_wiring.py tests/test_public_source_family_wiring.py tests/test_public_adapter_module_completeness.py \
+            tests/test_graph_store_adapter.py::test_graph_traversal_is_bounded_and_projected \
+            tests/test_graph_store_adapter.py::test_graph_unknown_relationship_is_rejected_before_backend_call \
+            tests/test_vector_store_adapter.py::test_vector_store_search_embeds_projects_and_bounds_results \
+            tests/test_vector_store_adapter.py::test_vector_dimension_mismatch_fails_closed \
+            tests/test_record_store_adapter.py::test_document_query_is_bounded_filtered_and_projected \
+            tests/test_record_store_adapter.py::test_key_value_store_rejects_raw_query_dsl

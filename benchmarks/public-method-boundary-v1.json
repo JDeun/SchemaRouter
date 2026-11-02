@@ -1,0 +1,771 @@
+{
+  "schema_version": 1,
+  "scope": "all-public-methods-on-three-exported-owner-classes",
+  "qualification": "DEV_ONLY_STATIC_METHOD_SURFACE_AND_SEPARATE_REAL_EXECUTOR_TESTS",
+  "owners": [
+    {
+      "owner": "SchemaRouter",
+      "source": "src/schemarouter/runtime.py",
+      "methods": [
+        {
+          "name": "authorization_audit_delivery_status",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 932
+        },
+        {
+          "name": "aclose",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1208
+        },
+        {
+          "name": "input_schema",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1240
+        },
+        {
+          "name": "output_schema",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1244
+        },
+        {
+          "name": "config_schema",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1248
+        },
+        {
+          "name": "inspect",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1251
+        },
+        {
+          "name": "mark_access_unavailable",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1263
+        },
+        {
+          "name": "mark_access_available",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1278
+        },
+        {
+          "name": "unavailable_access_paths",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1283
+        },
+        {
+          "name": "register_health_probe",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1288
+        },
+        {
+          "name": "unregister_health_probe",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1298
+        },
+        {
+          "name": "health_snapshots",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1301
+        },
+        {
+          "name": "check_health_once",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1304
+        },
+        {
+          "name": "start_health_monitor",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1318
+        },
+        {
+          "name": "stop_health_monitor",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1331
+        },
+        {
+          "name": "register_schema_watch",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1334
+        },
+        {
+          "name": "unregister_schema_watch",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1357
+        },
+        {
+          "name": "schema_watch_snapshots",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1360
+        },
+        {
+          "name": "schema_watch_pending_review",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1363
+        },
+        {
+          "name": "aaccept_schema_watch_pending",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1369
+        },
+        {
+          "name": "accept_schema_watch_pending",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1380
+        },
+        {
+          "name": "areject_schema_watch_pending",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1393
+        },
+        {
+          "name": "reject_schema_watch_pending",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1404
+        },
+        {
+          "name": "check_schema_watches_once",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1417
+        },
+        {
+          "name": "start_schema_watcher",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1428
+        },
+        {
+          "name": "stop_schema_watcher",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1435
+        },
+        {
+          "name": "with_config",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1438
+        },
+        {
+          "name": "from_url",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1445
+        },
+        {
+          "name": "add_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1507
+        },
+        {
+          "name": "aremove_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1528
+        },
+        {
+          "name": "remove_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1553
+        },
+        {
+          "name": "add_bound_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1558
+        },
+        {
+          "name": "native_schema_watch_snapshots",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1681
+        },
+        {
+          "name": "arefresh_native_schema",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1731
+        },
+        {
+          "name": "aaccept_native_schema_pending",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1744
+        },
+        {
+          "name": "check_native_schema_watches_once",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1755
+        },
+        {
+          "name": "start_native_schema_watcher",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1764
+        },
+        {
+          "name": "stop_native_schema_watcher",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1775
+        },
+        {
+          "name": "add_sqlite_database",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1778
+        },
+        {
+          "name": "add_sqlalchemy_database",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1818
+        },
+        {
+          "name": "aadd_vector_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1900
+        },
+        {
+          "name": "add_vector_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1957
+        },
+        {
+          "name": "aadd_native_vector_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 1988
+        },
+        {
+          "name": "add_native_vector_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2026
+        },
+        {
+          "name": "aadd_graph_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2061
+        },
+        {
+          "name": "add_graph_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2118
+        },
+        {
+          "name": "aadd_record_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2149
+        },
+        {
+          "name": "add_record_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2203
+        },
+        {
+          "name": "aadd_native_graph_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2232
+        },
+        {
+          "name": "add_native_graph_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2270
+        },
+        {
+          "name": "aadd_native_record_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2305
+        },
+        {
+          "name": "add_native_record_store",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2341
+        },
+        {
+          "name": "amend_capability",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2374
+        },
+        {
+          "name": "bind_existing",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2459
+        },
+        {
+          "name": "rehydrate_bindings",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2570
+        },
+        {
+          "name": "register_adapter",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2671
+        },
+        {
+          "name": "adapter_registry",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2680
+        },
+        {
+          "name": "provider_profiles",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2684
+        },
+        {
+          "name": "provider_profile_registry",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2690
+        },
+        {
+          "name": "register_provider_profile",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2695
+        },
+        {
+          "name": "resolve_provider",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2708
+        },
+        {
+          "name": "discover_provider",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 2721
+        },
+        {
+          "name": "approve_provider_candidate",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2741
+        },
+        {
+          "name": "load_provider_profile_plugins",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2756
+        },
+        {
+          "name": "add_provider",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2769
+        },
+        {
+          "name": "load_adapter_plugins",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2792
+        },
+        {
+          "name": "add_callable",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2804
+        },
+        {
+          "name": "add_langchain_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2847
+        },
+        {
+          "name": "add_llamaindex_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2886
+        },
+        {
+          "name": "add_http_tool",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2923
+        },
+        {
+          "name": "inspect_url",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2968
+        },
+        {
+          "name": "bind_openapi",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 2984
+        },
+        {
+          "name": "approve_proposal",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3031
+        },
+        {
+          "name": "add_mcp_client_factory",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3099
+        },
+        {
+          "name": "add_mcp_stdio",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3162
+        },
+        {
+          "name": "probe_url",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3214
+        },
+        {
+          "name": "add_url",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3256
+        },
+        {
+          "name": "arefresh_schema",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3299
+        },
+        {
+          "name": "refresh_schema",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 3791
+        },
+        {
+          "name": "plan",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 3816
+        },
+        {
+          "name": "aplan",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 3847
+        },
+        {
+          "name": "plan_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 3881
+        },
+        {
+          "name": "aplan_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 3892
+        },
+        {
+          "name": "retrieve_routes",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 3975
+        },
+        {
+          "name": "aretrieve_routes",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4011
+        },
+        {
+          "name": "retrieve_routes_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4047
+        },
+        {
+          "name": "aretrieve_routes_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4059
+        },
+        {
+          "name": "retrieve",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4097
+        },
+        {
+          "name": "aretrieve",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4139
+        },
+        {
+          "name": "prepare_field_routing",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4181
+        },
+        {
+          "name": "retrieve_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4201
+        },
+        {
+          "name": "retrieve_adaptive",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4215
+        },
+        {
+          "name": "aretrieve_adaptive",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4237
+        },
+        {
+          "name": "aretrieve_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4259
+        },
+        {
+          "name": "reretrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4279
+        },
+        {
+          "name": "areretrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4304
+        },
+        {
+          "name": "retrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4329
+        },
+        {
+          "name": "aretrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4348
+        },
+        {
+          "name": "plan_executable",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4374
+        },
+        {
+          "name": "aplan_executable",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4406
+        },
+        {
+          "name": "plan_executable_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4441
+        },
+        {
+          "name": "aplan_executable_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4452
+        },
+        {
+          "name": "retrieve_executable",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4463
+        },
+        {
+          "name": "aretrieve_executable",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4507
+        },
+        {
+          "name": "retrieve_executable_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4551
+        },
+        {
+          "name": "aretrieve_executable_authorized",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 4563
+        },
+        {
+          "name": "execute",
+          "kind": "registered-tool-execution",
+          "source_line": 4601
+        },
+        {
+          "name": "ainvoke",
+          "kind": "registered-tool-execution",
+          "source_line": 4610
+        },
+        {
+          "name": "invoke",
+          "kind": "registered-tool-execution",
+          "source_line": 4621
+        },
+        {
+          "name": "abatch",
+          "kind": "registered-tool-execution",
+          "source_line": 4629
+        },
+        {
+          "name": "batch",
+          "kind": "registered-tool-execution",
+          "source_line": 4690
+        },
+        {
+          "name": "abatch_as_completed",
+          "kind": "registered-tool-execution",
+          "source_line": 4705
+        },
+        {
+          "name": "batch_as_completed",
+          "kind": "registered-tool-execution",
+          "source_line": 4759
+        },
+        {
+          "name": "astream",
+          "kind": "registered-tool-execution",
+          "source_line": 4774
+        },
+        {
+          "name": "stream",
+          "kind": "registered-tool-execution",
+          "source_line": 4821
+        },
+        {
+          "name": "astream_events",
+          "kind": "registered-tool-execution",
+          "source_line": 4829
+        },
+        {
+          "name": "run",
+          "kind": "registered-tool-execution",
+          "source_line": 6001
+        },
+        {
+          "name": "arun",
+          "kind": "registered-tool-execution",
+          "source_line": 6009
+        }
+      ]
+    },
+    {
+      "owner": "ConfiguredSchemaRouter",
+      "source": "src/schemarouter/runtime.py",
+      "methods": [
+        {
+          "name": "retrieve_routes",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6025
+        },
+        {
+          "name": "aretrieve_routes",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6034
+        },
+        {
+          "name": "retrieve",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6043
+        },
+        {
+          "name": "aretrieve",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6052
+        },
+        {
+          "name": "reretrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6061
+        },
+        {
+          "name": "areretrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6079
+        },
+        {
+          "name": "retrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6097
+        },
+        {
+          "name": "aretrieve_state_aware",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6115
+        },
+        {
+          "name": "retrieve_executable",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6133
+        },
+        {
+          "name": "aretrieve_executable",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 6142
+        },
+        {
+          "name": "invoke",
+          "kind": "registered-tool-execution",
+          "source_line": 6151
+        },
+        {
+          "name": "ainvoke",
+          "kind": "registered-tool-execution",
+          "source_line": 6154
+        },
+        {
+          "name": "batch",
+          "kind": "registered-tool-execution",
+          "source_line": 6157
+        },
+        {
+          "name": "abatch",
+          "kind": "registered-tool-execution",
+          "source_line": 6169
+        },
+        {
+          "name": "batch_as_completed",
+          "kind": "registered-tool-execution",
+          "source_line": 6181
+        },
+        {
+          "name": "abatch_as_completed",
+          "kind": "registered-tool-execution",
+          "source_line": 6193
+        },
+        {
+          "name": "stream",
+          "kind": "registered-tool-execution",
+          "source_line": 6205
+        },
+        {
+          "name": "astream",
+          "kind": "registered-tool-execution",
+          "source_line": 6208
+        },
+        {
+          "name": "astream_events",
+          "kind": "registered-tool-execution",
+          "source_line": 6211
+        }
+      ]
+    },
+    {
+      "owner": "SchemaFieldRoutingSession",
+      "source": "src/schemarouter/field_routing_session.py",
+      "methods": [
+        {
+          "name": "prepare",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 185
+        },
+        {
+          "name": "refresh",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 220
+        },
+        {
+          "name": "revise_catalog",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 280
+        },
+        {
+          "name": "snapshot_id",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 336
+        },
+        {
+          "name": "catalog_revision_id",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 348
+        },
+        {
+          "name": "indexed_route_count",
+          "kind": "registration-inspection-or-lifecycle",
+          "source_line": 359
+        },
+        {
+          "name": "inspect_visible_fields",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 363
+        },
+        {
+          "name": "discover",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 524
+        },
+        {
+          "name": "compile",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 539
+        },
+        {
+          "name": "compile_understood",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 561
+        },
+        {
+          "name": "aexecute_direct",
+          "kind": "registered-tool-execution",
+          "source_line": 589
+        },
+        {
+          "name": "acompile_query",
+          "kind": "retrieval-or-planning-no-execution",
+          "source_line": 691
+        }
+      ]
+    }
+  ],
+  "notes": "All directly declared public owner methods are enumerated and classified. Registered tool execution methods are tested via the separate public-execution-entrypoints-v1.json integration and existing direct-native E2E; retrieval, plan, registry and lifecycle methods do not alone constitute execution. This is source inventory only, not full functional proof."
+}

@@ -215,7 +215,13 @@ async def test_openrpc_positional_params_fail_on_ambiguous_optional_gap() -> Non
             NonRetryableInvocationError,
             match="cannot skip an earlier optional parameter",
         ):
-            await router.executor.execute_call(call)
+            await router.execute(
+                ExecutionPlan(
+                    query="material result",
+                    registry_version=router.registry.version,
+                    calls=[call],
+                )
+            )
 
     assert seen["post"] is False
 
