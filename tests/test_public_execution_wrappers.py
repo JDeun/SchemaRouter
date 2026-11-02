@@ -13,6 +13,7 @@ from schemarouter import (
     PlanRequest,
     PrincipalContext,
     RunConfig,
+    SchemaDriftError,
     SchemaRouter,
 )
 
@@ -150,3 +151,41 @@ async def test_configured_async_wrappers_check_auth_at_dispatch(
     assert calls == [7]
     await _async_call(router.with_config(denied), method, request, executed=False)
     assert calls == [7], "Configured denied context must not call provider"
+
+
+
+@pytest.mark.asyncio
+async def test_unavailable_registered_callable_abstains_then_recovers() -> None:
+    """Temporary runtime unavailability blocks public execution, not registration."""
+    router, calls, request, allowed, _ = _registered_router()
+    router.mark_access_unavailable("lookup", "call", cooldown_seconds=120)
+    assert ("lookup", "call") in router.unavailable_access_paths()
+    result = await router.ainvoke(request, config=allowed)
+    assert result == []
+    events = [
+        event async for event in router.astream_events(request, config=allowed)
+    ]
+    assert [event.event for event in events] == [
+        "run.start", "plan.end", "run.end"
+    ]
+    assert calls == []
+
+    router.mark_access_available("lookup", "call")
+    assert ("lookup", "call") not in router.unavailable_access_paths()
+    _check_results(await router.ainvoke(request, config=allowed), executed=True)
+    assert calls == [7]
+
+
+@pytest.mark.asyncio
+async def test_removed_registered_callable_cannot_execute_stale_plan() -> None:
+    """Old authorized plan receipts must not survive registry deregistration."""
+    router, calls, request, allowed, _ = _registered_router()
+    plan = router.plan_executable_authorized(
+        request,
+        principal=allowed.principal,
+    )
+    assert plan.executable and len(plan.calls) == 1
+    await router.aremove_tool("lookup")
+    with pytest.raises(SchemaDriftError):
+        await router.execute(plan, config=allowed)
+    assert calls == [], "Removed source must never be dispatched by stale receipt"
