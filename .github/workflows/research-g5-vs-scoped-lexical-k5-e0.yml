@@ -1,0 +1,93 @@
+name: Native G5 vs Scoped Schema Lexical K5 E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_g5_vs_scoped_lexical_k5_e0.py"
+      - "tests/test_research_g5_vs_scoped_lexical_k5_e0.py"
+      - "research/autoresearch/g5-vs-scoped-lexical-k5-e0.md"
+      - ".github/workflows/research-g5-vs-scoped-lexical-k5-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strict-scoped-paired-original-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        catalog: [500, 5000]
+        scope: [normal, mixed]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install exact local source and test toolchain
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Verify source authorization and exact qualitative denominator
+        run: |
+          ruff check scripts/research_g5_vs_scoped_lexical_k5_e0.py tests/test_research_g5_vs_scoped_lexical_k5_e0.py
+          python -m pytest -q tests/test_research_g5_vs_scoped_lexical_k5_e0.py tests/test_research_g5_source_schema_exposure_e0.py
+      - name: Run native G5 and schema-aware lexical with strictly matched K5
+        run: |
+          mkdir -p artifacts/true-g5-vs-lexical-k5-e0
+          python -m scripts.research_g5_vs_scoped_lexical_k5_e0 \
+            --registered-routes ${{ matrix.catalog }} \
+            ${{ matrix.scope == 'mixed' && '--mixed-scope' || '' }} \
+            --out artifacts/true-g5-vs-lexical-k5-e0/${{ matrix.catalog }}-${{ matrix.scope }}.json
+      - name: Assert ground-truth parity and budget only if BOTH complete
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          files = list(Path("artifacts/true-g5-vs-lexical-k5-e0").glob("*.json"))
+          assert len(files) == 1
+          report = json.loads(files[0].read_text())
+          assert report["schema_version"] == "g5-vs-scoped-lexical-k5-e0-v1"
+          assert report["strict_k"] == 5
+          assert report["registered_native_routes"] in (500, 5000)
+          assert report["independent_e2_qualified"] is False
+          assert report["all_model_tokens_measured"] is False
+          assert report["actual_agent_final_task_measured"] is False
+          assert report["release_qualified"] is False
+          assert report["same_snapshot_source_health_denied"] is True
+          assert [r["language"] for r in report["rows"]] == ["en", "ko", "ja"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as handle:
+              handle.write("## Same K5 G5 vs source-scoped schema lexical E0\n\n")
+              handle.write("Synthetic 3-route original source oracle. NOT agent tokens or external E2.\n\n")
+              handle.write("| Alias | G5 all routes | Lexical all routes | G5 bytes | Lexical bytes | Shared complete cost-eligible |\n")
+              handle.write("|---|---|---|---:|---:|---|\n")
+              for row in report["rows"]:
+                  assert row["required_original_routes"] == 3
+                  assert row["g5_source_oracle_complete"] is True
+                  assert row["g5_route_count"] == 3
+                  assert row["lexical_route_count"] <= 5
+                  assert row["both_arms_same_scope_and_k"] is True
+                  assert row["both_arms_executable_authority"] is False
+                  assert row["shared_complete_cost_eligible"] == (
+                      row["g5_source_oracle_complete"]
+                      and row["lexical_source_oracle_complete"]
+                  )
+                  assert row["g5_schema_bytes"] > 0
+                  assert row["lexical_schema_bytes"] >= 0
+                  handle.write(
+                      f"| {row['language']} | {row['g5_source_oracle_complete']} | "
+                      f"{row['lexical_source_oracle_complete']} | "
+                      f"{row['g5_schema_bytes']} | {row['lexical_schema_bytes']} | "
+                      f"{row['shared_complete_cost_eligible']} |\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: true-g5-lexical-k5-${{ matrix.catalog }}-${{ matrix.scope }}-${{ github.run_id }}
+          path: artifacts/true-g5-vs-lexical-k5-e0/*.json
+          retention-days: 30
+          if-no-files-found: warn
