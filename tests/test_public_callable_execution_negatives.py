@@ -5,6 +5,8 @@ effects rather than an executor mock. Developer fixtures, not independent E2.
 """
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from schemarouter import (
@@ -63,7 +65,8 @@ def _fixture(mode: str, *, read_only: bool = True):
 
 async def _invoke(router, request, config, mode):
     if mode == "sync":
-        return router.invoke(request, config=config)
+        # The synchronous public API deliberately rejects an active event loop.
+        return await asyncio.to_thread(router.invoke, request, config=config)
     return await router.ainvoke(request, config=config)
 
 
