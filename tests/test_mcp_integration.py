@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter, SchemaValidationError
 
 pytestmark = pytest.mark.mcp_integration
 
@@ -85,6 +85,48 @@ async def test_real_streamable_http_mcp_discovery_and_execution() -> None:
 
         results = await router.execute(plan)
         assert results[0].data == {"result": 5}
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
+
+
+@pytest.mark.asyncio
+async def test_real_http_mcp_rejects_invalid_arguments_before_execution() -> None:
+    port = _free_port()
+    env = dict(os.environ)
+    env["SCHEMAROUTER_MCP_TEST_PORT"] = str(port)
+    server = Path(__file__).parent / "fixtures" / "mcp_http_server.py"
+    process = subprocess.Popen(
+        [sys.executable, str(server)],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        await _wait_for_port(port, process)
+        router = SchemaRouter(policy=ExecutionPolicy(allow_unclassified_remote=True))
+        tool = await router.add_url(
+            f"http://127.0.0.1:{port}/mcp",
+            kind="mcp",
+            trusted_headers={"X-SchemaRouter-Test": "integration"},
+        )
+        with pytest.raises(SchemaValidationError):
+            router.plan(
+                PlanRequest(
+                    query="add result",
+                    preferred_tools=[tool.key],
+                    arguments={"a": "not-an-integer", "b": 3},
+                )
+            )
     finally:
         process.terminate()
         try:
