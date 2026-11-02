@@ -15,6 +15,7 @@ from typing import Any
 
 from schemarouter.errors import PolicyViolationError
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
+from scripts.research_codegraph_native_envelope_e1 import strict_native_json_envelope
 from scripts.research_codegraph_final_answer_diagnostics_e1 import classify_strict_final_e1
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
@@ -211,6 +212,7 @@ async def run_surgical_model_episode(
     experimental_single_step_prompt: bool = False,
     experimental_bare_schema_request: bool = False,
     experimental_graph_path_order_prompt: bool = False,
+    experimental_strict_unwrapped_json: bool = False,
 ) -> dict[str, Any]:
     """Measure schema requests and actual original invocations separately.
 
@@ -232,6 +234,10 @@ async def run_surgical_model_episode(
         )
     ):
         raise ValueError("graph path order requires the paired surgical E1 protocol")
+    if type(experimental_strict_unwrapped_json) is not bool or (
+        experimental_strict_unwrapped_json and experimental_bare_schema_request
+    ):
+        raise ValueError("research strict envelope mode requires isolated boolean treatment")
     if type(host_context) is not SurgicalHostContext:
         raise ValueError("trusted surgical host context required")
     if type(host_context.final_response_instruction) is not str:
@@ -267,6 +273,7 @@ async def run_surgical_model_episode(
     action_shape_labels: list[str] = []
     argument_alignment_labels: list[str] = []
     bare_schema_request_normalizations = 0
+    strict_envelope_normalizations = 0
     final_outcome_category = "no_complete_final"
 
     for _ in range(max_turns):
@@ -314,8 +321,15 @@ async def run_surgical_model_episode(
         if generated["context_overflow"]:
             reason = "context_overflow"
             break
+        parsed_text = generated["text"]
+        if experimental_strict_unwrapped_json:
+            parsed_text, normalized = strict_native_json_envelope(
+                parsed_text,
+                offered_tool_names=tuple(tool["name"] for tool in offered),
+            )
+            strict_envelope_normalizations += int(normalized)
         try:
-            kind, value = _parse_action(generated["text"])
+            kind, value = _parse_action(parsed_text)
             if (
                 experimental_bare_schema_request
                 and not materialized_ids
@@ -377,7 +391,7 @@ async def run_surgical_model_episode(
                 break
             materialized_ids = list(value)
             schema_requests += 1
-            _append_observation(messages, generated["text"], {
+            _append_observation(messages, parsed_text, {
                 "status": "ok", "tool_definitions": definitions,
             })
             continue
@@ -420,7 +434,7 @@ async def run_surgical_model_episode(
         source_calls += 1
         executed_routes.append(route_id)
         observations[route_id] = observation
-        _append_observation(messages, generated["text"], observation)
+        _append_observation(messages, parsed_text, observation)
 
     return {
         "evidence_tier": "E1_RESEARCH_SCOPED_PROTOCOL",
@@ -446,4 +460,7 @@ async def run_surgical_model_episode(
         } if diagnose_model_actions else {}),
         **({"bare_schema_request_normalizations": bare_schema_request_normalizations}
            if experimental_bare_schema_request else {}),
+        **({"strict_unwrapped_envelope_normalizations": strict_envelope_normalizations,
+            "strict_unwrapped_envelope_research_only": True}
+           if experimental_strict_unwrapped_json else {}),
     }

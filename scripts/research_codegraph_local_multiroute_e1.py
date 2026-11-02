@@ -43,6 +43,7 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_bare_json_adapter_e1 import parse_native_action_optin
+from scripts.research_codegraph_native_envelope_e1 import strict_native_json_envelope
 from scripts.research_codegraph_final_answer_diagnostics_e1 import classify_strict_final_e1
 from scripts.research_codegraph_graph_frontier_e1 import (
     FRONTIER_ARM,
@@ -251,6 +252,7 @@ async def _baseline_local_arm(
     agent: Any, *, source: LocalControlSource, condition: str,
     diagnose_model_actions: bool = False,
     experimental_bare_native_json: bool = False,
+    experimental_strict_unwrapped_json: bool = False,
     experimental_single_step_prompt: bool = False,
     experimental_g5_verified_continuation: bool = False,
 ) -> dict[str, Any]:
@@ -311,6 +313,7 @@ async def _baseline_local_arm(
     turns = 0
     action_shape_labels: list[str] = []
     bare_json_strict_parser_acceptances = 0
+    strict_envelope_normalizations = 0
     verified_continuation_cues = 0
     final_outcome_category = "no_complete_final"
     for _ in range(TURN_BUDGET):
@@ -339,9 +342,16 @@ async def _baseline_local_arm(
             schema_tokens += generated["tool_tokens"]
         else:
             all_receipts = False
+        parsed_text = generated["text"]
+        if experimental_strict_unwrapped_json:
+            parsed_text, normalized = strict_native_json_envelope(
+                parsed_text,
+                offered_tool_names=tuple(tool["name"] for tool in definitions),
+            )
+            strict_envelope_normalizations += int(normalized)
         try:
             kind, payload, accepted_bare = parse_native_action_optin(
-                generated["text"],
+                parsed_text,
                 offered_names=tuple(tool["name"] for tool in definitions),
                 accept_bare_json_native=experimental_bare_native_json,
             )
@@ -395,7 +405,7 @@ async def _baseline_local_arm(
         calls.append(route_id)
         observations[route_id] = observation
         messages.extend((
-            {"role": "assistant", "content": generated["text"]},
+            {"role": "assistant", "content": parsed_text},
             {"role": "tool", "content": json.dumps(observation, sort_keys=True)},
         ))
         if (
@@ -427,6 +437,8 @@ async def _baseline_local_arm(
            if diagnose_model_actions else {}),
         **({"bare_json_strict_parser_acceptances": bare_json_strict_parser_acceptances}
            if experimental_bare_native_json else {}),
+        **({"strict_unwrapped_envelope_normalizations": strict_envelope_normalizations}
+           if experimental_strict_unwrapped_json else {}),
         **({"verified_continuation_cues": verified_continuation_cues}
            if experimental_g5_verified_continuation
            and condition == "concept_graph_optin" else {}),
@@ -438,6 +450,7 @@ async def run_local_multiroute_codegraph_e1(
     catalog_size: int = 12,
     diagnose_model_actions: bool = False,
     experimental_bare_native_json: bool = False,
+    experimental_strict_unwrapped_json: bool = False,
     experimental_single_step_prompt: bool = False,
     experimental_g5_verified_continuation: bool = False,
     experimental_bare_schema_request: bool = False,
@@ -450,12 +463,19 @@ async def run_local_multiroute_codegraph_e1(
             not experimental_single_step_prompt or not experimental_bare_schema_request
             or not experimental_graph_path_order_prompt
             or experimental_bare_native_json or experimental_g5_verified_continuation
+            or experimental_strict_unwrapped_json
             or catalog_size != 4 or condition != "joined"
         )
     ):
         raise ValueError("frontier requires isolated four-route paired path-order controls")
     if type(experimental_bare_native_json) is not bool:
         raise ValueError("research bare-native experiment must be boolean")
+    if type(experimental_strict_unwrapped_json) is not bool or (
+        experimental_strict_unwrapped_json and (
+            experimental_bare_native_json or experimental_bare_schema_request
+        )
+    ):
+        raise ValueError("research strict envelope mode requires isolated boolean treatment")
     if type(experimental_single_step_prompt) is not bool:
         raise ValueError("research one-action prompt flag must be boolean")
     if type(experimental_g5_verified_continuation) is not bool:
@@ -592,6 +612,7 @@ async def run_local_multiroute_codegraph_e1(
                     experimental_single_step_prompt=experimental_single_step_prompt,
                     experimental_bare_schema_request=experimental_bare_schema_request,
                     experimental_graph_path_order_prompt=experimental_graph_path_order_prompt,
+                    experimental_strict_unwrapped_json=experimental_strict_unwrapped_json,
                 )
             row = {
                 **row, "condition": arm,
@@ -604,6 +625,7 @@ async def run_local_multiroute_codegraph_e1(
                 agent, source=current, condition=arm,
                 diagnose_model_actions=diagnose_model_actions,
                 experimental_bare_native_json=experimental_bare_native_json,
+                experimental_strict_unwrapped_json=experimental_strict_unwrapped_json,
                 experimental_single_step_prompt=experimental_single_step_prompt,
                 experimental_g5_verified_continuation=experimental_g5_verified_continuation,
             )
