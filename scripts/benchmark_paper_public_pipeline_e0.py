@@ -29,6 +29,7 @@ from schemarouter import (
     PaperIntentRegistry,
     PaperNativeRankPolicy,
     ParameterSpec,
+    PolicyViolationError,
     PrincipalContext,
     ToolSpec,
 )
@@ -216,11 +217,112 @@ async def _measure_async(session: Any, semantic: str, intents: Any, policy: Any,
     }
 
 
+def _measure_refresh(
+    router: Any, session: Any, catalog: Any, intents: Any,
+    expected: tuple[str, ...], repeats: int, routes: int,
+) -> dict[str, Any]:
+    """Compare public journal refresh to a fresh public preparation per edit."""
+    wall_refresh: list[float] = []
+    cpu_refresh: list[float] = []
+    wall_rebuild: list[float] = []
+    cpu_rebuild: list[float] = []
+    hint = PaperUnderstanding(intent_id="case.lookup", named_tools=())
+    for revision in range(repeats):
+        # Replace, rather than add, a non-candidate source route. The typed
+        # target and authorization policy do not change between measurements.
+        router.add_tool(ToolSpec(
+            name="unrelated_00000", source_type="research", license=LICENSE,
+            endpoints=[EndpointSpec(
+                name="read", read_only=True, output_fields=[FieldSpec(
+                    name="label", semantic_id=f"research.refresh_{revision}",
+                    json_schema={"type": "string"},
+                )],
+            )],
+        ), replace=True)
+        old = session
+        old_policy = PaperNativeRankPolicy(
+            snapshot_id=old.snapshot_id,
+            route_domains={expected[-1]: ("case",)},
+            route_priorities={expected[-1]: 90},
+        )
+        w0, c0 = perf_counter_ns(), process_time_ns()
+        session = old.refresh()
+        wall_refresh.append((perf_counter_ns() - w0) / 1_000_000)
+        cpu_refresh.append((process_time_ns() - c0) / 1_000_000)
+
+        w0, c0 = perf_counter_ns(), process_time_ns()
+        rebuilt = router.prepare_field_routing(catalog=catalog)
+        wall_rebuild.append((perf_counter_ns() - w0) / 1_000_000)
+        cpu_rebuild.append((process_time_ns() - c0) / 1_000_000)
+        if (
+            session.snapshot_id == old.snapshot_id
+            or session.snapshot_id != rebuilt.snapshot_id
+            or session._index.field_index.indexed_route_count != routes
+            or rebuilt._index.field_index.indexed_route_count != routes
+        ):
+            raise AssertionError("public journal refresh differs from cold source snapshot")
+        refreshed_graph = session._index
+        rebuilt_graph = rebuilt._index
+        if (
+            refreshed_graph.graph.capability_ids != rebuilt_graph.graph.capability_ids
+            or refreshed_graph.graph.edges != rebuilt_graph.graph.edges
+            or refreshed_graph.native_root_count != rebuilt_graph.native_root_count
+            or refreshed_graph.native_consumer_count != rebuilt_graph.native_consumer_count
+            or refreshed_graph.edge_consumer_routes != rebuilt_graph.edge_consumer_routes
+            or refreshed_graph.approved_host_roots != rebuilt_graph.approved_host_roots
+            or refreshed_graph._source_contracts != rebuilt_graph._source_contracts
+        ):
+            # The posting snapshot does not attest the independently built
+            # typed dependency edges. Compare the full canonical graph too.
+            raise AssertionError("public journal refresh differs from cold graph parity")
+        policy = PaperNativeRankPolicy(
+            snapshot_id=session.snapshot_id,
+            route_domains={expected[-1]: ("case",)},
+            route_priorities={expected[-1]: 90},
+        )
+        _assert_plan(session.compile_understood(
+            hint, principal=ACTOR, intent_registry=intents,
+            rank_policy=policy, allow_unnamed_graph_discovery=True,
+        ), expected)
+        _assert_plan(rebuilt.compile_understood(
+            hint, principal=ACTOR, intent_registry=intents,
+            rank_policy=policy, allow_unnamed_graph_discovery=True,
+        ), expected)
+        try:
+            old.compile_understood(
+                hint, principal=ACTOR, intent_registry=intents,
+                rank_policy=old_policy, allow_unnamed_graph_discovery=True,
+            )
+        except PolicyViolationError:
+            pass
+        else:
+            raise AssertionError("old prepared session accepted stale source")
+
+    return {
+        "measured_changes": repeats,
+        "registered_routes": routes,
+        "expected_route_ids": list(expected),
+        "source_snapshot_matches_cold": True,
+        "stale_sessions_rejected": True,
+        "exact_route_oracle": True,
+        "model_calls": 0, "provider_calls": 0,
+        "journal_refresh": {
+            "wall_ms": _percentiles(wall_refresh),
+            "process_cpu_ms": _percentiles(cpu_refresh),
+        },
+        "cold_rebuild": {
+            "wall_ms": _percentiles(wall_rebuild),
+            "process_cpu_ms": _percentiles(cpu_rebuild),
+        },
+    }
+
+
 def benchmark(routes: int, *, hops: int = 1, repeats: int = 3,
-              warmup: int = 1) -> dict[str, Any]:
+              warmup: int = 1, measure_refresh: bool = False) -> dict[str, Any]:
     if (
         type(repeats) is not int or not 1 <= repeats <= 20
         or type(warmup) is not int or not 0 <= warmup <= 3
+        or type(measure_refresh) is not bool
     ):
         raise ValueError("E0 bounded benchmark accepts 1-20 runs and 0-3 warmups")
     router, catalog, intents, expected = build_synthetic_public_case(routes, hops)
@@ -243,8 +345,8 @@ def benchmark(routes: int, *, hops: int = 1, repeats: int = 3,
     async_metrics = asyncio.run(_measure_async(
         session, semantic, intents, policy, expected, warmup, repeats,
     ))
-    return {
-        "schema_version": 1,
+    report = {
+        "schema_version": 2 if measure_refresh else 1,
         "evidence_tier": EVIDENCE_TIER,
         "independent_e2_qualified": False,
         "model_latency_measured": False,
@@ -267,6 +369,11 @@ def benchmark(routes: int, *, hops: int = 1, repeats: int = 3,
             "No default router or release qualification",
         ],
     }
+    if measure_refresh:
+        report["incremental_refresh"] = _measure_refresh(
+            router, session, catalog, intents, expected, repeats, routes,
+        )
+    return report
 
 
 def main() -> None:
@@ -275,10 +382,11 @@ def main() -> None:
     parser.add_argument("--hops", type=int, choices=(1, 2), default=1)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--measure-refresh", action="store_true")
     args = parser.parse_args()
     print(json.dumps(
         benchmark(args.routes, hops=args.hops, repeats=args.repeats,
-                  warmup=args.warmup),
+                  warmup=args.warmup, measure_refresh=args.measure_refresh),
         sort_keys=True, ensure_ascii=False,
     ))
 
