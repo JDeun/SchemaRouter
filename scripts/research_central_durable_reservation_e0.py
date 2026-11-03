@@ -79,7 +79,13 @@ class DurableCentralReservationE0:
         connection = sqlite3.connect(
             str(self._path), timeout=10.0, isolation_level=None,
         )
-        connection.execute("PRAGMA busy_timeout=10000")
+        try:
+            connection.execute("PRAGMA busy_timeout=10000")
+        except BaseException:
+            # Connection creation succeeded, but initialization failed:
+            # the caller never received ownership of the open handle.
+            connection.close()
+            raise
         return connection
 
     def provision_once(
