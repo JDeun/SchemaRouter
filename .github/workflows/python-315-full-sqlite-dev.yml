@@ -1,0 +1,37 @@
+name: Python 3.15 Full SQLite Lifecycle DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_central_durable_reservation_e0.py"
+      - "tests/test_research_central_durable_reservation_e0.py"
+      - "tests/test_sqlite_native_graph_journal_e0.py"
+      - "tests/test_sqlite_native_posting_journal_e0.py"
+      - "tests/test_sqlite_registry_mutation_journal_e0.py"
+      - "tests/test_sqlite_native_g5_graph_journal_e0.py"
+      - ".github/workflows/python-315-full-sqlite-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-preview-full:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.15.0-rc.2"
+          allow-prereleases: true
+      - name: Install package and development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Static check
+        run: ruff check .
+      - name: Full Python preview regression with unclosed-handle warnings as errors
+        run: python -m pytest -q -m "not mcp_integration" -W error::ResourceWarning
+      - name: Installed public quickstart
+        run: python examples/quickstart.py
