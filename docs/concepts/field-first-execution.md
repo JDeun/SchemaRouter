@@ -17,12 +17,18 @@ user query
   -> minimal ToolResult context
 ```
 
-The prepared `SchemaFieldRoutingSession` path accepts host-reviewed scalar requirements for strings,
-integers, numbers and booleans, including bounded `enum`, `const`, numeric bounds and multiples,
-and string length/pattern assertions. Schema syntax and validation-work limits are checked before
-the source field can qualify. References, unions and other unproved scalar shapes remain excluded
-from this path. Each complete required field group must survive current authorization, visibility,
-availability and source checks before K5 disclosure or typed planning.
+The prepared `SchemaFieldRoutingSession` path accepts host-reviewed direct response requirements
+for scalar, nullable, array, object and map fields, including declared constraints. It also accepts
+bounded, acyclic references through object-key JSON pointers inside the same field descriptor.
+External references, anchors, endpoint-root context recovery, unknown schemas and unconstrained
+wrappers are excluded. Schema syntax, validation-work limits and conservative assertion compatibility
+are checked before a source field can qualify. Each complete required field group must survive current
+authorization, visibility, availability and source checks before K5 disclosure or typed planning.
+
+G5 dependency producers still require scalar, unitless identifiers; trusted host inputs retain their
+existing scalar limits. A source container overlapping a declared hidden descendant is excluded even
+when their result paths differ. Restricted views keep their schema stripping: removed nested contract
+details are never recovered from the raw registry to manufacture a field proof.
 
 Requirements use the canonical output contract after an explicitly declared unit normalization.
 Raw source assertions are validated before conversion. Canonical bounds and finite values are
@@ -50,6 +56,12 @@ does not promise an unconditional minimum field count. The combined route set re
 K5: a union exceeding five routes returns `budget_unsatisfied` without calls.
 Generic intents may declare `required_concept_ids=()`; they add no arbitrary representative field.
 
+`session.inspect_visible_fields(principal=...)` provides the currently scoped field JSON schemas,
+aliases, qualifiers and source/result paths for owner review. These detached declarations let a host review
+its concept/alias relationships without reading private registry state. Restricted views may omit
+metadata and replace paths with public field names; review never reconstructs hidden originals or
+approves a concept catalog automatically.
+
 The schema-independent response uses `PaperQueryUnderstanding`. For example, this illustrates its
 shape; it supplies no source or execution authority:
 
@@ -72,6 +84,9 @@ support its explicit unit, source type and qualifiers; unknown role/path/time co
 unproved. Units, source types and qualifier values must match declarations exactly, with one declared
 field supporting all conditions on a need together. This resolution infers no unit conversion or
 role/path/time mapping. This is bounded declared-alias resolution, not general semantic understanding.
+Owners may share a complete alias between concepts only when their declared source types, units or
+qualifiers distinguish them. Explicit query conditions must leave exactly one matching concept;
+missing or insufficient conditions remain ambiguous, regardless of source access or availability.
 
 `plan.coverage` records `required`, `covered`, `uncovered` and `complete`. In this model protocol,
 requirements retain the raw concept labels and their unit/source/qualifier conditions. Exclusions
