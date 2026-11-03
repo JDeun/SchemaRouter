@@ -213,6 +213,18 @@ async def test_model_can_only_copy_an_explicit_current_source_name(query, tool, 
 
 
 @pytest.mark.asyncio
+async def test_every_explicit_source_must_supply_requested_data():
+    plan = await _query(_router(), {"intent_id": "material.lookup", "needs": [
+        {"concept": "band gap"},
+    ], "named_tools": ["materials", "papers"]},
+        query="Get band gap from materials and papers")
+    assert plan.status == "no_proven_hit" and not plan.coverage.complete
+    assert [call.route_id for call in plan.calls] == ["materials.read"]
+    assert any(item.semantic_id == "papers" and "named_tool=true" in item.qualifiers
+               for item in plan.coverage.uncovered)
+
+
+@pytest.mark.asyncio
 async def test_unserializable_owner_mutation_is_rejected_without_private_details():
     session = _router().prepare_field_routing(catalog=CATALOG)
 

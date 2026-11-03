@@ -136,11 +136,13 @@ def _compile_query_needs(
     excluded = [_resolve_query_need(PaperQueryNeed(concept=name), catalog)
                 for name in raw.excluded_concepts]
     named_tools = []
+    named_requirements = []
     missing_tools = []
     for name in raw.named_tools:
         # A model can copy a user-named source, never choose a provider on its own.
         key = (resolve_tool(name) if _alias_mentions(_normalized(query), _normalized(name))
                else None)
+        named_requirements.append((name, key))
         (named_tools if key is not None else missing_tools).append(key or name)
     known = tuple(dict.fromkeys(cid for cid, _ in resolved if cid is not None))
     ambiguous = any(flag for _, flag in (*resolved, *excluded))
@@ -194,8 +196,14 @@ def _compile_query_needs(
     for name, (cid, _) in zip(raw.excluded_concepts, excluded, strict=True):
         add(SemanticFieldRequirement(semantic_id=name, qualifiers=["excluded=true"]),
             cid is not None and not conflict)
-    for name in missing_tools:
-        add(SemanticFieldRequirement(semantic_id=name, qualifiers=["named_tool=true"]), False)
+    answer_semantics = {field.semantic_id for cid in known for field in by_id[cid].required_fields}
+    contributing_tools = {
+        call.call.tool for call in plan.calls
+        if not conflict and any(meta.semantic_id in answer_semantics for meta in call.fields_meta)
+    }
+    for name, key in named_requirements:
+        add(SemanticFieldRequirement(semantic_id=name, qualifiers=["named_tool=true"]),
+            key is not None and key in contributing_tools)
     if not raw.needs:
         add(SemanticFieldRequirement(semantic_id="query requirements"), False)
     if raw.needs_truncated:
