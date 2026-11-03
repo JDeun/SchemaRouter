@@ -1,0 +1,1628 @@
+{
+  "schema_version": 1,
+  "purpose": "ARCHIVE ONLY - NOT CODE INTEGRATION",
+  "repository": "JDeun/SchemaRouter",
+  "capture_date_local": "2026-11-04",
+  "captured_at_utc": "2026-11-03T15:48:00.546485+00:00",
+  "scope": "404 already-public remote branch tips. Local-only heads, untracked files and private DEV inputs are excluded.",
+  "restoration": "git branch <original-branch-name> <recorded-sha>; no experiment or execution permission follows.",
+  "retention": "Synthetic index commits retain original Git object histories as parents, but never merge their source trees or qualify any feature. Do not merge this archive branch into main.",
+  "branches": [
+    {
+      "ref": "refs/heads/audit/1821-executable-gap-ledger-20261102",
+      "sha": "75b8cb515a94e4de2a91e287d894d2ff31710703"
+    },
+    {
+      "ref": "refs/heads/audit/1821-paper-direct-real-denial-attribution-20261102",
+      "sha": "8fba7a91a995f05ca112879f5983b4ea7a9065c2"
+    },
+    {
+      "ref": "refs/heads/backup/pr-1007-2fffe46",
+      "sha": "2fffe464b3bf4aa6a71a2946436fa6c1ddedbdcf"
+    },
+    {
+      "ref": "refs/heads/backup/pr-1010-1a324dd",
+      "sha": "1a324dd6f0f178a53613c4d46def0571d0f99b0f"
+    },
+    {
+      "ref": "refs/heads/backup/pr-1010-4ea27a2",
+      "sha": "4ea27a2cf9e21eb0676e3908a9206a0f479f8214"
+    },
+    {
+      "ref": "refs/heads/backup/pr-999-f24bd63",
+      "sha": "f24bd639525a77bd00379c3a177d52147a8e254f"
+    },
+    {
+      "ref": "refs/heads/bench/1809-paper-public-pipeline-e0-20261028",
+      "sha": "966f3b98ea964a90daabb5d42cffe871234de784"
+    },
+    {
+      "ref": "refs/heads/bench/paper-public-refresh-e0-20261028",
+      "sha": "cd0fea1084cbbbbb2789a7b5555b0ee34c1dd553"
+    },
+    {
+      "ref": "refs/heads/chore-resume-0.15-development",
+      "sha": "a5fe2b066495e55054d1b0986f93990242614a48"
+    },
+    {
+      "ref": "refs/heads/chore-resume-0.15-development-v2",
+      "sha": "95f7a7ef30c6767921b5dc863311ba585c8424ca"
+    },
+    {
+      "ref": "refs/heads/ci/main-sync-20261003",
+      "sha": "5abb2cd469bc106b7f4969ddf5a87ffde7889729"
+    },
+    {
+      "ref": "refs/heads/contrib/638-adapter-plugin-example",
+      "sha": "628f34c98682884d8b6deda14ae4d1ddf9e588d6"
+    },
+    {
+      "ref": "refs/heads/design/codegraph-surgical-e1-20261023",
+      "sha": "5072f4727969ae010969308e9d2a5ce467b321d0"
+    },
+    {
+      "ref": "refs/heads/diagnostics/1275-c500-g27-p04-one-shot-20261011",
+      "sha": "1cbb06a98897c432306476c56ea0b42772940eee"
+    },
+    {
+      "ref": "refs/heads/docs-0.14-launch-surfaces",
+      "sha": "726c92414279566fdfb9af12fbfc884827435d6f"
+    },
+    {
+      "ref": "refs/heads/docs-sync-public-surfaces-2026-10-02",
+      "sha": "7293978069d21d986aa8f10a9750fdfe580078ff"
+    },
+    {
+      "ref": "refs/heads/docs/0.13-v6h-terminal-sync-20260929",
+      "sha": "edf7647668904d22489bc1ba1e4f0f1c3310267f"
+    },
+    {
+      "ref": "refs/heads/docs/0.14-agent-utility-thesis",
+      "sha": "d4eec6d2b5e5ef98db404a84902d64f3b5d46a04"
+    },
+    {
+      "ref": "refs/heads/docs/1202-research-negative-evidence-translation-20261010",
+      "sha": "0ae366093b1704482095d224b02eba6a958bade4"
+    },
+    {
+      "ref": "refs/heads/docs/1745-original-algorithm1-parity-mainline-20261102",
+      "sha": "6a4ed7c8bd52e1c93a2c29f7f20b93cf6b88f49c"
+    },
+    {
+      "ref": "refs/heads/docs/577-discoverability",
+      "sha": "7e2524480c0d5d41a46a3e74ecb6874bd161a75f"
+    },
+    {
+      "ref": "refs/heads/docs/921-runtime-contract-alignment",
+      "sha": "e25a73796b048dbc499018acd5d940b2e641e14a"
+    },
+    {
+      "ref": "refs/heads/docs/927-api-contract-checker",
+      "sha": "901c96ce27ac838633ef7369bf10356440d81b62"
+    },
+    {
+      "ref": "refs/heads/docs/audit-all-147-pairs-20261010",
+      "sha": "769de270bb39a189a19f5fa4352e8e4908141db2"
+    },
+    {
+      "ref": "refs/heads/docs/finalize-benchmark",
+      "sha": "5883529fd654e4fe43564b5f91559bfdb21df702"
+    },
+    {
+      "ref": "refs/heads/docs/ko-design-history-prose-audit-20261010",
+      "sha": "329da18e26db3803b44b6244cd63f173d07a2d83"
+    },
+    {
+      "ref": "refs/heads/docs/ko-final-technical-lines-20261010",
+      "sha": "29b5bfbdf3fe2a83f3be82115eec995b0ae0872b"
+    },
+    {
+      "ref": "refs/heads/docs/ko-legacy-experiment-hypotheses-20261010",
+      "sha": "e8617679e68ba4d78d9913714d9f5a9f5e8d9a8a"
+    },
+    {
+      "ref": "refs/heads/docs/ko-release-provenance-language-20261010",
+      "sha": "7cf2b60fa4da36230389025fa8fbab5041544913"
+    },
+    {
+      "ref": "refs/heads/docs/ko-research-history-evidence-qa-20261010",
+      "sha": "b41890c5ffc4f4e489e98962aae2d8e431a47cab"
+    },
+    {
+      "ref": "refs/heads/docs/ko-research-prose-cleanup-20261010",
+      "sha": "e4d1d7f0275858efa0ed7f1a680552b417a66586"
+    },
+    {
+      "ref": "refs/heads/docs/ko-residual-semantic-qa-after1243-20261010",
+      "sha": "6024ecc5b6c929aa04d4e38a8d2e2da18921a38b"
+    },
+    {
+      "ref": "refs/heads/docs/ko-reviewed-parity-slices-20261008",
+      "sha": "7ffe6100b5b031a895a4912927c07964e082df3d"
+    },
+    {
+      "ref": "refs/heads/docs/ko-runtime-contract-reconcile-20261008",
+      "sha": "6d8cd01cb5504c37c84a23feb805ec066f0c72df"
+    },
+    {
+      "ref": "refs/heads/docs/ko-untranslated-research-pass-20261010",
+      "sha": "66d702f4136ee48c12ad4438180900a71676c6c7"
+    },
+    {
+      "ref": "refs/heads/docs/paper-algorithm1-product-parity-20261024",
+      "sha": "ace3d4ca5d72950e44c2151f0e0bf0b028e84627"
+    },
+    {
+      "ref": "refs/heads/docs/quickstart-stable-anchors-20261010",
+      "sha": "53aa1adb1255b944d8e880d0ecbbccbb22f99b27"
+    },
+    {
+      "ref": "refs/heads/feat/1339-explicit-multilingual-glossary-20261015",
+      "sha": "edc9a0a7bf631c20d7d9cba5aa6d447757ba391b"
+    },
+    {
+      "ref": "refs/heads/feat/1560-direct-index-decision-benchmark-e0-20261025",
+      "sha": "75015d8d517bcd11129b79b40059b7a5bac0471b"
+    },
+    {
+      "ref": "refs/heads/feat/1560-indexed-agent-bridge-e0-20261025",
+      "sha": "65a649ddc3d0374136bc7f6554cc385ff9afde9e"
+    },
+    {
+      "ref": "refs/heads/feat/1560-indexed-decision-eval-e0-20261025",
+      "sha": "a4353d242798166413e417559a3737efe8453d53"
+    },
+    {
+      "ref": "refs/heads/feat/1560-indexed-paired-ranking-dev-20261025",
+      "sha": "59ae0233fc3dc150337d34446be71e2fe7323d5a"
+    },
+    {
+      "ref": "refs/heads/feat/1560-indexed-verified-ranking-e0-20261025",
+      "sha": "be1a200e76c169fb69cc9c5193640a99414f1c27"
+    },
+    {
+      "ref": "refs/heads/feat/1560-paper-a5-runtime-bind-20261027",
+      "sha": "5c6e3a764e5ae88cd74ad50ed61074e5c71a98be"
+    },
+    {
+      "ref": "refs/heads/feat/1560-paper-field-toolcall-plan-20261024",
+      "sha": "e8517ba671bc0725612396383d88fc03dc99e47e"
+    },
+    {
+      "ref": "refs/heads/feat/1560-paper-live-unhinted-wiring-20261027",
+      "sha": "456199f7c8dca03ca5f72b3a8976743b85d9fdef"
+    },
+    {
+      "ref": "refs/heads/feat/1560-paper-native-a5-e1-20261027",
+      "sha": "ddc87edbfba4c22d98be2c005085c2f3641af7a0"
+    },
+    {
+      "ref": "refs/heads/feat/1560-paper-reviewed-hints-wiring-20261027",
+      "sha": "2447efdbb101f30683c8026b7c32719500c57a36"
+    },
+    {
+      "ref": "refs/heads/feat/1560-paper-understood-direct-e0-20261025",
+      "sha": "318a6d6fc8f937ab6a4e3298a4ed5666fa67b8d6"
+    },
+    {
+      "ref": "refs/heads/feat/1761-paper-a5-heterogeneous-native-e1-20261027",
+      "sha": "fb03d7c43e672dfb8f8f5f0993a3f8935b731a24"
+    },
+    {
+      "ref": "refs/heads/feat/1763-paper-optimade-live-a5-e1-20261027",
+      "sha": "2cc49393726bb78b8d65a6fbbe2ed99a34d8159a"
+    },
+    {
+      "ref": "refs/heads/feat/1765-paper-crossref-native-a5-e1-20261027",
+      "sha": "a4218e4c49c6eda8f2a7812cd61e0a3d3c701b8e"
+    },
+    {
+      "ref": "refs/heads/feat/1767-paper-deepwiki-mcp-native-a5-e1-20261027",
+      "sha": "875775accc92036c2a791083516f8f2f3d49ee84"
+    },
+    {
+      "ref": "refs/heads/feat/1769-paper-europepmc-native-a5-e1-20261027",
+      "sha": "87e99583c480b532ed0451623db978a0bb3333fb"
+    },
+    {
+      "ref": "refs/heads/feat/1771-core-schema-field-routing-session-20261027",
+      "sha": "bca615c98c4ebaad5cf9b80a3fefe8cc49ffb41e"
+    },
+    {
+      "ref": "refs/heads/feat/1773-core-typed-parameter-metadata-20261027",
+      "sha": "01d6186ce827b7fa6a7056dd5d3b54ceb8e3fe25"
+    },
+    {
+      "ref": "refs/heads/feat/1775-prepared-understand-routing-20261027",
+      "sha": "20c4fcf48188c18fee0665a680f2a82f28dcc2e5"
+    },
+    {
+      "ref": "refs/heads/feat/1777-bounded-understand-query-20261027",
+      "sha": "0831032d75cf3e017f5de34146951596a02d5f44"
+    },
+    {
+      "ref": "refs/heads/feat/1785-core-session-refresh-20261027",
+      "sha": "47e9a9d3ad8be725547ca5c85469612f6e302e95"
+    },
+    {
+      "ref": "refs/heads/feat/1787-owner-catalog-revision-20261027",
+      "sha": "80d05923145bca3a94e0247f2e838621430752ab"
+    },
+    {
+      "ref": "refs/heads/feat/1789-core-field-review-inventory-20261027",
+      "sha": "5d72257a031b6a26f9654d38222cdf394e53d82a"
+    },
+    {
+      "ref": "refs/heads/feat/1791-core-parameter-review-20261027",
+      "sha": "4f4108e4ff3cef8baec69e8b3e4bc1f4ede279b8"
+    },
+    {
+      "ref": "refs/heads/feat/1793-core-host-root-revision-20261027",
+      "sha": "a438389c9374fdd33f84bb9c7ddd83f38ac6c392"
+    },
+    {
+      "ref": "refs/heads/feat/1795-native-review-reverse-index-20261028",
+      "sha": "7849cc4e15abff8ad940267e3b16cda458e6c0e0"
+    },
+    {
+      "ref": "refs/heads/feat/1797-paper-native-rank-20261028",
+      "sha": "e6493ae66aaafa64c14a1f990a405ce0894296cc"
+    },
+    {
+      "ref": "refs/heads/feat/1799-paper-native-graph-rank-20261028",
+      "sha": "6c397061dae7a8559f53828dd086667f67049c3a"
+    },
+    {
+      "ref": "refs/heads/feat/1801-host-optin-unnamed-g5-20261028",
+      "sha": "6882328d37ce473ea46025a38d359fd68997daac"
+    },
+    {
+      "ref": "refs/heads/feat/1803-paper-a9-ranked-graph-executor-20261028",
+      "sha": "c73eae117e397651371b9d8cd97a21c480c12e52"
+    },
+    {
+      "ref": "refs/heads/feat/1805-cross-depth-g5-rank-20261028",
+      "sha": "d21626108ff5a8805301e31c0f0c4506daeb499e"
+    },
+    {
+      "ref": "refs/heads/feat/1807-unnamed-g5-intent-domain-filter-20261028",
+      "sha": "185066020110819bd94677980ef538a5a6a577bb"
+    },
+    {
+      "ref": "refs/heads/feat/579-example-gallery",
+      "sha": "120b4c0ba54942c43ed823f1c4b433f052a273c6"
+    },
+    {
+      "ref": "refs/heads/feat/601-schema-explorer",
+      "sha": "307274e31bcf5547dea4f4a5be626fd71825f9cb"
+    },
+    {
+      "ref": "refs/heads/feat/604-live-provider-smoke-matrix",
+      "sha": "cda0aef5831daa059404364b2eacb93ead585018"
+    },
+    {
+      "ref": "refs/heads/feat/711-capability-graph-snapshots",
+      "sha": "56efaf54c066afc504a83eeb4a3378ea836b0d2b"
+    },
+    {
+      "ref": "refs/heads/feat/743-state-conditioned-backfill",
+      "sha": "b6a1b8016520b438d43f154527bb33209e55528a"
+    },
+    {
+      "ref": "refs/heads/feat/743-state-conditioned-reretrieval",
+      "sha": "e5f6077f567f92aca376a2b6005946d4c9fcccc6"
+    },
+    {
+      "ref": "refs/heads/feat/747-unified-decision-trace",
+      "sha": "3b246aee033292481da3a88af76661e6f6c6240e"
+    },
+    {
+      "ref": "refs/heads/feat/747-unified-decision-trace-main",
+      "sha": "79d1971ed318702c6b35d6f2ab10793b014d4e86"
+    },
+    {
+      "ref": "refs/heads/feat/762-principal-authorization",
+      "sha": "0e4f096853b9e2938bdb8e7fe3b3b623da4ff108"
+    },
+    {
+      "ref": "refs/heads/feat/762-principal-authorization-main",
+      "sha": "9f7846ffeecfc2114705286f76275207faa807c1"
+    },
+    {
+      "ref": "refs/heads/feat/766-sqlite-database-introspection",
+      "sha": "b9d62b43f6c8e263eeb201fbf6da359f474f7911"
+    },
+    {
+      "ref": "refs/heads/feat/766-sqlite-database-introspection-clean",
+      "sha": "26afe7715e9e238fac7ef4bd24faffe9991d799a"
+    },
+    {
+      "ref": "refs/heads/feat/767-pinecone-vector-adapter",
+      "sha": "36cada7923912ec16e2111846e4c1d7dae4aae2c"
+    },
+    {
+      "ref": "refs/heads/feat/767-pinecone-vector-adapter-clean",
+      "sha": "ba0d3948ededffc0673e04aa4dd940013463efae"
+    },
+    {
+      "ref": "refs/heads/feat/767-vector-native-adapters",
+      "sha": "5e8c20e12a0134f6b61be2bee4f5a208da130836"
+    },
+    {
+      "ref": "refs/heads/feat/767-vector-native-adapters-2",
+      "sha": "5cb8687d839fd4858a278acd3f8c2a5212ae899b"
+    },
+    {
+      "ref": "refs/heads/feat/767-vector-store-contract",
+      "sha": "a17fa75db0f9b657245c2558a1532bc3a44a7f1b"
+    },
+    {
+      "ref": "refs/heads/feat/767-vector-vendors",
+      "sha": "87b49b5377582cb4766c8701e071ab27f46f4dcb"
+    },
+    {
+      "ref": "refs/heads/feat/767-weaviate-vector-adapter",
+      "sha": "0a885885a523c450c6113cbeb95e41a31a56cc63"
+    },
+    {
+      "ref": "refs/heads/feat/768-graph-store-contract",
+      "sha": "0994e7068582952d1f7456b09b8aede55eff3bb4"
+    },
+    {
+      "ref": "refs/heads/feat/768-graph-store-contract-clean",
+      "sha": "b2a4bfd6fc84bd569ed17a5261c3b40bd431474a"
+    },
+    {
+      "ref": "refs/heads/feat/768-graph-store-contract-v2",
+      "sha": "ef5ba8bb6e75557fd82c5ad61c70f5d8dafa9dbd"
+    },
+    {
+      "ref": "refs/heads/feat/769-record-store-contract",
+      "sha": "00266f9bca82b144ce4a5c9bb81c1bae69ffac39"
+    },
+    {
+      "ref": "refs/heads/feat/770-data-scope-contract",
+      "sha": "56b72c94e8b0f7294686d1fa6d6d45c46f9396a4"
+    },
+    {
+      "ref": "refs/heads/feat/770-data-scope-main",
+      "sha": "dedd55b9514252f9586aee09e658dcd795364431"
+    },
+    {
+      "ref": "refs/heads/feat/777-native-graph-adapters",
+      "sha": "34985e610b5ccbe103a3a132362138ec8236f4db"
+    },
+    {
+      "ref": "refs/heads/feat/778-native-nosql-adapters",
+      "sha": "444905cbb01907a66bcd5a31c6dc93f7cd474e4e"
+    },
+    {
+      "ref": "refs/heads/feat/798-authorization-audit",
+      "sha": "76e063e0684f29e62938aa802d2aa2e15cf8b557"
+    },
+    {
+      "ref": "refs/heads/feat/904-atomic-provider-registration",
+      "sha": "ac96e299f2eac8d6fa5a9b027e52ec4950c61e56"
+    },
+    {
+      "ref": "refs/heads/feat/capability-contract-validation",
+      "sha": "79fc8ec460bcf9021f14141dcd384d4fd9b9494f"
+    },
+    {
+      "ref": "refs/heads/feat/codegraph-surgical-e1-20261023",
+      "sha": "2a5fd2f90891b707274c61a66c6a02868596e2c5"
+    },
+    {
+      "ref": "refs/heads/feat/http-serving-layer",
+      "sha": "2b84912f3c42275353561c5111abac5d45f1cf56"
+    },
+    {
+      "ref": "refs/heads/feat/observability-cli",
+      "sha": "10dfc5609de9a41ebc36a03843b42996bdf3a1a4"
+    },
+    {
+      "ref": "refs/heads/feat/openapi-external-refs",
+      "sha": "fdf43d6fb85e15e07b0c0fdf7a395db9a8b42c84"
+    },
+    {
+      "ref": "refs/heads/feat/openapi-typed-json-bodies",
+      "sha": "a0ac3699bc960fcdc0b8450e4c0c6d71ad8da658"
+    },
+    {
+      "ref": "refs/heads/feat/planning-priority",
+      "sha": "726817df47c27f81f89e051b1059dfddbc8813ce"
+    },
+    {
+      "ref": "refs/heads/feat/provider-neutral-field-routing",
+      "sha": "b266a1597ef2fd989e96d3bc5b583e2abd0c6cb2"
+    },
+    {
+      "ref": "refs/heads/feat/required-field-fallback",
+      "sha": "2d67c6522b397091cee52b95cac50281ef2fd6cc"
+    },
+    {
+      "ref": "refs/heads/feat/routing-runtime-preflight",
+      "sha": "9b113579e6457cde066f4a45c11bb20c73ca96fc"
+    },
+    {
+      "ref": "refs/heads/feat/typed-quantity-arguments",
+      "sha": "26ddb954d13754d000824c8a68f94234742d1e03"
+    },
+    {
+      "ref": "refs/heads/feat/typed-unit-aware-fields",
+      "sha": "29064f777ee39bf87e010f30f20dfebc84e2d975"
+    },
+    {
+      "ref": "refs/heads/feature/0.14-topk-capability-retrieval",
+      "sha": "54ec866dab82f29a5b0d6b1c205310de2aba47f8"
+    },
+    {
+      "ref": "refs/heads/feature/541-mcp-stdio",
+      "sha": "5d7b71cf1b5e461e45acd119b30b1a1c6917a8f0"
+    },
+    {
+      "ref": "refs/heads/feature/551-array-adapter-discovery",
+      "sha": "9106a69f1bf3522ce3df9252013513676b31db2b"
+    },
+    {
+      "ref": "refs/heads/feature/551-array-item-fields",
+      "sha": "a93d240c26ecb4a6f09d2d6dd19506b2a812de54"
+    },
+    {
+      "ref": "refs/heads/feature/551-array-item-projection",
+      "sha": "60520fc190c64cea4a06f51390ce29f6cd44b5cb"
+    },
+    {
+      "ref": "refs/heads/fix/1228-servicenow-arm-identity-gate-20261013",
+      "sha": "9edfa2b1ef8a1f34fc8d931a19fe0aee5d7b60bd"
+    },
+    {
+      "ref": "refs/heads/fix/1275-aggregate-only-salvage-20261014",
+      "sha": "c11b2e40b4361a1b08e5c3fe09d71e412a751b66"
+    },
+    {
+      "ref": "refs/heads/fix/1405-benchmark-provenance-binding-20261016",
+      "sha": "47357e9d9b62169c16a5f9a232eeb67f2eb049aa"
+    },
+    {
+      "ref": "refs/heads/fix/1434-b023-prestage",
+      "sha": "ce1feaa999c426ce40d4ddf42b263f50a3e1fdef"
+    },
+    {
+      "ref": "refs/heads/fix/1437-ruff-prestage",
+      "sha": "dcad84f6914522ca6064f14f3466c50056510aba"
+    },
+    {
+      "ref": "refs/heads/fix/1441-ruff-prestage",
+      "sha": "74e46d6be71b963069b8baca31cc223db05c9ba0"
+    },
+    {
+      "ref": "refs/heads/fix/1446-ruff-prestage",
+      "sha": "0453c56965876562a08d9b1b1a47e255cb3079d2"
+    },
+    {
+      "ref": "refs/heads/fix/1450-preserve-principal-scoped-retrieval-total-20261016",
+      "sha": "d76ec6772dfb59a5644f3a3134df52662211ffcb"
+    },
+    {
+      "ref": "refs/heads/fix/1851-raw-sqlite-context-closure-20261103",
+      "sha": "8e46a12e0f5ce85d4a39e16b07f3d13a306ac5b0"
+    },
+    {
+      "ref": "refs/heads/fix/1851-store-constructor-pragma-closure-20261103",
+      "sha": "2b9b46b4d42214ca5ebd4cb9f75ae8e77278c54c"
+    },
+    {
+      "ref": "refs/heads/fix/431-cancel-stale-corrective-blocker",
+      "sha": "53294e8c16499f0457a40dc31f0122635556e273"
+    },
+    {
+      "ref": "refs/heads/fix/589-health-probe-transitions",
+      "sha": "dc16c38e6c33f9a81afcee141f7b3a54ccf9021d"
+    },
+    {
+      "ref": "refs/heads/fix/599-source-diagnostics",
+      "sha": "f9e2d4ba7f6e85a96576127279f6c3202404386e"
+    },
+    {
+      "ref": "refs/heads/fix/599-structured-probe-diagnostics",
+      "sha": "66eac47e33c46350756819baf25a8aa12818af93"
+    },
+    {
+      "ref": "refs/heads/fix/701-state-aware-retrieval-v2",
+      "sha": "68124f0e847220be1f42dc057f0bc66fe1d15f46"
+    },
+    {
+      "ref": "refs/heads/fix/713-portable-artifact-v2",
+      "sha": "c53f7e529b584adad3de5299fc719c26303a305b"
+    },
+    {
+      "ref": "refs/heads/fix/714-consolidate-capability-workstream",
+      "sha": "1aabe40281c6545a180bfbc30c3338286c41bd7f"
+    },
+    {
+      "ref": "refs/heads/fix/714-restore-typed-capability-infrastructure",
+      "sha": "6cef8f998dd660a50571d08dd6eb9f612d164d97"
+    },
+    {
+      "ref": "refs/heads/fix/832-prefer-materialized-corrective",
+      "sha": "f260b33142fee72e6c4eebf78fb831821dcc78da"
+    },
+    {
+      "ref": "refs/heads/fix/844-direct-replacement-native-state",
+      "sha": "e67272b6c9beb4b3b5d63c75bb618cd1dab86fe8"
+    },
+    {
+      "ref": "refs/heads/fix/846-single-computed-field",
+      "sha": "dcf5e33addbcd471a4ce49af0230468cdbcccf6f"
+    },
+    {
+      "ref": "refs/heads/fix/846-storage-computed-fields",
+      "sha": "28fe5028c2c2e35b4e4df5f7320f7ed6ec0d1834"
+    },
+    {
+      "ref": "refs/heads/fix/847-atomic-execution-budgets",
+      "sha": "5fc0133abf3e94d3fd3d955ffbc69d7661b363ad"
+    },
+    {
+      "ref": "refs/heads/fix/848-indeterminate-offloaded-sync",
+      "sha": "4535edd4f12442ef06f8edc724c8e8128619ea4f"
+    },
+    {
+      "ref": "refs/heads/fix/848-offloaded-sync-mutation-semantics-stack",
+      "sha": "3e4d39911d730e23134c2bba9d1c18cd442979d0"
+    },
+    {
+      "ref": "refs/heads/fix/849-post-invocation-hook-semantics-stack",
+      "sha": "b0c1720b9c7a86c107024428fa2277871b82ce61"
+    },
+    {
+      "ref": "refs/heads/fix/849-post-invocation-hook-semantics-v2",
+      "sha": "9bdb979b0a435c30bab5fdb93e5a7e61559f6739"
+    },
+    {
+      "ref": "refs/heads/fix/850-atomic-bound-publication-stack",
+      "sha": "f57114cdc61f6151e6d83ded447454a3c7db582a"
+    },
+    {
+      "ref": "refs/heads/fix/850-atomic-bound-publication-v2",
+      "sha": "cce92b2bc761ad8ef149aed6f422c8650fbc6b42"
+    },
+    {
+      "ref": "refs/heads/fix/858-approval-composition-main5",
+      "sha": "b717a92dc04f2a86dd03703e7d11c9b63c57e04a"
+    },
+    {
+      "ref": "refs/heads/fix/864-hidden-fields-fail-closed",
+      "sha": "c3747e8d36d4b46aa7670bd13a3427ec00b80c9c"
+    },
+    {
+      "ref": "refs/heads/fix/864-hidden-fields-fail-closed-main2",
+      "sha": "34700083420478cd7e9f93b3bc66d3de45eb062b"
+    },
+    {
+      "ref": "refs/heads/fix/864-hidden-fields-fail-closed-v2",
+      "sha": "0cde839f7249a4dc4530d034ed2fc0d8adba82cd"
+    },
+    {
+      "ref": "refs/heads/fix/869-bounded-record-sampling",
+      "sha": "1ff39a3d6f3b3513ea24148e3f703e45a27cc353"
+    },
+    {
+      "ref": "refs/heads/fix/869-bounded-record-schema-discovery",
+      "sha": "1159d4845cc98528c2e6e97c1b35ef4e25d0d4d3"
+    },
+    {
+      "ref": "refs/heads/fix/870-registry-snapshot-provenance",
+      "sha": "85bcd26db2c2d4c02f4d810796636590901763c8"
+    },
+    {
+      "ref": "refs/heads/fix/870-snapshot-bound-registry-version",
+      "sha": "811e7a137b30f82d3eaabb4df8839c235ec93e7e"
+    },
+    {
+      "ref": "refs/heads/fix/870-stable-catalog-snapshot",
+      "sha": "7d0349ca01b0c852f90cefe1d03459605a9eb608"
+    },
+    {
+      "ref": "refs/heads/fix/872-live-export-contract",
+      "sha": "61b12139e80bb8f02789a456120c9c3bbe172929"
+    },
+    {
+      "ref": "refs/heads/fix/873-analyzer-registry-snapshot",
+      "sha": "696ffb08710bb8631f17a96101a833bcea9f5cd0"
+    },
+    {
+      "ref": "refs/heads/fix/874-conflicting-trusted-identifiers",
+      "sha": "4915adf2a9a95bee9578f0ecb9d26a9551dfd55b"
+    },
+    {
+      "ref": "refs/heads/fix/874-conflicting-trusted-identifiers-v2",
+      "sha": "9c52d68dfeaf41323ae52f5869a0ee8ef205823d"
+    },
+    {
+      "ref": "refs/heads/fix/877-mcp-discovery-budgets",
+      "sha": "c1680e4880c7e4baeb95a24cdaa30215c69393a1"
+    },
+    {
+      "ref": "refs/heads/fix/883-native-schema-watch-resilience",
+      "sha": "ab2a95d9a0adf92ab8b7016a289161c96587fcfc"
+    },
+    {
+      "ref": "refs/heads/fix/884-graph-vendor-discovery-bounds",
+      "sha": "f5e2e96b6e6380a96ace5ee88540f97eaff1bd2a"
+    },
+    {
+      "ref": "refs/heads/fix/884-native-discovery-budgets",
+      "sha": "96fc0b928c15d2f79ec973b48ad86494d8bf3872"
+    },
+    {
+      "ref": "refs/heads/fix/884-native-discovery-budgets-ci",
+      "sha": "96fc0b928c15d2f79ec973b48ad86494d8bf3872"
+    },
+    {
+      "ref": "refs/heads/fix/886-openapi-yaml-alias-budgets",
+      "sha": "d3e41bae063a9874cbdefc15ebcd6655707ac6bc"
+    },
+    {
+      "ref": "refs/heads/fix/899-explicit-elastic-sdk-dispatch",
+      "sha": "834574cd762b3eff265cc962aa86135f23ec8ec7"
+    },
+    {
+      "ref": "refs/heads/fix/900-sync-stream-cleanup",
+      "sha": "b10ce82cbac5a5be74d58b28baf75ae91c9d409a"
+    },
+    {
+      "ref": "refs/heads/fix/913-bounded-health-sync-probes",
+      "sha": "b3b3a3bfc6ce5d569f11d4fe9a50f4d80a0716a4"
+    },
+    {
+      "ref": "refs/heads/fix/913-sync-health-probe-inflight",
+      "sha": "aa318e0ba47544f64420d21b02dcd87ca308ad3f"
+    },
+    {
+      "ref": "refs/heads/fix/915-native-coverage-ratchet",
+      "sha": "4f775722c43f926a5efaf11f7efe080a6f013659"
+    },
+    {
+      "ref": "refs/heads/fix/929-trace-persistence-outcome",
+      "sha": "560c3f66dc2a631ed705117143895cb035960274"
+    },
+    {
+      "ref": "refs/heads/fix/929-trace-persistence-outcome-main",
+      "sha": "124158e07847a38ebbea00735c66dc4a296e654a"
+    },
+    {
+      "ref": "refs/heads/fix/930-compatibility-context-artifacts",
+      "sha": "b34b20d3bc05b6f2f138e802ee1db6d3c9eeea4e"
+    },
+    {
+      "ref": "refs/heads/fix/931-reentrant-publication-validation",
+      "sha": "cc2996692ebfd8afa52abbe1e1aeecaffe2ab686"
+    },
+    {
+      "ref": "refs/heads/fix/932-watch-generation-guard",
+      "sha": "1b3eca3af029a403c4ba760f30aa55efdafe2515"
+    },
+    {
+      "ref": "refs/heads/fix/932-watch-generation-guard-stack",
+      "sha": "9c2a8d0f9a8662b29efe17f4efdcf374d68fcd63"
+    },
+    {
+      "ref": "refs/heads/fix/933-health-probe-reentrancy-stack",
+      "sha": "4eff0e041a65aaf4167c236dfbcbf674fd3336a0"
+    },
+    {
+      "ref": "refs/heads/fix/934-sqlite-backup-reservation-stack",
+      "sha": "6450b2d69fcd938235f1ad5de96f751389f9fa6c"
+    },
+    {
+      "ref": "refs/heads/fix/938-capability-semantic-multiplicity-stack",
+      "sha": "e3a885350afef140d2bd6a4a4eb0ba83ef91b91b"
+    },
+    {
+      "ref": "refs/heads/fix/939-tracing-ownership-cleanup-main2",
+      "sha": "156f982f46310271467793d9b0cc1de99c11d677"
+    },
+    {
+      "ref": "refs/heads/fix/939-tracing-stream-cleanup",
+      "sha": "d7e5d13eed4ca912593f20e9624d853c6bdd5035"
+    },
+    {
+      "ref": "refs/heads/fix/940-stable-sync-loop-main2",
+      "sha": "3125fc5819cba67ce7388e9f6bc7e88f3d5c9244"
+    },
+    {
+      "ref": "refs/heads/fix/940-sync-loop-affinity",
+      "sha": "ae3677939ef3f1977bf00045fd5dc9eb89ac3fd5"
+    },
+    {
+      "ref": "refs/heads/fix/940-sync-loop-affinity-main3",
+      "sha": "7ab668b33e3f0b806dda0ea362a3d7b714407212"
+    },
+    {
+      "ref": "refs/heads/fix/941-sequence-trace-ordering",
+      "sha": "71f83c39a0d9c045e0e0905569810ada2acebd80"
+    },
+    {
+      "ref": "refs/heads/fix/conveyor-artifact-redirect-auth-20261009",
+      "sha": "4666a74261c3e962b57bd92da0bab30b450a70c0"
+    },
+    {
+      "ref": "refs/heads/fix/explicit-dimensionless-contracts",
+      "sha": "1e80d44291de89411e6ae2afb6ae38a9ee68c724"
+    },
+    {
+      "ref": "refs/heads/fix/qualification-r03-live-owner-20261102",
+      "sha": "e000b0278733611ec8e980a9208255614b0f5715"
+    },
+    {
+      "ref": "refs/heads/fix/recover-capability-infrastructure",
+      "sha": "220ed144bbd4def60545899c44f51aa6cf191fce"
+    },
+    {
+      "ref": "refs/heads/fix/recover-capability-infrastructure-v2",
+      "sha": "5c055ba76c38f64ff688e8844811999efcfe1039"
+    },
+    {
+      "ref": "refs/heads/growth/577-discoverability",
+      "sha": "8c5c72b37e8ce88a5bf27632fa81b35e03060cda"
+    },
+    {
+      "ref": "refs/heads/growth/577-discoverability-clean",
+      "sha": "474648cb1eae15fed5040163732801b8cd416580"
+    },
+    {
+      "ref": "refs/heads/growth/579-example-gallery",
+      "sha": "36968d2b66294eade4c5c25fa1912642f4c1296b"
+    },
+    {
+      "ref": "refs/heads/growth/583-adoption-scorecard",
+      "sha": "dd5c28f457d9f40e41aca792453dbf829fca8481"
+    },
+    {
+      "ref": "refs/heads/infra/1275-recovery-failure-forensics-20261011",
+      "sha": "edaf2ff31cc404f77f3c85c9794f6a7d234a8f07"
+    },
+    {
+      "ref": "refs/heads/launch-0.14-show-hn",
+      "sha": "baff11f8dced5a4514744a76c38c1d763767a8ac"
+    },
+    {
+      "ref": "refs/heads/main",
+      "sha": "43f0eb0ac2b2eee3de6dccb4cbd6fb6a67b358b3"
+    },
+    {
+      "ref": "refs/heads/maintenance/remove-branch-cleanup-20261001",
+      "sha": "9fc0b1dbe8b5950971f2fa2b061241c4fca351d3"
+    },
+    {
+      "ref": "refs/heads/ops/890-trace-retention",
+      "sha": "560c61dbd84312737346078600d0577834f502c2"
+    },
+    {
+      "ref": "refs/heads/perf/1031-sharded-coverage",
+      "sha": "731b6e186c27757cc075f8f5cb2d4e9232b4bc9e"
+    },
+    {
+      "ref": "refs/heads/perf/1031-sharded-coverage-main2",
+      "sha": "bbe07e30441d09b7ea7b5f9a14a7b9184f1cb2e5"
+    },
+    {
+      "ref": "refs/heads/perf/1038-pip-cache",
+      "sha": "28bfc1b1685ef845c7cce6ca647dc82e8bdbef23"
+    },
+    {
+      "ref": "refs/heads/perf/1038-pip-cache-current-main",
+      "sha": "6251245bba6275abc7cfc7486381a0da246b371d"
+    },
+    {
+      "ref": "refs/heads/perf/1038-pip-cache-main2",
+      "sha": "02aef463b0c9b4aa3a3d68fccf9dba2958653b14"
+    },
+    {
+      "ref": "refs/heads/perf/1038-pip-cache-prep",
+      "sha": "6442f205794afc06eb77493bd6f78fb41f896915"
+    },
+    {
+      "ref": "refs/heads/perf/1038-pip-cache-v2",
+      "sha": "85bdde1238e5ed9ece4b0b5b4ec0f7b9f9aa4422"
+    },
+    {
+      "ref": "refs/heads/perf/1038-pip-download-cache",
+      "sha": "cb3eee3cb97419b4ad2178fbf4bd1a2b627d6e03"
+    },
+    {
+      "ref": "refs/heads/perf/1431-request-local-visible-projection",
+      "sha": "a859114bc11bca5a6b3b0ff71eb77e73cf15b1fb"
+    },
+    {
+      "ref": "refs/heads/perf/1431-scoped-exact-index-experiment",
+      "sha": "3b4c3578fee16cfb8e8a6149e02b0caf16089a3c"
+    },
+    {
+      "ref": "refs/heads/perf/1873-reuse-source-audited-e0-provider-fixtures",
+      "sha": "ab34629084221d20c18a16dd5b50a48decb8f2d0"
+    },
+    {
+      "ref": "refs/heads/perf/1875-churn-phase-wall-timings-20261103",
+      "sha": "9f3792c421cb22ab888d5a3e53658621d0a6fd66"
+    },
+    {
+      "ref": "refs/heads/perf/744-indexed-capability-graph",
+      "sha": "a31ebfe9c5bb13c1d9d669b410a1879995226195"
+    },
+    {
+      "ref": "refs/heads/perf/845-candidate-index-substring",
+      "sha": "44058cc92b4b73b324d0bd3e532247f8431967a3"
+    },
+    {
+      "ref": "refs/heads/perf/845-candidate-substring-index",
+      "sha": "bcde81582a7e556c78cf115627df62892410c9a3"
+    },
+    {
+      "ref": "refs/heads/perf/920-compatibility-pr-critical-path-prep",
+      "sha": "fc4b29c049ae2034b2fc755e3f4d9df95fc459f1"
+    },
+    {
+      "ref": "refs/heads/perf/923-post-merge-core-prep",
+      "sha": "84e15873eba7fe43448668dd03506837f4715b71"
+    },
+    {
+      "ref": "refs/heads/perf/935-bounded-execution-cardinality-stack",
+      "sha": "3096e2d9ac0449e50cd490a22ec79db855ece0d0"
+    },
+    {
+      "ref": "refs/heads/perf/936-async-trace-persistence-stack",
+      "sha": "f94b0134143b5056d582855eb6e81e64efbd6156"
+    },
+    {
+      "ref": "refs/heads/perf/937-stack-safe-capability-graph-stack",
+      "sha": "3da8f614d18283841f719d6ebbeae2edc4e27a7e"
+    },
+    {
+      "ref": "refs/heads/refactor/895-provider-registration-on-mixin",
+      "sha": "303a813dcbd7b143319531ad6564a535db2bad76"
+    },
+    {
+      "ref": "refs/heads/refactor/895-provider-registration-service",
+      "sha": "c3bf120b01d0d18d03ffecc3a6e78dc2a34a9c8f"
+    },
+    {
+      "ref": "refs/heads/refactor/896-native-vector-factory-registry",
+      "sha": "95d028fe5acac8fa528b97a6d51aa2e49a7aa10d"
+    },
+    {
+      "ref": "refs/heads/refactor/897-candidate-pipeline-stage",
+      "sha": "3bbe2e4a81c36dd9f42f4101be0c487636bfde30"
+    },
+    {
+      "ref": "refs/heads/refactor/897-fallback-selection-stage",
+      "sha": "890781eed5456088ff871a558e84f3076e90cab0"
+    },
+    {
+      "ref": "refs/heads/refactor/897-fallback-selection-stage-current-main",
+      "sha": "77bc47b16d9aee8d4253b187e1832b21e4e3ce2d"
+    },
+    {
+      "ref": "refs/heads/refactor/897-fallback-selection-stage-main",
+      "sha": "905ffbe19b2242ee2e7776932567ece4d564e3d4"
+    },
+    {
+      "ref": "refs/heads/refactor/897-final-plan-assembly",
+      "sha": "41d3d3e156bf87e81f07caea978bdb5d2ddeddd4"
+    },
+    {
+      "ref": "refs/heads/refactor/897-final-plan-assembly-main2",
+      "sha": "f46453148371e55a5d4feae4876b2c4ba72da0df"
+    },
+    {
+      "ref": "refs/heads/refactor/897-plan-assembly-on-fallback",
+      "sha": "f52567e2798e3e50f50cb71af41b12dcc024805c"
+    },
+    {
+      "ref": "refs/heads/refactor/897-plan-assembly-stage",
+      "sha": "4bca376df6e91a2844697d074db00b5a2fd0585f"
+    },
+    {
+      "ref": "refs/heads/refactor/897-plan-assembly-stage-current-main",
+      "sha": "9a561c65c67f2d6d9cc0c28c45a8a727c3fcc071"
+    },
+    {
+      "ref": "refs/heads/refactor/897-plan-assembly-stage-main",
+      "sha": "0fab754bafd23f592609f0faa61427ee0992baca"
+    },
+    {
+      "ref": "refs/heads/refactor/897-primary-selection-stage",
+      "sha": "6d3583484584366183a432926951e1ea1872cbca"
+    },
+    {
+      "ref": "refs/heads/refactor/898-runtime-defaults-v2",
+      "sha": "74d5268c94cecb7a124077b401260fd37d912bd8"
+    },
+    {
+      "ref": "refs/heads/release-0.14.0",
+      "sha": "b97d8d92e26fa340a5099a90a04ec9d92d138717"
+    },
+    {
+      "ref": "refs/heads/release-0.14.0-final",
+      "sha": "3869253f3f85f00c59767a96498ea1a812544aae"
+    },
+    {
+      "ref": "refs/heads/release/0.18.0-candidate-held-for-external-gate",
+      "sha": "e9ee12b0fbfff3d001750e0231e74ba41ade4d51"
+    },
+    {
+      "ref": "refs/heads/repair/1016-main-sync-v2",
+      "sha": "867fe81511c3698b8a6849a31ece5a9cf16d7388"
+    },
+    {
+      "ref": "refs/heads/repair/1018-main-sync-v2",
+      "sha": "14867142733ec576483ebac8f812f877f47fc116"
+    },
+    {
+      "ref": "refs/heads/repair/1019-main-sync-v2",
+      "sha": "c04c0b0f77a94f4ff77514c1b256b25286c2fb10"
+    },
+    {
+      "ref": "refs/heads/repair/864-main-sync-v2",
+      "sha": "a6d5c6c695bd1cc6d411ffbc5f66369eeb14c355"
+    },
+    {
+      "ref": "refs/heads/research/0.12-capability-set-consensus",
+      "sha": "0eb4f5ded8b1d5147eac4448d1d71e121fcb6ce2"
+    },
+    {
+      "ref": "refs/heads/research/0.12-capability-set-membership-consensus",
+      "sha": "4e6279e15a16135fc79b3533ba9a5b39b6f7f22d"
+    },
+    {
+      "ref": "refs/heads/research/0.12-direct-set-nli-veto",
+      "sha": "8b9728a66dae1c7a1f8cf24e74a006cb08f004a1"
+    },
+    {
+      "ref": "refs/heads/research/0.12-hierarchical-capability-ontology",
+      "sha": "c0d8c8acaf3c8e85bd9a285885bd9be0f1fe69b6"
+    },
+    {
+      "ref": "refs/heads/research/0.12-tool-conditioned-counterfactual",
+      "sha": "dd29148da0584b76bd511d2257a072049caddc24"
+    },
+    {
+      "ref": "refs/heads/research/0.13-density-ratio-harness",
+      "sha": "6d4ee820dd9b1e2a8aeaa1c6a059579a4f25db96"
+    },
+    {
+      "ref": "refs/heads/research/0.13-knn-membership",
+      "sha": "e24ebccd79dff17dc6def62814bedf681a8e50fe"
+    },
+    {
+      "ref": "refs/heads/research/0.13-schema-hard-negative-boundary",
+      "sha": "0348bbdebb233ad81bebcd6e8c41a82e67b6ebcf"
+    },
+    {
+      "ref": "refs/heads/research/0.14-adaptive-authoring-infra",
+      "sha": "4bd69d1615e561cfa47b387856fcc4cc9cd323fd"
+    },
+    {
+      "ref": "refs/heads/research/0.14-adaptive-depth-prereg",
+      "sha": "5a3b2624d00e1d82414b9fd3282564114ad6c4c6"
+    },
+    {
+      "ref": "refs/heads/research/0.14-adaptive-dev-infra",
+      "sha": "bfb10d76d3361120951ab1b3bc0676f33f09a71c"
+    },
+    {
+      "ref": "refs/heads/research/0.14-adaptive-dev-run",
+      "sha": "9927e6590e8b0385e10de57a0d992b7f8dec5426"
+    },
+    {
+      "ref": "refs/heads/research/0.14-adaptive-diagnose-run",
+      "sha": "39b92fd4e63d85b614703c8381fdc068b61d94e1"
+    },
+    {
+      "ref": "refs/heads/research/0.14-adaptive-policy-kernel",
+      "sha": "be241fb4e76af1b3a6b4de00320a8c1cb848d262"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-arm64-250-run",
+      "sha": "cc07d3b49d8aba1c60224b9c295d9f73cc6495ec"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-arm64-benchmark-run",
+      "sha": "06599488fea46e31088820c51846453728f66701"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-gemma4-smoke",
+      "sha": "808b9b7225b3b3e94e31bbfad59fbfb875dcfd7b"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-harness-prep-backup",
+      "sha": "5d1a10b1e25ab1ef4e5e8a0bb032e872296fb211"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-llama32-smoke",
+      "sha": "b35eaebfe52c848da12b58bfa5e7465d1f58cc77"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-prefix-cache",
+      "sha": "52ffa39e41e7402e37961869015201fd11e43a3b"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-prefix-cache-250-run",
+      "sha": "46946621ea323a4ae2eb7dfd1382f4cdf8e54e1d"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-prefix-cache-run",
+      "sha": "a675afae76d0f94ee408a53b42368775084b0603"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-run",
+      "sha": "01edb00fe7e8bff803988ce6bce5e05f79801e43"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-runner-telemetry",
+      "sha": "c0cf8db4ee3a67213bd44f37f6a9d05e9267c096"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-sdpa-250-run",
+      "sha": "b37eec196b1c82c829c76191a0759144882257a6"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-sdpa-equivalence-run",
+      "sha": "298a9b31c07dfb4a30c3d0de97ea0f23506d3f7f"
+    },
+    {
+      "ref": "refs/heads/research/0.14-b2-sdpa-memory-run",
+      "sha": "82fad74aeb9494a5518b9c8cfbf23d52495f35e3"
+    },
+    {
+      "ref": "refs/heads/research/0.14-conveyor-import-hotfix",
+      "sha": "c86a5238ef7f9810ed9592729cacf2070dc2a4b8"
+    },
+    {
+      "ref": "refs/heads/research/0.14-doc-sync",
+      "sha": "29c40e5d8229241beb0901a7aac15577c0c09149"
+    },
+    {
+      "ref": "refs/heads/research/0.14-governance-hardening",
+      "sha": "a11a88302a413c06251c60b35da5599a9889f7f2"
+    },
+    {
+      "ref": "refs/heads/research/0.14-identity-rerank-dev",
+      "sha": "a7e0df301d1bb102b7f8ba460c462da75c3696f6"
+    },
+    {
+      "ref": "refs/heads/research/0.14-ledger-refresh",
+      "sha": "71e627cb9b39c6f26a3c410e6a5fe28e52b6c5ef"
+    },
+    {
+      "ref": "refs/heads/research/0.14-local-agent-ab",
+      "sha": "b9eadefd3cd076f026a54bbc55a949f0424f5dab"
+    },
+    {
+      "ref": "refs/heads/research/0.14-local-agent-ab-integration",
+      "sha": "a7fd3ba8c75d20b9c7ece402480fef99c667addf"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-adaptive-dev",
+      "sha": "9fcea30a257658b4ec738f0883fc75f2e7869ac8"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-adaptive-v3-run",
+      "sha": "11fc523eb31024f619689199d4e102da5d4e2d13"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-confirmation",
+      "sha": "9ac80726b2ac64da799f37920b5327ddee0059d3"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-confirmation-run",
+      "sha": "573178e2c5a95ffacdec8b63a97cd98946f738c7"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-fixed-k3-confirmation",
+      "sha": "feec1418bde2ae7f871be7d6edfa9a885e237608"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-fixed-k3-confirmation-run",
+      "sha": "cef611aa0f833bc36e340b3f28fc9e681b530b17"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-fixed3-v4-run",
+      "sha": "b27f0856f73db81f080928aa7595e39bbe81253e"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-latency-run",
+      "sha": "d83a3f5fc60c443ac781bc4b0a993b0519eafbeb"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-parity-run",
+      "sha": "ef23b9b006ba2718bfe567739361efed199d19a4"
+    },
+    {
+      "ref": "refs/heads/research/0.14-structural-retrieval-run",
+      "sha": "0c245a8160a1a261f84705b72382aa743663c4ca"
+    },
+    {
+      "ref": "refs/heads/research/0.14-successor-authoring-scaffolds",
+      "sha": "f4a61cc4e39f6e858fdf24014061363f159f5477"
+    },
+    {
+      "ref": "refs/heads/research/1114-matched-information-control",
+      "sha": "368b2bd9d5d957fb6dcb6e2d504a63f8dbe2ac3e"
+    },
+    {
+      "ref": "refs/heads/research/1114-smartmcp-pinned-smoke",
+      "sha": "b3931a362eaa841d77a6e647c86a85afbc2c4449"
+    },
+    {
+      "ref": "refs/heads/research/1211-safeact-v1",
+      "sha": "fbbc445097c8b4172823adbd508c99706dff16cc"
+    },
+    {
+      "ref": "refs/heads/research/1228-native-k5-overlap-audit-20261016",
+      "sha": "1d0a203e31132c151bf3eb352496e8bf001cc24e"
+    },
+    {
+      "ref": "refs/heads/research/1275-conveyor-cutover-wakeup",
+      "sha": "2d751f1baea8219c34d5686669b77d662c71b48c"
+    },
+    {
+      "ref": "refs/heads/research/1277-two-task-frozen-live-pilot",
+      "sha": "a8c4c4f0bd3757e8e0a065753ff8cbc8832d378c"
+    },
+    {
+      "ref": "refs/heads/research/1312-native-pi-jev-local-runner-20261013",
+      "sha": "194053a4197eef419809a420b00e4741edac7c0b"
+    },
+    {
+      "ref": "refs/heads/research/1412-autoresearch-execution-v1",
+      "sha": "87fd00bd5148131512a6438e5f5e3a421b14242f"
+    },
+    {
+      "ref": "refs/heads/research/1412-joint-pool-rerank-cpu-v2",
+      "sha": "d30f33a2fb7ddc7be855872982f1d3341d0381c2"
+    },
+    {
+      "ref": "refs/heads/research/1477-bounded-host-incomplete-retry-e0-20261017",
+      "sha": "ddc2ff4da6baf5ef7b758eb2f70a003bd14fe831"
+    },
+    {
+      "ref": "refs/heads/research/1477-principal-scoped-agent-tool-surface-20261017",
+      "sha": "6298fe508d7c17f5d7e871784e997a39e450d0ad"
+    },
+    {
+      "ref": "refs/heads/research/1477-qwen-structured-tool-transcript-e0-20261017",
+      "sha": "2b5e06731554499bc06e2251d603b91ba83ad146"
+    },
+    {
+      "ref": "refs/heads/research/1477-qwen3-17b-real-bound-two-step-e0-20261017",
+      "sha": "929a115cf4bde76e3df33a0de72dd98699a78b21"
+    },
+    {
+      "ref": "refs/heads/research/1477-real-qwen-e5-paired-agent-e0-20261017",
+      "sha": "150d2a6617c5e98172e118998d3fa3580305a2ee"
+    },
+    {
+      "ref": "refs/heads/research/1477-scoped-catalog-byte-cost-e0-20261018",
+      "sha": "4d2830fbbeb003f3b695a80d049112dda8423d96"
+    },
+    {
+      "ref": "refs/heads/research/1477-scoped-catalog-byte-cost-e0-main-20261018",
+      "sha": "435f0124daec888fddb4afdfe796745cd08f8ece"
+    },
+    {
+      "ref": "refs/heads/research/1477-scoped-ranked-catalog-preview-k5-20261018",
+      "sha": "d5295a96dbe496c8b3a935326cf18a820919c9d1"
+    },
+    {
+      "ref": "refs/heads/research/1540-verified-two-hop-schema-graph-g2-20261018",
+      "sha": "db1d2aaa46a8178bd7322d52db7c33dfeff51f0b"
+    },
+    {
+      "ref": "refs/heads/research/1560-1751-1752-mainline-e0-migration",
+      "sha": "632c4684c5ba35c6239fbc7edff05cb094b0ade9"
+    },
+    {
+      "ref": "refs/heads/research/1560-g5-source-cost-500-5000-e0-20261024",
+      "sha": "2e0d730dda79b4af3ea6387e8786fa49054d9327"
+    },
+    {
+      "ref": "refs/heads/research/1560-multidomain-g5-vs-lexical-e0-20261024",
+      "sha": "870fc85212ab1375ae5e895c2b425d75fdc2c673"
+    },
+    {
+      "ref": "refs/heads/research/1560-native-g5-vs-scoped-lexical-k5-e0-20261024",
+      "sha": "66883ed3b1287aee52a786c2eb31a4e5e7fefc8f"
+    },
+    {
+      "ref": "refs/heads/research/1560-paired-context-frontier-e0-20261024",
+      "sha": "ad1fe06f6b65af1937bce6baec4417176cc0ccb2"
+    },
+    {
+      "ref": "refs/heads/research/1560-qwen-schema-tokenizer-e0-20261024",
+      "sha": "974adfcce60a84519a5f651c7123a978a6f2f961"
+    },
+    {
+      "ref": "refs/heads/research/1560-sqlite-500-5000-g5-graph-paired-cpu-e0-20261021",
+      "sha": "136727c207eefaa506bec826e351888960d6f96e"
+    },
+    {
+      "ref": "refs/heads/research/1576-bfcl-public-menu-familywise-e1-20261019",
+      "sha": "605daf7a5a55331a65ac2ec0e7d88016abd3d9fb"
+    },
+    {
+      "ref": "refs/heads/research/1578-qwen-grounded-observation-progress-e1-20261019",
+      "sha": "62678676779b2c425edc4dc1fab030eb92c118d5"
+    },
+    {
+      "ref": "refs/heads/research/1578-qwen-source-grounded-feedback-e1-20261019",
+      "sha": "276f3b68d6a85ee8ea7a0c775d575a759a15dc44"
+    },
+    {
+      "ref": "refs/heads/research/1581-bfcl-cross-encoder-singleton-fit-e1-20261019",
+      "sha": "17c78fc3ccec2f8467666b8803253aaf0e6c07c9"
+    },
+    {
+      "ref": "refs/heads/research/1585-qwen-bounded-premature-final-feedback-e1-20261019",
+      "sha": "a6ec24cf3fa1a4c0c0869e3853ab65d5fda1db83"
+    },
+    {
+      "ref": "refs/heads/research/1711-codegraph-action-shape-e1-20261023",
+      "sha": "90cfdb6cde4a21e56e34c39eacafc1fda766d080"
+    },
+    {
+      "ref": "refs/heads/research/1711-codegraph-fair-fourroute-e1-20261023",
+      "sha": "231b044cf43e6e2b938b22677168f59eafd7ee6e"
+    },
+    {
+      "ref": "refs/heads/research/1711-strict-envelope-e1-20261023",
+      "sha": "f502151acf5c2decbfb8b63fe1ece1c001a0671e"
+    },
+    {
+      "ref": "refs/heads/research/1723-argument-alignment-diagnostic-20261023",
+      "sha": "f3f8fb9322dcb9422d947610efff4735474b1bc6"
+    },
+    {
+      "ref": "refs/heads/research/1723-bare-schema-treatment-20261023",
+      "sha": "46d983d5e2c99903e68e3189d76265e4ed775473"
+    },
+    {
+      "ref": "refs/heads/research/1723-g5-path-order-cue-20261023",
+      "sha": "d8fc2ef0cca90f63414344586dbc23b9cb88391f"
+    },
+    {
+      "ref": "refs/heads/research/1723-g5-verified-continuation-e1-20261023",
+      "sha": "2bac654e84dcb45a0bfb4c999a8ab1e27dbbcb24"
+    },
+    {
+      "ref": "refs/heads/research/1723-graph-frontier-design-20261023",
+      "sha": "94e0337ee52b9e9e7f232be1d25695997849ae80"
+    },
+    {
+      "ref": "refs/heads/research/1723-qwen-bare-json-strict-adapter-e1-20261023",
+      "sha": "61b9cb08593769243fc920bcb74cadebc5d92c9f"
+    },
+    {
+      "ref": "refs/heads/research/1723-qwen-single-step-protocol-e1-20261023",
+      "sha": "de541b1ad4a33335f7fc59d66c14dd230bab3f2d"
+    },
+    {
+      "ref": "refs/heads/research/1723-qwen-structural-diagnostics-e1-20261023",
+      "sha": "5974096c410e144ae55c658444e8fbe88e4f15a6"
+    },
+    {
+      "ref": "refs/heads/research/1723-surgical-followup-20261023",
+      "sha": "061110a588528d1c66a22b49b6d4a9978be0e5b2"
+    },
+    {
+      "ref": "refs/heads/research/1726-strict-native-envelope-current-main-20261102",
+      "sha": "ecc028c7127e0de652c10402e686915c9c033325"
+    },
+    {
+      "ref": "refs/heads/research/1735-frontier-verified-continuation-20261023",
+      "sha": "6bc00760277f303d2860c0c3e58a9e3e8839ccc5"
+    },
+    {
+      "ref": "refs/heads/research/1736-final-answer-taxonomy-e1-20261024",
+      "sha": "eac2e4fcd65235d30f9f513c471cd434792012fd"
+    },
+    {
+      "ref": "refs/heads/research/1736-qwen35-native-tool-capability-20261023",
+      "sha": "a1ee3ef95ef9ba59fac936b7f0c6ea60187b48f3"
+    },
+    {
+      "ref": "refs/heads/research/1736-qwen35-xml-prefix-e1-20261023",
+      "sha": "e5d87ecf8f57d81e018310d1b32748e3fb27adba"
+    },
+    {
+      "ref": "refs/heads/research/1741-1744-g5-k5-e0-mainline-20261102",
+      "sha": "cf302691a47cdeae271aee17b0f45f4c0e4ae49a"
+    },
+    {
+      "ref": "refs/heads/research/bfcl-cross-encoder-no-fit-e1-20261019",
+      "sha": "d906a683da685c2f691db70d1e76ce563abfb6b0"
+    },
+    {
+      "ref": "refs/heads/research/cascade-calibration-once",
+      "sha": "304da85287a3133db130c73777b41ed8d71871f1"
+    },
+    {
+      "ref": "refs/heads/research/durable-probe-lease-revocation-e1-20261020",
+      "sha": "83bec3d683655149fb91e6cdb0cd531380ac004b"
+    },
+    {
+      "ref": "refs/heads/research/fixed5-visible-rank-order-e0-20261020",
+      "sha": "309ad66297e5ed6e4c461f9e102f6167b269544b"
+    },
+    {
+      "ref": "refs/heads/research/g5-real-host-parameterized-jsonplaceholder-e1-20261019",
+      "sha": "e0e3145515a030511aecdabc125e07f4b529c782"
+    },
+    {
+      "ref": "refs/heads/research/graph-projection-v3-calibration-prep",
+      "sha": "2484ef5ad9d334f185ab55e89e6ab3fa9fc8b4a5"
+    },
+    {
+      "ref": "refs/heads/research/graph-semantic-seed-v3-dev",
+      "sha": "9afb1b4a1b43c8d29802ac7878f95175b3c4e2c1"
+    },
+    {
+      "ref": "refs/heads/research/knuckles-kg-tool-discovery-20261030",
+      "sha": "04c769821e500754822b73755a4ff2b800e4bdc5"
+    },
+    {
+      "ref": "refs/heads/research/one-shot-runner-shared-lease-e1-20261020",
+      "sha": "b4e90461eac472180f6f3778909ee1b76a4b3a8c"
+    },
+    {
+      "ref": "refs/heads/research/operation-fit-cross-encoders",
+      "sha": "446f8242f212dd60c753d1bdc6b893c955433f65"
+    },
+    {
+      "ref": "refs/heads/research/reserve-v12-hybrid-holdout",
+      "sha": "0ef4e7d830a371717902941f689b7e58939b6246"
+    },
+    {
+      "ref": "refs/heads/research/sync-0.12g-set-conditioned-evidence",
+      "sha": "db4259c0f3a3d59e0c7f837a88f46a8f0166be50"
+    },
+    {
+      "ref": "refs/heads/research/v13-consumed-evidence",
+      "sha": "fb3984eb2cf66ee9f5eac3341afb13c2bac0e35b"
+    },
+    {
+      "ref": "refs/heads/research/v13-minilm-diagnostic",
+      "sha": "2962906b7a5bbc822dbda5192b0b443c51359921"
+    },
+    {
+      "ref": "refs/heads/research/v4-action-evidence-diagnostic",
+      "sha": "d6427320a0f56f7dcd052692c06bfe16b2025ba8"
+    },
+    {
+      "ref": "refs/heads/research/v4-bge-kev-global-noul",
+      "sha": "d779acc56898a441bdeff5bbbc7bf4f51f2a1ce5"
+    },
+    {
+      "ref": "refs/heads/research/v4-bge-m3-typed-two-view-gate",
+      "sha": "6f7d3034b563d795c7d0fce63f038a93fd75698a"
+    },
+    {
+      "ref": "refs/heads/research/v4-bounded-action-embedding",
+      "sha": "408d324d921f80984244c05f68260d0aa128250b"
+    },
+    {
+      "ref": "refs/heads/research/v4-frozen-crossmodel-rescue-candidate",
+      "sha": "b8e88100fee32716b20e4a5de4949e825d092e51"
+    },
+    {
+      "ref": "refs/heads/research/v4-frozen-width2-candidate",
+      "sha": "ea3edecfa85996abb2887e17f53060b98c1a5f5f"
+    },
+    {
+      "ref": "refs/heads/research/v4-kev-08b-system-one-timeout-rescue",
+      "sha": "6934e97c5cd6f837aea405e3545995d5cb481374"
+    },
+    {
+      "ref": "refs/heads/research/v4-operation-fit-selector",
+      "sha": "4f5e81556d88ae43364e782d31402b051af35139"
+    },
+    {
+      "ref": "refs/heads/research/v4-operation-surface-diagnostic",
+      "sha": "f9dbf2169f754d2b2ff0b9ed49d98f148d4e3f9a"
+    },
+    {
+      "ref": "refs/heads/research/v4-robust-zero-false-rescue",
+      "sha": "30b2f8ad9388a2800bdad701091ec2c61635a565"
+    },
+    {
+      "ref": "refs/heads/research/v4-stage-diagnostics",
+      "sha": "1cf7efc261b5bcb16b50a8794c8abbf84ed9265c"
+    },
+    {
+      "ref": "refs/heads/research/v4-strict-top2-bge",
+      "sha": "6cf070139a7197430bd36a023aa67dbc64fda364"
+    },
+    {
+      "ref": "refs/heads/research/v4-topk-laya-noul-routing",
+      "sha": "f6e5d086175317bd7a7cb54aa6ecc83351667fa6"
+    },
+    {
+      "ref": "refs/heads/research/v7-field-projection",
+      "sha": "18666f9f951abb2339d3472982625cda84e942aa"
+    },
+    {
+      "ref": "refs/heads/security/1532-scoped-input-semantic-id-20261021",
+      "sha": "390312d3393c3497f8ee6b1f31ce4bb22d141ec6"
+    },
+    {
+      "ref": "refs/heads/security/851-856-egress-policy",
+      "sha": "bfdf2f558104a7dca76292a3b2c01ec644813762"
+    },
+    {
+      "ref": "refs/heads/security/853-schema-complexity-main2",
+      "sha": "7b103d25a2800906156e02dd547e582898868c72"
+    },
+    {
+      "ref": "refs/heads/security/863-trusted-filter-invoker-capability",
+      "sha": "c1aa4a3ece18a5c20ad4581f55fed460f1007414"
+    },
+    {
+      "ref": "refs/heads/security/871-trace-safe-metadata",
+      "sha": "3b4404f6d4c329cf8bb52d03cefd1ca527ad4aaf"
+    },
+    {
+      "ref": "refs/heads/security/871-trace-safe-metadata-v2",
+      "sha": "bed317a9eb92ef79ce841769479557f56f8ac2de"
+    },
+    {
+      "ref": "refs/heads/security/871-trace-safe-run-metadata",
+      "sha": "203ca25f180835765fe2a3712db9f5f93a16d5e6"
+    },
+    {
+      "ref": "refs/heads/security/877-bound-mcp-discovery",
+      "sha": "d5dd82d6b6a1331e2c8c696fadad962cbf41ace5"
+    },
+    {
+      "ref": "refs/heads/security/877-mcp-discovery-bounds",
+      "sha": "2685aa17c4a57e4418f6041f0bfdfd2d8edcde50"
+    },
+    {
+      "ref": "refs/heads/security/881-audit-delivery-policy",
+      "sha": "9743fe71f29ca670d238451fb655b1fa6de5a024"
+    },
+    {
+      "ref": "refs/heads/security/881-authz-audit-delivery-v2",
+      "sha": "0c412818b990393c16a3c5aa75c4ad698f06ac8d"
+    },
+    {
+      "ref": "refs/heads/security/884-graph-native-bounds",
+      "sha": "f3d816ddf130b0f69babe812f4e137626f66cac8"
+    },
+    {
+      "ref": "refs/heads/security/894-bounded-config-loading",
+      "sha": "fb1c93f15ecb4da53504fa8742dab7f3415fb5c4"
+    },
+    {
+      "ref": "refs/heads/security/894-config-document-budgets",
+      "sha": "544c47ac8714568cab2cbbcc3f27e79c02182de1"
+    },
+    {
+      "ref": "refs/heads/security/963-bounded-persisted-documents",
+      "sha": "e913c93ce0c788e71420b3194fa29a7adcc7bde4"
+    },
+    {
+      "ref": "refs/heads/security/963-persisted-document-limits",
+      "sha": "4671fad57e4cc8e4dec7b8732f5230787c916b65"
+    },
+    {
+      "ref": "refs/heads/security/scoped-analyzer-wire-projection-metadata-e0-20261019",
+      "sha": "832f739d903a622ec45f0cb9564ff25c57c6e180"
+    },
+    {
+      "ref": "refs/heads/security/scoped-lexical-scoring-sidechannel-e0-20261019",
+      "sha": "6b26b24e025bee40a12eb8810ce432ea282397b1"
+    },
+    {
+      "ref": "refs/heads/test/1202-rendered-page-layout-parity-20261010",
+      "sha": "1a7aa78623afcda3a44a660fa47d99cbecfa3f9f"
+    },
+    {
+      "ref": "refs/heads/test/1751-existing-index-ranker-regressions-20261102",
+      "sha": "539d20ca575fb5ee13bbe50fc7881d207c2027d0"
+    },
+    {
+      "ref": "refs/heads/test/1821-direct-sdk-native-binding-generation-20261102",
+      "sha": "a76a0502ae7ada8c603b0ddf1e4c5f91eb53bb59"
+    },
+    {
+      "ref": "refs/heads/test/1821-exported-standalone-execution-e2e-20261102",
+      "sha": "9f328bf8eb52590f2c2669fd5a69ab2933df0adf"
+    },
+    {
+      "ref": "refs/heads/test/1821-generic-store-negative-20261102",
+      "sha": "0bb82fef7cba0356e1787b5a203f928761be4a9a"
+    },
+    {
+      "ref": "refs/heads/test/1821-http-json-graphql-failclosed-20261102",
+      "sha": "3127fc0c439dc09d12069fce02fe80eb2c823db9"
+    },
+    {
+      "ref": "refs/heads/test/1821-mcp-http-real-server-availability-20261102",
+      "sha": "35f8784fb7ca6a0ac380c8b6bf20a6890db1fc7e"
+    },
+    {
+      "ref": "refs/heads/test/1821-native-three-source-unavailable-20261102",
+      "sha": "e38272c90e66d3d1953cd01e2fb834e3accaf612"
+    },
+    {
+      "ref": "refs/heads/test/1821-openapi-optimade-source-availability-20261102",
+      "sha": "3681ae5bdd3fa32d0326c644dc1ae3ab26c9cae9"
+    },
+    {
+      "ref": "refs/heads/test/1821-public-execution-wrapper-routing",
+      "sha": "73eea1d1c4787726eaa2c872b45f2d5d56fd4303"
+    },
+    {
+      "ref": "refs/heads/test/1821-public-invoker-negative-evidence",
+      "sha": "0636c641e6f456e068dddaf8647ca4876718e7ed"
+    },
+    {
+      "ref": "refs/heads/test/1821-public-openrpc-odata-execution-20261102",
+      "sha": "151815b76ddb49296b489273f710146dca63b60c"
+    },
+    {
+      "ref": "refs/heads/test/1821-public-optimade-store-families-20261102",
+      "sha": "4a97cd04af61d2a61e0566e549734f37eb2c5e3e"
+    },
+    {
+      "ref": "refs/heads/test/1821-python-callable-real-negative-20261102",
+      "sha": "25d4b1c49ba75628fbc8d251c7bfc8618b9c1677"
+    },
+    {
+      "ref": "refs/heads/test/1821-real-direct-sdk-negative",
+      "sha": "ec0fbf06622f48f691171e4d41cb6c9213f73800"
+    },
+    {
+      "ref": "refs/heads/test/1821-remote-protocol-negative-proof-20261102",
+      "sha": "f71a303ccdfb3308b0e3d3b2d37f33409ef0bb3f"
+    },
+    {
+      "ref": "refs/heads/test/1821-source-family-semantic-negative-20261102",
+      "sha": "20217ee0e4c50b7840a83cc42971d9f6b8790945"
+    },
+    {
+      "ref": "refs/heads/test/1821-sqlite-sqlalchemy-source-unavailable-20261102",
+      "sha": "e697e87142b20ddaddffc392342db00f22990004"
+    },
+    {
+      "ref": "refs/heads/test/908-bounded-success-prior",
+      "sha": "d61369306508e5dbd000f1d0c5156a0aec4d76f3"
+    },
+    {
+      "ref": "refs/heads/test/async-invoker-denials-1821",
+      "sha": "15ae3325f2217f3d412bccf436bd180062a8f126"
+    },
+    {
+      "ref": "refs/heads/test/b1-catalog-oracle-rss-20261028",
+      "sha": "9ffdf3ab08707c0c1f88f335e78467e88b8a898b"
+    },
+    {
+      "ref": "refs/heads/tmp/rebase-1010-tracing-main",
+      "sha": "e11b534ae314693bc93478dfe7823b7268683aaf"
+    },
+    {
+      "ref": "refs/heads/tmp/rebase-1032-coverage-main",
+      "sha": "15b498595b682018cf47fece4703f7fb8c03d948"
+    },
+    {
+      "ref": "refs/heads/validation/646-mcp-agent-catalog-retrieval",
+      "sha": "9be7477fb9989cd1b0c9af789eedfc07d12ceba7"
+    },
+    {
+      "ref": "refs/heads/validation/installed-extras-live-smoke",
+      "sha": "5eb47675fd041094d237f8ad863743483d778fc2"
+    }
+  ]
+}
