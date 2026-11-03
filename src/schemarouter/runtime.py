@@ -510,7 +510,6 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
-        self.authorization_policy = authorization_policy
         self.authorization_audit_hook = authorization_audit_hook
         self._authorization_audit_delivery = AuthorizationAuditDeliveryMonitor(
             mode=authorization_audit_delivery_mode,
@@ -1235,6 +1234,15 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             "SchemaRouter shutdown encountered an error after attempting all "
             "router-owned background tasks"
         ) from first
+
+    @property
+    def authorization_policy(self) -> AuthorizationPolicy | None:
+        """Share current authorization authority across planning and invocation."""
+        return self.executor.authorization_policy
+
+    @authorization_policy.setter
+    def authorization_policy(self, policy: AuthorizationPolicy | None) -> None:
+        self.executor.authorization_policy = policy
 
     @property
     def input_schema(self) -> dict[str, Any]:

@@ -99,9 +99,9 @@
     },
     {
       "path": "concepts/registry.md",
-      "en_blob": "6b3ee8779f47606078027d3a2e7b1d5895cee67b",
-      "ko_blob": "fc4225468c5ad4d281522ff483a661c0a1413296",
-      "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics."
+      "en_blob": "74f0e148a9b660b9f4672fff3262e94eb8c39e66",
+      "ko_blob": "2e3e642fc7c426765455a485c3f163797c493d4d",
+      "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics. 2026-11-03 AI-assisted paired comparison of current-binding versus host-pinned generation semantics and shared router/executor authorization policy: same-contract trusted replacement, endpoint/tool drift denial, revocation after hooks/retries, coherent in-flight snapshot and explicit None behavior match. Not independent bilingual sign-off."
     },
     {
       "path": "concepts/schema-router.md",

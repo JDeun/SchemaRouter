@@ -391,7 +391,8 @@ def test_no_authorization_policy_preserves_existing_no_principal_behavior() -> N
     assert retrieval.candidates[0].tool == "public"
 
 @pytest.mark.asyncio
-async def test_retry_reauthorizes_capability_after_policy_revocation() -> None:
+@pytest.mark.parametrize("policy_owner", ("router", "executor"))
+async def test_retry_reauthorizes_capability_after_policy_revocation(policy_owner: str) -> None:
     allow_rule = AuthorizationRule(
         name="retry-allow",
         effect="allow",
@@ -408,7 +409,8 @@ async def test_retry_reauthorizes_capability_after_policy_revocation() -> None:
         del endpoint, arguments
         attempts += 1
         if attempts == 1:
-            router.executor.authorization_policy = AuthorizationPolicy(
+            owner = router if policy_owner == "router" else router.executor
+            owner.authorization_policy = AuthorizationPolicy(
                 default_effect="deny"
             )
             raise TransientInvocationError("transient failure")
@@ -431,7 +433,8 @@ async def test_retry_reauthorizes_capability_after_policy_revocation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_retry_recomputes_data_scope_before_second_invocation() -> None:
+@pytest.mark.parametrize("policy_owner", ("router", "executor"))
+async def test_retry_recomputes_data_scope_before_second_invocation(policy_owner: str) -> None:
     allow_rule = AuthorizationRule(
         name="retry-allow",
         effect="allow",
@@ -456,7 +459,8 @@ async def test_retry_recomputes_data_scope_before_second_invocation() -> None:
         del endpoint, arguments
         attempts += 1
         if attempts == 1:
-            router.executor.authorization_policy = AuthorizationPolicy(
+            owner = router if policy_owner == "router" else router.executor
+            owner.authorization_policy = AuthorizationPolicy(
                 rules=(allow_rule,),
                 data_rules=(
                     DataScopeRule(
