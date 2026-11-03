@@ -17,6 +17,9 @@ def _validate_canonical_json_value(value: Any, *, path: str = "$") -> None:
         return
     if isinstance(value, (list, tuple)):
         for index, item in enumerate(value):
+            # Validate terminal scalars here; they need no recursive error path.
+            if item is None or isinstance(item, (str, bool, int)):
+                continue
             _validate_canonical_json_value(item, path=f"{path}[{index}]")
         return
     if isinstance(value, dict):
@@ -25,6 +28,8 @@ def _validate_canonical_json_value(value: Any, *, path: str = "$") -> None:
                 raise TypeError(
                     f"canonical JSON object keys must be strings at {path}"
                 )
+            if item is None or isinstance(item, (str, bool, int)):
+                continue
             _validate_canonical_json_value(item, path=f"{path}.{key}")
         return
     raise TypeError(
