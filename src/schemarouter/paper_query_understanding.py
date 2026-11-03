@@ -29,6 +29,7 @@ from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
 from .paper_native_rank import PaperNativeRankPolicy
+from .paper_query_conditions import _apply_query_input_conditions
 from .paper_query_needs import (
     PaperQueryNeed,
     PaperQueryUnderstanding,
@@ -575,6 +576,9 @@ async def compile_model_query(
         plan = _compile_query_needs(
             raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
             compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
+        )
+        plan = _apply_query_input_conditions(
+            router, plan, principal=principal, parameter_hints=raw.parameter_hints,
         )
         verify()
         return plan
