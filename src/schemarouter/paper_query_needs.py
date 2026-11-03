@@ -152,3 +152,24 @@ def _resolve_query_need(
         )
     )]
     return (qualified[0].concept_id, False) if len(qualified) == 1 else (None, len(qualified) > 1)
+
+
+def _resolve_query_need_candidate(
+    need: PaperQueryNeed, catalog: NativeConceptCatalog, global_source_type: str | None = None,
+) -> tuple[str | None, bool]:
+    """Select meaning only; actual scoped fields must prove every raw condition."""
+    resolved = _resolve_query_need(need, catalog, global_source_type)
+    if resolved[0] is not None or resolved[1]:
+        return resolved
+    # Retain owner-declared meaning discriminators (for example roles), while
+    # deferring input and structural conditions to actual scoped descriptors.
+    keys = {key for concept in catalog.concepts if any(
+        _normalize(alias) == _normalize(need.concept)
+        for alias in (concept.concept_id, *concept.aliases)
+    ) for field in concept.required_fields for key in field.qualifiers}
+    return _resolve_query_need(
+        need.model_copy(update={"qualifiers": {
+            key: value for key, value in need.qualifiers.items()
+            if key in keys and key not in ("source_path", "result_path")
+        }}), catalog, global_source_type,
+    )
