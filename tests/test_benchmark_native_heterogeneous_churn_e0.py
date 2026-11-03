@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from math import isfinite
 from types import MappingProxyType
 
 import pytest
@@ -37,6 +38,23 @@ def test_original_native_journal_matches_fresh_rebuild_across_source_churn(
     assert report["default_routing_changed"] is False
     assert report["query_wall_ms"]["p99"] >= 0
     assert report["query_process_cpu_ms"]["p50"] >= 0
+    # Exact stage cardinalities remain 3 snapshots / 2 journal refreshes;
+    # timing data must not replace any original independent oracle checks.
+    phases = report["phase_wall_ms"]
+    assert set(phases) == {
+        "fixture_build", "initial_index_build", "journal_refresh",
+        "fresh_rebuild", "scope_matrix", "health_checks", "full_audit",
+    }
+    for key, expected in (
+        ("journal_refresh", 2),
+        ("fresh_rebuild", 3),
+        ("scope_matrix", 3),
+        ("health_checks", 3),
+    ):
+        assert len(phases[key]) == expected
+        assert all(isfinite(value) and value >= 0 for value in phases[key])
+    for key in ("fixture_build", "initial_index_build", "full_audit"):
+        assert isfinite(phases[key]) and phases[key] >= 0
     assert report["peak_process_rss_kib"] > 0
     assert "gold" not in str(report.get("samples", ""))
     assert "case_ids" not in report
