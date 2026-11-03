@@ -7,7 +7,12 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
-from .concept_retrieval import NativeConceptCatalog, NativeDeclaredConcept
+from .concept_retrieval import (
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    _merged_concept_constraints,
+    _merged_concept_fields,
+)
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
@@ -101,7 +106,9 @@ def _compile_understood_concept_plan(
                     semantic_id=field.semantic_id,
                     qualifiers=[
                         f"concept_id={concept.concept_id}",
-                        f"source_type={concept.source_type}", f"license={concept.license}",
+                        *([f"source_type={concept.source_type}"]
+                          if concept.source_type is not None else []),
+                        *([f"license={concept.license}"] if concept.license is not None else []),
                         *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
                     ],
                 )
@@ -120,11 +127,9 @@ def _compile_understood_concept_plan(
     # independently ranking smaller concepts with potentially different menus.
     # A single native group holds eight semantics; larger valid concept unions
     # retain their per-concept proof instead of widening that source contract.
-    group_semantics = {
-        field.semantic_id for concept in concepts for field in concept.required_fields
-    }
-    if (len(group_semantics) <= 8
-            and len({(concept.source_type, concept.license) for concept in concepts}) == 1):
+    group_fields = _merged_concept_fields(concepts)
+    if (group_fields is not None and 1 <= len(group_fields) <= 8
+            and _merged_concept_constraints(concepts) is not None):
         kwargs = dict(principal=principal, catalog=catalog, intent_registry=intent_registry,
                       index=index, k=k, rank_policy=rank_policy, **(graph_options or {}))
         try:
@@ -154,6 +159,28 @@ def _compile_understood_concept_plan(
                            status="no_proven_hit" if group.calls and not report.complete
                            else group.status)
 
+    return _merge_understood_plans(
+        router, principal=principal, index=index, k=k,
+        host_source_arguments=host_source_arguments, prove_groups=prove_groups,
+        verify_current=verify_current,
+        coverage=lambda covered: coverage({concepts[position].concept_id for position in covered}),
+    )
+
+
+def _merge_understood_plans(
+    router: SchemaRouter,
+    *,
+    principal: PrincipalContext,
+    index: NativeSchemaGraphIndex,
+    k: int,
+    host_source_arguments: dict[str, dict[str, Any]] | None,
+    prove_groups: Callable[[], tuple[PaperTypedToolPlan, ...]],
+    verify_current: Callable[[], None],
+    coverage: Callable[[set[int]], PlanCoverage],
+) -> PaperTypedToolPlan:
+    """Union bounded source proofs, retaining each independent requirement position."""
+    witness = router._retrieval_authority_witness()
+    host_inputs = deepcopy(host_source_arguments or {})
     try:
         first = prove_groups()
     except Exception:
@@ -265,7 +292,7 @@ def _compile_understood_concept_plan(
     except Exception:
         raise PolicyViolationError("paper concept source eligibility changed") from None
     covered = {
-        concept.concept_id for concept, plan in zip(concepts, first, strict=True)
+        position for position, plan in enumerate(first)
         if plan.calls and plan.status in {"ready", "requires_arguments", "requires_observation"}
     }
     report = coverage(covered)

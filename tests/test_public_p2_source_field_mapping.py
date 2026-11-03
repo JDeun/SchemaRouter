@@ -129,7 +129,11 @@ async def test_public_model_query_keeps_typed_direct_mapping_without_trusting_mo
         model_visible_tool_keys=("weather",), host_source_arguments=host,
     )
     assert len(payloads) == 1
-    assert plan.status == ("requires_arguments" if host is None else "ready")
+    assert plan.status == ("requires_arguments" if host is None else "no_proven_hit")
+    assert plan.coverage.complete is (host is None)
+    conditions = plan.coverage.covered if host is None else plan.coverage.uncovered
+    expected = "proof=pending_host_input" if host is None else "proof=conflicting_host_input"
+    assert any(expected in item.qualifiers for item in conditions)
     assert plan.calls[0].call.arguments == ({} if host is None else {"city": "Busan"})
     assert plan.calls[0].call.fields == ["temperature"]
     assert plan.calls[0].fields_meta[0].source_path == ("payload", "temperature")

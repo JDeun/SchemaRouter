@@ -130,7 +130,7 @@ async def test_null_intent_retains_actual_unsupported_need_and_parameters():
         {"concept": "send a payment"},
     ], "parameter_hints": {"amount": 37}}, query="send a payment of 37")
     assert plan.calls == () and not plan.coverage.complete
-    assert [r.semantic_id for r in plan.coverage.uncovered] == ["send a payment"]
+    assert [r.semantic_id for r in plan.coverage.uncovered] == ["send a payment", "amount"]
     assert plan.understanding_hints["parameter_hints"] == {"amount": 37}
 
 
@@ -180,7 +180,11 @@ async def test_explicit_parameters_remain_advisory_until_the_host_supplies_them(
     from test_public_p2_source_field_mapping import source
 
     _, session, intents = source(units=True)
-    for host in (None, {"weather.read": {"city": "HOST"}}):
+    for host, expected_status in (
+        (None, "requires_arguments"),
+        ({"weather.read": {"city": "HOST"}}, "no_proven_hit"),
+        ({"weather.read": {"city": "QUERY"}}, "ready"),
+    ):
         plan = await session.acompile_query(
             "Get temperature in Celsius for city QUERY", principal=WEATHER_ACTOR,
             model=lambda _: {"intent_id": "weather.lookup", "needs": [
@@ -189,9 +193,9 @@ async def test_explicit_parameters_remain_advisory_until_the_host_supplies_them(
             intent_registry=intents, model_visible_intent_ids=("weather.lookup",),
             host_source_arguments=host,
         )
-        assert plan.status == ("ready" if host else "requires_arguments")
-        assert plan.coverage.complete
-        assert plan.calls[0].call.arguments == ({"city": "HOST"} if host else {})
+        assert plan.status == expected_status
+        assert plan.coverage.complete is (expected_status != "no_proven_hit")
+        assert plan.calls[0].call.arguments == (host["weather.read"] if host else {})
         assert plan.calls[0].fields_meta[0].source_path == ("payload", "temperature")
         assert plan.calls[0].fields_meta[0].unit == "Cel"
         assert plan.understanding_hints["parameter_hints"] == {"city": "QUERY"}

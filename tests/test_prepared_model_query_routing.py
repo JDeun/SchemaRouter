@@ -154,7 +154,9 @@ async def test_model_query_uses_approved_root_arguments_only():
         model_visible_tool_keys=("fork_owner",),
         host_source_arguments={RIGHT: {"customer_id": "HOST"}},
     )
-    assert result.status == "ready"
+    assert result.status == "no_proven_hit" and not result.coverage.complete
+    assert any("proof=conflicting_host_input" in item.qualifiers
+               for item in result.coverage.uncovered)
     assert [c.call.arguments for c in result.calls] == [{"customer_id": "HOST"}]
 
 

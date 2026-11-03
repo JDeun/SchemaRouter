@@ -140,7 +140,9 @@ def _resolve_query_need(
         _normalize(alias) == normalized for alias in (concept.concept_id, *concept.aliases)
     )]
     qualified = [concept for concept in matches if (
-        all(source is None or source == concept.source_type
+        len({source for source in (global_source_type, approved_need.source_type)
+             if source is not None}) <= 1
+        and all(source is None or concept.source_type is None or source == concept.source_type
             for source in (global_source_type, approved_need.source_type))
         and any(
             (approved_need.unit is None or field.unit == approved_need.unit)

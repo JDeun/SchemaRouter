@@ -246,10 +246,12 @@ def test_determinism_across_catalog_order_and_unicode():
     ).concept_ids == ("support.priority", "support.status")
 
 
-def test_concept_without_reviewed_source_and_license_cannot_enter_catalog():
+@pytest.mark.parametrize("constraints", ({"source_type": ""}, {"license": ""}))
+def test_blank_owner_source_or_license_constraints_cannot_enter_catalog(constraints):
     with pytest.raises(ValueError):
         NativeDeclaredConcept(
             concept_id="unreviewed.concept",
             aliases=("unreviewed term",),
             required_fields=(_contract("unreviewed.field"),),
+            **constraints,
         )
