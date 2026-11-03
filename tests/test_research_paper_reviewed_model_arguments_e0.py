@@ -25,6 +25,7 @@ from schemarouter import (
     AuthorizationPolicy,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
+    PlanCoverage,
     PrincipalContext,
 )
 from schemarouter.errors import PolicyViolationError
@@ -71,6 +72,38 @@ def _graph_args(view, index):
         model_visible_intent_ids=("case.lookup",),
         model_visible_concept_ids=("crm.status",),
     )
+
+
+@pytest.mark.asyncio
+async def test_root_review_ignores_understanding_hints_but_checks_actual_proof():
+    router, index, view, _ = _graph_context(hops=1)
+    understanding = PaperUnderstanding(
+        intent_id="case.lookup", concept_ids=("crm.status",), named_tools=("target_0",),
+        parameter_hints={"external_id": "e7"},
+    )
+    plan = compile_paper_understood_graph_plan(
+        router, understanding, principal=view._principal, catalog=CATALOG,
+        intent_registry=INTENTS, index=index,
+    )
+    options = dict(
+        view=view, understanding=understanding, index=index,
+        catalog=CATALOG, intent_registry=INTENTS,
+    )
+    tagged = replace(plan, understanding_hints=understanding.model_dump(mode="json"))
+    assert await review_paper_root_model_arguments_e0(
+        lambda _: True, plan=tagged, **options,
+    ) == {"root.read": {"external_id": "e7"}}
+
+    changed_fields = replace(
+        tagged.calls[0], call=tagged.calls[0].call.model_copy(update={"fields": []}),
+    )
+    for forged in (
+        replace(tagged, calls=tuple(reversed(tagged.calls))),
+        replace(tagged, calls=(changed_fields, *tagged.calls[1:])),
+        replace(tagged, coverage=PlanCoverage(complete=True)),
+    ):
+        with pytest.raises(PolicyViolationError, match="original plan proof"):
+            await review_paper_root_model_arguments_e0(lambda _: True, plan=forged, **options)
 
 
 @pytest.mark.asyncio

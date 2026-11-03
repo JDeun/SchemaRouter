@@ -97,7 +97,7 @@ class PaperTypedToolPlan:
     executable_authority: bool = False
     ranked_unverified: bool = False
     coverage: PlanCoverage | None = None
-    understanding_hints: dict[str, Any] | None = None
+    understanding_hints: dict[str, Any] | None = field(default=None, compare=False)
 
 
 def compile_paper_typed_tool_plan(
