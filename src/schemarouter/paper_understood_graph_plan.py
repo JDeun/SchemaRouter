@@ -213,7 +213,7 @@ def compile_paper_understood_graph_plan(
         # A graph probe may revoke the health of an earlier incomplete
         # direct candidate through the SAME availability callable. Re-prove
         # the original direct receipt rather than returning stale evidence.
-        if discover_unnamed and direct.status == "requires_arguments":
+        if direct.status == "requires_arguments":
             try:
                 current_direct = compile_paper_understood_direct_plan(
                     router, understanding, principal=principal,
@@ -221,10 +221,10 @@ def compile_paper_understood_graph_plan(
                     index=index, k=k, rank_policy=rank_policy,
                 )
                 if current_direct != direct:
-                    raise PolicyViolationError("unnamed graph direct proof changed")
+                    raise PolicyViolationError("paper graph direct proof changed")
             except Exception:
                 raise PolicyViolationError(
-                    "unnamed graph direct source eligibility changed"
+                    "paper graph direct source eligibility changed"
                 ) from None
             verify_current()
             return direct
