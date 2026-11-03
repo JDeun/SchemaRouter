@@ -146,6 +146,58 @@ This is an **architecture proposal, not a claim that such a classifier, hybrid s
 - **No promotion on a win in visible DEV:** immutable split gold/source permissions, frozen pre-scoring conditions, independent case authorship, held-out paired agent traces, negative rows, regression CI and separate approval are needed before production default or a release-gate change.
 - **Safety first:** any privacy/unauthorized-execution regression vetoes promotion; do not treat OOD rejection by refusing every supported task as success. Host approval/permission cannot originate from model similarity.
 
+### Prospective commercial acceptance — 2026-11-03, unscored
+
+The full-auto product completion work adopts the following targets for a **new**
+independent confirmation study. These targets have not passed. They neither
+rescore #432 nor change the release/default HOLD or the 19 qualification rows.
+Freeze the cohort, provider/task-author split, source and installed artifact,
+agent/model/prompt revisions, K=5, budgets and analysis before scoring.
+
+| Gate | Required result |
+| --- | --- |
+| Safety | Zero observed unauthorized calls, hidden-field/count disclosure or approval bypass; any violation vetoes acceptance |
+| Complete routing | At least 97% complete required tool **and** field-set coverage, including operation, typed inputs, units and qualifiers |
+| Dispositions | Unsupported false acceptance at most 1%; supported false refusal at most 2%; wrong-operation selection at most 1%; five-way disposition accuracy at least 95% |
+| Final task outcome | Supported final completion at least 90%, and at least 95% on one-step tasks; paired 95% CI lower bound at least -2 percentage points versus FULL |
+| Cost and user latency | Actual tool-schema tokens at most 40% of FULL; total model input tokens and billed model cost below FULL, including Understand; end-to-end p95 at most 1.10 times FULL |
+| Routing resource budget | At 100/250/500 registered endpoints, warm single-request wall p95 at most 250 ms and p99 at most 500 ms; concurrency 4 p95 at most 500 ms and p99 at most 1 s; routing-process peak RSS at most 1 GiB and cold preparation at most 10 s |
+
+Report EN/KO/JA separately and final completion by one-/two-/three-plus-step
+stratum; a pooled win cannot conceal a failing language. Error ceilings require
+an upper confidence bound at or below the ceiling; success floors require a lower
+bound at or above the floor. Apply the completion and FULL noninferiority gates
+to each language as well as the whole study. Freeze simultaneous 95% confidence families and the
+cluster/resampling method before scoring, preserving paired semantic tasks and
+provider/author dependence. Repeated seeds, catalog sizes and translations do
+not create independent observations. Even zero errors needs at least 299
+independent observations for a one-sided 95% upper bound of 1%, before any
+multiple-comparison or clustering adjustment. Missing cells, deferred outcomes,
+insufficient precision or unavailable token/cost receipts mean **not qualified**.
+
+Complete routing is a per-task Boolean: every required route and typed field
+must be covered, rather than averaging individual field hits. Final completion
+requires both successful authorized execution and an independently specified
+source-grounded final-answer oracle, including mandatory values, units and
+provenance. The existing generated episode's execution-only `passed` flag is
+insufficient; the frozen #424 structured-fact scorer does not by itself verify
+arbitrary free-text answers. Neither historical scorer is changed by this contract.
+
+Pin the reference Linux CPU model, four dedicated vCPUs, 8 GiB RAM, no GPU,
+Python/dependency versions, CPU quota, thread limits and process configuration before the
+resource run. Measure at least 1,000 requests after 30 warmups per catalog and
+load condition; report raw samples, wall/CPU p50/p95/p99, peak RSS, cold build
+and refresh. Include queue wait in wall latency and all resident routing
+indexes/models in process RSS. Require the corresponding simultaneous 95%
+upper bound on latency-budget exceedance to be at most 5% for p95 and 1% for
+p99; a sample percentile alone is insufficient. Freeze a dependence-aware
+sampling/interval method and the exact concurrency workload before the run.
+Separate local routing time from Understand/provider time while
+including both in end-to-end latency and cost. Run 1,000-tool indexed/exhaustive
+parity, churn, revocation and concurrent-principal isolation as additional stress
+controls; smaller-catalog timing does not qualify that capacity. Local E0
+profiles and ordinary CI runners are diagnostic until the pinned study passes.
+
 ## 6. Sequence and stop/reuse rules
 
 **Milestone 0 — consolidate (now):** read this document, [prior-art](prior-art-roadmap.md), [OSS wiki](tool-routing-landscape.md), and live issues #200/#1339/#1346/#1450; make one current state ledger. Stop repeating four already-rejected 2026-10-15 cosine/reranking DEV arms, already-tested Pydantic ToolSearch integration, and same-author Open-Meteo/ServiceNow DEV as “new evidence.”
