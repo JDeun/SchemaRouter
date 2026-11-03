@@ -163,10 +163,9 @@ def _owner_query_field_coverage(
         for concept in [concepts[concept_id]]
         for field in concept.required_fields
     ]
-    if not source_proven and understood.intent_id is not None:
+    if not source_proven:
         # A failed current proof does not disclose owner field/source/license
         # metadata. These meaning IDs were already offered in the query payload.
-        # Preserve the established null-intent field ledger separately.
         fields = [SemanticFieldRequirement(semantic_id=concept_id,
             qualifiers=[f"concept_id={concept_id}"],
         ) for concept_id in concept_ids]

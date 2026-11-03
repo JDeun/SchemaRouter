@@ -183,8 +183,9 @@ async def test_common_final_verify_refuses_owner_mutation_during_condition_callb
     assert changed and "PRIVATE_CHANGED_HOST" not in str(caught.value)
 
 
+@pytest.mark.parametrize("intent_id", (None, "information.lookup"))
 @pytest.mark.asyncio
-async def test_failed_current_proof_does_not_restore_owner_field_metadata():
+async def test_failed_current_proof_does_not_restore_owner_field_metadata(intent_id):
     from pydantic import TypeAdapter
 
     from schemarouter import PaperTypedToolPlan
@@ -208,7 +209,7 @@ async def test_failed_current_proof_does_not_restore_owner_field_metadata():
     def model(payload):
         assert payload["offered_concepts"][0]["concept_id"] == "weather.public_meaning"
         available["current"] = False
-        return {"intent_id": "information.lookup", "concept_ids": ["weather.public_meaning"]}
+        return {"intent_id": intent_id, "concept_ids": ["weather.public_meaning"]}
 
     plan = await session.acompile_query("Get air temperature", principal=ACTOR, model=model,
         intent_registry=INTENTS, model_visible_intent_ids=("information.lookup",),
