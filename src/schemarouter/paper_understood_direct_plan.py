@@ -16,7 +16,12 @@ from pydantic import Field, model_validator
 
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_sha256
-from .concept_retrieval import _ID_PATTERN, NativeConceptCatalog, NativeDeclaredConcept
+from .concept_retrieval import (
+    _ID_PATTERN,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    _merged_concept_constraints,
+)
 from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
@@ -166,10 +171,11 @@ def _source_owned_understood_group(
     approved_hints, _, concepts = _source_owned_understood_concepts(
         understanding, catalog, intent_registry,
     )
-    sources = {(concept.source_type, concept.license) for concept in concepts}
-    if len(sources) != 1:
+    constraints = _merged_concept_constraints(concepts)
+    if constraints is None:
         raise ValueError("incompatible source-owned intent concept contracts")
-    source_type, license_id = next(iter(sources))
+    source_type, license_id = constraints
+    source_type = source_type or approved_hints.source_type
 
     demanded = {}
     for concept in concepts:

@@ -294,8 +294,9 @@ def _compile_paper_understood_graph_plan(
         tool = router.registry.get(tool_key)
         endpoint = tool.endpoint(endpoint_name)
         if (
-            tool.source_type != group.source_type
-            or tool.license != group.license
+            not tool.source_type or not tool.license
+            or group.source_type is not None and tool.source_type != group.source_type
+            or group.license is not None and tool.license != group.license
             or not permitted_targets(tool, endpoint)
             or endpoint.read_only is not True
             or endpoint.destructive is True
@@ -466,7 +467,7 @@ def _compile_paper_understood_graph_plan(
             raise PolicyViolationError("paper named graph original route missing")
         source_tool = router.registry.get(location[0])
         if (
-            source_tool.license != group.license
+            group.license is not None and source_tool.license != group.license
             or approved.source_type is not None
             and source_tool.source_type != approved.source_type
         ):

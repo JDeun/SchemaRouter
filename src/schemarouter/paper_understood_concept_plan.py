@@ -7,7 +7,11 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
-from .concept_retrieval import NativeConceptCatalog, NativeDeclaredConcept
+from .concept_retrieval import (
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    _merged_concept_constraints,
+)
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
@@ -101,7 +105,9 @@ def _compile_understood_concept_plan(
                     semantic_id=field.semantic_id,
                     qualifiers=[
                         f"concept_id={concept.concept_id}",
-                        f"source_type={concept.source_type}", f"license={concept.license}",
+                        *([f"source_type={concept.source_type}"]
+                          if concept.source_type is not None else []),
+                        *([f"license={concept.license}"] if concept.license is not None else []),
                         *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
                     ],
                 )
@@ -124,7 +130,7 @@ def _compile_understood_concept_plan(
         field.semantic_id for concept in concepts for field in concept.required_fields
     }
     if (len(group_semantics) <= 8
-            and len({(concept.source_type, concept.license) for concept in concepts}) == 1):
+            and _merged_concept_constraints(concepts) is not None):
         kwargs = dict(principal=principal, catalog=catalog, intent_registry=intent_registry,
                       index=index, k=k, rank_policy=rank_policy, **(graph_options or {}))
         try:

@@ -70,7 +70,7 @@ def _host_approved_paper_roots(
     index: NativeSchemaGraphIndex,
 ) -> tuple[PaperFieldRoute, ...]:
     """Find only host-pinned, explicitly parameterized roots with complete fields."""
-    if not required or not source_type or not license:
+    if not required:
         return ()
     permitted = router._authorization_predicate(principal)
     if permitted is None:
@@ -85,7 +85,9 @@ def _host_approved_paper_roots(
         fingerprint = (tool.fingerprint, endpoint.fingerprint)
         if (
             index.field_index.route_fingerprints.get(route_id) != fingerprint
-            or tool.source_type != source_type or tool.license != license
+            or not tool.source_type or not tool.license
+            or source_type is not None and tool.source_type != source_type
+            or license is not None and tool.license != license
             or not permitted(tool, endpoint) or endpoint.read_only is not True
             or endpoint.destructive is True or _host_source_input_names(endpoint) is None
         ):
