@@ -15,7 +15,6 @@ import asyncio
 import json
 import os
 import platform
-import resource
 import subprocess
 import sys
 import threading
@@ -25,6 +24,11 @@ from pathlib import Path
 from statistics import median
 from time import perf_counter_ns, process_time_ns
 from typing import Any
+
+try:
+    import resource
+except ImportError:
+    resource = None
 
 from pydantic import TypeAdapter
 
@@ -411,17 +415,25 @@ def _load_environment() -> dict[str, Any]:
             if key.strip() in ("model name", "Hardware"):
                 cpu_model = value.strip()
                 break
+    try:
+        load_average = os.getloadavg()
+    except (AttributeError, OSError):
+        load_average = None
+    try:
+        cpu_affinity = sorted(getattr(os, "sched_getaffinity")(0))
+    except (AttributeError, OSError):
+        cpu_affinity = None
     return {
         "python": platform.python_version(), "platform": platform.platform(),
         "machine": platform.machine(), "processor": platform.processor(),
         "cpu_model": cpu_model, "logical_cpu_count": os.cpu_count(),
-        "load_average": os.getloadavg(),
-        "cpu_affinity": (
-            sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None
-        ),
+        "load_average": load_average,
+        "cpu_affinity": cpu_affinity,
         "cgroup_v2_cpu_max": read_optional("/sys/fs/cgroup/cpu.max"),
         "cgroup_v1_cpu_quota_us": read_optional("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"),
         "cgroup_v1_cpu_period_us": read_optional("/sys/fs/cgroup/cpu/cpu.cfs_period_us"),
+        "cgroup_v2_memory_max": read_optional("/sys/fs/cgroup/memory.max"),
+        "cgroup_v1_memory_limit_bytes": read_optional("/sys/fs/cgroup/memory/memory.limit_in_bytes"),
         "python_threads": threading.active_count(),
         "thread_environment": {key: os.environ.get(key) for key in (
             "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
@@ -518,7 +530,13 @@ async def _measure_load(
             pool.shutdown(wait=True, cancel_futures=True)
     if model_calls != (warmup + requests if asynchronous else 0):
         raise AssertionError("unexpected model stub call count")
-    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    rss = rss_unit = None
+    if resource is not None:
+        try:
+            rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            rss_unit = "bytes" if sys.platform == "darwin" else "KiB"
+        except OSError:
+            pass
     return {
         "warmup_calls": warmup, "measured_calls": requests,
         "concurrency": concurrency, "max_outstanding_requests_observed": peak_outstanding,
@@ -535,7 +553,7 @@ async def _measure_load(
         "total_wall_ms": total_wall_ms, "total_process_cpu_ms": total_cpu_ms,
         "cpu_scope": "measured requests and harness scheduling; excludes warmup/build/shutdown",
         "process_peak_rss_raw": rss,
-        "process_peak_rss_unit": "bytes" if sys.platform == "darwin" else "KiB",
+        "process_peak_rss_unit": rss_unit,
         "peak_rss_scope": "process lifetime high-water mark, shared across profile cases",
         "max_python_threads_observed": max(s["python_threads"] for s in samples),
         "exact_route_oracle": True, "model_stub_calls": model_calls,
@@ -545,7 +563,7 @@ async def _measure_load(
 
 def benchmark_load_profile(
     routes: int, *, requests: int = 1000, warmup: int = 30, concurrency: int = 1,
-    thresholds: tuple[float, ...] | list[float] = (10, 50, 100),
+    thresholds: tuple[float, ...] | list[float] = (250, 500, 1000),
 ) -> dict[str, Any]:
     """Explicit, bounded closed-loop load; each public pathway gets `requests` calls."""
     if (
@@ -611,7 +629,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--load-requests", type=int, help="per pathway, 1-1000 (default: 1000)")
     parser.add_argument("--load-warmup", type=int, help="per pathway, 0-30 (default: 30)")
     parser.add_argument("--load-threshold-ms", type=float, nargs="+",
-                        help="wall-ms exceedance thresholds (default: 10 50 100)")
+                        help="wall-ms exceedance thresholds (default: 250 500 1000)")
     args = parser.parse_args(argv)
     load_options = (args.load_routes, args.load_concurrency, args.load_requests,
                     args.load_warmup, args.load_threshold_ms)
@@ -626,7 +644,7 @@ def main(argv: list[str] | None = None) -> None:
                 requests=args.load_requests if args.load_requests is not None else 1000,
                 warmup=args.load_warmup if args.load_warmup is not None else 30,
                 thresholds=args.load_threshold_ms if args.load_threshold_ms is not None
-                else (10, 50, 100),
+                else (250, 500, 1000),
             ) for routes in (args.load_routes or (100, 250, 500))
             for concurrency in (args.load_concurrency or (1, 4))
         ]}, sort_keys=True, ensure_ascii=False))

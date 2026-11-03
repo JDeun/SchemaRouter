@@ -258,3 +258,41 @@ def test_load_profile_cli_defaults_to_six_cases_with_1000_requests_per_path(monk
     }
     assert all(k["requests"] == 1000 and k["warmup"] == 30 for _, k in calls)
     assert len(json.loads(capsys.readouterr().out)["cases"]) == 6
+
+
+def test_legacy_module_imports_without_unix_resource(monkeypatch):
+    import builtins
+    import runpy
+
+    from scripts import benchmark_paper_public_pipeline_e0 as module
+
+    original_import = builtins.__import__
+
+    def without_resource(name, *args, **kwargs):
+        if name == "resource":
+            raise ModuleNotFoundError("resource unavailable on this platform")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_resource)
+    namespace = runpy.run_path(module.__file__)
+    assert namespace["resource"] is None
+    assert callable(namespace["benchmark"])
+
+
+@pytest.mark.parametrize("probe_error", (AttributeError, OSError))
+def test_load_profile_preserves_unavailable_platform_metrics(monkeypatch, probe_error):
+    from scripts import benchmark_paper_public_pipeline_e0 as module
+
+    def unavailable(*args):
+        raise probe_error("platform probe unavailable")
+
+    monkeypatch.setattr(module, "resource", None)
+    monkeypatch.setattr(module.os, "getloadavg", unavailable, raising=False)
+    monkeypatch.setattr(module.os, "sched_getaffinity", unavailable, raising=False)
+    report = benchmark_load_profile(100, requests=1, warmup=0)
+    assert report["environment"]["load_average"] is None
+    assert report["environment"]["cpu_affinity"] is None
+    for path in ("prepared_sync", "prepared_async_model_stub"):
+        assert report[path]["process_peak_rss_raw"] is None
+        assert report[path]["process_peak_rss_unit"] is None
+    assert not report["slo_validated"]
