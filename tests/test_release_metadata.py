@@ -242,7 +242,10 @@ def test_release_gate_cannot_bypass_hold_with_an_unpublished_legacy_version(monk
 
 
 def test_development_version_still_skips_before_release_qualification(monkeypatch, tmp_path):
+    pytest.importorskip("tomllib", reason="release metadata runs on pinned Python 3.12")
     workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    prepare = workflow.split("  prepare:", 1)[1].split("  build:", 1)[0]
+    assert 'python-version: "3.12"' in prepare
     metadata = workflow.split("      - name: Resolve release metadata and target SHA\n", 1)[1]
     embedded = metadata.split("          python - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
     monkeypatch.chdir(tmp_path)
