@@ -81,7 +81,9 @@ def test_code_blocks_are_not_flagged_as_untranslated_prose() -> None:
 
 
 def test_canonical_korean_launch_quote_is_not_untranslated_english() -> None:
-    quote = "> 등록한 MCP·OpenAPI 도구의 입력과 출력 필드를 확인하고 로컬 정책에 따라 실행합니다. " * 8
+    quote = (
+        "> 등록한 MCP·OpenAPI 도구의 입력과 출력 필드를 확인하고 로컬 정책에 따라 실행합니다. "
+    ) * 8
     en = "# Launch draft\n\n" + quote
     ko = "# 공개 초안\n\n" + quote
     assert checker.unchanged_english_prose(en, ko) == []
