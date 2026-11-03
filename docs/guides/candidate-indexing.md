@@ -55,6 +55,31 @@ stronger deterministic property: indexed and exhaustive planning must produce th
 while the selective synthetic case reduces scorer calls from the full registry to the exact
 candidate subset.
 
+## Public prepared-session load profile
+
+An explicit E0 mode measures public `compile_understood` and `acompile_query`:
+
+```bash
+python -m scripts.benchmark_paper_public_pipeline_e0 --load-profile
+```
+
+Each 100/250/500-endpoint catalog and concurrency 1/4 condition runs 30 warmups
+and 1,000 measured requests **per pathway**. Closed-loop clients submit the next
+request after the previous response; outstanding requests stay bounded by the
+client count. Wall samples include submission-to-worker/event-loop queue wait,
+compilation, the route oracle and receipt serialization. Reports retain raw
+queue/service/wall samples, process CPU, lifetime peak RSS, environment and
+250/500/1,000 ms exceedance counts. Unsupported platform probes are null, not zero.
+
+For a short diagnostic, add `--load-routes 100 --load-concurrency 1 4 --load-requests 4 --load-warmup 0`.
+Legacy 500/5,000-route and refresh modes retain their options. `--load-*` options
+require the separate opt-in. Synthetic sources and a deterministic Understand
+callback do not measure provider execution or model inference. RSS is a shared
+process-lifetime high-water mark. Sample percentiles and exceedance counts alone
+do not establish confidence bounds, a commercial SLO or independent E2; apply
+the [prospective acceptance contract](../research/product-north-star-and-test-matrix.md)
+with separately pinned hardware, workload and confirmation evidence.
+
 ## Scope
 
 The current index is in-process and rebuilt from the registry snapshot. It is not a

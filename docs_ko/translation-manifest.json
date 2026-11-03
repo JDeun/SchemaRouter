@@ -49,7 +49,7 @@
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "3910e4fbc45c3576866c0f80554d0e985ec397e3"
+      "source_blob": "865daa685100b90b1df7faa5580a3e3d97440abe"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -117,7 +117,7 @@
     },
     {
       "path": "guides/candidate-indexing.md",
-      "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
+      "source_blob": "ef38632f196d444f601048f44310b4cdb5ababa6"
     },
     {
       "path": "guides/capability-artifacts.md",
@@ -593,7 +593,7 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "source_blob": "d09287555f0be5389d9907e5ca6858d4e4948546"
+      "source_blob": "df4d026fe09935a0c39a34dfd56ab8be1d9331ca"
     },
     {
       "path": "research/routing-status.md",

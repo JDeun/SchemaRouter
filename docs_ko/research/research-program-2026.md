@@ -96,6 +96,23 @@ PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
 
 기존 A10 no-fit 진단은 지원 또는 미지원 과제에 인수·관측값 대기가 하나라도 남아 있으면 `plan_within_declared_limits`와 `candidate_within_declared_limits`를 **null(미확정)**로 유지합니다. 집계 수치·오류율·분모는 그대로이며, 다른 분류에서 올바르게 명확화나 모호성 처리를 한 경우에는 이 이진 진단을 막지 않습니다. null은 통과가 아니며, E0 진단이 true여도 E2 검증에는 별도로 관측한 실제 과제 완료와 독립 검토가 필요합니다.
 
+새 A7 E0 선택 모드는
+`capture_authorized_agent_tool_surface(..., experimental_full_catalog=True)`로
+해당 Principal에게 보이는 전체 카탈로그를 캡처하고,
+`run_paper_paired_agent_e0(..., experimental_full_final_oracle=True)`로 FULL과
+공개 준비 필드 세션의 K5를 비교합니다. 실행 순서 교차 래퍼도 지원합니다. 두
+비교군은 같은 최종답변 프롬프트와 새로 만든 동일 설정 에이전트를 사용합니다.
+FULL은 원본·바이트 상한을 유지하고 기본 `KeywordAnalyzer`를 지원하며 기존 K5와
+동결한 조건은 변경하지 않습니다.
+
+기존 `passed`는 실행 지표입니다. 비공개 원본 #424 형식의 정답이 있으면 별도
+`execution_and_structured_final_passed`가 실행 **및** 필수 값·단위·출처의 일치를
+모두 요구하며 큰 정수의 정밀도도 보존합니다. 정답이나 사용량이 없으면 null로
+남기고, 사용량 누락은 `all_model_usage_complete=False`로 표시합니다. 비공개 정답
+판정기 밖으로 허용된 판정값만 반환하며 답변 원문·정답은 내보내지 않습니다. 자유
+서술의 의미적 진실성은 검증하지 않으며, 이 E0 관측이나 선택 옵션은 독립 E2,
+출시 승인, 기본값 채택을 입증하지 않습니다.
+
 ## 5. 추가 선행연구와 실제 적용 의미
 
 | 논문·공식 자료 | 핵심 연구 결과 | SchemaRouter에 적용할 범위와 한계 |

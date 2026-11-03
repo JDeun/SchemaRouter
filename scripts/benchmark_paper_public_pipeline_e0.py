@@ -420,7 +420,8 @@ def _load_environment() -> dict[str, Any]:
     except (AttributeError, OSError):
         load_average = None
     try:
-        cpu_affinity = sorted(getattr(os, "sched_getaffinity")(0))
+        affinity_probe = getattr(os, "sched_getaffinity", None)
+        cpu_affinity = sorted(affinity_probe(0)) if affinity_probe is not None else None
     except (AttributeError, OSError):
         cpu_affinity = None
     return {
@@ -433,7 +434,9 @@ def _load_environment() -> dict[str, Any]:
         "cgroup_v1_cpu_quota_us": read_optional("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"),
         "cgroup_v1_cpu_period_us": read_optional("/sys/fs/cgroup/cpu/cpu.cfs_period_us"),
         "cgroup_v2_memory_max": read_optional("/sys/fs/cgroup/memory.max"),
-        "cgroup_v1_memory_limit_bytes": read_optional("/sys/fs/cgroup/memory/memory.limit_in_bytes"),
+        "cgroup_v1_memory_limit_bytes": read_optional(
+            "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+        ),
         "python_threads": threading.active_count(),
         "thread_environment": {key: os.environ.get(key) for key in (
             "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",

@@ -87,9 +87,9 @@
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "3910e4fbc45c3576866c0f80554d0e985ec397e3",
-      "ko_blob": "57ab83b4352460ffbed5916cca8d84c3327057c0",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review."
+      "en_blob": "865daa685100b90b1df7faa5580a3e3d97440abe",
+      "ko_blob": "330c66ecdff5798b55b65fba7b10f2f7d97dc7e7",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -189,9 +189,9 @@
     },
     {
       "path": "guides/candidate-indexing.md",
-      "en_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce",
-      "ko_blob": "e8dd1e38f5f16c5a854c4e9dcc1905477a5c7e3b",
-      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement."
+      "en_blob": "ef38632f196d444f601048f44310b4cdb5ababa6",
+      "ko_blob": "37b0b2c348bf97192d8b3ce8e45486ea0aac7895",
+      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement. 2026-11-03 delta: AI-assisted EN/KO comparison. Public prepared-session closed-loop profiles use each pathway 30 warmups/1000 samples, bounded 1/4 clients, submission queue boundaries, CPU/lifetime RSS/platform nulls and threshold counts; E0 is not SLO/E2. Not independent human editorial sign-off."
     },
     {
       "path": "guides/capability-artifacts.md",
@@ -903,9 +903,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "d09287555f0be5389d9907e5ca6858d4e4948546",
-      "ko_blob": "98e3c795fdc71f3110cb776c814b3bcea01bd32c",
-      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off."
+      "en_blob": "df4d026fe09935a0c39a34dfd56ab8be1d9331ca",
+      "ko_blob": "92be2c6ff92f76454d5bf5512732959f0dd7efc8",
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off. 2026-11-03 delta: AI-assisted EN/KO comparison. New opt-in captures principal-scoped FULL and compares public field-session K5 with matching agents/prompt; private precision-preserving structured oracle AND execution, missing evidence null, usage-completeness false, no raw final/gold export, no free-text semantic or E2/release approval claim. Not independent human editorial sign-off."
     },
     {
       "path": "research/routing-status.md",

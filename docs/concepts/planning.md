@@ -150,6 +150,10 @@ used to prove semantic compatibility when access paths expose different field na
 Fallback and cross-provider corroboration compare required JSON Schema assertions as well as
 types and canonical units. Unproved differences in enum/const, bounds, patterns or array
 constraints cannot establish field compatibility; this comparison is not general schema subsumption.
+Schemas containing references require full-schema equality because a changed enclosing type can
+change a nested reference's meaning. Explicit JSON Schema input/output validation rejects NaN and
+infinity before dispatch or result return, respectively; large integers and nullable values retain
+their declared behavior.
 
 Fallback is not model-driven replanning and is disabled by default. See
 [Provider-aware fallback](../guides/provider-fallback.md).
