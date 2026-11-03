@@ -17,6 +17,7 @@ from schemarouter import (
     SchemaValidationError,
     ToolCall,
 )
+from schemarouter.errors import SchemaRouterError
 
 
 def _source_document() -> dict:
@@ -176,3 +177,57 @@ async def test_openapi_denied_principal_never_reaches_http() -> None:
         with pytest.raises(PolicyViolationError, match="authorization denied"):
             await router.execute(_plan(router, "inventory", arguments={"item_id": 7}), config=guest)
         assert wire_calls == []
+
+
+
+@pytest.mark.asyncio
+async def test_openapi_source_unavailable_refuses_data_get_and_recovers_once() -> None:
+    """Registered OpenAPI keeps discovery separate from executable data GET."""
+    data_gets: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/openapi.json":
+            return httpx.Response(200, json=_source_document(), request=request)
+        data_gets.append(request.url.path)
+        assert request.method == "GET" and request.url.path == "/items/7"
+        return httpx.Response(
+            200, json={"id": 7, "label": "verified"}, request=request,
+        )
+
+    policy = AuthorizationPolicy(
+        rules=(AuthorizationRule(
+            effect="allow", operation="inventory.get_item", roles_any=("reader",),
+        ),),
+        default_effect="deny",
+    )
+    reader = RunConfig(
+        principal=PrincipalContext(subject="reader", roles=("reader",))
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://inventory.example.test/openapi.json",
+            kind="openapi",
+            name="inventory",
+            base_url="https://inventory.example.test",
+            http_client=client,
+            authorization_policy=policy,
+            policy=ExecutionPolicy(allow_unclassified_remote=True),
+        )
+        endpoint = router.registry.get("inventory").endpoint("get_item")
+        assert endpoint.read_only is True
+        plan = _plan(router, "inventory", arguments={"item_id": 7})
+
+        router.mark_access_unavailable("inventory", "get_item", cooldown_seconds=120)
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=reader)
+        assert data_gets == []
+
+        router.mark_access_available("inventory", "get_item")
+        result = await router.execute(plan, config=reader)
+        assert result[0].data == {"id": 7, "label": "verified"}
+        assert data_gets == ["/items/7"]
+
+        await router.aremove_tool("inventory")
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=reader)
+        assert data_gets == ["/items/7"]

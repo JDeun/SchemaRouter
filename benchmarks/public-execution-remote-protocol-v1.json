@@ -9,12 +9,14 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "test_file": "tests/test_public_remote_protocol_execution_wiring.py",
       "positive_test": "test_openrpc_public_execute_denies_guest_and_bad_input_before_http",
-      "denial_test": "test_openrpc_public_execute_denies_guest_and_bad_input_before_http",
+      "denial_test": "test_openrpc_public_execute_denies_unavailable_and_missing_required_before_http",
       "checked": [
         "registered-jsonrpc-post",
         "denied-principal-no-http",
         "invalid-input-no-http",
-        "stale-tool-no-http"
+        "stale-tool-no-http",
+        "unavailable-source-no-http",
+        "availability-recovery-one-http"
       ],
       "evidence": "local-httpx-mocktransport"
     },
@@ -24,14 +26,18 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "test_file": "tests/test_public_remote_protocol_execution_wiring.py",
       "positive_test": "test_odata_public_execute_denies_guest_and_stale_plan_before_http",
-      "denial_test": "test_odata_public_execute_denies_guest_and_stale_plan_before_http",
+      "denial_test": "test_odata_public_execute_denies_undeclared_and_unavailable_before_http",
       "checked": [
         "registered-odata-get",
         "denied-principal-no-http",
         "stale-tool-no-http",
-        "read-only-source"
+        "read-only-source",
+        "invalid-input-no-http",
+        "unavailable-source-no-http",
+        "availability-recovery-one-http"
       ],
       "evidence": "local-httpx-mocktransport"
     }
-  ]
+  ],
+  "notes": "Each protocol has a separate registered-execution positive and an independently named deny/recovery path. Deterministic MockTransport DEV; no actual provider E2."
 }

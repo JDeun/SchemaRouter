@@ -47,9 +47,9 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Blocker: Sibling-operation correctness currently has bounded DEV evidence.
   - Next action: Test read/list/update/delete correct selection and abstention in E2.
   - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1493)
-- [ ] **R03 P1** — `DEV_ONLY` — [owner #1444](https://github.com/JDeun/SchemaRouter/issues/1444)
+- [ ] **R03 P1** — `DEV_ONLY` — [owner #1535](https://github.com/JDeun/SchemaRouter/issues/1535)
   - Blocker: Typed required field, enum, unit, qualifier and input joint coverage unqualified.
-  - Next action: Evaluate source-native input/output/enum conjunctions.
+  - Next action: Independently qualify required FieldGroup and typed enum, unit, qualifier and input conjunctions before Top-K; measure no-fit and end-to-end coverage.
   - Evidence: No qualifying independent evidence registered
 - [ ] **R04 P1** — `HISTORICAL_NEGATIVE` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: On disclosed synthetic DEV strict unsupported no-call was 0/6 in each arm.

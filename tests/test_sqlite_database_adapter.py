@@ -16,7 +16,7 @@ from schemarouter import (
     ToolCall,
 )
 from schemarouter.adapters.sqlite_database import introspect_sqlite_database
-from schemarouter.errors import BindingDriftError, RegistrationError
+from schemarouter.errors import BindingDriftError, RegistrationError, SchemaRouterError
 from schemarouter.registry import InMemoryRegistry
 
 
@@ -510,3 +510,65 @@ def test_sqlite_registration_preserves_newer_runtime_writer_during_failed_rollba
     assert router.executor.bound_keys() == (concurrently_rebound_key,)
     assert router.executor.binding_states()[concurrently_rebound_key] == "orphaned"
     connection.close()
+
+
+
+@pytest.mark.asyncio
+async def test_sqlite_public_execute_denies_unavailable_and_stale_before_driver() -> None:
+    """Native SQLite source must be silent while unavailable and after removal."""
+    connection = _connection()
+    try:
+        policy = AuthorizationPolicy(
+            rules=(AuthorizationRule(
+                effect="allow",
+                operation="company.employees.select",
+                roles_any=("reader",),
+            ),),
+            default_effect="deny",
+        )
+        router = SchemaRouter(authorization_policy=policy)
+        (key,) = router.add_sqlite_database(
+            connection, database_name="company", tables={"employees"},
+        )
+        endpoint = router.registry.get(key).endpoint("select")
+        assert endpoint.read_only is True
+        assert endpoint.destructive is False
+        reader = RunConfig(
+            principal=PrincipalContext(subject="reader", roles=("reader",))
+        )
+        guest = RunConfig(
+            principal=PrincipalContext(subject="guest", roles=("guest",))
+        )
+        plan = _plan(router, key, fields=["id", "name"], arguments={"id": 1})
+        statements: list[str] = []
+        connection.set_trace_callback(statements.append)
+
+        with pytest.raises(PolicyViolationError):
+            await router.execute(plan, config=guest)
+        assert statements == []
+
+        with pytest.raises(PlanValidationError):
+            await router.execute(
+                _plan(router, key, fields=["id"], arguments={"sql": "DELETE FROM employees"}),
+                config=reader,
+            )
+        assert statements == []
+
+        router.mark_access_unavailable(key, "select", cooldown_seconds=120)
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=reader)
+        assert statements == []
+
+        router.mark_access_available(key, "select")
+        result = await router.execute(plan, config=reader)
+        assert result[0].data == [{"id": 1, "name": "Alice"}]
+        assert len(statements) == 1
+        assert statements[0].lstrip().upper().startswith("SELECT")
+
+        await router.aremove_tool(key)
+        with pytest.raises(SchemaRouterError):
+            await router.execute(plan, config=reader)
+        assert len(statements) == 1
+    finally:
+        connection.set_trace_callback(None)
+        connection.close()

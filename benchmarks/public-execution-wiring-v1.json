@@ -22,7 +22,23 @@
         "test_direct_sdk_rejects_unsafe_execution_shapes"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Read-only single native invocation; no independent external-provider E2 qualification."
+      "notes": "Positive source-backed direct native invoker; earlier denial_tests are mock-only mechanism tests. Separate registered_denial_evidence runs the real registered executor and records provider invocation count for denied principal, missing host arguments, unavailable source, revoked policy, and recovery. No independent E2.",
+      "registered_denial_evidence": {
+        "test_file": "tests/test_public_direct_sdk_real_denials.py",
+        "test_names": [
+          "test_direct_sdk_real_registered_native_denials_never_dispatch",
+          "test_direct_sdk_real_registered_native_recovers_from_temporary_unavailability"
+        ],
+        "cases": [
+          "missing_host_arguments",
+          "denied_principal",
+          "unavailable_source",
+          "policy_revoked",
+          "availability_recovery_one_bound_call"
+        ],
+        "evidence_level": "DEV_ONLY_REGISTERED_NATIVE_INVOKER",
+        "owner_issue": 1821
+      }
     },
     {
       "id": "router.python.callable.sync",

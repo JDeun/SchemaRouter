@@ -1,0 +1,33 @@
+name: Public Execution Negative Gap Ledger DEV
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/public-execution-wiring-v1.json"
+      - "benchmarks/public-source-family-wiring-v1.json"
+      - "benchmarks/public-execution-mcp-stdio-v1.json"
+      - "benchmarks/public-execution-entrypoints-v1.json"
+      - "benchmarks/public-execution-negative-gaps-v1.json"
+      - "tests/test_public_execution_negative_gaps.py"
+      - ".github/workflows/public-execution-negative-gaps-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-backed-gap-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.11,<1"
+      - name: Guard 19 paths and explicit NOT_TESTED/N-A dispositions
+        run: |
+          ruff check tests/test_public_execution_negative_gaps.py
+          python -m pytest -q tests/test_public_execution_negative_gaps.py tests/test_public_execution_wiring_contract.py

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "qualification": "DEV_ONLY_REGISTERED_SOURCE_NOT_INDEPENDENT_E2",
   "public_entrypoint": "schemarouter.SchemaRouter.execute",
-  "notes": "Supplement to 14-family canonical execution matrix under pending PR #1832; adds one source discovery and generic graph/vector/record store. Explicit negatives are source-specific. Principal and other negative paths in existing test suites are not automatically counted as provider-independent qualification.",
+  "notes": "Additional source discovery and generic Graph/Vector/Record Store adapters; source-local positive and negative tests remain DEV_ONLY. Generic store public execution now has separately wired, runtime-registered denied/unavailable/stale and recovery receipts. External provider-independent E2 remains unqualified.",
   "paths": [
     {
       "id": "router.optimade.source",
@@ -29,7 +29,25 @@
         "invalid_relationship_before_backend",
         "principal_denial_separately_tested"
       ],
-      "evidence": "registered-fake-backend"
+      "evidence": "registered-fake-backend",
+      "public_runtime_negative": {
+        "test_file": "tests/test_public_generic_store_execution_negative.py",
+        "scenario_kind": "graph",
+        "test_names": [
+          "test_registered_generic_store_fail_closed_and_recovers",
+          "test_registered_generic_store_revoked_policy_never_calls_backend"
+        ],
+        "checked": [
+          "denied_principal_zero_backend_calls",
+          "undeclared_input_zero_backend_calls",
+          "unavailable_source_zero_backend_calls",
+          "availability_recovery_exactly_one_backend_call",
+          "removed_tool_stale_plan_zero_additional_calls",
+          "revoked_authority_zero_backend_calls"
+        ],
+        "evidence": "registered-original-invoker-fake-vendor-not-executor-mock",
+        "qualification": "DEV_ONLY"
+      }
     },
     {
       "id": "router.vector_store.generic",
@@ -42,7 +60,25 @@
         "invalid_dimension",
         "principal_denial_separately_tested"
       ],
-      "evidence": "registered-fake-backend"
+      "evidence": "registered-fake-backend",
+      "public_runtime_negative": {
+        "test_file": "tests/test_public_generic_store_execution_negative.py",
+        "scenario_kind": "vector",
+        "test_names": [
+          "test_registered_generic_store_fail_closed_and_recovers",
+          "test_registered_generic_store_revoked_policy_never_calls_backend"
+        ],
+        "checked": [
+          "denied_principal_zero_backend_calls",
+          "undeclared_input_zero_backend_calls",
+          "unavailable_source_zero_backend_calls",
+          "availability_recovery_exactly_one_backend_call",
+          "removed_tool_stale_plan_zero_additional_calls",
+          "revoked_authority_zero_backend_calls"
+        ],
+        "evidence": "registered-original-invoker-fake-vendor-not-executor-mock",
+        "qualification": "DEV_ONLY"
+      }
     },
     {
       "id": "router.record_store.generic",
@@ -55,7 +91,25 @@
         "untrusted_query_dsl",
         "principal_denial_separately_tested"
       ],
-      "evidence": "registered-fake-backend"
+      "evidence": "registered-fake-backend",
+      "public_runtime_negative": {
+        "test_file": "tests/test_public_generic_store_execution_negative.py",
+        "scenario_kind": "record",
+        "test_names": [
+          "test_registered_generic_store_fail_closed_and_recovers",
+          "test_registered_generic_store_revoked_policy_never_calls_backend"
+        ],
+        "checked": [
+          "denied_principal_zero_backend_calls",
+          "undeclared_input_zero_backend_calls",
+          "unavailable_source_zero_backend_calls",
+          "availability_recovery_exactly_one_backend_call",
+          "removed_tool_stale_plan_zero_additional_calls",
+          "revoked_authority_zero_backend_calls"
+        ],
+        "evidence": "registered-original-invoker-fake-vendor-not-executor-mock",
+        "qualification": "DEV_ONLY"
+      }
     }
   ]
 }
