@@ -9,6 +9,7 @@ from pydantic import Field, model_validator
 
 from .canonical_json import canonical_json_text
 from .models import FieldSpec, StrictModel
+from .validation import canonical_unit_value_schema
 
 CompatibilityStatus = Literal["exact", "compatible", "convertible", "incompatible", "unknown"]
 EffectKind = Literal["read", "write", "external_side_effect"]
@@ -47,7 +48,7 @@ class CapabilityFieldContract(StrictModel):
         normalization = field.unit_normalization
         return cls(
             semantic_id=field.semantic_id,
-            json_schema=field.json_schema,
+            json_schema=canonical_unit_value_schema(field.json_schema, normalization),
             unit=normalization.canonical_unit if normalization is not None else field.unit,
             dimension=normalization.dimension if normalization is not None else None,
             qualifiers=field.qualifiers,

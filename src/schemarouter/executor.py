@@ -2139,6 +2139,8 @@ class RegistryExecutor:
                         f"projected field {_field_name!r} requires numeric values "
                         "for unit normalization"
                     )
+                if _spec.scale == 1 and _spec.offset == 0:
+                    return item
                 try:
                     converted = item * _spec.scale + _spec.offset
                 except OverflowError as exc:
