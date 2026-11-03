@@ -7,6 +7,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+- Preserve scoped field paths, value schemas and missing inputs in prepared schema-only plans.
+- Compose complete concept groups across endpoints while retaining unmet query needs and K5 limits.
+
 - Mark development snapshots as `0.18.0.dev0` and distinguish development docs from stable `0.17.0`.
 - Reduce original-schema preparation costs with prefix candidate path validation and scalar JSON
   validation fast paths while retaining fingerprints and conflict diagnostics.
