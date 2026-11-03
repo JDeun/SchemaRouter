@@ -197,15 +197,38 @@ def _verify_catalog_stage(
     return build_ms
 
 
-def audit_original_four_provider_native_churn_e0() -> dict[str, Any]:
-    """Prove 1,009→358→1,009→654→1,009 on one actual native registry."""
+def audit_original_four_provider_native_churn_e0(
+    *,
+    prepared_tools: tuple[ToolSpec, ToolSpec, ToolSpec, ToolSpec] | None = None,
+) -> dict[str, Any]:
+    """Prove 1,009→358→1,009→654→1,009 on one actual native registry.
+
+    The optional prepared fixture is for same-module DEV test reuse only.
+    The normal script path always compiles freshly from pinned publisher
+    sources. Even with prepared tools, parse both pinned original sources,
+    recompute the independent route manifest, and rebuild the native index
+    for *every* audit stage; do not cache graph or journal state.
+    """
     openai_source = _source_document()
     github_source = _local_snapshot()
-    tools = (
-        _compile_original_openai_http_publisher_e0(openai_source),
-        compile_official_github_get_bundle_e0(github_source),
-        *_other_providers(),
-    )
+    if prepared_tools is None:
+        tools = (
+            _compile_original_openai_http_publisher_e0(openai_source),
+            compile_official_github_get_bundle_e0(github_source),
+            *_other_providers(),
+        )
+    else:
+        if (
+            not isinstance(prepared_tools, tuple)
+            or len(prepared_tools) != 4
+            or not all(isinstance(tool, ToolSpec) for tool in prepared_tools)
+            or [len(tool.endpoints) for tool in prepared_tools] != [355, 651, 2, 1]
+            or len({tool.key for tool in prepared_tools}) != 4
+        ):
+            raise ValueError("prepared four-provider fixture inventory drift")
+        # Do not let a second audit share mutable ToolSpec ownership with the
+        # module-scoped positive/negative test fixture.
+        tools = tuple(tool.model_copy(deep=True) for tool in prepared_tools)
     openai, github, _, _ = tools
     manifest = _source_route_manifest(openai_source, github_source, tools)
     github_routes = {(github.key, e.name) for e in github.endpoints}
