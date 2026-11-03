@@ -384,3 +384,46 @@ def test_missing_usage_cannot_be_exported_as_zero_in_legacy_stage_receipt():
                 hmac_key=b"private-test-key-000", seed=17,
             ),
         )
+
+
+@pytest.mark.parametrize(("expected", "actual", "tolerance", "passed"), [
+    (2**53, 2**53, {"absolute": 0}, True),
+    (2**53, 2**53 + 1, {"absolute": 0}, False),
+    (2**53, 2**53 + 1, {"relative": 0}, False),
+    (2**53, 2**53 + 1, {"absolute": 1}, True),
+    (10**400, 10**400, {"absolute": 0}, True),
+    (10**400, 10**400 + 1, {"absolute": 0}, False),
+    (10**400, 10**400 + 1, {"absolute": 1}, True),
+    (10**400, 10**400 + 1, {"relative": 0}, False),
+    (10**400, 10**400 + 1, {"relative": 1e-20}, True),
+    (2**53 + 1, float(2**53), {"absolute": 0}, False),
+    (2**53, 2**53 + 1, {"absolute": 0, "relative": 1e-10}, True),
+    (1e308, -1e308, {"relative": 1.9}, False),
+    (0, 1e-13, {"relative": 1}, True),
+])
+def test_private_numeric_oracle_preserves_integer_precision(expected, actual, tolerance, passed):
+    original = gold_task()
+    original["required_facts"][0]["value"] = expected
+    original["numeric_tolerances"] = {"case.status": tolerance}
+    before = deepcopy(original)
+    result = private_structured_final_result(original, answer(value=actual), execution_passed=True)
+    assert result["structured_final_answer_passed"] is passed
+    assert result["execution_and_structured_final_passed"] is passed
+    assert original == before
+
+
+@pytest.mark.parametrize(("value", "forbidden", "passed"), [
+    (10**400, 10**400, False),
+    (10**400, 10**400 + 1, True),
+    (10, 0, True),
+    (1, True, False),
+])
+def test_private_numeric_copies_preserve_original_forbidden_values(value, forbidden, passed):
+    original = gold_task()
+    original["required_facts"][0]["value"] = value
+    original["numeric_tolerances"] = {"case.status": {"absolute": 0}}
+    original["forbidden_facts"] = [{"key": "case.status", "value": forbidden}]
+    before = deepcopy(original)
+    result = private_structured_final_result(original, answer(value=value), execution_passed=True)
+    assert result["execution_and_structured_final_passed"] is passed
+    assert original == before

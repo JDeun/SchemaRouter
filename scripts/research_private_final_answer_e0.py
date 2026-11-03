@@ -6,17 +6,28 @@ No gold, answer text, fact values or source IDs leave this function.
 """
 from __future__ import annotations
 
+import json
 import math
+from copy import deepcopy
+from fractions import Fraction
 from typing import Any
 
 
 def _finite_scalar(value: Any) -> bool:
-    if type(value) in (str, bool, type(None)):
+    if type(value) in (str, bool, int, type(None)):
         return True
-    try:
-        return type(value) in (int, float) and math.isfinite(value)
-    except OverflowError:
-        return False
+    return type(value) is float and math.isfinite(value)
+
+
+def _exact_numeric_match(actual: int | float, expected: int | float,
+                         tolerance: dict[str, int | float]) -> bool:
+    """Compare exact input numbers without rounding integers through float."""
+    difference = abs(Fraction(actual) - Fraction(expected))
+    return (
+        "absolute" in tolerance and difference <= Fraction(tolerance["absolute"])
+        or "relative" in tolerance and difference <= Fraction(tolerance["relative"])
+        * max(abs(Fraction(expected)), Fraction(1e-12))
+    )
 
 
 def _usable_gold(task: dict[str, Any]) -> bool:
@@ -102,7 +113,41 @@ def private_structured_final_result(
         result["structured_final_answer_passed"] = False
         result["execution_and_structured_final_passed"] = False
         return result
-    scores = score_envelope(task, final_text)
+    assert envelope is not None
+    numeric_keys = {
+        key for key, fact in expected.items() if type(fact["value"]) in (int, float)
+    }
+    for fact in envelope["facts"]:
+        key, value = fact["key"], fact["value"]
+        if key not in numeric_keys:
+            continue
+        if not _exact_numeric_match(
+            value, expected[key]["value"], task["numeric_tolerances"][key],
+        ) or any(
+            forbidden["key"] == key and (
+                Fraction(value) == Fraction(forbidden["value"])
+                if type(forbidden["value"]) in (int, float)
+                else value == forbidden["value"]
+            )
+            for forbidden in task["forbidden_facts"]
+        ):
+            result["structured_final_answer_passed"] = False
+            result["execution_and_structured_final_passed"] = False
+            return result
+    # Only already-verified numbers become bounded private copies for #424's
+    # structural/unit/source checks. Its historical float arithmetic is frozen.
+    scoring_task, scoring_envelope = deepcopy(task), deepcopy(envelope)
+    for fact in scoring_task["required_facts"]:
+        if fact["key"] in numeric_keys:
+            fact["value"] = 0
+            scoring_task["numeric_tolerances"][fact["key"]] = {"absolute": 0}
+    for fact in scoring_envelope["facts"]:
+        if fact["key"] in numeric_keys:
+            fact["value"] = 0
+    scoring_task["forbidden_facts"] = [
+        fact for fact in scoring_task["forbidden_facts"] if fact["key"] not in numeric_keys
+    ]
+    scores = score_envelope(scoring_task, json.dumps(scoring_envelope))
     passed = bool(
         scores["final_envelope_valid"]
         and scores["required_fact_recall"] == 1.0
