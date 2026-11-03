@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from threading import Event, Thread
 
 import pytest
@@ -156,7 +157,7 @@ def test_sqlite_journal_rejects_missing_or_corrupted_past_receipt(tmp_path):
         _seed(reg)
         old = NativeSchemaPostingIndex.build(reg)
         reg.register(_tool("added"))
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         conn.execute(
             "DELETE FROM schemarouter_registry_mutations WHERE version = ?",
             (old.registry_version + 1,),
@@ -166,7 +167,7 @@ def test_sqlite_journal_rejects_missing_or_corrupted_past_receipt(tmp_path):
         # before deleting rows when testing a corrupt receipt.
         current = NativeSchemaPostingIndex.build(reg)
         reg.register(_tool("more"))
-        with sqlite3.connect(path) as conn:
+        with closing(sqlite3.connect(path)) as conn, conn:
             conn.execute(
                 "UPDATE schemarouter_registry_mutations "
                 "SET changed_keys = ? WHERE version = ?",
@@ -212,7 +213,7 @@ def test_sqlite_journal_legacy_history_fails_and_requires_full_rebuild(
         reg.register(_tool("after"))
         # Simulates a database that existed before journaling, without
         # producing fictitious records on reopening.
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         conn.execute("DROP TABLE schemarouter_registry_mutations")
     with SQLiteRegistry(path) as reg:
         rebuilt = NativeSchemaPostingIndex.build(reg)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -134,7 +135,7 @@ def test_sqlite_existing_catalog_has_no_invented_retroactive_receipts(tmp_path):
     with SQLiteRegistry(path) as reg:
         reg.register(_tool("legacy"))
         old_version = reg.version
-    with sqlite3.connect(path) as connection:
+    with closing(sqlite3.connect(path)) as connection, connection:
         connection.execute("DROP TABLE schemarouter_registry_mutations")
     with SQLiteRegistry(path) as upgraded:
         assert upgraded.version == old_version
@@ -178,7 +179,7 @@ def test_sqlite_receipt_rejects_bad_on_disk_journal_content(tmp_path):
     path = tmp_path / "tampered.sqlite3"
     with SQLiteRegistry(path) as reg:
         reg.register(_tool("safe"))
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         conn.execute(
             "UPDATE schemarouter_registry_mutations "
             "SET changed_keys = ? WHERE version = 1",

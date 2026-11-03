@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from contextlib import closing
 from multiprocessing import get_context
 from pathlib import Path
 from threading import Event
@@ -198,7 +199,7 @@ def test_local_racing_stop_never_reopens_lease_or_exceeds_quota(tmp_path):
 
 def test_empty_or_partial_schema_is_not_implicitly_repaired(tmp_path):
     path = tmp_path / "partial.sqlite3"
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         conn.execute("CREATE TABLE unrelated (id INTEGER)")
     store = DurableCentralReservationE0(path)
     assert store.reserve(_request("new")) == "synthetic_authority_unavailable"
@@ -244,7 +245,7 @@ def test_interrupted_provision_rolls_back_all_authority_and_registration(
             cap_per_tenant_route=1,
         )
     assert "PRIVATE_" not in str(failure.value)
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn, conn:
         names = {
             row[0] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'"
@@ -403,3 +404,71 @@ def test_no_synthetic_handoff_without_valid_prior_reservation(tmp_path):
         request, synthetic_sink=sink,
     ) == "synthetic_authority_unavailable"
     assert forwarded == []
+
+
+
+def test_reservation_count_closes_native_sqlite_handle_on_success_and_error(
+    tmp_path, monkeypatch,
+):
+    """The connection context commits/rolls back but does not itself close."""
+    path = tmp_path / "close-count.sqlite3"
+    store = _fixture(path)
+    assert store.reserve(_request("count")) == "synthetic_reservation"
+    closes: list[str] = []
+
+    class TrackedConnection(sqlite3.Connection):
+        def close(self) -> None:
+            closes.append("closed")
+            super().close()
+
+    class FaultyConnection(TrackedConnection):
+        def execute(self, sql, parameters=(), /):
+            if sql.startswith("SELECT COUNT(*)"):
+                raise sqlite3.OperationalError("synthetic query failure")
+            return super().execute(sql, parameters)
+
+    monkeypatch.setattr(
+        store, "_existing_connection",
+        lambda: sqlite3.connect(path, factory=TrackedConnection),
+    )
+    assert store.reserved_for_test("church", GEO) == 1
+    assert closes == ["closed"]
+
+    monkeypatch.setattr(
+        store, "_existing_connection",
+        lambda: sqlite3.connect(path, factory=FaultyConnection),
+    )
+    with pytest.raises(RuntimeError, match="synthetic central counts unavailable"):
+        store.reserved_for_test("church", GEO)
+    assert closes == ["closed", "closed"]
+
+
+
+def test_reservation_connection_pragmas_fail_without_leaking_handle(
+    tmp_path, monkeypatch,
+):
+    """Failed connection initialization must not orphan a raw SQLite handle."""
+    path = tmp_path / "pragma-failure.sqlite3"
+    store = _fixture(path)
+    closed: list[bool] = []
+    original_connect = sqlite3.connect
+
+    class FailingPragmaConnection(sqlite3.Connection):
+        def execute(self, sql, parameters=(), /):
+            if sql.startswith("PRAGMA busy_timeout"):
+                raise sqlite3.OperationalError("synthetic pragma failure")
+            return super().execute(sql, parameters)
+
+        def close(self):
+            closed.append(True)
+            return super().close()
+
+    def failing_connect(*args, **kwargs):
+        return original_connect(
+            *args, factory=FailingPragmaConnection, **kwargs,
+        )
+
+    monkeypatch.setattr(sqlite3, "connect", failing_connect)
+    with pytest.raises(sqlite3.OperationalError, match="synthetic pragma failure"):
+        store._existing_connection()
+    assert closed == [True]

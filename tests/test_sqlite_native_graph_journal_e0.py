@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -178,7 +179,7 @@ def test_sqlite_g5_graph_refuses_missing_source_receipt(tmp_path):
         _seed(reg)
         previous = _full(reg)
         reg.register(_tool("added"))
-        with sqlite3.connect(path) as outside:
+        with closing(sqlite3.connect(path)) as outside, outside:
             outside.execute(
                 "DELETE FROM schemarouter_registry_mutations WHERE version = ?",
                 (reg.version,),

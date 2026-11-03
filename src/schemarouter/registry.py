@@ -749,15 +749,17 @@ class SQLiteRegistry:
             timeout=timeout,
             check_same_thread=False,
         )
-        self._connection.row_factory = sqlite3.Row
-        self._connection.execute("PRAGMA foreign_keys = ON")
-        busy_timeout_ms = int(timeout * 1000)
-        self._connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
-        if self.path != ":memory:":
-            self._connection.execute("PRAGMA journal_mode = WAL")
         try:
+            # Ownership begins immediately after connect: SQLite PRAGMAs may
+            # fail before _initialize, so cleanup must cover the entire setup.
+            self._connection.row_factory = sqlite3.Row
+            self._connection.execute("PRAGMA foreign_keys = ON")
+            busy_timeout_ms = int(timeout * 1000)
+            self._connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
+            if self.path != ":memory:":
+                self._connection.execute("PRAGMA journal_mode = WAL")
             self._initialize()
-        except Exception:
+        except BaseException:
             self._connection.close()
             self._closed = True
             raise
