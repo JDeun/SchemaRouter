@@ -213,10 +213,10 @@
     {
       "path": "research/experiment-index.md",
       "section": 3,
-      "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
-      "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
+      "en_blob": "814aa31e04a1858ee322f6ace5188fa73fb742d4",
+      "ko_blob": "9303bf4912e0cd3158cb4f54642f908febb69b03",
       "decision": "meaning-preserved",
-      "evidence": "The Korean experiment index continues to distinguish ordinary Git commits from independent experiment decisions. The 2026-10-12 editorial note explicitly identifies English `Hypothesis / purpose` cells as verbatim source-ledger evidence rather than mistakenly claiming a completed Korean translation, preserving immutable experiment statements and references."
+      "evidence": "The Korean experiment index continues to distinguish ordinary Git commits from independent experiment decisions. The 2026-10-12 editorial note explicitly identifies English `Hypothesis / purpose` cells as verbatim source-ledger evidence rather than mistakenly claiming a completed Korean translation, preserving immutable experiment statements and references. 2026-11-04 AI-assisted comparison preserves this section and the archival92-record statuses; the revised introduction links later records without rescoring. The full pair distinguishes a dated inventory from merged code or qualified results. Not independent human sign-off."
     },
     {
       "path": "research/research-program-2026.md",

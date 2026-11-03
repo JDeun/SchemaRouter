@@ -7,6 +7,28 @@
 > Tracking: [#1712](https://github.com/JDeun/SchemaRouter/issues/1712).
 > Canonical cross-session research tracker: [#200](https://github.com/JDeun/SchemaRouter/issues/200).
 
+Before resuming development or rerunning an experiment, consult the
+[2026-11-04 branch and evidence reconciliation](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/repository-reconciliation-2026-11-04.json).
+It connects pinned branch/worktree inventories, integration decisions and later result records.
+This is a dated inventory, not proof that every branch was merged or that an experiment passed;
+recheck live PR state before acting. Private local DEV inputs remain outside the repository.
+
+## 2026-11-04 situation after hygiene
+
+The reconciliation separates the following states; removing a branch does not resolve its product gap.
+
+| Area | Current state | Source |
+| --- | --- | --- |
+| Original question → required fields | Existing local DEV failures remain. Complete coverage of extracted needs is not proof that the model extracted every need. | [Reconciliation](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/repository-reconciliation-2026-11-04.json) |
+| Default API → schema graph | Default planning remains lexical; prepared model/graph field routing is opt-in. | [Paper parity](original-paper-algorithm1-parity.md) |
+| Scoped typed field plans | Implemented for declared source contracts, conditions and bindings; this is not general semantic understanding. | [Field-first execution](../concepts/field-first-execution.md) |
+| Commercial correctness, latency and cost | Not independently qualified by contract tests or small E0/E1 studies. | [Acceptance matrix](product-north-star-and-test-matrix.md) |
+| Release | v0.18 remains held. Hygiene and CI success do not clear the release gate. | [Held PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356) |
+
+Historical variants are preserved with their original outcomes rather than all being merged into the product.
+The reported OpenClaw vLLM Qwen122B connection is the next model environment to inspect after this
+organization and situation report; no new model run is part of the cleanup.
+
 ## Read in this order
 
 1. [Research program and current gates](research-program-2026.md): current priorities,
