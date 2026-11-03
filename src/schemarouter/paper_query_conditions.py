@@ -106,7 +106,7 @@ def _apply_query_input_conditions(
             # Equality only: never test a proposed value against assertions
             # removed from this principal's descriptor (a membership oracle).
             original = {parameter.name: parameter for parameter in endpoint.parameters}
-            parameters.extend((position, parameter,
+            parameters.extend((position, parameter.model_copy(deep=True),
                 canonical_json_text(parameter.json_schema)
                 == canonical_json_text(original[parameter.name].json_schema),
             ) for parameter in scoped.parameters)

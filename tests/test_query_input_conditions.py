@@ -215,6 +215,34 @@ async def test_callback_disposable_schema_mutation_cannot_create_a_source_alias(
 
 
 @pytest.mark.asyncio
+async def test_scope_cannot_rewrite_its_retained_input_to_hide_alias_withdrawal(monkeypatch):
+    from schemarouter.errors import PolicyViolationError
+    from schemarouter.paper_query_conditions import _apply_query_input_conditions
+
+    router, session = source(parameters=(city(aliases=("place",)),))
+    plan = await query(session, {}, host={"city": "Seoul"})
+    original = router._data_scope_endpoint_view
+    observations = 0
+    retained = []
+
+    def changing_scope(principal, tool, endpoint):
+        nonlocal observations
+        observations += 1
+        view = original(principal, tool, endpoint).model_copy(deep=True)
+        if observations >= 3:
+            for previous in retained:
+                previous.parameters[0].aliases.clear()
+            view.parameters[0].aliases.clear()
+        retained.append(view)
+        return view
+
+    monkeypatch.setattr(router, "_data_scope_endpoint_view", changing_scope)
+    with pytest.raises(PolicyViolationError, match="source eligibility changed"):
+        _apply_query_input_conditions(router, plan, principal=ACTOR,
+            parameter_hints={"place": "Seoul"})
+
+
+@pytest.mark.asyncio
 async def test_global_hint_cannot_broadcast_to_two_same_semantic_source_inputs():
     router, _ = source(parameters=(city(semantic_id="weather.city"),))
     router.add_tool(ToolSpec(name="humidity", source_type="weather", license="reviewed",
