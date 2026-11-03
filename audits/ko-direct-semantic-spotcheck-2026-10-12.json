@@ -189,9 +189,9 @@
     },
     {
       "path": "guides/candidate-indexing.md",
-      "en_blob": "ef38632f196d444f601048f44310b4cdb5ababa6",
-      "ko_blob": "37b0b2c348bf97192d8b3ce8e45486ea0aac7895",
-      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement. 2026-11-03 delta: AI-assisted EN/KO comparison. Public prepared-session closed-loop profiles use each pathway 30 warmups/1000 samples, bounded 1/4 clients, submission queue boundaries, CPU/lifetime RSS/platform nulls and threshold counts; E0 is not SLO/E2. Not independent human editorial sign-off."
+      "en_blob": "a804f7cb6a76cd7dfe73a4373da1a44d8d037bf7",
+      "ko_blob": "ed253f323c76dab39c85db74e5cbc5e09be5dc5b",
+      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement. 2026-11-03 delta: AI-assisted EN/KO comparison. Public prepared-session closed-loop profiles use each pathway 30 warmups/1000 samples, bounded 1/4 clients, submission queue boundaries, CPU/lifetime RSS/platform nulls and threshold counts; E0 is not SLO/E2. Not independent human editorial sign-off. AI-assisted EN/KO preparation delta: complete-segment prefix candidates preserve source/result/wildcard predicates and declaration-order errors, mutable registration validation stays before snapshot storage, scalar validation preserves canonical bytes/fingerprints/diagnostics; no SLO qualification claim."
     },
     {
       "path": "guides/capability-artifacts.md",

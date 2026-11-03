@@ -28,6 +28,15 @@ A successful registry mutation increments the version, which invalidates the pla
 next request. Building an index reads a stable registry snapshot; if the registry changes repeatedly
 during construction, planning fails rather than caching a mixed-version view.
 
+## Source-schema preparation
+
+Endpoint validation compares only result paths that share a complete segment prefix, then applies
+the source/result overlap and wildcard rules. It preserves duplicate checks and the first error
+in declaration order. Registration still validates mutable input before storing its snapshot.
+Canonical JSON validation checks terminal scalars without building a recursive error path for
+each one, preserving canonical bytes, fingerprints and diagnostics. These reduce preparation work
+for wide original schemas; resource limits still require the measured workload below.
+
 ## Disable for comparison or debugging
 
 ```python

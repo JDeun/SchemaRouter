@@ -7,6 +7,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+- Mark development snapshots as `0.18.0.dev0` and distinguish development docs from stable `0.17.0`.
+- Reduce original-schema preparation costs with prefix candidate path validation and scalar JSON
+  validation fast paths while retaining fingerprints and conflict diagnostics.
+
 - Support constrained scalar field routing and sound canonical unit contracts, preserving large
   integer precision and live router/executor authorization.
 - Preserve required JSON Schema assertions for provider fallback/corroboration; require full
