@@ -124,11 +124,8 @@ def private_structured_final_result(
         if not _exact_numeric_match(
             value, expected[key]["value"], task["numeric_tolerances"][key],
         ) or any(
-            forbidden["key"] == key and (
-                Fraction(value) == Fraction(forbidden["value"])
-                if type(forbidden["value"]) in (int, float)
-                else value == forbidden["value"]
-            )
+            forbidden["key"] == key and type(forbidden["value"]) in (int, float)
+            and Fraction(value) == Fraction(forbidden["value"])
             for forbidden in task["forbidden_facts"]
         ):
             result["structured_final_answer_passed"] = False

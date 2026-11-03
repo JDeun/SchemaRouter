@@ -416,7 +416,8 @@ def test_private_numeric_oracle_preserves_integer_precision(expected, actual, to
     (10**400, 10**400, False),
     (10**400, 10**400 + 1, True),
     (10, 0, True),
-    (1, True, False),
+    (1, True, True),
+    (0, False, True),
 ])
 def test_private_numeric_copies_preserve_original_forbidden_values(value, forbidden, passed):
     original = gold_task()
