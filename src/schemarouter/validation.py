@@ -6,10 +6,16 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from jsonschema import exceptions, validators
+from jsonschema import Draft202012Validator, exceptions, validators
 
+from .canonical_json import canonical_json_text
 from .errors import SchemaValidationError
 from .models import EndpointSpec, UnitNormalizationSpec, _schema_at_projection_path
+
+_SCHEMA_ANNOTATIONS = {
+    "title", "description", "default", "examples", "deprecated",
+    "readOnly", "writeOnly", "$comment",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -595,23 +601,41 @@ def json_schemas_compatible(
     required: dict[str, Any],
     candidate: dict[str, Any],
 ) -> bool:
-    """Conservatively compare field value-shape compatibility."""
+    """Prove type assignability and preserved assertions without general subsumption."""
 
     required_types = json_schema_types(required)
     candidate_types = json_schema_types(candidate)
     if not json_types_compatible(required_types, candidate_types):
         return False
-    if not required_types:
-        return True
+    ignored = _SCHEMA_ANNOTATIONS | {"type"}
+    # References/combinators can depend on items; retain their complete assertion comparison.
+    if (
+        "items" not in required
+        or required["items"] is True
+        or isinstance(required["items"], dict)
+        and required.keys() | candidate.keys() <= _SCHEMA_ANNOTATIONS | {
+            "type", "items", "enum", "const", "minItems", "maxItems", "uniqueItems",
+            "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf",
+            "minLength", "maxLength", "pattern",
+        }
+    ):
+        ignored |= {"items"}
+    required_assertions = {key: value for key, value in required.items() if key not in ignored}
+    if required_assertions:
+        candidate_assertions = {
+            key: value for key, value in candidate.items() if key not in ignored
+        }
+        # shortcut: differing assertions remain unproved; add subsumption only with a proof.
+        try:
+            canonical_json_text((required_assertions, candidate_assertions))
+            if not Draft202012Validator({"const": required_assertions}).is_valid(
+                candidate_assertions,
+            ):
+                return False
+        except (TypeError, ValueError, RecursionError):
+            return False
 
-    if "array" in required_types:
-        if "array" not in candidate_types:
-            # A union can still be compatible through another shared type.
-            shared_non_array = (required_types & candidate_types) - {"array"}
-            numeric = {"number", "integer"}
-            return bool(shared_non_array) or bool(
-                required_types & numeric and candidate_types & numeric
-            )
+    if "array" in candidate_types or not candidate_types:
         required_items = required.get("items")
         candidate_items = candidate.get("items")
         if isinstance(required_items, dict):
