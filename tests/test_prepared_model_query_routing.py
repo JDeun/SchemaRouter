@@ -15,6 +15,7 @@ from schemarouter import (
     PaperIntentRegistry,
 )
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
+from schemarouter.paper_query_understanding import _decode_bounded_response
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     RIGHT,
@@ -32,6 +33,28 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
     intent_id="crm.owner_lookup", required_concept_ids=("crm.owner",),
 ),))
+
+
+def test_understanding_retains_unresolved_query_needs_without_creating_contracts():
+    understood = _decode_bounded_response({
+        "intent_id": "crm.owner_lookup", "concept_ids": ["crm.owner"],
+        "unresolved_concepts": ["tomorrow's availability", "연락 가능한 시간"],
+    }, 4096)
+    assert understood.concept_ids == ("crm.owner",)
+    assert understood.unresolved_concepts == (
+        "tomorrow's availability", "연락 가능한 시간",
+    )
+
+
+@pytest.mark.parametrize("needs", [
+    [""], [" padded"], ["line\nbreak"], ["bad\x7f"], ["x" * 161],
+    ["same", "same"], [f"need {i}" for i in range(9)], [17], "humidity",
+])
+def test_understanding_rejects_invalid_unresolved_query_needs(needs):
+    with pytest.raises(ModelAnalysisError, match="structured"):
+        _decode_bounded_response({
+            "intent_id": "crm.owner_lookup", "unresolved_concepts": needs,
+        }, 4096)
 
 
 @pytest.mark.asyncio

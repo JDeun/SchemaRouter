@@ -86,6 +86,7 @@ class PaperUnderstanding(StrictModel):
 
     intent_id: str
     concept_ids: tuple[str, ...] = ()
+    unresolved_concepts: tuple[str, ...] = ()
     source_type: str | None = None
     named_tools: tuple[str, ...] = ()
     parameter_hints: dict[str, Any] = Field(default_factory=dict)
@@ -101,6 +102,9 @@ class PaperUnderstanding(StrictModel):
                 for cid in self.concept_ids
             )
             or len(set(self.concept_ids)) != len(self.concept_ids)
+            or len(self.unresolved_concepts) > 8
+            or any(not _bounded_name(need) for need in self.unresolved_concepts)
+            or len(set(self.unresolved_concepts)) != len(self.unresolved_concepts)
             or self.source_type is not None
             and not _bounded_name(self.source_type)
             or len(self.named_tools) > 5
