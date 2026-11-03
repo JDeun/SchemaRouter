@@ -51,3 +51,20 @@ def test_timing_report_escapes_parameterized_pytest_ids(
 def test_timing_report_rejects_non_positive_limit(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="positive"):
         render_timing_summary(tmp_path / "core.xml", count=0)
+
+
+def test_protected_ci_instruments_without_weakening_coverage() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "pytest -vv" in workflow
+    assert "--durations=50" in workflow
+    assert "--durations-min=1.0" in workflow
+    assert "--junitxml=pytest-core-3.12.xml" in workflow
+    assert "python scripts/ci_pytest_timing_summary.py" in workflow
+    assert "name: pytest-core-timings-" in workflow
+    assert "if-no-files-found: warn" in workflow
+    assert "retention-days: 14" in workflow
+    assert "--cov=schemarouter" in workflow
+    assert "--cov-branch" in workflow
+    assert "coverage report --fail-under=83.5" in workflow
