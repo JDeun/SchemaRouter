@@ -9,7 +9,13 @@ from typing import Any, Literal
 from pydantic import Field, model_validator
 
 from .errors import PolicyViolationError
-from .models import EndpointSpec, StrictModel, ToolCall, ToolSpec
+from .models import (
+    EndpointSpec,
+    StrictModel,
+    ToolCall,
+    ToolSpec,
+    _overlapping_projection_pairs,
+)
 
 
 class PrincipalContext(StrictModel):
@@ -511,6 +517,17 @@ class AuthorizationPolicy:
                 raise PolicyViolationError("authorization denied for requested data scope")
             visible_set = set(rule.visible_fields)
         visible_set.difference_update(rule.hidden_fields)
+        # Selecting a source container also retrieves its descendants, even
+        # when the adapter remaps their result paths to disjoint locations.
+        # Name-based scope grants cannot authorize an overlapping denied value.
+        fields = endpoint.output_fields
+        denied = declared_fields - visible_set
+        for left, right in _overlapping_projection_pairs([
+            tuple(output.projection_path) for output in fields
+        ]):
+            if fields[left].name in denied or fields[right].name in denied:
+                visible_set.discard(fields[left].name)
+                visible_set.discard(fields[right].name)
 
         filters = tuple(
             (binding.field, binding.resolve(principal))

@@ -14,7 +14,7 @@ from .authorization import PrincipalContext
 from .capability_contracts import CapabilityFieldContract
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
-    _scalar_contract,
+    _response_contract,
     retrieve_authorized_field_group,
 )
 from .models import CapabilityRetrieval, StrictModel
@@ -65,7 +65,7 @@ class NativeDeclaredConcept(StrictModel):
             or not 1 <= len(self.required_fields) <= 8
             or len({f.semantic_id for f in self.required_fields})
             != len(self.required_fields)
-            or any(not _scalar_contract(f.json_schema)
+            or any(not _response_contract(f.json_schema)
                    for f in self.required_fields)
             or any(
                 type(source) is not str or source != source.strip()
