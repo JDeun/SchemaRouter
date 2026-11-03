@@ -230,6 +230,55 @@ def audit_original_four_provider_native_churn_e0(
         # module-scoped positive/negative test fixture.
         tools = tuple(tool.model_copy(deep=True) for tool in prepared_tools)
     openai, github, _, _ = tools
+    if prepared_tools is not None:
+        # Prepared fixtures still have to agree with the *independently read*
+        # pinned original path/method/operationId declarations. In particular,
+        # fixture reuse must never launder a write method into a read-only GET.
+        expected_openai = {
+            (path, method.upper(), operation["operationId"])
+            for path, item in openai_source["paths"].items()
+            for method, operation in item.items() if method in _HTTP_METHODS
+            and "?" not in path and not (
+                isinstance((body := operation.get("requestBody")), dict)
+                and isinstance((content := body.get("content")), dict)
+                and bool(content) and "application/json" not in content
+            )
+        }
+        expected_github = {
+            (path, "GET", item["get"]["operationId"])
+            for path, item in github_source["paths"].items() if "get" in item
+        }
+        if (
+            {(e.path, e.method, e.name) for e in openai.endpoints} != expected_openai
+            or {(e.path, e.method, e.name) for e in github.endpoints} != expected_github
+            or any(tool.source_type or tool.license for tool in tools)
+            or any(field.semantic_id for tool in tools
+                   for endpoint in tool.endpoints for field in endpoint.output_fields)
+            or any(
+                endpoint.read_only is not (endpoint.method == "GET")
+                or endpoint.destructive is not (endpoint.method == "DELETE")
+                for endpoint in openai.endpoints
+            )
+            or any(
+                endpoint.read_only is not True or endpoint.destructive is not False
+                for endpoint in github.endpoints
+            )
+        ):
+            raise ValueError("prepared four-provider fixture source identity/safety drift")
+        for tool, document in ((openai, openai_source), (github, github_source)):
+            for endpoint in tool.endpoints:
+                operation = document["paths"][endpoint.path][endpoint.method.lower()]
+                original_security = operation.get("security", document.get("security"))
+                required_paths = set(re.findall(r"\{([^{}]+)\}", endpoint.path))
+                actual_paths = {
+                    p.name for p in endpoint.parameters
+                    if p.required and p.location == "path"
+                }
+                if (
+                    (original_security and not endpoint.auth_requirements)
+                    or not required_paths.issubset(actual_paths)
+                ):
+                    raise ValueError("prepared four-provider fixture auth/path drift")
     manifest = _source_route_manifest(openai_source, github_source, tools)
     github_routes = {(github.key, e.name) for e in github.endpoints}
     openai_routes = {(openai.key, e.name) for e in openai.endpoints}
