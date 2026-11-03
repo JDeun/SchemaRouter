@@ -50,7 +50,25 @@ jobs:
       - name: Lint exact pinned source audit
         run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py scripts/research_cross_provider_openapi_e0.py tests/test_research_cross_provider_openapi_e0.py scripts/research_official_openai_get_e0.py tests/test_research_official_openai_get_e0.py scripts/research_official_openai_operations_e0.py tests/test_research_official_openai_operations_e0.py scripts/research_official_github_get_e0.py tests/test_research_official_github_get_e0.py scripts/research_official_four_provider_catalog_e0.py tests/test_research_official_four_provider_catalog_e0.py
       - name: Verify genuine publisher bytes and converter safety
-        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py tests/test_research_cross_provider_openapi_e0.py tests/test_research_official_openai_get_e0.py tests/test_research_official_openai_operations_e0.py tests/test_research_official_github_get_e0.py tests/test_research_official_four_provider_catalog_e0.py
+        run: >-
+          python -m pytest -q
+          --durations=50
+          --durations-min=1.0
+          --junitxml=official-provider-source-e0.xml
+          tests/test_research_official_openapi_snapshot_e0.py
+          tests/test_research_cross_provider_openapi_e0.py
+          tests/test_research_official_openai_get_e0.py
+          tests/test_research_official_openai_operations_e0.py
+          tests/test_research_official_github_get_e0.py
+          tests/test_research_official_four_provider_catalog_e0.py
+      - name: Save exact-head provider source E0 test timings
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: official-provider-source-e0-timings-${{ github.run_id }}
+          path: official-provider-source-e0.xml
+          if-no-files-found: warn
+          retention-days: 14
       - name: Execute no-network safe source receipt and reject promotion
         run: |
           python - <<'PY'
