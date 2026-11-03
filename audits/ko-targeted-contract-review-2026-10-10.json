@@ -6,11 +6,12 @@
   "reviews": [
     {
       "path": "release-checklist.md",
-      "en_blob": "855308419408998f721f925d88d74718f845688b",
-      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
+      "en_blob": "93d04dc004da70caeec8852950bb36b37f66938d",
+      "ko_blob": "ba50f8ac59b7a526e72b450e12120847962c2500",
       "section": "Post-release",
       "defect": "Korean checklist compressed required exact-PyPI-version wheel, sdist, isolated extras and combined extras matrix to an unspecified generic verification pass.",
-      "disposition": "Restored the explicit test matrix and retained the exact-version post-publication requirement."
+      "disposition": "Restored the explicit test matrix and retained the exact-version post-publication requirement.",
+      "revision_checkpoint_2026_11_03": "AI-assisted EN/KO comparison preserves the exact-version post-publish matrix and the added source-bound release review/qualification path, explicit API failure blocking and SHA-256 format-check limits. Not independent human sign-off."
     },
     {
       "path": "concepts/field-first-execution.md",

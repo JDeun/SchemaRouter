@@ -59,6 +59,7 @@ SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 �
 - [ ] release commit main merge 및 normal CI green
 - [ ] top-level `Release` workflow가 successful main CI event를 소비하고 tested SHA가 current main head인지 확인
 - [ ] workflow는 `.dev` reject, matching release note와 dated changelog heading 요구
+- [ ] 후보 태그 생성·빌드 전에 `prepare`가 기존 자격·외부 증거 원장, 명시된 검토자의 보류 PR 최신 head 승인과 현재 저장소 write/maintain/admin 권한, 해당 PR의 병합 SHA, 정확한 릴리스 SHA의 Post-merge Qualification 성공을 확인하며 API 오류는 배포를 차단
 - [ ] `v<version>` 없으면 exact green main SHA에 annotated tag 생성
 - [ ] tag는 있지만 GitHub release가 없으면 green current main의 ancestor이고 same version일 때만 resume
 - [ ] resolved release SHA에서 unprivileged job으로 wheel/sdist build
@@ -73,6 +74,8 @@ SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 �
 - [ ] GitHub Release/PyPI 성공 후 exact public version을 wheel/sdist/isolated lightweight extras(MCP,Jev,OpenTelemetry)/combined extras로 checkout 밖에서 재설치
 - [ ] clean environment install/import 검증
 - [ ] published artifact 최소 하나의 provenance/SPDX SBOM attestation을 GitHub CLI로 검증
+
+보류된 후보는 기존 승인 증빙을 커밋하고 릴리스 PR을 동결한 다음, 명시된 검토자가 최종 PR head를 승인하고 병합 후 생성된 커밋을 검증합니다. 이후의 최종 결정이 `CHANGES_REQUESTED` 또는 `DISMISSED`이거나 이전 head에 대한 승인이면 배포를 차단합니다. 증빙의 `exact_head_ci_url`은 증거 참조로 유지하고 최종 병합 커밋의 검증은 별도로 확인하므로, 증빙에 자기 커밋의 미래 CI 실행 URL을 넣을 필요가 없습니다. 기존 `source_sha256`·`artifact_sha256`는 출처 증빙 역할을 유지합니다. 형식 검사로 실제 바이트를 인증하지 않으며, 승인 기록과 검토자가 해당 바이트를 식별해야 합니다. 릴리스 승인은 모델·기본값 승격 및 독립 E2 검증과 별개입니다.
 
 ## Post-release
 

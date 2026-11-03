@@ -657,9 +657,9 @@
     },
     {
       "path": "release-checklist.md",
-      "en_blob": "855308419408998f721f925d88d74718f845688b",
-      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
-      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work."
+      "en_blob": "93d04dc004da70caeec8852950bb36b37f66938d",
+      "ko_blob": "ba50f8ac59b7a526e72b450e12120847962c2500",
+      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work. 2026-11-03 delta: AI-assisted paired comparison of the new candidate gate and approval path preserves the named latest-head review/current write permission, merge-to-release SHA binding, final qualification, API fail-closed behavior, no self-referential future CI URL, unchanged SHA-256 provenance limitations and independent model/E2 hold. No independent human editorial sign-off is asserted."
     },
     {
       "path": "releases/0.10.0.md",

@@ -66,6 +66,10 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
   the tested SHA is still the current `main` head.
 - [ ] The release workflow rejects `.dev` versions and requires matching release notes and a dated
   changelog heading.
+- [ ] Before creating the candidate tag or building, `prepare` validates the existing qualification
+  and external-evidence ledgers, an approval of the held PR's latest head by the named reviewer
+  with current repository write/maintain/admin permission, that PR's merge SHA, and successful
+  Post-merge Qualification at the exact release SHA. API failures block release.
 - [ ] If `v<version>` does not already exist, the release workflow creates an annotated tag at the
   exact green `main` SHA.
 - [ ] If the tag already exists but the GitHub release does not, the workflow may resume from that
@@ -88,6 +92,15 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
   publication succeed.
 - [ ] Verify install/import in a clean environment.
 - [ ] Verify the release provenance and SPDX SBOM attestations with GitHub CLI for at least one published artifact.
+
+For the held candidate, commit the existing approval envelope, freeze the release PR, obtain the
+named review on that final PR head, then merge and qualify the resulting commit. A later decisive
+`CHANGES_REQUESTED` or `DISMISSED` review, or an approval of an older head, blocks release.
+The receipt's `exact_head_ci_url` remains an evidence reference; the final merge's qualification
+is checked separately, so the receipt need not contain its own future CI run URL. The existing
+`source_sha256` and `artifact_sha256` fields retain their provenance role: format checks do not
+authenticate the referenced bytes, which the approval record and reviewer must identify.
+Release approval remains separate from model/default promotion and independent E2 qualification.
 
 ## Post-release
 
