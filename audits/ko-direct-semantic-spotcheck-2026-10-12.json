@@ -87,9 +87,9 @@
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb",
-      "ko_blob": "d861a028bd4093470cdc490d43ddf3e21709eacd",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership."
+      "en_blob": "3910e4fbc45c3576866c0f80554d0e985ec397e3",
+      "ko_blob": "57ab83b4352460ffbed5916cca8d84c3327057c0",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -891,9 +891,9 @@
     },
     {
       "path": "research/product-north-star-and-test-matrix.md",
-      "en_blob": "53165ef2ce198905b87bb322d2cf84887abde1b8",
-      "ko_blob": "4e60b7fb2671018682a84120faa9c31cd4008ef3",
-      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison of original-paper typed ontology graph and query-to-concept-to-field gap; external agent owns tool selection/action; graph DB not required; #1530 code parity audit; #1532/#1450 P0 privacy/source gate; #1531 synthetic alias E0 non-product; #1346 independent source/gold before #1477 E2; frozen #432 and v0.18 hold. Existing G/S/R/A/E matrix retained. No independent human/sentence-level verification. 2026-11-03 delta: AI-assisted EN/KO comparison of prospective, unscored commercial targets: per-language and paired completion, per-task complete tool/field conjunction, independent final-answer oracle, confidence/error budgets, total metered cost, pinned CPU load/tail/RSS boundaries. All historical negatives, 19-row qualifications and release/default HOLD remain unchanged. No independent human editorial sign-off."
+      "en_blob": "7a34fe38d92d3c8d041d75941ede67d1122fd6be",
+      "ko_blob": "1c08aa6cb6fbfb2c293a00e10e1d87a44c3e9ffd",
+      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison of original-paper typed ontology graph and query-to-concept-to-field gap; external agent owns tool selection/action; graph DB not required; #1530 code parity audit; #1532/#1450 P0 privacy/source gate; #1531 synthetic alias E0 non-product; #1346 independent source/gold before #1477 E2; frozen #432 and v0.18 hold. Existing G/S/R/A/E matrix retained. No independent human/sentence-level verification. 2026-11-03 delta: AI-assisted EN/KO comparison of prospective, unscored commercial targets: per-language and paired completion, per-task complete tool/field conjunction, independent final-answer oracle, confidence/error budgets, total metered cost, pinned CPU load/tail/RSS boundaries. All historical negatives, 19-row qualifications and release/default HOLD remain unchanged. No independent human editorial sign-off. Clarifies per-language/stratum gates and preserves correctly labelled clarification/ambiguity outcomes; only unresolved binary outcomes and missing required execution are disqualifying deferrals."
     },
     {
       "path": "research/realistic-break-even-result.md",

@@ -147,6 +147,10 @@ Each fallback is a complete `ToolCall` compiled against its own schema and tool 
 Same-provider access paths are ordered before candidates from another provider. Field aliases are
 used to prove semantic compatibility when access paths expose different field names.
 
+Fallback and cross-provider corroboration compare required JSON Schema assertions as well as
+types and canonical units. Unproved differences in enum/const, bounds, patterns or array
+constraints cannot establish field compatibility; this comparison is not general schema subsumption.
+
 Fallback is not model-driven replanning and is disabled by default. See
 [Provider-aware fallback](../guides/provider-fallback.md).
 

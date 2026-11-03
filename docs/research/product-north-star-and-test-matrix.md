@@ -166,14 +166,17 @@ agent/model/prompt revisions, K=5, budgets and analysis before scoring.
 Report EN/KO/JA separately and final completion by one-/two-/three-plus-step
 stratum; a pooled win cannot conceal a failing language. Error ceilings require
 an upper confidence bound at or below the ceiling; success floors require a lower
-bound at or above the floor. Apply the completion and FULL noninferiority gates
-to each language as well as the whole study. Freeze simultaneous 95% confidence families and the
+bound at or above the floor. Apply routing, disposition, completion and FULL
+noninferiority gates to each language and relevant preregistered stratum as well
+as the whole study. Freeze simultaneous 95% confidence families and the
 cluster/resampling method before scoring, preserving paired semantic tasks and
 provider/author dependence. Repeated seeds, catalog sizes and translations do
 not create independent observations. Even zero errors needs at least 299
 independent observations for a one-sided 95% upper bound of 1%, before any
-multiple-comparison or clustering adjustment. Missing cells, deferred outcomes,
-insufficient precision or unavailable token/cost receipts mean **not qualified**.
+multiple-comparison or clustering adjustment. Missing cells, unresolved binary
+supported/unsupported outcomes, incomplete required execution, insufficient
+precision or unavailable token/cost receipts mean **not qualified**. Correct
+clarification/ambiguity outcomes are scored in their own disposition strata.
 
 Complete routing is a per-task Boolean: every required route and typed field
 must be covered, rather than averaging individual field hits. Final completion

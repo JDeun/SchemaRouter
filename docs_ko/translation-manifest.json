@@ -49,7 +49,7 @@
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb"
+      "source_blob": "3910e4fbc45c3576866c0f80554d0e985ec397e3"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -585,7 +585,7 @@
     },
     {
       "path": "research/product-north-star-and-test-matrix.md",
-      "source_blob": "53165ef2ce198905b87bb322d2cf84887abde1b8"
+      "source_blob": "7a34fe38d92d3c8d041d75941ede67d1122fd6be"
     },
     {
       "path": "research/realistic-break-even-result.md",
