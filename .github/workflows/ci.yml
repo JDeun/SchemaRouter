@@ -122,6 +122,13 @@ jobs:
           --cov=schemarouter
           --cov-branch
           --cov-report=
+      - name: Publish slow-test timings to GitHub run summary
+        if: ${{ always() && matrix.python-version == '3.12' }}
+        run: |
+          if test -f scripts/ci_pytest_timing_summary.py; then
+            python scripts/ci_pytest_timing_summary.py pytest-core-3.12.xml --top 25 >> "$GITHUB_STEP_SUMMARY" ||
+              echo "Timing report rendering failed; do not infer test success." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Upload Python 3.12 test durations
         if: ${{ always() && matrix.python-version == '3.12' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
