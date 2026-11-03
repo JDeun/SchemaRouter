@@ -6,6 +6,7 @@ translation, open-vocabulary intent extraction, or an execution capability.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from pydantic import model_validator
@@ -51,8 +52,8 @@ class NativeDeclaredConcept(StrictModel):
     concept_id: str
     aliases: tuple[str, ...]
     required_fields: tuple[CapabilityFieldContract, ...]
-    source_type: str
-    license: str
+    source_type: str | None = None
+    license: str | None = None
 
     @model_validator(mode="after")
     def validate_concept(self) -> NativeDeclaredConcept:
@@ -68,8 +69,10 @@ class NativeDeclaredConcept(StrictModel):
             or any(not _response_contract(f.json_schema)
                    for f in self.required_fields)
             or any(
-                type(source) is not str or source != source.strip()
-                or not 1 <= len(source) <= 160
+                source is not None and (
+                    type(source) is not str or source != source.strip()
+                    or not 1 <= len(source) <= 160
+                )
                 for source in (self.source_type, self.license)
             )
         ):
@@ -104,7 +107,8 @@ class NativeConceptCatalog(StrictModel):
 
 def _distinct_query_conditions(left: NativeDeclaredConcept, right: NativeDeclaredConcept) -> bool:
     """Shared aliases need explicit owner distinctions, never inferred namespaces."""
-    if left.source_type != right.source_type:
+    if (left.source_type is not None and right.source_type is not None
+            and left.source_type != right.source_type):
         return True
     return all(
         first.unit is not None and second.unit is not None and first.unit != second.unit
@@ -112,6 +116,18 @@ def _distinct_query_conditions(left: NativeDeclaredConcept, right: NativeDeclare
                for key, value in first.qualifiers.items())
         for first in left.required_fields for second in right.required_fields
     )
+
+
+def _merged_concept_constraints(
+    concepts: Iterable[NativeDeclaredConcept],
+) -> tuple[str | None, str | None] | None:
+    """Intersect optional owner narrowing constraints; None means incompatible."""
+    concepts = tuple(concepts)
+    sources = {concept.source_type for concept in concepts if concept.source_type is not None}
+    licenses = {concept.license for concept in concepts if concept.license is not None}
+    if len(sources) > 1 or len(licenses) > 1:
+        return None
+    return next(iter(sources), None), next(iter(licenses), None)
 
 
 class ResolvedNativeConcepts(StrictModel):
@@ -195,8 +211,8 @@ def resolve_native_concepts(
 
     matched = {cid for _, _, cid in hits}
     selected = [c for c in approved.concepts if c.concept_id in matched]
-    sources = {(c.source_type, c.license) for c in selected}
-    if len(sources) != 1:
+    constraints = _merged_concept_constraints(selected)
+    if constraints is None:
         raise ValueError("incompatible source policy across concepts")
 
     unique: dict[str, CapabilityFieldContract] = {}
@@ -209,7 +225,7 @@ def resolve_native_concepts(
     if len(unique) > 8:
         raise ValueError("merged FieldGroup exceeds field budget")
 
-    source_type, license_id = next(iter(sources))
+    source_type, license_id = constraints
     group = NativeDeclaredFieldGroup(
         aliases=(query,),
         required_fields=tuple(unique[key] for key in sorted(unique)),
