@@ -126,3 +126,17 @@ def test_four_provider_prepared_fixture_cannot_omit_original_source(
 
     with pytest.raises(ValueError, match="prepared four-provider fixture"):
         audit_original_four_provider_native_churn_e0(prepared_tools=four_tools[:-1])
+
+
+def test_four_provider_prepared_fixture_cannot_reclassify_write_as_read(
+    four_tools: tuple,
+) -> None:
+    from scripts.research_official_four_provider_catalog_e0 import (
+        audit_original_four_provider_native_churn_e0,
+    )
+
+    forged = tuple(tool.model_copy(deep=True) for tool in four_tools)
+    endpoint = next(e for e in forged[0].endpoints if e.method == "POST")
+    endpoint.read_only = True
+    with pytest.raises(ValueError, match="prepared four-provider fixture"):
+        audit_original_four_provider_native_churn_e0(prepared_tools=forged)
