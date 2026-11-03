@@ -111,11 +111,25 @@ jobs:
         if: matrix.python-version == '3.12'
         env:
           COVERAGE_FILE: .coverage.core
+        # -vv emits the current test node ID before a long-running test ends.
+        # Durations and JUnit records identify regressions without changing
+        # the protected coverage threshold or the test selection.
         run: >-
-          pytest -q
+          pytest -vv
+          --durations=50
+          --durations-min=1.0
+          --junitxml=pytest-core-3.12.xml
           --cov=schemarouter
           --cov-branch
           --cov-report=
+      - name: Upload Python 3.12 test durations
+        if: ${{ always() && matrix.python-version == '3.12' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pytest-core-timings-${{ github.run_id }}
+          path: pytest-core-3.12.xml
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload Python 3.12 core coverage data
         if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
