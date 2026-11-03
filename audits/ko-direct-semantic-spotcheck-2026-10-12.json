@@ -87,9 +87,9 @@
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "865daa685100b90b1df7faa5580a3e3d97440abe",
-      "ko_blob": "330c66ecdff5798b55b65fba7b10f2f7d97dc7e7",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off."
+      "en_blob": "57c60af68bdcbb8b261414bb9aa65e0133ddcf4f",
+      "ko_blob": "2e141bc69158b8c2e4000aa2bfbcdfccf0b02a03",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",

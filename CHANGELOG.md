@@ -10,7 +10,7 @@ The project is pre-1.0 and follows the compatibility rules in
 - Support constrained scalar field routing and sound canonical unit contracts, preserving large
   integer precision and live router/executor authorization.
 - Preserve required JSON Schema assertions for provider fallback/corroboration; require full
-  equality for reference-dependent contracts and reject schema-bound non-finite runtime numbers.
+  equality for reference-dependent contracts and reject schema-bound non-finite or complex numbers.
 - Add opt-in principal-scoped FULL versus public field-session comparisons with private,
   precision-preserving structured-final checks; retain frozen scores and unknown missing evidence.
 - Add closed-loop public routing load profiles, reliable bilingual navigation and guarded release
