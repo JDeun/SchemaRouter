@@ -47,7 +47,9 @@ CASES = (
 )
 
 
-def _router(required, candidate, primary_value, backup_value, mode, *, units=False):
+def _router(
+    required, candidate, primary_value, backup_value, mode, *, units=False, output_schema=None,
+):
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="allow"))
     invoked = []
     for name, schema, value in (
@@ -69,7 +71,8 @@ def _router(required, candidate, primary_value, backup_value, mode, *, units=Fal
         router.add_bound_tool(ToolSpec(
             name=name, provider=name, source_type="measurements", license="host-reviewed",
             endpoints=[EndpointSpec(name="read", description="measurement value",
-                                    read_only=True, output_fields=[field])],
+                                    read_only=True, output_fields=[field],
+                                    output_schema=output_schema or {})],
         ), invoke)
     return router, invoked
 
@@ -152,3 +155,34 @@ def test_opaque_assertions_cannot_change_meaning_when_array_items_narrow():
         CapabilityFieldContract(semantic_id="value", json_schema=required),
         CapabilityFieldContract(semantic_id="value", json_schema=candidate),
     ).status == "unknown"
+
+
+def _boolean_items_reference_schemas():
+    branches = [{"const": [1]}, {"not": {"$ref": "#/items"}}]
+    return (
+        {"type": "array", "items": True, "anyOf": branches},
+        {"type": "array", "items": False, "anyOf": branches},
+    )
+
+
+def test_opaque_assertions_cannot_change_meaning_when_boolean_items_narrow():
+    required, candidate = _boolean_items_reference_schemas()
+    assert Draft202012Validator(required).is_valid([1])
+    assert not Draft202012Validator(required).is_valid([])
+    assert Draft202012Validator(candidate).is_valid([])
+    assert not json_schemas_compatible(required, candidate)
+    assert compare_capability_fields(
+        CapabilityFieldContract(semantic_id="value", json_schema=required),
+        CapabilityFieldContract(semantic_id="value", json_schema=candidate),
+    ).status == "unknown"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ("fallback", "corroborate"))
+async def test_public_fallback_preserves_opaque_assertions_with_boolean_items(mode):
+    required, candidate = _boolean_items_reference_schemas()
+    # Each field's local reference is evaluated against its own declared value schema.
+    router, invoked = _router(required, candidate, [1], [], mode, output_schema={
+        "type": "object", "properties": {"value": {"type": "array"}}, "required": ["value"],
+    })
+    await _check_public_dispatch(router, invoked, mode, False, required)

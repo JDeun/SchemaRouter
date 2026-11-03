@@ -610,14 +610,15 @@ def json_schemas_compatible(
     ignored = _SCHEMA_ANNOTATIONS | {"type"}
     # References/combinators can depend on items; retain their complete assertion comparison.
     if (
-        "items" not in required
-        or required["items"] is True
-        or isinstance(required["items"], dict)
-        and required.keys() | candidate.keys() <= _SCHEMA_ANNOTATIONS | {
+        required.keys() | candidate.keys() <= _SCHEMA_ANNOTATIONS | {
             "type", "items", "enum", "const", "minItems", "maxItems", "uniqueItems",
             "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf",
             "minLength", "maxLength", "pattern",
         }
+        and (
+            "items" not in required or required["items"] is True
+            or isinstance(required["items"], dict)
+        )
     ):
         ignored |= {"items"}
     required_assertions = {key: value for key, value in required.items() if key not in ignored}
