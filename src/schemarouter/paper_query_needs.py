@@ -125,9 +125,9 @@ def _resolve_query_need(
 ) -> tuple[str | None, bool]:
     """Match a whole atom to one existing owner concept, never create authority.
 
-    The boolean reports normalized alias/ID ambiguity. Query conditions may
-    narrow an owner contract, but cannot disambiguate a colliding identity or
-    combine conditions from different fields. Units have no inferred aliases.
+    The boolean reports ambiguity after applying explicit owner conditions.
+    Conditions must hold on one field; they cannot be combined across fields.
+    Units have no inferred aliases. No access or availability state selects meaning.
     """
     approved_need = PaperQueryNeed.model_validate(need.model_dump(mode="python"), strict=True)
     approved_catalog = NativeConceptCatalog.model_validate(
@@ -139,17 +139,14 @@ def _resolve_query_need(
     matches = [concept for concept in approved_catalog.concepts if any(
         _normalize(alias) == normalized for alias in (concept.concept_id, *concept.aliases)
     )]
-    if len(matches) != 1:
-        return None, len(matches) > 1
-    concept = matches[0]
-    if any(source is not None and source != concept.source_type
-           for source in (global_source_type, approved_need.source_type)):
-        return None, False
-    if (approved_need.unit is not None or approved_need.qualifiers) and not any(
-        (approved_need.unit is None or field.unit == approved_need.unit)
-        and all(field.qualifiers.get(key) == value
-                for key, value in approved_need.qualifiers.items())
-        for field in concept.required_fields
-    ):
-        return None, False
-    return concept.concept_id, False
+    qualified = [concept for concept in matches if (
+        all(source is None or source == concept.source_type
+            for source in (global_source_type, approved_need.source_type))
+        and any(
+            (approved_need.unit is None or field.unit == approved_need.unit)
+            and all(field.qualifiers.get(key) == value
+                    for key, value in approved_need.qualifiers.items())
+            for field in concept.required_fields
+        )
+    )]
+    return (qualified[0].concept_id, False) if len(qualified) == 1 else (None, len(qualified) > 1)

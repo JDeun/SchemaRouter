@@ -86,19 +86,32 @@ class NativeConceptCatalog(StrictModel):
             raise ValueError("invalid bounded concept count")
         if len({c.concept_id for c in self.concepts}) != len(self.concepts):
             raise ValueError("duplicate trusted concept ID")
-        aliases: dict[str, str] = {}
+        aliases: dict[str, list[NativeDeclaredConcept]] = {}
         for concept in self.concepts:
             for alias in concept.aliases:
                 key = _normalized(alias)
-                if key in aliases:
+                if any(not _distinct_query_conditions(concept, previous)
+                       for previous in aliases.get(key, ())):
                     raise ValueError("ambiguous owner-declared concept alias")
-                aliases[key] = concept.concept_id
-        if len(aliases) > MAX_ALIASES:
+                aliases.setdefault(key, []).append(concept)
+        if sum(len(concept.aliases) for concept in self.concepts) > MAX_ALIASES:
             raise ValueError("too many declared concept aliases")
         # This is a bound on the full ontology contract, not just query text.
         if len(self.model_dump_json().encode("utf-8")) > 16384:
             raise ValueError("concept catalog exceeds byte budget")
         return self
+
+
+def _distinct_query_conditions(left: NativeDeclaredConcept, right: NativeDeclaredConcept) -> bool:
+    """Shared aliases need explicit owner distinctions, never inferred namespaces."""
+    if left.source_type != right.source_type:
+        return True
+    return all(
+        first.unit is not None and second.unit is not None and first.unit != second.unit
+        or any(key in second.qualifiers and second.qualifiers[key] != value
+               for key, value in first.qualifiers.items())
+        for first in left.required_fields for second in right.required_fields
+    )
 
 
 class ResolvedNativeConcepts(StrictModel):
