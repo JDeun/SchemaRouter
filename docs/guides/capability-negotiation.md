@@ -16,4 +16,6 @@ result = negotiate_capabilities(
 
 Authorization is an intersection, never an expansion. An empty host allow-set remains empty in effect, and unavailable candidates are distinguished from contract mismatches. Unit conversion is only reported when explicitly declared in the compatibility context; SchemaRouter does not perform the conversion.
 
+Matching top-level JSON types alone does not prove a constrained field contract. If a required schema has assertions such as `enum`, numeric bounds, `items` or object properties, the produced schema must retain the same assertions. Different assertions return `unknown`, including stricter constraints whose compatibility has not been proved. Descriptive annotations do not affect this comparison; integer outputs may still satisfy number requirements. This conservative declaration check does not replace runtime value validation.
+
 Negotiation is a contract query, not planning or execution. Existing stateless query-based routing remains independent and supported.

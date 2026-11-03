@@ -13,6 +13,10 @@ from .models import FieldSpec, StrictModel
 CompatibilityStatus = Literal["exact", "compatible", "convertible", "incompatible", "unknown"]
 EffectKind = Literal["read", "write", "external_side_effect"]
 TriState = Literal["true", "false", "unknown"]
+_SCHEMA_ANNOTATIONS = {
+    "title", "description", "default", "examples", "deprecated",
+    "readOnly", "writeOnly", "$comment",
+}
 
 
 class CapabilityFieldContract(StrictModel):
@@ -269,6 +273,21 @@ def _type_compatible(required: dict, produced: dict) -> bool | None:
         if value == "integer" and "number" in required_types:
             continue
         return False
+    required_assertions = {
+        key: value for key, value in required.items()
+        if key != "type" and key not in _SCHEMA_ANNOTATIONS
+    }
+    if required_assertions:
+        produced_assertions = {
+            key: value for key, value in produced.items()
+            if key != "type" and key not in _SCHEMA_ANNOTATIONS
+        }
+        # shortcut: differing assertions stay unknown; add subsumption proof to accept more cases.
+        try:
+            if canonical_json_text(required_assertions) != canonical_json_text(produced_assertions):
+                return None
+        except (TypeError, ValueError, RecursionError):
+            return None
     return True
 
 

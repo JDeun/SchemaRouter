@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from schemarouter import (
     CapabilityContract,
     CapabilityFieldContract,
@@ -38,6 +40,79 @@ def test_integer_output_satisfies_number_requirement() -> None:
     )
     assert result.status == "compatible"
     assert result.satisfies
+
+
+@pytest.mark.parametrize(("required_schema", "produced_schema"), [
+    ({"type": "string", "enum": ["approved"]},
+     {"type": "string", "enum": ["denied"]}),
+    ({"type": "number", "minimum": 10}, {"type": "number", "minimum": 0}),
+    ({"type": "number", "minimum": 10}, {"type": "number", "minimum": 20}),
+    ({"type": "string", "pattern": "^safe-"}, {"type": "string"}),
+    ({"type": "array", "items": {"type": "integer"}},
+     {"type": "array", "items": {"type": "string"}}),
+    ({"type": "object", "required": ["record_id"]}, {"type": "object"}),
+    ({"type": "object", "properties": {"value": {"type": "number"}}},
+     {"type": "object", "properties": {"value": {"type": "string"}}}),
+    ({"type": "array", "minItems": 1}, {"type": "array"}),
+    ({"type": "object", "additionalProperties": False}, {"type": "object"}),
+    ({"type": "object", "additionalProperties": False},
+     {"type": "object", "additionalProperties": False,
+      "properties": {"extra": {"type": "string"}}}),
+    ({"type": "number", "enum": [1]}, {"type": "number", "enum": [True]}),
+])
+def test_matching_top_level_type_does_not_prove_schema_constraints(
+    required_schema, produced_schema,
+) -> None:
+    result = compare_capability_fields(
+        contract("value", json_schema=required_schema),
+        contract("value", json_schema=produced_schema),
+    )
+    assert result.status == "unknown"
+    assert not result.satisfies
+
+
+def test_preserved_assertions_and_narrower_types_prove_compatibility() -> None:
+    result = compare_capability_fields(
+        contract("value", json_schema={
+            "type": "number", "minimum": 0, "description": "Required value",
+        }),
+        contract("value", json_schema={
+            "type": "integer", "minimum": 0,
+            "description": "Produced value",
+        }),
+    )
+    assert result.status == "compatible"
+    assert result.satisfies
+
+
+def test_unproven_constraints_cannot_satisfy_downstream_contract_consumers() -> None:
+    from schemarouter import (
+        CapabilityNegotiationRequest,
+        CapabilityObservation,
+        ObservedStateField,
+        TypedExecutionState,
+        build_capability_dependency_graph,
+        evaluate_state_eligibility,
+        negotiate_capabilities,
+        validate_capability_inputs,
+    )
+
+    required = contract("approval", json_schema={"type": "string", "enum": ["approved"]})
+    produced = contract("approval", json_schema={"type": "string", "enum": ["denied"]})
+    producer = CapabilityContract(capability_id="read", produces=[produced])
+    consumer = CapabilityContract(capability_id="act", requires=[required])
+    assert not compare_capability_composition(producer, consumer).satisfies
+    assert not build_capability_dependency_graph([producer, consumer]).edges
+    negotiated = negotiate_capabilities(
+        CapabilityNegotiationRequest(required_outputs=[required]), [producer],
+    )
+    assert negotiated.candidates[0].status == "unknown"
+    assert not validate_capability_inputs(
+        consumer, [CapabilityObservation(contract=produced)],
+    ).valid
+    assert not evaluate_state_eligibility(
+        [required], TypedExecutionState(observed_fields=[ObservedStateField(contract=produced)]),
+    ).eligible
 
 
 def test_semantic_identity_is_not_inferred_from_similar_names() -> None:
