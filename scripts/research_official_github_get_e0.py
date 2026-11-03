@@ -189,10 +189,44 @@ def _same_original_source_index(
         raise ValueError("original GitHub source journal differs from full native rebuild")
 
 
-def audit_official_github_get_churn_e0() -> dict[str, Any]:
-    """Actual publisher bundle 654→3→654 under one source-owned journal key."""
+def audit_official_github_get_churn_e0(
+    *,
+    prepared_github: ToolSpec | None = None,
+) -> dict[str, Any]:
+    """Actual publisher bundle 654→3→654 under one source-owned journal key.
+
+    A same-module E0 test may supply its already source-verified 651-route
+    bundle. The default command still converts from scratch; either way,
+    independently revalidate the pinned original source and every GET route.
+    Every test invocation constructs a separate registry and native index.
+    """
     document = _local_snapshot()
-    github = compile_official_github_get_bundle_e0(document)
+    if prepared_github is None:
+        github = compile_official_github_get_bundle_e0(document)
+    else:
+        original_routes = {
+            (path, item["get"]["operationId"])
+            for path, item in document["paths"].items() if "get" in item
+        }
+        if (
+            not isinstance(prepared_github, ToolSpec)
+            or prepared_github.name != "github_rest_original_get_source"
+            or prepared_github.source_type is not None
+            or prepared_github.license is not None
+            or len(prepared_github.endpoints) != 651
+            or {
+                (endpoint.path, endpoint.name) for endpoint in prepared_github.endpoints
+            } != original_routes
+            or any(
+                endpoint.method != "GET"
+                or endpoint.read_only is not True
+                or endpoint.destructive is True
+                or any(field.semantic_id for field in endpoint.output_fields)
+                for endpoint in prepared_github.endpoints
+            )
+        ):
+            raise ValueError("prepared GitHub publisher source identity or safety drift")
+        github = prepared_github.model_copy(deep=True)
     other = _previous_two_providers()
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="deny"))
     for tool in (github, *other):
