@@ -5,11 +5,14 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.17.0</span>
+<span class="sr-kicker">SchemaRouter · Development documentation</span>
 
 # Put a typed execution boundary between agents and tools
 
 SchemaRouter is a **typed capability routing and governed execution layer for AI agents across APIs, tools, and data systems**.
+
+This site follows development `main` (`0.18.0.dev0`). The published stable package is `0.17.0`;
+unreleased changes require a [development checkout](getting-started/installation.md#development-checkout).
 
 Agents get harder to steer as you connect more tools, and each tool can return far more than the
 request needs. SchemaRouter decides which **declared data fields** are needed, exposes a bounded set

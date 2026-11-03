@@ -5,11 +5,14 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.17.0</span>
+<span class="sr-kicker">SchemaRouter · 개발 문서</span>
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
 SchemaRouter는 API·도구·데이터 시스템 전반에서 AI 에이전트를 위한 **타입 기반 기능 라우팅(typed capability routing) 및 정책 통제형 실행(governed execution) 계층**입니다.
+
+이 사이트는 개발용 `main`(`0.18.0.dev0`)을 따릅니다. 공개 안정판은 `0.17.0`이며,
+미출시 변경은 [개발 체크아웃](getting-started/installation.md#development-checkout)이 필요합니다.
 
 에이전트에 연결하는 도구가 늘어나면 실행 경로를 통제하기 어려워지고, 각 도구가 요청에 필요한 양보다 훨씬 많은 데이터를 반환할 수 있습니다. SchemaRouter는 먼저 필요한 **선언된 데이터 필드**를 판별하고, 해당 필드를 제공할 수 있도록 등록된 도구만 제한된 범위에서 노출합니다. 그 결과를 모델에 전달하기 전에도 선언된 필드만 유지합니다.
 

@@ -28,6 +28,9 @@
 
 > **Stable release: 0.17.0** · Beta / pre-1.0
 
+Development on `main` identifies as `0.18.0.dev0`. Unreleased changes require a source checkout;
+`pip install schemarouter` installs the published stable package.
+
 SchemaRouter is a **typed capability routing and governed execution layer for AI agents across APIs, tools, and data systems**.
 
 It sits between an orchestrator and external tools/data sources, compiles heterogeneous schemas into

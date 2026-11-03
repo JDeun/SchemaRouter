@@ -13,9 +13,13 @@ relying on marketing copy.
 | Status | Beta / pre-1.0 |
 | Python | 3.10–3.14 are release-blocking CI targets; 3.15 is a non-blocking preview |
 | License | MIT |
-| Release | [SchemaRouter 0.15.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.15.0) |
+| Release | [SchemaRouter 0.17.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.17.0) |
 | Stable-core contract | [Stable core](../stable-core.md) |
 | Security policy | [SECURITY.md](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md) |
+
+Development `main` identifies as `0.18.0.dev0`; these docs may describe unreleased changes.
+The stable package above remains the published artifact. Development versions are not release
+approval and the held `0.18.0` candidate retains its separate qualification gates.
 
 For 0.14.0 and later, the exact release source SHA and artifact digests are recorded by the
 machine-generated `release-manifest.json` and `SHA256SUMS.txt` attached to the GitHub Release.
