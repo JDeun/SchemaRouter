@@ -202,13 +202,30 @@ def _same_predicate_health_checks(
 def audit_heterogeneous_churn(
     registered_routes: int, *, iterations: int = 1,
 ) -> dict[str, Any]:
-    """Bounded independent-exhaustive-oracle E0 audit over three snapshots."""
+    """Bounded independent-exhaustive-oracle E0 audit over three snapshots.
+
+    Timings are informative developer CPU observations, never SLA evidence.
+    They do not alter the 500/5000-route fixtures or original-source oracle.
+    """
     if type(registered_routes) is not int or registered_routes not in (500, 5000):
         raise ValueError("only preregistered 500/5000 source catalogs allowed")
     if type(iterations) is not int or not 1 <= iterations <= 4:
         raise ValueError("iterations must be a bounded integer between 1 and 4")
+    audit_started = time.perf_counter_ns()
+    stamp = audit_started
     router = build_heterogeneous_fixture(registered_routes)
+    fixture_build_ms = (time.perf_counter_ns() - stamp) / 1_000_000
+    stamp = time.perf_counter_ns()
     index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    initial_index_build_ms = (time.perf_counter_ns() - stamp) / 1_000_000
+    phase_wall_ms: dict[str, Any] = {
+        "fixture_build": round(fixture_build_ms, 4),
+        "initial_index_build": round(initial_index_build_ms, 4),
+        "journal_refresh": [],
+        "fresh_rebuild": [],
+        "scope_matrix": [],
+        "health_checks": [],
+    }
     wall_samples: list[float] = []
     cpu_samples: list[float] = []
     count = 0
@@ -236,11 +253,19 @@ def audit_heterogeneous_churn(
                 stale_rejections += 1
             else:
                 raise AssertionError("churn stale source index did not fail closed")
+            stamp = time.perf_counter_ns()
             index = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
                 index, router.registry,
             )
+            phase_wall_ms["journal_refresh"].append(
+                round((time.perf_counter_ns() - stamp) / 1_000_000, 4)
+            )
+        stamp = time.perf_counter_ns()
         rebuilt = NativeSchemaGraphIndex.build(
             NativeSchemaPostingIndex.build(router.registry),
+        )
+        phase_wall_ms["fresh_rebuild"].append(
+            round((time.perf_counter_ns() - stamp) / 1_000_000, 4)
         )
         _verify_snapshot_equivalence(index, rebuilt)
         versions.add(router.registry.version)
@@ -250,13 +275,21 @@ def audit_heterogeneous_churn(
         should_find = stage != "revoked"
         if bool(current) != should_find:
             raise AssertionError("churn original-source revocation/restoration drift")
+        stamp = time.perf_counter_ns()
         count += _scope_matrix(
             router, index, rebuilt, iterations=iterations,
             wall_samples=wall_samples, cpu_samples=cpu_samples,
         )
+        phase_wall_ms["scope_matrix"].append(
+            round((time.perf_counter_ns() - stamp) / 1_000_000, 4)
+        )
+        stamp = time.perf_counter_ns()
         health_checks += _same_predicate_health_checks(
             router, index, rebuilt,
             wall_samples=wall_samples, cpu_samples=cpu_samples,
+        )
+        phase_wall_ms["health_checks"].append(
+            round((time.perf_counter_ns() - stamp) / 1_000_000, 4)
         )
     return {
         "evidence_tier": EVIDENCE,
@@ -277,6 +310,12 @@ def audit_heterogeneous_churn(
         "paired_checks": count,
         "query_wall_ms": _sample_summary(wall_samples),
         "query_process_cpu_ms": _sample_summary(cpu_samples),
+        "phase_wall_ms": {
+            **phase_wall_ms,
+            "full_audit": round(
+                (time.perf_counter_ns() - audit_started) / 1_000_000, 4
+            ),
+        },
         "peak_process_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "python_version": platform.python_version(),
         "limitations": [
