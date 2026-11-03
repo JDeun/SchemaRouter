@@ -118,7 +118,13 @@ def _compile_understood_concept_plan(
 
     # Preserve the original complete-field AND and its owner Rank before
     # independently ranking smaller concepts with potentially different menus.
-    if len({(concept.source_type, concept.license) for concept in concepts}) == 1:
+    # A single native group holds eight semantics; larger valid concept unions
+    # retain their per-concept proof instead of widening that source contract.
+    group_semantics = {
+        field.semantic_id for concept in concepts for field in concept.required_fields
+    }
+    if (len(group_semantics) <= 8
+            and len({(concept.source_type, concept.license) for concept in concepts}) == 1):
         kwargs = dict(principal=principal, catalog=catalog, intent_registry=intent_registry,
                       index=index, k=k, rank_policy=rank_policy, **(graph_options or {}))
         try:

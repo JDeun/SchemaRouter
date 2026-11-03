@@ -377,3 +377,39 @@ def test_disjoint_same_source_fields_still_split_after_complete_group_no_hit():
     plan = _compile(router, PaperUnderstanding(intent_id="material.properties"))
     assert plan.status == "ready" and plan.coverage.complete
     assert {item.route_id for item in plan.calls} == {"materials.read", "density.read"}
+
+
+@pytest.mark.parametrize("graph", (False, True))
+@pytest.mark.parametrize("unresolved", ((), ("unregistered thermal lifetime",)))
+def test_concept_union_above_single_group_capacity_keeps_valid_k5_composition(graph, unresolved):
+    concepts = tuple(NativeDeclaredConcept(
+        concept_id=f"material.group_{index}", aliases=(f"metric group {index}",),
+        source_type=SOURCES["material"][0], license=SOURCES["material"][1],
+        required_fields=tuple(CapabilityFieldContract(
+            semantic_id=f"metric_{index}_{field}", json_schema={"type": "number"},
+        ) for field in range(2)),
+    ) for index in range(6))
+    catalog = NativeConceptCatalog(concepts=concepts)
+    intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+        intent_id="material.many", required_concept_ids=tuple(c.concept_id for c in concepts),
+    ),))
+    router = _router()
+    router.add_tool(_tool("bundle", "material", [
+        _field(f"metric_{index}_{field}", f"metric_{index}_{field}", "number")
+        for index in range(6) for field in range(2)
+    ]))
+    session = router.prepare_field_routing(catalog=catalog)
+    hints = PaperUnderstanding(intent_id="material.many", unresolved_concepts=unresolved)
+    if graph:
+        plan = session.compile_understood(hints, principal=ACTOR, intent_registry=intents)
+    else:
+        plan = compile_paper_understood_direct_plan(
+            router, hints, principal=ACTOR, catalog=catalog, intent_registry=intents,
+            index=session._index,
+        )
+    assert plan.status == ("no_proven_hit" if unresolved else "ready")
+    assert plan.coverage.complete is (not unresolved)
+    assert len(plan.coverage.covered) == 12
+    assert len(plan.coverage.uncovered) == len(unresolved)
+    assert [item.route_id for item in plan.calls] == ["bundle.read"]
+    assert len(plan.calls[0].call.fields) == 13  # Original identifier plus every required field.
