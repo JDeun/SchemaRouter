@@ -1,7 +1,8 @@
 """Opt-in A7 native baseline-vs-paper agent pairing; synthetic E0 only.
 
-Reuses the one original principal-scoped fixed5 executor and the existing A7
-paper meter. Frozen DEV fixtures and author claims are never independent E2.
+Reuses the original principal-scoped executor and A7 paper meter. Explicit
+FULL/final-oracle mode is separate from the default captured ranked K5 pair.
+Frozen DEV fixtures and author claims are never independent E2.
 """
 from __future__ import annotations
 
@@ -18,6 +19,9 @@ from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
+    EXPERIMENTAL_FULL_CONDITION,
+    FINAL_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
     GeneratedEpisodeAgent,
     run_generated_episode,
     sha256_json,
@@ -51,6 +55,8 @@ class PaperPairedAgentE0:
     execution_order: Literal["baseline_first", "paper_first"] = "baseline_first"
     host_declared_matching_agent_configuration: bool = True
     independent_e2_qualified: bool = False
+    full_catalog_comparison: bool = False
+    all_model_usage_complete: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +114,7 @@ async def run_paper_paired_agent_e0(
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
     execution_order: Literal["baseline_first", "paper_first"] = "baseline_first",
+    experimental_full_final_oracle: bool = False,
 ) -> PaperPairedAgentE0:
     """Compare captured authorized ranked K5 with paper K5 on the same case.
 
@@ -115,6 +122,11 @@ async def run_paper_paired_agent_e0(
     source proof. The factory is called twice for fresh same-config agents;
     its revision claim cannot independently authenticate the external model.
     A failure in either branch discards the whole comparison.
+    Explicit `experimental_full_final_oracle=True` instead compares the entire
+    captured original authorized catalog to public field-session K5, with the
+    same #424 final-envelope prompt in both arms. Structured final correctness
+    is a separate joint metric, not a rewrite of historical execution `passed`.
+    No free-prose truth, gold independence, provider identity or E2 is verified.
     """
     if type(execution_order) is not str or execution_order not in (
         "baseline_first", "paper_first",
@@ -122,6 +134,10 @@ async def run_paper_paired_agent_e0(
         raise ValueError("unsupported paired execution order")
     if not isinstance(view, AuthorizedAgentToolSurface):
         raise ValueError("original principal-scoped view required")
+    if type(experimental_full_final_oracle) is not bool:
+        raise ValueError("FULL/final oracle opt-in must be boolean")
+    if experimental_full_final_oracle and view.full_catalog_captured is not True:
+        raise ValueError("FULL comparison requires complete authorized catalog capture")
     if not isinstance(view.router.registry, InMemoryRegistry):
         raise ValueError("paired E0 requires the original in-memory agent registry")
     if type(task) is not dict or task.get("query") != view.original_query:
@@ -180,7 +196,7 @@ async def run_paper_paired_agent_e0(
         assert_original_task()
         if query != view.original_query or source_ids != view.visible_route_ids:
             raise PolicyViolationError("paired baseline source identities changed")
-        return list(source_ids[:5])
+        return list(source_ids if experimental_full_final_oracle else source_ids[:5])
 
     baseline_schema_bytes = 0
 
@@ -201,10 +217,14 @@ async def run_paper_paired_agent_e0(
             raise ValueError("paired E0 requires the original in-memory agent registry")
         result = run_generated_episode(
             BaselineSchemaMeter(), current_registry, copy.deepcopy(frozen_task),
-            EXPERIMENTAL_FIXED5_CONDITION,
+            EXPERIMENTAL_FULL_CONDITION if experimental_full_final_oracle
+            else EXPERIMENTAL_FIXED5_CONDITION,
+            system_prompt=FINAL_SYSTEM_PROMPT if experimental_full_final_oracle else SYSTEM_PROMPT,
             experimental_candidate_selector=select_original_ranked_k5,
             experimental_agent_tool_surface=view,
             experimental_host_empty_menu_terminal=True,
+            experimental_final_answer_oracle=experimental_full_final_oracle,
+            experimental_block_unavailable_observation=experimental_full_final_oracle,
         )
         assert_original_task()
         assert_owner_unchanged()
@@ -216,6 +236,7 @@ async def run_paper_paired_agent_e0(
             catalog=catalog, intent_registry=intent_registry, index=index,
             model_visible_intent_ids=model_visible_intent_ids,
             model_visible_concept_ids=model_visible_concept_ids,
+            experimental_full_final_oracle=experimental_full_final_oracle,
         )
         assert_original_task()
         assert_owner_unchanged()
@@ -242,6 +263,16 @@ async def run_paper_paired_agent_e0(
             },
         ),
         execution_order=execution_order,
+        full_catalog_comparison=experimental_full_final_oracle,
+        all_model_usage_complete=(
+            baseline.get("agent_usage_complete") is True
+            and paper.episode.get("agent_usage_complete") is True
+            and (
+                not paper.measurement.understand_called
+                or (paper.measurement.understand_input_tokens_provider_reported is not None
+                    and paper.measurement.understand_output_tokens_provider_reported is not None)
+            )
+        ) if experimental_full_final_oracle else None,
     )
 
 
@@ -256,6 +287,7 @@ async def run_paper_counterbalanced_agent_e0(
     index: NativeSchemaGraphIndex,
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
+    experimental_full_final_oracle: bool = False,
 ) -> PaperCounterbalancedAgentE0:
     """Execute both original A7 orders without leaking any partial result.
 
@@ -334,6 +366,7 @@ async def run_paper_counterbalanced_agent_e0(
             view=view, task=task, catalog=catalog, intent_registry=intent_registry,
             index=index, model_visible_intent_ids=model_visible_intent_ids,
             model_visible_concept_ids=model_visible_concept_ids,
+            experimental_full_final_oracle=experimental_full_final_oracle,
         )
 
     assert_original_pair_evidence()

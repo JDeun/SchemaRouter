@@ -11,6 +11,8 @@ from schemarouter import InMemoryRegistry, PolicyViolationError
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
+    FINAL_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
     GeneratedEpisodeAgent,
     run_generated_episode,
 )
@@ -26,6 +28,7 @@ def run_paper_fixed5_episode_e0(
     task: dict[str, Any],
     plan: PaperTypedToolPlan | None,
     scoped_host_call_binding: ScopedHostCallBinding | None = None,
+    experimental_final_answer_oracle: bool = False,
 ) -> dict[str, Any]:
     """Use only existing frozen executor and principal-scoped model exposure."""
     if not isinstance(view, AuthorizedAgentToolSurface):
@@ -51,8 +54,11 @@ def run_paper_fixed5_episode_e0(
     return run_generated_episode(
         agent, cast(InMemoryRegistry, view.router.registry), task,
         EXPERIMENTAL_FIXED5_CONDITION,
+        system_prompt=FINAL_SYSTEM_PROMPT if experimental_final_answer_oracle else SYSTEM_PROMPT,
         experimental_candidate_selector=select,
         experimental_agent_tool_surface=view,
         experimental_host_empty_menu_terminal=True,
         experimental_scoped_call_binding=scoped_host_call_binding,
+        experimental_final_answer_oracle=experimental_final_answer_oracle,
+        experimental_block_unavailable_observation=experimental_final_answer_oracle,
     )
