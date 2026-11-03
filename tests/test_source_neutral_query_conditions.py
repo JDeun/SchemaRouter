@@ -223,7 +223,9 @@ async def test_per_source_proofs_do_not_promote_query_parameters():
     _, session, intents = _source(parameters=True)
     needs = [{"concept": "temperature", "source_type": f"source_{i}"} for i in range(2)]
     plan = await _query(session, intents, needs, raw={"parameter_hints": {"city": "QUERY"}})
-    assert plan.status == "requires_arguments" and plan.coverage.complete
+    assert plan.status == "requires_arguments" and not plan.coverage.complete
+    assert any("proof=ambiguous_source_input" in item.qualifiers
+               for item in plan.coverage.uncovered)
     assert all(call.call.arguments == {} for call in plan.calls)
     assert all(call.call.missing_required_arguments == ["city"] for call in plan.calls)
     ready = await _query(session, intents, needs, host_source_arguments={

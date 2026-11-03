@@ -21,6 +21,7 @@ from .concept_retrieval import (
     MAX_QUERY_BYTES,
     MAX_QUERY_CHARS,
     NativeConceptCatalog,
+    NativeDeclaredConcept,
     _alias_mentions,
     _normalized,
 )
@@ -126,6 +127,54 @@ def _may_be_excluded(meta: PaperPlanFieldMeta, requirement: CapabilityFieldContr
     # A different declared role proves disjointness; a missing role does not.
     return not any(key in actual and actual[key] != value
                    for key, value in requirement.qualifiers.items())
+
+
+def _owner_query_field_coverage(
+    understood: PaperUnderstanding,
+    *,
+    concepts: dict[str, NativeDeclaredConcept],
+    intents: dict[str, PaperIntentDeclaration],
+    source_proven: bool,
+) -> PlanCoverage:
+    """Owner field ledger for query receipts whose core proof has no ledger.
+
+    Query input conditions cannot stand in for the intent/concept output
+    requirements. Only an already source-proven core receipt covers them.
+    """
+    concept_ids = list(understood.concept_ids)
+    if understood.intent_id is not None:
+        concept_ids = sorted(set(concept_ids) | set(
+            intents[understood.intent_id].required_concept_ids,
+        ))
+    fields = [
+        SemanticFieldRequirement(
+            semantic_id=field.semantic_id,
+            qualifiers=[
+                f"concept_id={concept_id}",
+                *([f"source_type={concept.source_type}"] if concept.source_type else []),
+                *([f"license={concept.license}"] if concept.license else []),
+                *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
+            ],
+        )
+        for concept_id in concept_ids
+        for concept in [concepts[concept_id]]
+        for field in concept.required_fields
+    ]
+    if not source_proven and understood.intent_id is not None:
+        # A failed current proof does not disclose owner field/source/license
+        # metadata. These meaning IDs were already offered in the query payload.
+        # Preserve the established null-intent field ledger separately.
+        fields = [SemanticFieldRequirement(semantic_id=concept_id,
+            qualifiers=[f"concept_id={concept_id}"],
+        ) for concept_id in concept_ids]
+    unresolved = [SemanticFieldRequirement(
+        semantic_id="unresolved", qualifiers=[f"query_concept={proposal}"],
+    ) for proposal in understood.unresolved_concepts]
+    uncovered = [*([] if source_proven else fields), *unresolved]
+    return PlanCoverage(
+        required=[*fields, *unresolved], covered=fields if source_proven else [],
+        uncovered=uncovered, complete=bool(fields) and not uncovered,
+    )
 
 
 def _compile_query_needs(
@@ -405,6 +454,17 @@ async def compile_model_query(
             registry_version=witness[1], requested_k=k,
         )
 
+    def finalize(
+        plan: PaperTypedToolPlan, parameter_hints: dict[str, Any],
+    ) -> PaperTypedToolPlan:
+        plan = _apply_query_input_conditions(
+            router, plan, principal=principal, parameter_hints=parameter_hints,
+        )
+        # The condition helper also calls host callbacks. Recheck the caller's
+        # complete catalog/intent/Rank/host-input witness after both protocols.
+        verify()
+        return plan
+
     def compile_hint(
         understood: PaperUnderstanding,
         required_sources: tuple[tuple[str, str | None], ...] = (),
@@ -577,11 +637,7 @@ async def compile_model_query(
             raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
             compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
         )
-        plan = _apply_query_input_conditions(
-            router, plan, principal=principal, parameter_hints=raw.parameter_hints,
-        )
-        verify()
-        return plan
+        return finalize(plan, raw.parameter_hints)
 
     # These are owner-reviewed concepts that still have a current, accessible,
     # field-complete proof. Never disclose unreachable concepts to the model.
@@ -730,27 +786,15 @@ async def compile_model_query(
     ):
         raise ModelAnalysisError("model selected unoffered paper identities")
     if understood.intent_id is None:
-        requirements = [
-            SemanticFieldRequirement(
-                semantic_id=field.semantic_id,
-                qualifiers=[
-                    f"concept_id={concept_id}",
-                    *([f"source_type={concept.source_type}"] if concept.source_type else []),
-                    *([f"license={concept.license}"] if concept.license else []),
-                    *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
-                ],
-            )
-            for concept_id in understood.concept_ids
-            for concept in [approved_concepts[concept_id]]
-            for field in concept.required_fields
-        ]
-        requirements.extend(SemanticFieldRequirement(
-            semantic_id="unresolved", qualifiers=[f"query_concept={proposal}"],
-        ) for proposal in understood.unresolved_concepts)
-        return replace(
-            abstain(),
-            coverage=PlanCoverage(required=requirements, uncovered=requirements, complete=False),
-            understanding_hints=understood.model_dump(mode="json"),
-        )
-    plan = compile_hint(understood)
-    return replace(plan, understanding_hints=understood.model_dump(mode="json"))
+        plan = abstain()
+    else:
+        plan = compile_hint(understood)
+    if plan.coverage is None:
+        plan = replace(plan, coverage=_owner_query_field_coverage(
+            understood, concepts=approved_concepts, intents=approved_intents,
+            source_proven=bool(plan.calls) and plan.status in {
+                "ready", "requires_arguments", "requires_observation",
+            },
+        ))
+    plan = replace(plan, understanding_hints=understood.model_dump(mode="json"))
+    return finalize(plan, understood.parameter_hints)
