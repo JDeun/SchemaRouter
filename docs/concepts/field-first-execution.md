@@ -49,10 +49,13 @@ which discloses the approved concept IDs/aliases and tool names. These APIs are 
 reasoning or extraction of argument values from query text.
 
 Each concept's complete required field group is proved independently at an authorized endpoint
-under its own source type and license. Independent concepts can therefore use different tools and
-licenses. Proven routes are combined, and repeated routes retain the union of selected fields in
-source declaration order. Identifiers and owner-required intent groups preserve recall; the result
-does not promise an unconditional minimum field count. The combined route set remains bounded by
+under its own source type and license. In `NativeDeclaredConcept`, `source_type=None` and
+`license=None` impose no source-type or license constraint; they do not remove actual source metadata.
+Independent concepts can therefore use different tools and licenses. Concepts sharing a semantic ID
+but requiring incompatible schemas, units or qualifiers retain separate proofs rather than being
+merged by ID alone. Proven routes are combined, and repeated routes retain the union of selected
+fields in source declaration order. Identifiers and owner-required intent groups preserve recall;
+the result does not promise an unconditional minimum field count. The combined route set remains bounded by
 K5: a union exceeding five routes returns `budget_unsatisfied` without calls.
 Generic intents may declare `required_concept_ids=()`; they add no arbitrary representative field.
 
@@ -87,11 +90,16 @@ role/path/time mapping. This is bounded declared-alias resolution, not general s
 Owners may share a complete alias between concepts only when their declared source types, units or
 qualifiers distinguish them. Explicit query conditions must leave exactly one matching concept;
 missing or insufficient conditions remain ambiguous, regardless of source access or availability.
+A per-need source condition narrows a concept only where its owner left `source_type=None`; it
+cannot overwrite a declared owner source constraint, including one required by intent recall.
 
 `plan.coverage` records `required`, `covered`, `uncovered` and `complete`. In this model protocol,
 requirements retain the raw concept labels and their unit/source/qualifier conditions. Exclusions
 and explicitly user-named sources also remain requirements: a named source must be currently visible
-and contribute requested fields. Negated fields cannot be restored by an intent's required group.
+and contribute an actual selected field from the current scoped view. That field must be
+typed-compatible with the requested owner contract and satisfy the same need's unit/source/qualifier conditions and
+owner license constraint. A shared semantic ID or an unrelated intent-recalled field is insufficient.
+Negated fields cannot be restored by an intent's required group.
 A missing need can leave proven partial `calls` with `status="no_proven_hit"` and `complete=False`.
 `intent_id=null` returns `no_proven_hit` with no calls and incomplete coverage. Structured
 `compile_understood` coverage instead uses field semantic IDs with concept/source/license qualifiers;
@@ -103,10 +111,22 @@ contains at most eight needs and 4,096 bytes. If more needs remain, the model mu
 These checks cannot detect every requirement omitted by the model and do not establish commercial
 query-to-field accuracy.
 
-An otherwise complete direct mapping retains `requires_arguments` and
-`call.missing_required_arguments` when no proved dependency supplies its required inputs.
-`parameter_hints` remain untrusted proposals. Only separately supplied `host_source_arguments`
-for approved roots can bind values, subject to the existing source and value validation.
+Both model-query protocols include source-proven field requirements and scalar input conditions in
+coverage. `parameter_hints` remain untrusted proposals: each key must identify a unique current scoped
+`ParameterSpec` by its name, explicit alias or semantic ID. Hints are never broadcast across inputs,
+automatically bound as arguments or treated as evidence of an implicit output postfilter relation.
+Only separately supplied `host_source_arguments` for approved roots can bind values, subject to the
+existing source and value validation.
+
+An unbound proposal that fits the fully exposed scalar input contract can prove the input mapping
+with `proof=pending_host_input`. Coverage may then be complete while an otherwise ready plan waits
+with `requires_arguments`. This also applies to a source-optional input needed by the question:
+`ParameterSpec.required` and `call.missing_required_arguments` retain the original source requirements.
+A matching, already validated host argument proves the condition using exact JSON scalar agreement.
+Invalid proposals, conflicting host values, ambiguous inputs and unproved source relations remain
+uncovered. Removed private schema constraints are not recovered to test proposed values; their fit
+remains unproved. Uncovered conditions change an otherwise ready plan to `no_proven_hit`, while
+existing `requires_arguments` or `requires_observation` diagnoses remain intact.
 
 Each call's `fields_meta` exposes `PaperPlanFieldMeta.source_path`, `result_path` and `json_schema`
 from the current scoped schema view, including its canonical unit/value contract. Policy may flatten
