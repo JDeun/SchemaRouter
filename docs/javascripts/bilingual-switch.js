@@ -28,12 +28,14 @@
     window.location.assign((lang === "ko" ? KO : BASE) + window.location.search);
   }
 
+  // Handle language links before the theme can navigate to a query-free root.
   document.addEventListener("click", (event) => {
     const anchor = event.target.closest("a[hreflang]");
     if (!anchor) return;
     const lang = anchor.getAttribute("hreflang");
     if (lang !== "en" && lang !== "ko") return;
     event.preventDefault();
+    event.stopPropagation();
     void navigateToCounterpart(lang);
-  });
+  }, true);
 })();

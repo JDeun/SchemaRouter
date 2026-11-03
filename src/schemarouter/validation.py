@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from copy import deepcopy
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ from typing import Any
 from jsonschema import exceptions, validators
 
 from .errors import SchemaValidationError
-from .models import EndpointSpec, _schema_at_projection_path
+from .models import EndpointSpec, UnitNormalizationSpec, _schema_at_projection_path
 
 
 @dataclass(frozen=True, slots=True)
@@ -477,43 +478,84 @@ def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any
     return deepcopy(schema)
 
 
+def canonical_unit_value_schema(
+    schema: dict[str, Any],
+    normalization: UnitNormalizationSpec | None,
+) -> dict[str, Any]:
+    """Describe a sound overapproximation of values after affine normalization."""
+
+    if normalization is None or (normalization.scale == 1 and normalization.offset == 0):
+        return deepcopy(schema)
+    # Raw assertions are validated before conversion.
+    # shortcut: omit unproved affine predicates; add a canonical proof before preserving them.
+    normalized = {
+        key: deepcopy(value) for key, value in schema.items()
+        if key in {
+            "type", "title", "description", "deprecated", "readOnly", "writeOnly", "$comment",
+        }
+    }
+    declared = normalized.get("type")
+    if declared == "integer":
+        normalized["type"] = "number"
+    elif isinstance(declared, list):
+        normalized["type"] = list(dict.fromkeys(
+            "number" if value == "integer" else value for value in declared
+        ))
+
+    def convert(value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [convert(item) for item in value]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError("normalization requires numeric values")
+        converted = value * normalization.scale + normalization.offset
+        if not math.isfinite(converted):
+            raise ValueError("normalized schema value is not finite")
+        return converted
+
+    for key in ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "enum", "const"):
+        if key not in schema:
+            continue
+        if key not in {"enum", "const"} and (
+            isinstance(schema[key], bool) or not isinstance(schema[key], (int, float))
+        ):
+            continue
+        if key == "enum" and not isinstance(schema[key], list):
+            continue
+        try:
+            converted = convert(schema[key])
+        except (ValueError, OverflowError, TypeError):
+            continue
+        if key in {"exclusiveMinimum", "exclusiveMaximum"}:
+            # Floating-point rounding can collapse a strict boundary onto an output value.
+            key = "minimum" if key == "exclusiveMinimum" else "maximum"
+            if key in normalized:
+                converted = (max if key == "minimum" else min)(normalized[key], converted)
+        normalized[key] = converted
+    items = schema.get("items")
+    if isinstance(items, dict):
+        normalized["items"] = canonical_unit_value_schema(items, normalization)
+        for key in ("minItems", "maxItems"):
+            if key in schema:
+                normalized[key] = deepcopy(schema[key])
+    return normalized
+
+
 def canonical_field_value_schema(
     endpoint: EndpointSpec,
     field_name: str,
 ) -> dict[str, Any]:
-    """Return the projected result type shape after explicit unit normalization.
+    """Return canonical value constraints; raw assertions are validated before conversion."""
 
-    Raw provider constraints remain validated before normalization. This helper only widens
-    integer types to JSON number where affine conversion can produce non-integer values.
-    """
-
-    schema = field_value_schema(endpoint, field_name)
     field = next(
         (candidate for candidate in endpoint.output_fields if candidate.name == field_name),
         None,
     )
-    if field is None or field.unit_normalization is None:
-        return schema
-
-    normalized = deepcopy(schema)
-
-    def widen_integer(current: dict[str, Any]) -> None:
-        declared = current.get("type")
-        if declared == "integer":
-            current["type"] = "number"
-        elif isinstance(declared, list):
-            current["type"] = list(
-                dict.fromkeys(
-                    "number" if value == "integer" else value
-                    for value in declared
-                )
-            )
-        items = current.get("items")
-        if isinstance(items, dict):
-            widen_integer(items)
-
-    widen_integer(normalized)
-    return normalized
+    return canonical_unit_value_schema(
+        field_value_schema(endpoint, field_name),
+        field.unit_normalization if field is not None else None,
+    )
 
 
 def json_schema_types(schema: dict[str, Any]) -> frozenset[str]:

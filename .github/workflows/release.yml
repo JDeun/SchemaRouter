@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
+      pull-requests: read
     outputs:
       should_release: ${{ steps.state.outputs.should_release }}
       version: ${{ steps.metadata.outputs.version }}
@@ -44,6 +46,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
 
       - name: Verify successful post-merge qualification still refers to current main
         if: github.event_name == 'workflow_run'
@@ -182,6 +188,118 @@ jobs:
               release_notes=release_notes.as_posix(),
               prerelease="true" if prerelease else "false",
           )
+          PY
+
+      - name: Enforce reviewed release qualification
+        if: steps.metadata.outputs.releasable == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_SHA: ${{ steps.metadata.outputs.release_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+
+          from scripts.qualification_control import MATRIX, load_control, validate_control
+          from scripts.validate_v018_external_evidence import DEFAULT_PATH, validate
+
+          control = load_control()
+          validate_control(control, MATRIX.read_text(encoding="utf-8"))
+          version = os.environ["RELEASE_VERSION"]
+          release_sha = os.environ["RELEASE_SHA"]
+          release = control["release"]
+
+          def github(path, *, paginate=False):
+              command = ["gh", "api", "repos/JDeun/SchemaRouter/" + path]
+              if paginate:
+                  command += ["--paginate", "--slurp"]
+              return json.loads(subprocess.check_output(command, text=True))
+
+          if version == release["candidate"]:
+              if re.fullmatch(r"[0-9a-f]{40}", release_sha) is None:
+                  raise SystemExit("release requires an exact Git source commit")
+              if release["decision"] != "APPROVED":
+                  raise SystemExit("candidate release is on HOLD")
+              validate(json.loads(DEFAULT_PATH.read_text(encoding="utf-8")))
+              if re.fullmatch(
+                  r"https://github\.com/JDeun/SchemaRouter/actions/runs/\d+",
+                  release["approval"]["exact_head_ci_url"],
+              ) is None:
+                  raise SystemExit("release approval requires a CI run URL")
+
+              pull_path = "pulls/" + str(release["held_pr"])
+              pull = github(pull_path)
+              if (
+                  pull.get("number") != release["held_pr"]
+                  or pull.get("merged") is not True
+                  or pull.get("merge_commit_sha") != release_sha
+                  or pull.get("base", {}).get("ref") != "main"
+                  or pull.get("base", {}).get("repo", {}).get("full_name") != "JDeun/SchemaRouter"
+                  or pull.get("head", {}).get("repo", {}).get("full_name") != "JDeun/SchemaRouter"
+                  or re.fullmatch(r"[0-9a-f]{40}", pull.get("head", {}).get("sha", "")) is None
+              ):
+                  raise SystemExit("release source does not match the held release PR merge")
+              reviewer = release["approval"]["approved_by"]
+              if (
+                  re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", reviewer) is None
+                  or reviewer.casefold() == pull["user"]["login"].casefold()
+              ):
+                  raise SystemExit("release requires a separate GitHub reviewer")
+              latest = None
+              for page in github(pull_path + "/reviews", paginate=True):
+                  for review in page:
+                      if review["user"]["login"].casefold() != reviewer.casefold():
+                          continue
+                      state = review["state"]
+                      if state in ("APPROVED", "CHANGES_REQUESTED", "DISMISSED"):
+                          latest = review
+                      elif state not in ("COMMENTED", "PENDING"):
+                          raise SystemExit("unknown release review state")
+              if (
+                  latest is None or latest["state"] != "APPROVED"
+                  or latest["commit_id"] != pull["head"]["sha"]
+                  or latest["user"].get("type") != "User"
+              ):
+                  raise SystemExit("release lacks an approval of the latest PR head")
+              permission = github("collaborators/" + reviewer + "/permission")
+              if (
+                  permission.get("permission") not in ("write", "maintain", "admin")
+                  or permission.get("user", {}).get("login", "").casefold() != reviewer.casefold()
+              ):
+                  raise SystemExit("release reviewer lacks current repository authority")
+              runs = github(
+                  "actions/workflows/post-merge-qualification.yml/runs?head_sha="
+                  + release_sha + "&per_page=1"
+              )
+              latest_runs = runs.get("workflow_runs", [])
+              if len(latest_runs) != 1:
+                  raise SystemExit("release requires the latest exact-source qualification run")
+              run = latest_runs[0]
+              if (
+                  type(run.get("id")) is not int or run["id"] <= 0
+                  or run.get("head_sha") != release_sha
+                  or run.get("head_branch") != "main"
+                  or run.get("status") != "completed"
+                  or run.get("conclusion") != "success"
+                  or run.get("repository", {}).get("full_name") != "JDeun/SchemaRouter"
+                  or run.get("path") != ".github/workflows/post-merge-qualification.yml"
+              ):
+                  raise SystemExit("release lacks successful exact-source qualification")
+          elif tuple(map(int, re.match(r"\d+\.\d+\.\d+", version)[0].split("."))) > tuple(
+              map(int, control["published_release"].split("."))
+          ):
+              raise SystemExit("release version has no reviewed candidate gate")
+          else:
+              published = github("releases/tags/v" + version)
+              if (
+                  published.get("tag_name") != "v" + version
+                  or published.get("draft") is not False
+                  or not published.get("published_at")
+              ):
+                  raise SystemExit("legacy version is not an already published release")
           PY
 
       - name: Create annotated tag when missing

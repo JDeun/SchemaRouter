@@ -138,8 +138,21 @@ def run(site: Path | None, base_url: str, smoke_only: bool, shots: Path | None) 
 
         try:
             page.route(re.compile(r"/SchemaRouter/ko/getting-started/quickstart/"), reject_head)
-            page.goto(base_url + "guides/mcp/", wait_until="domcontentloaded", timeout=30000)
-            _check_page(page, english)
+            page.goto(base_url + "guides/mcp/", wait_until="networkidle", timeout=30000)
+            # The theme's language router must also work when KO's sitemap loads first.
+            pending_sitemaps = []
+            sitemap_pattern = re.compile(r"/SchemaRouter/sitemap\.xml$")
+            page.route(sitemap_pattern, lambda route: pending_sitemaps.append(route))
+            with page.expect_request_finished(
+                lambda request: request.url == base_url + "ko/sitemap.xml"
+            ) as korean_sitemap:
+                _check_page(page, english)
+            response = korean_sitemap.value.response()
+            assert response and response.status == 200, "Korean sitemap must load successfully"
+            page.unroute(sitemap_pattern)
+            for route in pending_sitemaps:
+                route.continue_()
+            page.wait_for_load_state("networkidle")
             _switch(page, "ko", base_url + "ko/?browser_qa=1")
             print("missing counterpart graceful language-root fallback: OK")
         except Exception as exc:

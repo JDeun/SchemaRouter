@@ -5,14 +5,20 @@ from collections import Counter
 from collections.abc import Iterable
 from typing import Literal
 
+from jsonschema import Draft202012Validator
 from pydantic import Field, model_validator
 
 from .canonical_json import canonical_json_text
 from .models import FieldSpec, StrictModel
+from .validation import canonical_unit_value_schema
 
 CompatibilityStatus = Literal["exact", "compatible", "convertible", "incompatible", "unknown"]
 EffectKind = Literal["read", "write", "external_side_effect"]
 TriState = Literal["true", "false", "unknown"]
+_SCHEMA_ANNOTATIONS = {
+    "title", "description", "default", "examples", "deprecated",
+    "readOnly", "writeOnly", "$comment",
+}
 
 
 class CapabilityFieldContract(StrictModel):
@@ -43,7 +49,7 @@ class CapabilityFieldContract(StrictModel):
         normalization = field.unit_normalization
         return cls(
             semantic_id=field.semantic_id,
-            json_schema=field.json_schema,
+            json_schema=canonical_unit_value_schema(field.json_schema, normalization),
             unit=normalization.canonical_unit if normalization is not None else field.unit,
             dimension=normalization.dimension if normalization is not None else None,
             qualifiers=field.qualifiers,
@@ -269,6 +275,24 @@ def _type_compatible(required: dict, produced: dict) -> bool | None:
         if value == "integer" and "number" in required_types:
             continue
         return False
+    required_assertions = {
+        key: value for key, value in required.items()
+        if key != "type" and key not in _SCHEMA_ANNOTATIONS
+    }
+    if required_assertions:
+        produced_assertions = {
+            key: value for key, value in produced.items()
+            if key != "type" and key not in _SCHEMA_ANNOTATIONS
+        }
+        # shortcut: differing assertions stay unknown; add subsumption proof to accept more cases.
+        try:
+            canonical_json_text((required_assertions, produced_assertions))
+            if not Draft202012Validator({"const": required_assertions}).is_valid(
+                produced_assertions,
+            ):
+                return None
+        except (TypeError, ValueError, RecursionError):
+            return None
     return True
 
 

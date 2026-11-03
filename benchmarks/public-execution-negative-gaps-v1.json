@@ -50,7 +50,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.invoke",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4621
+        "line": 4629
       },
       "observed_test_file": "tests/test_python_adapter.py",
       "observed_test_names": [
@@ -98,7 +98,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.ainvoke",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4610
+        "line": 4618
       },
       "observed_test_file": "tests/test_python_adapter.py",
       "observed_test_names": [
@@ -146,7 +146,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_sqlite_database_adapter.py",
       "observed_test_names": [
@@ -182,7 +182,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_http_json_adapter.py",
       "observed_test_names": [
@@ -218,7 +218,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_graphql_adapter.py",
       "observed_test_names": [
@@ -264,7 +264,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_openrpc_adapter.py",
       "observed_test_names": [
@@ -292,7 +292,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_odata_adapter.py",
       "observed_test_names": [
@@ -330,7 +330,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_mcp_integration.py",
       "observed_test_names": [
@@ -367,7 +367,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_graph_native_adapters.py",
       "observed_test_names": [
@@ -404,7 +404,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_record_native_adapters.py",
       "observed_test_names": [
@@ -441,7 +441,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_vector_native_adapters.py",
       "observed_test_names": [
@@ -478,7 +478,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_public_openapi_execution_wiring.py",
       "observed_test_names": [
@@ -514,7 +514,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_public_sqlalchemy_execution_wiring.py",
       "observed_test_names": [
@@ -542,7 +542,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_public_optimade_execution_wiring.py",
       "observed_test_names": [
@@ -569,7 +569,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_graph_store_adapter.py",
       "observed_test_names": [
@@ -596,7 +596,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_vector_store_adapter.py",
       "observed_test_names": [
@@ -623,7 +623,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_record_store_adapter.py",
       "observed_test_names": [
@@ -650,7 +650,7 @@
       "public_entrypoint": "schemarouter.SchemaRouter.execute",
       "execution_location": {
         "file": "src/schemarouter/runtime.py",
-        "line": 4601
+        "line": 4609
       },
       "observed_test_file": "tests/test_mcp_integration.py",
       "observed_test_names": [

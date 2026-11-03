@@ -11,6 +11,7 @@ from test_research_paper_scoped_native_direct_e1 import _fixture
 
 from schemarouter import AuthorizationPolicy, PrincipalContext
 from schemarouter.errors import PolicyViolationError
+from schemarouter.hooks import ExecutionHooks
 
 
 @pytest.mark.asyncio
@@ -21,6 +22,7 @@ from schemarouter.errors import PolicyViolationError
         "denied_principal",
         "unavailable_source",
         "policy_revoked",
+        "policy_revoked_before_call",
     ),
 )
 async def test_direct_sdk_real_registered_native_denials_never_dispatch(
@@ -43,6 +45,10 @@ async def test_direct_sdk_real_registered_native_denials_never_dispatch(
         router.mark_access_unavailable("complete", "read", cooldown_seconds=120)
     elif case == "policy_revoked":
         router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+    elif case == "policy_revoked_before_call":
+        def revoke(_tool, _endpoint, _call):
+            router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        router.executor.hooks = ExecutionHooks(before_call=(revoke,))
 
     with pytest.raises(PolicyViolationError):
         await session.aexecute_direct(QUERY, principal=principal)
@@ -77,8 +83,6 @@ async def test_direct_sdk_same_contract_binding_generation_drift_never_dispatche
     The registry and endpoint fingerprints stay identical; only the *bound*
     invoker generation changes after SDK proof but before native invocation.
     """
-    from schemarouter.hooks import ExecutionHooks
-
     view, _index, original_invocations = _fixture(requires_input=False)
     router = view.router
     session = router.prepare_field_routing(catalog=CATALOG)

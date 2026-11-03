@@ -55,6 +55,12 @@ tool fingerprint != current tool fingerprint
 
 Invoker binding도 bind 시점의 tool fingerprint를 보유합니다. Transport를 rebind하지 않고 tool contract를 교체하면 `BindingDriftError`가 발생합니다.
 
+일반 `SchemaRouter.execute()`, `invoke()`, `ainvoke()`는 등록된 계약을 검증하고, 각 호출 시도마다 fingerprint가 일치하는 일관된 binding snapshot을 사용합니다. 신뢰된 로컬 코드는 같은 계약 아래 invoker를 교체할 수 있으므로, before-call hook에서 도구를 다시 bind하면 교체된 invoker로 실행할 수 있습니다. Plan이 고정하는 것은 선언된 실행 계약이며 특정 invoker 인스턴스가 아닙니다. Endpoint/tool fingerprint가 바뀌거나 권한이 철회되면 어느 invoker도 실행하기 전에 호출을 거부합니다. 시도의 binding snapshot을 얻은 뒤 동시 재바인딩이 일어나도 이미 선택된 호출을 취소하지 않습니다.
+
+명시적으로 선택하는 `SchemaFieldRoutingSession.aexecute_direct()`는 호스트 증명 시점부터 executor의 binding 검사까지 native invoker generation도 고정합니다. Before-call hook에서 재바인딩하면 계약이 그대로여도 거부합니다. 새로운 direct execution은 교체된 invoker에 맞춰 증명을 다시 compile할 수 있습니다. 어느 계약에서도 plan, receipt 또는 모델의 선택 자체가 실행 권한을 부여하지 않습니다.
+
+`router.authorization_policy`와 `router.executor.authorization_policy`는 같은 현재 정책을 공유합니다. 어느 API에서든 정책을 교체하면 계획과 executor의 다음 권한 검사에 반영되며, 여기에는 신뢰된 hook 이후와 재시도 전의 검사도 포함됩니다. 명시적으로 `None`을 설정하면 권한 정책 검사를 비활성화합니다. 이 결정은 신뢰된 호스트가 소유합니다.
+
 운영 진단을 위해 `compare_endpoint_specs()`와 `compare_tool_specs()`는 두 trusted snapshot의 차이를 설명하고 변경을 보수적으로 분류합니다. Compatible report도 fingerprint gate를 우회하지 않으며 caller는 현재 contract에 대해 다시 plan/bind해야 합니다. [Schema drift analysis](../guides/schema-drift.md)를 참고하십시오.
 
 ## 영속 SQLite registry

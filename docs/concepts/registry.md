@@ -73,6 +73,25 @@ tool fingerprint != current tool fingerprint
 Invoker bindings also carry the tool fingerprint that existed at bind time. Replacing a tool
 contract without rebinding its transport yields `BindingDriftError`.
 
+Ordinary `SchemaRouter.execute()`, `invoke()` and `ainvoke()` validate the registered contract
+and use a coherent, fingerprint-matched binding snapshot for each invocation attempt. Trusted
+local code may replace an invoker under the same contract; a before-call hook can therefore
+rebind a tool and dispatch through the replacement. The plan pins the declared execution
+contract, not a particular invoker instance. Changed endpoint/tool fingerprints or revoked
+authorization still reject the call before either invoker runs. A concurrent rebind after the
+attempt's binding snapshot is taken does not cancel that already-selected invocation.
+
+The opt-in `SchemaFieldRoutingSession.aexecute_direct()` also pins the native invoker generation
+from its host proof through the executor's binding checks. A rebind in a before-call hook is
+rejected even when the contract is unchanged. A fresh direct execution can recompile its proof
+against the replacement. Neither contract turns a plan, receipt or model selection into
+execution authority.
+
+`router.authorization_policy` and `router.executor.authorization_policy` share the same current
+policy. Replacing it through either API affects planning and the executor's next authorization
+check, including checks after trusted hooks and before retries. Passing `None` explicitly
+disables authorization policy enforcement; trusted hosts own that decision.
+
 For operational diagnosis, `compare_endpoint_specs()` and `compare_tool_specs()` explain why two
 trusted snapshots differ and classify the change conservatively. A compatible report never bypasses
 the fingerprint gate; callers still replan/rebind against the current contract. See

@@ -246,7 +246,11 @@ def calibrate_source_pinned_paper_no_fit_e0(
             ):
                 enough_cases = False
     plan_within_limits: bool | None = None
-    if enough_cases:
+    # A binary deferral needs a resolved observation; zero measured errors
+    # cannot establish acceptance while supported/OOD outcomes are unknown.
+    if enough_cases and not (
+        totals["supported_deferred"] or totals["unsupported_deferred"]
+    ):
         plan_within_limits = all(
             (metrics["supported_false_refusal_rate"] is not None
              and metrics["supported_false_refusal_rate"]

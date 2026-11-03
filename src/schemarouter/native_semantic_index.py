@@ -15,9 +15,10 @@ from hashlib import sha256
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
 
-from .authorization import PrincipalContext
+from .authorization import AuthorizationPolicy, AuthorizationRule, DataScopeRule, PrincipalContext
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError, RegistrationError
+from .executor import RegistryExecutor
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
@@ -25,8 +26,9 @@ from .field_group_retrieval import (
     _root_envelope_empty,
     _scalar_contract,
 )
-from .models import FieldSpec, ToolSpec
+from .models import EndpointSpec, FieldSpec, ToolSpec
 from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
+from .planner import SchemaPlanner
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
@@ -35,6 +37,127 @@ if TYPE_CHECKING:
 STRICT_K = 5
 # Non-production research rankers never receive an unbounded private candidate menu.
 MAX_RESEARCH_RANKABLE_POSTINGS = 32
+_SOURCE_REGISTRY_GETTERS = {
+    InMemoryRegistry: InMemoryRegistry.get,
+    SQLiteRegistry: SQLiteRegistry.get,
+}
+_SOURCE_MEMORY_SNAPSHOT = InMemoryRegistry._snapshot
+_SOURCE_POLICY_METHODS = {
+    name: getattr(AuthorizationPolicy, name) for name in ("visible", "evaluate", "data_scope")
+}
+_SOURCE_RULE_METHODS = {
+    kind: {
+        name: getattr(kind, name) for name in ("matches", "matches_resource", "matches_principal")
+    }
+    for kind in (AuthorizationRule, DataScopeRule)
+}
+_SOURCE_HEALTH_LAZY = RegistryExecutor.is_access_available_for_contract_lazy
+_SOURCE_HEALTH = RegistryExecutor.is_access_available_for_contract
+_SOURCE_PLANNER_FINGERPRINT = SchemaPlanner._snapshot_tool_fingerprint
+
+
+class _NativeSourcePass:
+    """Private source snapshots for one validation pass with no user callbacks."""
+
+    # shortcut: custom callbacks keep fresh reads; extend reuse only with an isolation proof.
+    def __init__(self, index: NativeSchemaPostingIndex, router: SchemaRouter) -> None:
+        self.index = index
+        self.router = router
+        self.policy = router.authorization_policy
+        self.rules = self.policy.rules if self.policy is not None else ()
+        self.data_rules = self.policy.data_rules if self.policy is not None else ()
+        self.availability = router.planner.availability_predicate
+        self.builtin_policy = (
+            type(self.policy) is AuthorizationPolicy
+            and all(
+                type(rule) is kind and all(
+                    getattr(getattr(rule, name), "__func__", None) is method
+                    for name, method in _SOURCE_RULE_METHODS[kind].items()
+                )
+                for rules, kind in (
+                    (self.rules, AuthorizationRule), (self.data_rules, DataScopeRule),
+                ) for rule in rules
+            )
+        )
+        self.tools: dict[str, tuple[ToolSpec, str, dict[str, EndpointSpec]]] = {}
+        self.fingerprints: dict[int, str] = {}
+        self.reusable = self._can_reuse()
+
+    def reset(self) -> None:
+        self.tools.clear()
+        self.fingerprints.clear()
+
+    def _can_reuse(self) -> bool:
+        from .runtime import _NATIVE_SOURCE_ROUTER_METHODS, SchemaRouter
+
+        router = self.router
+        registry = router.registry
+        policy = router.authorization_policy
+        if (
+            not self.builtin_policy or policy is not self.policy
+            or policy is None or policy.rules is not self.rules
+            or policy.data_rules is not self.data_rules
+            or router.planner.availability_predicate is not self.availability
+            or type(router) is not SchemaRouter
+            or router.authorization_audit_hook is not None
+            or type(registry) not in _SOURCE_REGISTRY_GETTERS
+            or getattr(registry.get, "__func__", None)
+            is not _SOURCE_REGISTRY_GETTERS[type(registry)]
+            or type(registry) is InMemoryRegistry
+            and registry._snapshot is not _SOURCE_MEMORY_SNAPSHOT
+        ):
+            return False
+        for name, method in _NATIVE_SOURCE_ROUTER_METHODS.items():
+            if getattr(getattr(router, name), "__func__", None) is not method:
+                return False
+        for name, method in _SOURCE_POLICY_METHODS.items():
+            if getattr(getattr(policy, name), "__func__", None) is not method:
+                return False
+        availability = router.planner.availability_predicate
+        if availability is None:
+            return True
+        return (
+            getattr(availability, "__self__", None) is router
+            and getattr(availability, "__func__", None)
+            is _NATIVE_SOURCE_ROUTER_METHODS["_is_snapshot_access_available"]
+            and type(router.executor) is RegistryExecutor
+            and getattr(router.executor.is_access_available_for_contract_lazy, "__func__", None)
+            is _SOURCE_HEALTH_LAZY
+            and getattr(router.executor.is_access_available_for_contract, "__func__", None)
+            is _SOURCE_HEALTH
+            and type(router.planner) is SchemaPlanner
+            and getattr(router.planner._snapshot_tool_fingerprint, "__func__", None)
+            is _SOURCE_PLANNER_FINGERPRINT
+        )
+
+    def get(self, tool_key: str, endpoint_name: str) -> tuple[ToolSpec, EndpointSpec, str]:
+        self.index._assert_source(self.router)
+        if not self.reusable or not self._can_reuse():
+            tool = self.router.registry.get(tool_key)
+            return tool, tool.endpoint(endpoint_name), tool.fingerprint
+        if tool_key not in self.tools:
+            tool = self.router.registry.get(tool_key)
+            fingerprint = tool.fingerprint
+            self.tools[tool_key] = tool, fingerprint, {ep.name: ep for ep in tool.endpoints}
+            self.fingerprints[id(tool)] = fingerprint
+        tool, fingerprint, endpoints = self.tools[tool_key]
+        return tool, endpoints[endpoint_name], fingerprint
+
+    def fingerprint(self, tool: ToolSpec) -> str:
+        cached = self.fingerprints.get(id(tool))
+        return cached if cached is not None else tool.fingerprint
+
+    def available(
+        self, tool: ToolSpec, endpoint: EndpointSpec,
+        availability: Callable[[ToolSpec, EndpointSpec], bool],
+    ) -> bool:
+        fingerprint = self.fingerprints.get(id(tool))
+        if fingerprint is not None and self._can_reuse():
+            # Check current health with the already-verified source hash, including cooldowns.
+            return self.router.executor.is_access_available_for_contract(
+                tool.key, endpoint.name, fingerprint,
+            )
+        return availability(tool, endpoint)
 
 
 def _native_review_cursor(snapshot_id: str, route_id: str) -> str:
@@ -531,6 +654,7 @@ class NativeSchemaPostingIndex:
         ids = [set(self.postings.get(field.semantic_id, ()))
                for field in declaration.required_fields]
         matched = set.intersection(*ids) if ids else set()
+        source = _NativeSourcePass(self, router)
         permitted = router._authorization_predicate(approved_principal)
         if permitted is None:
             raise PolicyViolationError("explicit authorization required")
@@ -553,9 +677,8 @@ class NativeSchemaPostingIndex:
             if (use_paper_rank and rank_policy is not None
                     and not rank_policy.permits_domain(route, _paper_rank_domains)):
                 continue
-            tool = router.registry.get(tool_key)
-            endpoint = tool.endpoint(endpoint_name)
-            if (tool.fingerprint, endpoint.fingerprint) != revisions:
+            tool, endpoint, fingerprint = source.get(tool_key, endpoint_name)
+            if (fingerprint, endpoint.fingerprint) != revisions:
                 raise PolicyViolationError("indexed source fingerprint drift")
             if (tool.source_type is None or tool.license is None
                     or declaration.source_type is not None
@@ -574,7 +697,7 @@ class NativeSchemaPostingIndex:
             # endpoint details before the later final eligibility pass.
             if availability is not None:
                 try:
-                    available_now = bool(availability(tool, endpoint))
+                    available_now = bool(source.available(tool, endpoint, availability))
                 except Exception:
                     raise PolicyViolationError(
                         "indexed availability check failed during lookup"
@@ -596,7 +719,7 @@ class NativeSchemaPostingIndex:
                 )
             qualified.append(IndexedNativeFieldCandidate(
                 route_id=route,
-                tool_fingerprint=tool.fingerprint,
+                tool_fingerprint=source.fingerprint(tool),
                 endpoint_fingerprint=endpoint.fingerprint,
                 required_output_fields=tuple(sorted(set(matched_names))),
             ))
@@ -639,13 +762,13 @@ class NativeSchemaPostingIndex:
         # later candidate's health probe revokes an earlier candidate.
         # Recheck every already-qualified route, even when >K ultimately
         # abstains: qualified_count is still disclosed to the caller.
+        source.reset()
         try:
             for candidate in qualified:
                 where = self.route_locations[candidate.route_id]
                 pinned = self.route_fingerprints[candidate.route_id]
-                tool = router.registry.get(where[0])
-                endpoint = tool.endpoint(where[1])
-                if (tool.fingerprint, endpoint.fingerprint) != pinned:
+                tool, endpoint, fingerprint = source.get(*where)
+                if (fingerprint, endpoint.fingerprint) != pinned:
                     raise PolicyViolationError("indexed candidate source changed")
                 if (
                     tool.source_type is None or tool.license is None
@@ -657,7 +780,8 @@ class NativeSchemaPostingIndex:
                     or endpoint.destructive is True
                     or input_free_only and not _root_envelope_empty(endpoint)
                     or not permitted(tool, endpoint)
-                    or availability is not None and not availability(tool, endpoint)
+                    or availability is not None
+                    and not source.available(tool, endpoint, availability)
                 ):
                     raise PolicyViolationError("indexed candidate no longer available")
                 scoped = router._data_scope_endpoint_view(

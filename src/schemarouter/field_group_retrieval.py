@@ -5,16 +5,29 @@ This is not natural-language semantic inference, an agent, or execution.
 """
 from __future__ import annotations
 
+import json
 import unicodedata
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from jsonschema import Draft202012Validator, SchemaError
 from pydantic import model_validator
 
 from .authorization import PrincipalContext
-from .capability_contracts import CapabilityFieldContract, compare_capability_fields
+from .canonical_json import canonical_json_text
+from .capability_contracts import (
+    _SCHEMA_ANNOTATIONS,
+    CapabilityFieldContract,
+    compare_capability_fields,
+)
 from .errors import PolicyViolationError
 from .models import CapabilityRetrieval, EndpointSpec, FieldSpec, PlanRequest, StrictModel, ToolSpec
 from .planner import KeywordAnalyzer
+from .validation import (
+    RuntimeValidationBudget,
+    _inspect_runtime_schema,
+    _RuntimeValidationBudgetExceeded,
+)
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -26,14 +39,44 @@ def _alias_key(value: str) -> str:
     return unicodedata.normalize("NFC", value).strip().casefold()
 
 
+@lru_cache(maxsize=256)
+def _validated_scalar_contract(encoded_schema: str) -> bool:
+    """Cache syntax/work-budget checks by schema content, never source authority."""
+    try:
+        schema = json.loads(encoded_schema)
+        _inspect_runtime_schema(schema, RuntimeValidationBudget())
+        Draft202012Validator.check_schema(schema)
+    except (SchemaError, _RuntimeValidationBudgetExceeded,
+            TypeError, ValueError, OverflowError, RecursionError):
+        return False
+    return True
+
+
 def _scalar_contract(schema: dict) -> bool:
-    # Typed comparator does not prove arbitrary enum/pattern/oneOf constraints.
-    return (
-        type(schema) is dict
-        and set(schema) == {"type"}
-        and type(schema["type"]) is str
-        and schema["type"] in {"string", "integer", "number", "boolean"}
-    )
+    if (
+        type(schema) is not dict
+        or type(schema.get("type")) is not str
+        or schema["type"] not in {"string", "integer", "number", "boolean"}
+    ):
+        return False
+    if set(schema) == {"type"}:
+        return True
+    if "enum" in schema and not schema["enum"]:
+        return False
+    allowed = _SCHEMA_ANNOTATIONS | {"type", "enum", "const"}
+    if schema["type"] in {"integer", "number"}:
+        allowed |= {"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"}
+    elif schema["type"] == "string":
+        allowed |= {"minLength", "maxLength", "pattern"}
+    if not schema.keys() <= allowed:
+        return False
+    try:
+        encoded = canonical_json_text(schema)
+        if len(encoded.encode("utf-8")) > 16_384:
+            return False
+    except (TypeError, ValueError, OverflowError, RecursionError):
+        return False
+    return _validated_scalar_contract(encoded)
 
 
 def _root_envelope_empty(endpoint: EndpointSpec) -> bool:

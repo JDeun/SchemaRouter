@@ -1,7 +1,268 @@
+import copy
+import json
 import re
+import textwrap
 from pathlib import Path
 
+import pytest
+
+from scripts.qualification_control import load_control
+
 ROOT = Path(__file__).resolve().parents[1]
+RELEASE_SHA = "0123456789abcdef0123456789abcdef01234567"
+PR_HEAD_SHA = "f" * 40
+QUALIFICATION_RUNS = (
+    "actions/workflows/post-merge-qualification.yml/runs?head_sha="
+    + RELEASE_SHA + "&per_page=1"
+)
+
+
+def _release_gate_source() -> str:
+    workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    gate = workflow.split("      - name: Enforce reviewed release qualification\n", 1)[1]
+    return textwrap.dedent(gate.split("          python - <<'PY'\n", 1)[1].split(
+        "\n          PY", 1,
+    )[0])
+
+
+def _release_approval() -> dict:
+    control = copy.deepcopy(load_control())
+    control["release"]["decision"] = "APPROVED"
+    control["release"]["approval"] = {
+        "approval_record_url": "https://github.com/JDeun/SchemaRouter/issues/1345",
+        "exact_head_ci_url": "https://github.com/JDeun/SchemaRouter/actions/runs/42",
+        "source_sha256": "a" * 64, "artifact_sha256": "b" * 64,
+        "approved_by": "synthetic-test-only", "approved_at": "2026-11-03",
+        "signed_off_issue_ids": [1345, 1346],
+    }
+    return control
+
+
+def _release_github_responses():
+    return {
+        "pulls/1356": {
+            "number": 1356, "merged": True, "merge_commit_sha": RELEASE_SHA,
+            "user": {"login": "release-author"},
+            "base": {"ref": "main", "repo": {"full_name": "JDeun/SchemaRouter"}},
+            "head": {"sha": PR_HEAD_SHA, "repo": {"full_name": "JDeun/SchemaRouter"}},
+        },
+        "pulls/1356/reviews": [[{
+            "user": {"login": "synthetic-test-only", "type": "User"},
+            "state": "APPROVED", "commit_id": PR_HEAD_SHA,
+        }]],
+        "collaborators/synthetic-test-only/permission": {
+            "permission": "write", "user": {"login": "synthetic-test-only"},
+        },
+        QUALIFICATION_RUNS: {"workflow_runs": [{
+            "id": 123, "head_sha": RELEASE_SHA, "head_branch": "main",
+            "status": "completed", "conclusion": "success",
+            "repository": {"full_name": "JDeun/SchemaRouter"},
+            "path": ".github/workflows/post-merge-qualification.yml",
+        }]},
+    }
+
+
+def _run_release_gate(
+    monkeypatch, control, *, version="0.18.0", responses=None, api_error=None,
+):
+    monkeypatch.setattr("scripts.qualification_control.load_control", lambda: control)
+    monkeypatch.setenv("RELEASE_VERSION", version)
+    monkeypatch.setenv("RELEASE_SHA", RELEASE_SHA)
+    calls = []
+    if responses is None:
+        responses = _release_github_responses()
+        responses["releases/tags/v" + version] = {
+            "tag_name": "v" + version, "draft": False,
+            "published_at": "2026-10-13T00:00:00Z",
+        }
+
+    def github_api(command, **kwargs):
+        calls.append(command)
+        assert command[:2] == ["gh", "api"]
+        path = command[2].removeprefix("repos/JDeun/SchemaRouter/")
+        if path.endswith("/reviews"):
+            assert command[3:] == ["--paginate", "--slurp"]
+        else:
+            assert command[3:] == []
+        if api_error is not None:
+            raise api_error
+        return json.dumps(responses[path])
+
+    monkeypatch.setattr("subprocess.check_output", github_api)
+    exec(compile(_release_gate_source(), "release qualification gate", "exec"), {})
+    return calls
+
+
+def test_release_qualification_precedes_tag_creation_and_build():
+    workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    gate = workflow.index("      - name: Enforce reviewed release qualification")
+    assert workflow.index("      - name: Resolve release metadata and target SHA") < gate
+    assert gate < workflow.index("      - name: Create annotated tag when missing")
+    assert gate < workflow.index("  build:")
+    step = workflow[gate:workflow.index("      - name: Create annotated tag when missing")]
+    assert "if: steps.metadata.outputs.releasable == 'true'" in step
+    assert "RELEASE_SHA: ${{ steps.metadata.outputs.release_sha }}" in step
+    assert "GH_TOKEN: ${{ github.token }}" in step
+
+
+def test_reviewed_release_gate_preserves_separate_model_hold(monkeypatch):
+    control = _release_approval()
+    assert control["promotion"]["decision"] == "HOLD"
+    before = copy.deepcopy(control)
+    # The committed receipt refers to earlier CI; the real external review
+    # binds the PR head, and merge provenance binds the final qualified SHA.
+    assert control["release"]["approval"]["exact_head_ci_url"].endswith("/42")
+    assert PR_HEAD_SHA != RELEASE_SHA
+    assert len(_run_release_gate(monkeypatch, control)) == 4
+    assert control == before
+
+
+def test_release_gate_fails_closed_when_github_is_unavailable(monkeypatch):
+    with pytest.raises(OSError, match="synthetic GitHub outage"):
+        _run_release_gate(
+            monkeypatch, _release_approval(), api_error=OSError("synthetic GitHub outage"),
+        )
+
+
+@pytest.mark.parametrize("problem", ("hold", "approval", "digest", "owners", "ci_url"))
+def test_release_gate_rejects_unapproved_or_malformed_receipt(monkeypatch, problem):
+    control = _release_approval()
+    gate = control["release"]
+    if problem == "hold":
+        control = load_control()
+    elif problem == "approval":
+        del gate["approval"]
+    elif problem == "digest":
+        gate["approval"]["source_sha256"] = "unverified"
+    elif problem == "owners":
+        gate["approval"]["signed_off_issue_ids"] = [1345]
+    else:
+        gate["approval"]["exact_head_ci_url"] = gate["approval"]["approval_record_url"]
+    with pytest.raises((ValueError, SystemExit)):
+        _run_release_gate(monkeypatch, control)
+
+
+@pytest.mark.parametrize("field,value", (
+    ("head_sha", PR_HEAD_SHA), ("id", 0), ("status", "in_progress"),
+    ("head_branch", "release-branch"),
+    ("conclusion", "failure"), ("repository", {"full_name": "other/project"}),
+    ("path", ".github/workflows/qualification-control.yml"),
+))
+def test_release_gate_rejects_stale_or_wrong_qualification_run(monkeypatch, field, value):
+    responses = _release_github_responses()
+    responses[QUALIFICATION_RUNS]["workflow_runs"][0][field] = value
+    with pytest.raises((ValueError, SystemExit)):
+        _run_release_gate(monkeypatch, _release_approval(), responses=responses)
+
+
+@pytest.mark.parametrize("problem", (
+    "missing", "stale", "changes_requested", "dismissed", "unknown",
+    "bot", "other_reviewer", "self_approval", "unmerged", "wrong_merge",
+    "wrong_base", "spoofed_base_repo", "spoofed_head_repo", "wrong_pr",
+    "no_permission", "spoofed_permission", "missing_qualification",
+    "ambiguous_qualification",
+))
+def test_release_gate_requires_source_bound_current_reviewer_authority(monkeypatch, problem):
+    responses = _release_github_responses()
+    pull = responses["pulls/1356"]
+    review = responses["pulls/1356/reviews"][0][0]
+    permission = responses["collaborators/synthetic-test-only/permission"]
+    if problem == "missing":
+        responses["pulls/1356/reviews"] = [[]]
+    elif problem == "stale":
+        review["commit_id"] = "a" * 40
+    elif problem in ("changes_requested", "dismissed", "unknown"):
+        latest = copy.deepcopy(review)
+        latest["state"] = {
+            "changes_requested": "CHANGES_REQUESTED",
+            "dismissed": "DISMISSED", "unknown": "UNKNOWN_API_STATE",
+        }[problem]
+        responses["pulls/1356/reviews"].append([latest])
+    elif problem == "bot":
+        review["user"]["type"] = "Bot"
+    elif problem == "other_reviewer":
+        review["user"]["login"] = "unrelated"
+    elif problem == "self_approval":
+        pull["user"]["login"] = review["user"]["login"]
+    elif problem == "unmerged":
+        pull["merged"] = False
+    elif problem == "wrong_merge":
+        pull["merge_commit_sha"] = "b" * 40
+    elif problem == "wrong_base":
+        pull["base"]["ref"] = "other-branch"
+    elif problem in ("spoofed_base_repo", "spoofed_head_repo"):
+        branch = "base" if problem == "spoofed_base_repo" else "head"
+        pull[branch]["repo"]["full_name"] = "other/project"
+    elif problem == "wrong_pr":
+        pull["number"] = 999
+    elif problem == "no_permission":
+        permission["permission"] = "read"
+    elif problem == "spoofed_permission":
+        permission["user"]["login"] = "unrelated"
+    elif problem == "ambiguous_qualification":
+        responses[QUALIFICATION_RUNS]["workflow_runs"].append(
+            copy.deepcopy(responses[QUALIFICATION_RUNS]["workflow_runs"][0]),
+        )
+    else:
+        responses[QUALIFICATION_RUNS] = {"workflow_runs": []}
+    with pytest.raises((ValueError, SystemExit)):
+        _run_release_gate(monkeypatch, _release_approval(), responses=responses)
+
+
+@pytest.mark.parametrize("permission", ("write", "maintain", "admin"))
+def test_release_gate_accepts_current_authority_and_nonrevoking_comments(monkeypatch, permission):
+    responses = _release_github_responses()
+    responses["collaborators/synthetic-test-only/permission"]["permission"] = permission
+    comment = copy.deepcopy(responses["pulls/1356/reviews"][0][0])
+    comment["state"] = "COMMENTED"
+    responses["pulls/1356/reviews"].append([comment])
+    assert len(_run_release_gate(monkeypatch, _release_approval(), responses=responses)) == 4
+
+
+def test_release_gate_reuses_external_evidence_validator(monkeypatch, tmp_path):
+    invalid = tmp_path / "invalid-evidence.json"
+    invalid.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr("scripts.validate_v018_external_evidence.DEFAULT_PATH", invalid)
+    with pytest.raises(ValueError, match="evidence manifest"):
+        _run_release_gate(monkeypatch, _release_approval())
+
+
+@pytest.mark.parametrize("version", ("0.16.0", "0.17.0", "0.17.0rc1"))
+def test_release_gate_preserves_historical_version_resumption(monkeypatch, version):
+    calls = _run_release_gate(monkeypatch, load_control(), version=version)
+    assert calls == [["gh", "api", "repos/JDeun/SchemaRouter/releases/tags/v" + version]]
+
+
+def test_release_gate_cannot_bypass_hold_with_an_unpublished_legacy_version(monkeypatch):
+    with pytest.raises(SystemExit, match="already published"):
+        _run_release_gate(
+            monkeypatch, load_control(), version="0.16.999",
+            responses={"releases/tags/v0.16.999": {}},
+        )
+
+
+def test_development_version_still_skips_before_release_qualification(monkeypatch, tmp_path):
+    pytest.importorskip("tomllib", reason="release metadata runs on pinned Python 3.12")
+    workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    prepare = workflow.split("  prepare:", 1)[1].split("  build:", 1)[0]
+    assert 'python-version: "3.12"' in prepare
+    metadata = workflow.split("      - name: Resolve release metadata and target SHA\n", 1)[1]
+    embedded = metadata.split("          python - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text('[project]\nversion = "0.18.0.dev0"\n')
+    output = tmp_path / "outputs"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.delenv("SKIP_RELEASE", raising=False)
+    with pytest.raises(SystemExit) as stopped:
+        exec(compile(textwrap.dedent(embedded), "release metadata", "exec"), {})
+    assert stopped.value.code == 0
+    assert output.read_text() == "releasable=false\n"
+
+
+@pytest.mark.parametrize("version", ("0.18.0rc1", "0.19.0", "1.0.0"))
+def test_release_gate_cannot_bypass_hold_with_an_unreviewed_version(monkeypatch, version):
+    with pytest.raises((ValueError, SystemExit)):
+        _run_release_gate(monkeypatch, load_control(), version=version)
 
 
 def _version() -> str:

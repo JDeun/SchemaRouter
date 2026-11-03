@@ -6,20 +6,22 @@
   "reviews": [
     {
       "path": "release-checklist.md",
-      "en_blob": "855308419408998f721f925d88d74718f845688b",
-      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
+      "en_blob": "93d04dc004da70caeec8852950bb36b37f66938d",
+      "ko_blob": "ba50f8ac59b7a526e72b450e12120847962c2500",
       "section": "Post-release",
       "defect": "Korean checklist compressed required exact-PyPI-version wheel, sdist, isolated extras and combined extras matrix to an unspecified generic verification pass.",
-      "disposition": "Restored the explicit test matrix and retained the exact-version post-publication requirement."
+      "disposition": "Restored the explicit test matrix and retained the exact-version post-publication requirement.",
+      "revision_checkpoint_2026_11_03": "AI-assisted EN/KO comparison preserves the exact-version post-publish matrix and the added source-bound release review/qualification path, explicit API failure blocking and SHA-256 format-check limits. Not independent human sign-off."
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "fdcd804497d469dd15001734f3cb51d031df188e",
-      "ko_blob": "07afaee53d8812877f6b34b72f39200b7adfea4d",
+      "en_blob": "b209667ffff53733a683573bec4dd1ae307c4279",
+      "ko_blob": "8371cbd12d728df7e6d6e8ee07c6dfe8dd590d15",
       "section": "Unit metadata is optional by field semantics",
       "defect": "Korean summary omitted the condition that only physical or otherwise unit-bearing values should declare a unit; did not explicitly prohibit model-authored semantic mapping.",
       "disposition": "Restored unit-eligibility and trusted FieldSpec.semantic_id-based matching with field-name fallback.",
-      "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off."
+      "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off.",
+      "notes": " 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off."
     }
   ],
   "claim_boundary": "These two known clauses were repaired. Automated evidence and assistant-side targeted review do not establish comprehensive independent EN/KO sentence fidelity."

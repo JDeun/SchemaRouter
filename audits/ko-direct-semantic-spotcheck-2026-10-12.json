@@ -80,9 +80,9 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "fdcd804497d469dd15001734f3cb51d031df188e",
-      "ko_blob": "07afaee53d8812877f6b34b72f39200b7adfea4d",
-      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits.",
+      "en_blob": "b209667ffff53733a683573bec4dd1ae307c4279",
+      "ko_blob": "8371cbd12d728df7e6d6e8ee07c6dfe8dd590d15",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off.",
       "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off."
     },
     {
@@ -99,9 +99,9 @@
     },
     {
       "path": "concepts/registry.md",
-      "en_blob": "6b3ee8779f47606078027d3a2e7b1d5895cee67b",
-      "ko_blob": "fc4225468c5ad4d281522ff483a661c0a1413296",
-      "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics."
+      "en_blob": "74f0e148a9b660b9f4672fff3262e94eb8c39e66",
+      "ko_blob": "2e3e642fc7c426765455a485c3f163797c493d4d",
+      "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics. 2026-11-03 AI-assisted paired comparison of current-binding versus host-pinned generation semantics and shared router/executor authorization policy: same-contract trusted replacement, endpoint/tool drift denial, revocation after hooks/retries, coherent in-flight snapshot and explicit None behavior match. Not independent bilingual sign-off."
     },
     {
       "path": "concepts/schema-router.md",
@@ -237,9 +237,9 @@
     },
     {
       "path": "guides/capability-negotiation.md",
-      "en_blob": "890d8c32eef8f09e3f477686c0728fc224f1871a",
-      "ko_blob": "9b325483b59463c218256836681f0e0b5a9cec31",
-      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority."
+      "en_blob": "9ae529fea12ca542f3f76a3d9dfe3d62a808eea7",
+      "ko_blob": "7cb20a3ca639f8f014979c3981446b58f4e0e5c4",
+      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority. 2026-11-03 AI-assisted paired review: both languages retain schema assertions, unknown for unproved differences, annotation exclusion, integer-to-number compatibility and separate runtime validation; no independent human sign-off. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off."
     },
     {
       "path": "guides/capability-snapshots.md",
@@ -657,9 +657,9 @@
     },
     {
       "path": "release-checklist.md",
-      "en_blob": "855308419408998f721f925d88d74718f845688b",
-      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
-      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work."
+      "en_blob": "93d04dc004da70caeec8852950bb36b37f66938d",
+      "ko_blob": "ba50f8ac59b7a526e72b450e12120847962c2500",
+      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work. 2026-11-03 delta: AI-assisted paired comparison of the new candidate gate and approval path preserves the named latest-head review/current write permission, merge-to-release SHA binding, final qualification, API fail-closed behavior, no self-referential future CI URL, unchanged SHA-256 provenance limitations and independent model/E2 hold. No independent human editorial sign-off is asserted."
     },
     {
       "path": "releases/0.10.0.md",
@@ -903,9 +903,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "e1d9466aa92b1133c429abae16ce0c963c0a9423",
-      "ko_blob": "b0f099753db4d385b5a645e2e16223eec047cfcc",
-      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open."
+      "en_blob": "d09287555f0be5389d9907e5ca6858d4e4948546",
+      "ko_blob": "98e3c795fdc71f3110cb776c814b3bcea01bd32c",
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off."
     },
     {
       "path": "research/routing-status.md",
