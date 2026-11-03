@@ -80,9 +80,9 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "b209667ffff53733a683573bec4dd1ae307c4279",
-      "ko_blob": "8371cbd12d728df7e6d6e8ee07c6dfe8dd590d15",
-      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off.",
+      "en_blob": "b54ccdbfd8fce60b8047dadb2e6e26038b7b435e",
+      "ko_blob": "bb1e814b1968e2388ed6b3a64cde3573484b1a06",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off. 2026-11-03 AI-assisted paired source review of opt-in prepared query/structured planning: source-separated complete concept groups, partial/unresolved coverage, K5 union bounds, retained direct missing arguments, scoped field paths/canonical schema, untrusted hints/null intent, identifier/intent recall and omitted-model-need limits. Not independent human sign-off.",
       "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off."
     },
     {
