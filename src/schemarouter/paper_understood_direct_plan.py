@@ -53,7 +53,7 @@ class PaperIntentDeclaration(StrictModel):
         if (
             type(self.intent_id) is not str
             or not _ID_PATTERN.fullmatch(self.intent_id)
-            or not 1 <= len(self.required_concept_ids) <= 8
+            or len(self.required_concept_ids) > 8
             or any(
                 type(cid) is not str or not _ID_PATTERN.fullmatch(cid)
                 for cid in self.required_concept_ids

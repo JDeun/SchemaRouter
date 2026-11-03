@@ -10,16 +10,30 @@ import json
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from dataclasses import replace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
+
+from pydantic import BaseModel
 
 from .authorization import PrincipalContext
-from .concept_retrieval import MAX_QUERY_BYTES, MAX_QUERY_CHARS, NativeConceptCatalog
+from .capability_contracts import CapabilityFieldContract
+from .concept_retrieval import (
+    MAX_QUERY_BYTES,
+    MAX_QUERY_CHARS,
+    NativeConceptCatalog,
+    _alias_mentions,
+    _normalized,
+)
 from .errors import ModelAnalysisError, PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
 from .paper_native_rank import PaperNativeRankPolicy
-from .paper_typed_tool_plan import PaperTypedToolPlan
+from .paper_query_needs import (
+    PaperQueryNeed,
+    PaperQueryUnderstanding,
+    _resolve_query_need,
+)
+from .paper_typed_tool_plan import PaperPlanFieldMeta, PaperTypedToolPlan
 from .paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
@@ -33,9 +47,16 @@ if TYPE_CHECKING:
 PaperFieldModel = Callable[
     [dict[str, Any]], dict[str, Any] | str | Awaitable[dict[str, Any] | str],
 ]
+_Response = TypeVar("_Response", bound=BaseModel)
 
 
 def _decode_bounded_response(raw: dict[str, Any] | str, limit: int) -> PaperUnderstanding:
+    return _decode_model_response(raw, limit, PaperUnderstanding)
+
+
+def _decode_model_response(
+    raw: dict[str, Any] | str, limit: int, response_type: type[_Response],
+) -> _Response:
     """Reject duplicate keys, nonfinite numbers, excess bytes and type coercion."""
 
     def unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -68,11 +89,137 @@ def _decode_bounded_response(raw: dict[str, Any] | str, limit: int) -> PaperUnde
         )
         if len(encoded.encode("utf-8")) > limit:
             raise ModelAnalysisError("paper model output exceeds byte budget")
-        return PaperUnderstanding.model_validate_json(encoded, strict=True)
+        return response_type.model_validate_json(encoded, strict=True)
     except ModelAnalysisError:
         raise
     except (ValueError, TypeError, OverflowError, RecursionError):
         raise ModelAnalysisError("invalid structured paper model response") from None
+
+
+async def _understand_query(
+    model: PaperFieldModel, payload: dict[str, Any], *, response_type: type[_Response],
+    max_input_bytes: int, max_output_bytes: int, verify: Callable[[], None],
+) -> _Response:
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":"), allow_nan=False)
+    if len(encoded.encode("utf-8")) > max_input_bytes:
+        raise ModelAnalysisError("paper model input exceeds byte budget")
+    verify()
+    try:
+        response = model(json.loads(encoded))
+        if inspect.isawaitable(response):
+            response = await response
+    except Exception:
+        verify()
+        raise ModelAnalysisError("paper model understanding failed") from None
+    verify()
+    return _decode_model_response(response, max_output_bytes, response_type)
+
+
+def _may_be_excluded(meta: PaperPlanFieldMeta, requirement: CapabilityFieldContract) -> bool:
+    if meta.semantic_id != requirement.semantic_id:
+        return False
+    actual = dict(meta.qualifiers)
+    # A different declared role proves disjointness; a missing role does not.
+    return not any(key in actual and actual[key] != value
+                   for key, value in requirement.qualifiers.items())
+
+
+def _compile_query_needs(
+    raw: PaperQueryUnderstanding, *, query: str, catalog: NativeConceptCatalog,
+    intent_ids: set[str], compile_hint: Callable[[PaperUnderstanding], PaperTypedToolPlan],
+    abstain: Callable[[], PaperTypedToolPlan], resolve_tool: Callable[[str], str | None],
+) -> PaperTypedToolPlan:
+    if raw.intent_id is not None and raw.intent_id not in intent_ids:
+        raise ModelAnalysisError("model selected an unoffered paper intent")
+    resolved = [_resolve_query_need(need, catalog, raw.source_type) for need in raw.needs]
+    excluded = [_resolve_query_need(PaperQueryNeed(concept=name), catalog)
+                for name in raw.excluded_concepts]
+    named_tools = []
+    missing_tools = []
+    for name in raw.named_tools:
+        # A model can copy a user-named source, never choose a provider on its own.
+        key = (resolve_tool(name) if _alias_mentions(_normalized(query), _normalized(name))
+               else None)
+        (named_tools if key is not None else missing_tools).append(key or name)
+    known = tuple(dict.fromkeys(cid for cid, _ in resolved if cid is not None))
+    ambiguous = any(flag for _, flag in (*resolved, *excluded))
+    if raw.needs_truncated or raw.intent_id is None or not known or missing_tools or ambiguous:
+        plan = abstain()
+    else:
+        plan = compile_hint(PaperUnderstanding(
+            intent_id=raw.intent_id, concept_ids=known, source_type=raw.source_type,
+            named_tools=tuple(dict.fromkeys(named_tools)),
+            unresolved_concepts=tuple(dict.fromkeys(
+                need.concept for need, (cid, _) in zip(raw.needs, resolved, strict=True)
+                if cid is None
+            )),
+        ))
+    covered_ids = {
+        qualifier.removeprefix("concept_id=")
+        for requirement in (plan.coverage.covered if plan.coverage else [])
+        for qualifier in requirement.qualifiers if qualifier.startswith("concept_id=")
+    }
+    if plan.coverage is None and plan.calls and plan.status in (
+        "ready", "requires_arguments", "requires_observation",
+    ):
+        covered_ids.update(known)
+    by_id = {concept.concept_id: concept for concept in catalog.concepts}
+    forbidden = [
+        field for cid, _ in excluded if cid is not None
+        for field in by_id[cid].required_fields
+    ]
+    conflict = any(_may_be_excluded(meta, requirement)
+                   for call in plan.calls for meta in call.fields_meta for requirement in forbidden)
+    if conflict:
+        covered_ids.clear()
+
+    required, covered, uncovered = [], [], []
+
+    def add(requirement: SemanticFieldRequirement, present: bool) -> None:
+        required.append(requirement)
+        (covered if present else uncovered).append(requirement)
+
+    for need, (cid, _) in zip(raw.needs, resolved, strict=True):
+        qualifiers = [f"{key}={value}" for key, value in sorted(need.qualifiers.items())]
+        if need.unit is not None:
+            qualifiers.append(f"unit={need.unit}")
+        source_type = need.source_type or raw.source_type
+        if source_type is not None:
+            qualifiers.append(f"source_type={source_type}")
+        if raw.source_type is not None and need.source_type not in (None, raw.source_type):
+            qualifiers.append(f"global_source_type={raw.source_type}")
+        add(SemanticFieldRequirement(semantic_id=need.concept, qualifiers=qualifiers),
+            cid is not None and cid in covered_ids)
+    for name, (cid, _) in zip(raw.excluded_concepts, excluded, strict=True):
+        add(SemanticFieldRequirement(semantic_id=name, qualifiers=["excluded=true"]),
+            cid is not None and not conflict)
+    for name in missing_tools:
+        add(SemanticFieldRequirement(semantic_id=name, qualifiers=["named_tool=true"]), False)
+    if not raw.needs:
+        add(SemanticFieldRequirement(semantic_id="query requirements"), False)
+    if raw.needs_truncated:
+        add(SemanticFieldRequirement(semantic_id="unrepresented query needs",
+                                    qualifiers=["understanding_budget_exceeded=true"]), False)
+    if plan.coverage is not None and not plan.coverage.complete and not uncovered:
+        # Do not disclose an inaccessible intent group's field count or source metadata.
+        add(SemanticFieldRequirement(semantic_id="intent requirements"), False)
+    if raw.intent_id is None:
+        covered, uncovered = [], list(required)
+    status = plan.status
+    if raw.needs_truncated:
+        status = "budget_unsatisfied"
+    elif conflict or ambiguous:
+        status = "ambiguous_paths"
+    elif uncovered and status in ("ready", "requires_arguments", "requires_observation"):
+        status = "no_proven_hit"
+    return replace(
+        plan, status=status,
+        calls=() if conflict else plan.calls, bindings=() if conflict else plan.bindings,
+        coverage=PlanCoverage(required=required, covered=covered, uncovered=uncovered,
+                              complete=not uncovered),
+        understanding_hints=raw.model_dump(mode="json"),
+    )
 
 
 async def compile_model_query(
@@ -83,7 +230,7 @@ async def compile_model_query(
     model: PaperFieldModel,
     intent_registry: PaperIntentRegistry,
     model_visible_intent_ids: tuple[str, ...],
-    model_visible_concept_ids: tuple[str, ...],
+    model_visible_concept_ids: tuple[str, ...] | None = None,
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
@@ -93,17 +240,20 @@ async def compile_model_query(
     rank_policy: PaperNativeRankPolicy | None = None,
     allow_unnamed_graph_discovery: bool = False,
 ) -> PaperTypedToolPlan:
-    """Propose source-scoped intent IDs using a single caller-supplied model.
+    """Understand before source resolution, or use the earlier scoped-ID protocol.
 
     The caller deliberately chooses which IDs/tool *names* may be disclosed
     to its model. Live field and source checks independently constrain those
     names. Model-suggested parameter values never become host arguments.
     """
+    independent = model_visible_concept_ids is None
     if (
-        type(query) is not str or not 2 <= len(query) <= MAX_QUERY_CHARS
-        or len(query.encode("utf-8")) > MAX_QUERY_BYTES
+        type(query) is not str
+        or not 2 <= len(query) <= (4096 if independent else MAX_QUERY_CHARS)
+        or len(query.encode("utf-8")) > (16384 if independent else MAX_QUERY_BYTES)
         or query != query.strip()
-        or any(ord(char) < 32 or ord(char) == 127 for char in query)
+        or any((ord(char) < 32 and not (independent and char in "\n\r\t"))
+               or ord(char) == 127 for char in query)
     ):
         raise ValueError("invalid bounded paper query")
     if not isinstance(principal, PrincipalContext):
@@ -173,18 +323,21 @@ async def compile_model_query(
     approved_concepts = {c.concept_id: c for c in reviewed.concepts}
     approved_intents = {i.intent_id: i for i in intents.intents}
     if (
-        type(model_visible_concept_ids) is not tuple
-        or not 1 <= len(model_visible_concept_ids) <= 8
-        or any(type(cid) is not str for cid in model_visible_concept_ids)
-        or len(set(model_visible_concept_ids)) != len(model_visible_concept_ids)
-        or not set(model_visible_concept_ids) <= approved_concepts.keys()
+        not independent and (
+            type(model_visible_concept_ids) is not tuple
+            or not 1 <= len(model_visible_concept_ids) <= 8
+            or any(type(cid) is not str for cid in model_visible_concept_ids)
+            or len(set(model_visible_concept_ids)) != len(model_visible_concept_ids)
+            or not set(model_visible_concept_ids) <= approved_concepts.keys()
+        )
         or type(model_visible_intent_ids) is not tuple
         or not 1 <= len(model_visible_intent_ids) <= 16
         or any(type(iid) is not str for iid in model_visible_intent_ids)
         or len(set(model_visible_intent_ids)) != len(model_visible_intent_ids)
         or not set(model_visible_intent_ids) <= approved_intents.keys()
-        or any(not set(approved_intents[iid].required_concept_ids)
-               <= set(model_visible_concept_ids) for iid in model_visible_intent_ids)
+        or any(not set(approved_intents[iid].required_concept_ids) <= (
+            approved_concepts.keys() if independent else set(model_visible_concept_ids or ())
+        ) for iid in model_visible_intent_ids)
         or type(model_visible_tool_keys) is not tuple
         or len(model_visible_tool_keys) > 5
         or any(not _bounded_name(name) for name in model_visible_tool_keys)
@@ -205,7 +358,12 @@ async def compile_model_query(
         session._index.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
         try:
-            current_rank_policy = rank_policy.model_dump_json() if rank_policy else None
+            current_owner = (
+                catalog.model_dump_json(), intent_registry.model_dump_json(),
+                principal.model_dump_json(), host_source_arguments,
+                rank_policy.model_dump_json() if rank_policy else None,
+            )
+            owner_changed = current_owner != before
         except Exception:
             # A model callback may mutate the caller's owned nested Pydantic
             # collection to an unserializable object. Never return that
@@ -215,11 +373,7 @@ async def compile_model_query(
             router.authorization_policy is None
             or _policy_contents_digest(router.authorization_policy) != policy_digest
             or router.planner.availability_predicate is not availability
-            or catalog.model_dump_json() != before[0]
-            or intent_registry.model_dump_json() != before[1]
-            or principal.model_dump_json() != before[2]
-            or host_source_arguments != before[3]
-            or current_rank_policy != before[4]
+            or owner_changed
         ):
             raise PolicyViolationError("paper query source or owner authority changed")
 
@@ -230,10 +384,85 @@ async def compile_model_query(
             registry_version=witness[1], requested_k=k,
         )
 
+    def compile_hint(understood: PaperUnderstanding) -> PaperTypedToolPlan:
+        try:
+            plan = session.compile_understood(
+                understood, principal=principal, intent_registry=intent_registry,
+                host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+                rank_policy=rank_policy,
+                allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
+            )
+        except (ValueError, TypeError):
+            verify()
+            raise ModelAnalysisError("model understanding could not be compiled") from None
+        verify()
+        return plan
+
+    if independent:
+        payload = {
+            "task": "Understand the question before looking up any tool or schema.",
+            "query": query,
+            "intents": list(model_visible_intent_ids),
+            "response_schema": PaperQueryUnderstanding.model_json_schema(),
+            "rules": [
+                "Return one JSON object matching response_schema.",
+                "Use a listed intent_id; use null if the requested task has no listed intent.",
+                "Extract EVERY positive data need, including ones a provider might not support.",
+                "If more than eight needs are requested, set needs_truncated=true.",
+                "Use short English concept names, preserving creator, assignee and other roles.",
+                "Keep explicit time, role and other conditions in needs.qualifiers.",
+                "Keep requested units and source types; do not invent conditions.",
+                "Use canonical symbols for requested units, such as Cel for Celsius.",
+                "Negated concepts belong only in excluded_concepts, never in positive needs.",
+                "Copy named_tools only from source names explicitly stated in the question.",
+                "parameter_hints contains explicit scalar values, not permissions or tool calls.",
+                "Do not guess schema fields, registered IDs, providers or execution authority.",
+            ],
+        }
+        raw = await _understand_query(
+            model, payload, response_type=PaperQueryUnderstanding,
+            max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
+            verify=verify,
+        )
+
+        def resolve_tool(name: str) -> str | None:
+            from .planner import _normalize
+
+            permitted = router._authorization_predicate(principal)
+            if permitted is None:
+                raise PolicyViolationError("paper query lacks source authorization")
+            matches = []
+            try:
+                for tool in router.registry.tools():
+                    if model_visible_tool_keys and tool.key not in model_visible_tool_keys:
+                        continue
+                    if _normalize(name) not in {_normalize(tool.key), _normalize(tool.name)}:
+                        continue
+                    if any(
+                        endpoint.read_only is True and endpoint.destructive is not True
+                        and permitted(tool, endpoint)
+                        and (availability is None or availability(tool, endpoint))
+                        and router._data_scope_endpoint_view(principal, tool, endpoint) is not None
+                        for endpoint in tool.endpoints
+                    ):
+                        matches.append(tool.key)
+            except Exception:
+                verify()
+                raise PolicyViolationError("paper query named source eligibility failed") from None
+            verify()
+            return matches[0] if len(matches) == 1 else None
+
+        plan = _compile_query_needs(
+            raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
+            compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
+        )
+        verify()
+        return plan
+
     # These are owner-reviewed concepts that still have a current, accessible,
     # field-complete proof. Never disclose unreachable concepts to the model.
     offered_concepts = []
-    for concept_id in model_visible_concept_ids:
+    for concept_id in model_visible_concept_ids or ():
         concept = approved_concepts[concept_id]
         try:
             coverage = session.discover(concept.aliases[0], principal=principal, k=k)
@@ -297,7 +526,7 @@ async def compile_model_query(
                 and not proof.executable_authority
             ):
                 graph_offered.update(required)
-        for concept_id in model_visible_concept_ids:
+        for concept_id in model_visible_concept_ids or ():
             if concept_id in graph_offered and concept_id not in offered_ids:
                 offered_concepts.append(approved_concepts[concept_id])
                 offered_ids.add(concept_id)
@@ -364,20 +593,11 @@ async def compile_model_query(
             "Never invent fields, values, credentials or permissions, or invoke providers.",
         ],
     }
-    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
-                         separators=(",", ":"), allow_nan=False)
-    if len(encoded.encode("utf-8")) > max_model_input_bytes:
-        raise ModelAnalysisError("paper model input exceeds byte budget")
-    verify()
-    try:
-        response = model(json.loads(encoded))
-        if inspect.isawaitable(response):
-            response = await response
-    except Exception:
-        verify()
-        raise ModelAnalysisError("paper model understanding failed") from None
-    verify()
-    understood = _decode_bounded_response(response, max_model_output_bytes)
+    understood = await _understand_query(
+        model, payload, response_type=PaperUnderstanding,
+        max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
+        verify=verify,
+    )
     if (
         understood.intent_id is not None
         and understood.intent_id not in {i.intent_id for i in offered_intents}
@@ -407,15 +627,5 @@ async def compile_model_query(
             coverage=PlanCoverage(required=requirements, uncovered=requirements, complete=False),
             understanding_hints=understood.model_dump(mode="json"),
         )
-    try:
-        plan = session.compile_understood(
-            understood, principal=principal, intent_registry=intent_registry,
-            host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
-            rank_policy=rank_policy,
-            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
-        )
-    except (ValueError, TypeError):
-        verify()
-        raise ModelAnalysisError("model understanding could not be compiled") from None
-    verify()
+    plan = compile_hint(understood)
     return replace(plan, understanding_hints=understood.model_dump(mode="json"))

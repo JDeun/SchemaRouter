@@ -18,11 +18,11 @@ class PaperQueryNeed(StrictModel):
 
     concept: str = Field(
         max_length=160,
-        description="Whole raw information need; never a schema field or concept ID.",
+        description="Short English name of one positive data concept, including its semantic role.",
     )
     unit: str | None = Field(
         default=None, max_length=160,
-        description="Explicit requested unit string; null when no unit was requested.",
+        description="Canonical unit symbol requested by the user; null when no unit was requested.",
     )
     source_type: str | None = Field(
         default=None, max_length=160,
@@ -57,6 +57,10 @@ class PaperQueryUnderstanding(StrictModel):
     needs: tuple[PaperQueryNeed, ...] = Field(
         default=(), max_length=8,
         description="All positive raw needs, including unsupported ones; at most eight.",
+    )
+    needs_truncated: bool = Field(
+        default=False,
+        description="True if requested needs remain outside this list; never omit them silently.",
     )
     excluded_concepts: tuple[str, ...] = Field(
         default=(), max_length=8,

@@ -696,7 +696,7 @@ class SchemaFieldRoutingSession:
         model: PaperFieldModel,
         intent_registry: PaperIntentRegistry,
         model_visible_intent_ids: tuple[str, ...],
-        model_visible_concept_ids: tuple[str, ...],
+        model_visible_concept_ids: tuple[str, ...] | None = None,
         model_visible_tool_keys: tuple[str, ...] = (),
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         k: int = 5,
@@ -706,8 +706,11 @@ class SchemaFieldRoutingSession:
         rank_policy: PaperNativeRankPolicy | None = None,
         allow_unnamed_graph_discovery: bool = False,
     ) -> PaperTypedToolPlan:
-        """Use a caller-owned model to suggest IDs, then prove source fields.
+        """Understand a query, then prove its fields against current source contracts.
 
+        Omit model_visible_concept_ids for schema-independent understanding:
+        the model receives only the query, fixed intent names and output format.
+        Supplying IDs retains the earlier scoped-ID selection protocol.
         No provider data is fetched. The model cannot authorize a route,
         expand source scope, or bind its proposed argument values.
         """
