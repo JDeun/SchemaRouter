@@ -603,6 +603,13 @@ def json_schemas_compatible(
 ) -> bool:
     """Prove type assignability and preserved assertions without general subsumption."""
 
+    try:
+        encoded = canonical_json_text((required, candidate))
+        # Nested references can change meaning when any enclosing type/items schema changes.
+        if any(f'"{key}":' in encoded for key in ("$ref", "$dynamicRef", "$recursiveRef")):
+            return Draft202012Validator({"const": required}).is_valid(candidate)
+    except (TypeError, ValueError, RecursionError):
+        return False
     required_types = json_schema_types(required)
     candidate_types = json_schema_types(candidate)
     if not json_types_compatible(required_types, candidate_types):
@@ -628,7 +635,6 @@ def json_schemas_compatible(
         }
         # shortcut: differing assertions remain unproved; add subsumption only with a proof.
         try:
-            canonical_json_text((required_assertions, candidate_assertions))
             if not Draft202012Validator({"const": required_assertions}).is_valid(
                 candidate_assertions,
             ):

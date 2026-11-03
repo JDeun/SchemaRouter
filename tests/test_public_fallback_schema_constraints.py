@@ -186,3 +186,46 @@ async def test_public_fallback_preserves_opaque_assertions_with_boolean_items(mo
         "type": "object", "properties": {"value": {"type": "array"}}, "required": ["value"],
     })
     await _check_public_dispatch(router, invoked, mode, False, required)
+
+
+def test_nested_self_reference_cannot_change_meaning_when_top_level_type_narrows():
+    required = {"type": ["array", "number"], "items": {"not": {"$ref": "#"}}}
+    candidate = {"type": ["array", "integer"], "items": {"not": {"$ref": "#"}}}
+    assert not Draft202012Validator(required).is_valid([1.5])
+    assert Draft202012Validator(candidate).is_valid([1.5])
+    assert not json_schemas_compatible(required, candidate)
+    assert compare_capability_fields(
+        CapabilityFieldContract(semantic_id="value", json_schema=required),
+        CapabilityFieldContract(semantic_id="value", json_schema=candidate),
+    ).status == "unknown"
+
+
+@pytest.mark.parametrize("reference", ("$ref", "$dynamicRef", "$recursiveRef"))
+def test_nested_references_require_complete_schema_equality(reference):
+    required = {
+        "type": "array", "items": {"type": "number"},
+        "$defs": {"nested": {"anyOf": [{reference: "#"}]}},
+    }
+    candidate = {**required, "items": {"type": "integer"}}
+    assert not json_schemas_compatible(required, candidate)
+    assert json_schemas_compatible(required, {**required})
+    type_only = {"type": "array"}
+    assert not json_schemas_compatible(type_only, candidate)
+
+
+@pytest.mark.parametrize("nonfinite", (float("nan"), float("inf"), -float("inf")))
+def test_nonfinite_schema_values_cannot_be_proved_compatible(nonfinite):
+    schema = {"type": "number", "default": nonfinite}
+    assert not json_schemas_compatible(schema, schema)
+
+
+def test_cyclic_schema_values_cannot_be_proved_compatible():
+    schema = {"type": "array"}
+    schema["items"] = schema
+    assert not json_schemas_compatible(schema, schema)
+
+
+def test_reference_text_in_annotations_does_not_disable_type_assignability():
+    assert json_schemas_compatible(
+        {"type": "number"}, {"type": "integer", "description": 'Example: "$ref":"#"'},
+    )
