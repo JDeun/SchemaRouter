@@ -26,7 +26,7 @@ def test_timing_report_ranks_slowest_tests_and_modules(tmp_path: Path) -> None:
     assert "Captured **3** pytest case timings" in summary
     assert summary.index("slow[1]") < summary.index("slow[2]")
     assert "| `tests/test_slow.py` | 101.00 |" in summary
-    assert "| `tests/test_unit.py` |" not in summary
+    assert "| `tests/test_unit.py` | 0.15 |" in summary
 
 
 def test_timing_report_missing_xml_is_explicit_non_qualification(
