@@ -5,14 +5,23 @@ through public sync Understand and async model-Understand APIs. A deterministic
 local callback stands in for the *model response*, NOT for an LLM timing
 measurement or independent semantic-quality oracle. NO provider/tool execution.
 Existing source-native graph and router indexes are reused, not reimplemented.
+The separate --load-profile opt-in adds bounded closed-loop 100/250/500-route
+sampling; it does not qualify a commercial SLO or change the default E0 runs.
 """
 from __future__ import annotations
 
 import argparse
 import asyncio
 import json
+import os
 import platform
-from math import ceil
+import resource
+import subprocess
+import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from math import ceil, isfinite
+from pathlib import Path
 from statistics import median
 from time import perf_counter_ns, process_time_ns
 from typing import Any
@@ -74,6 +83,10 @@ def build_synthetic_public_case(routes: int, hops: int) -> tuple[Any, Any, Any, 
         raise ValueError("synthetic registered route count must be 500 or 5000")
     if type(hops) is not int or hops not in (1, 2):
         raise ValueError("synthetic G5 path must have 1 or 2 edges")
+    return _build_public_case(routes, hops)
+
+
+def _build_public_case(routes: int, hops: int) -> tuple[Any, Any, Any, tuple[str, ...]]:
 
     extra = 2 if hops == 2 else 0
     # The existing source-native factory already registers the contact root,
@@ -376,17 +389,256 @@ def benchmark(routes: int, *, hops: int = 1, repeats: int = 3,
     return report
 
 
-def main() -> None:
+def _load_environment() -> dict[str, Any]:
+    def read_optional(path: str) -> str | None:
+        try:
+            return Path(path).read_text().strip()
+        except OSError:
+            return None
+
+    cpu_model = None
+    if sys.platform == "darwin":
+        try:
+            cpu_model = subprocess.check_output(
+                ["sysctl", "-n", "machdep.cpu.brand_string"], text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip()
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    else:
+        for line in (read_optional("/proc/cpuinfo") or "").splitlines():
+            key, _, value = line.partition(":")
+            if key.strip() in ("model name", "Hardware"):
+                cpu_model = value.strip()
+                break
+    return {
+        "python": platform.python_version(), "platform": platform.platform(),
+        "machine": platform.machine(), "processor": platform.processor(),
+        "cpu_model": cpu_model, "logical_cpu_count": os.cpu_count(),
+        "load_average": os.getloadavg(),
+        "cpu_affinity": (
+            sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None
+        ),
+        "cgroup_v2_cpu_max": read_optional("/sys/fs/cgroup/cpu.max"),
+        "cgroup_v1_cpu_quota_us": read_optional("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"),
+        "cgroup_v1_cpu_period_us": read_optional("/sys/fs/cgroup/cpu/cpu.cfs_period_us"),
+        "python_threads": threading.active_count(),
+        "thread_environment": {key: os.environ.get(key) for key in (
+            "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+            "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS",
+        )},
+    }
+
+
+async def _measure_load(
+    session: Any, intents: Any, policy: Any, expected: tuple[str, ...], *,
+    asynchronous: bool, warmup: int, requests: int, concurrency: int,
+    thresholds: tuple[float, ...] | list[float],
+) -> dict[str, Any]:
+    hint = PaperUnderstanding(intent_id="case.lookup", named_tools=())
+    model_calls = 0
+    outstanding = peak_outstanding = 0
+    loop = asyncio.get_running_loop()
+    pool = None if asynchronous else ThreadPoolExecutor(max_workers=concurrency)
+
+    async def deterministic_model(payload: dict[str, Any]) -> dict[str, Any]:
+        nonlocal model_calls
+        model_calls += 1
+        if payload.get("offered_tool_keys") != []:
+            raise AssertionError("unnamed source target identities leaked to model")
+        return {"intent_id": "case.lookup", "concept_ids": ["crm.status"], "named_tools": []}
+
+    def sync_call(queued: int) -> dict[str, Any]:
+        started = perf_counter_ns()
+        plan = session.compile_understood(
+            hint, principal=ACTOR, intent_registry=intents,
+            rank_policy=policy, allow_unnamed_graph_discovery=True,
+        )
+        return finish(plan, queued, started)
+
+    def finish(plan: Any, queued: int, started: int) -> dict[str, Any]:
+        receipt_bytes = _assert_plan(plan, expected)
+        ended = perf_counter_ns()
+        return {
+            "queue_ms": (started - queued) / 1_000_000,
+            "service_ms": (ended - started) / 1_000_000,
+            "wall_ms": (ended - queued) / 1_000_000,
+            "receipt_bytes": receipt_bytes,
+            "python_threads": threading.active_count(),
+        }
+
+    async def closed_loop(count: int) -> list[dict[str, Any]]:
+        samples: list[dict[str, Any]] = [{} for _ in range(count)]
+
+        async def client(client_id: int) -> None:
+            nonlocal outstanding, peak_outstanding
+            for request_id in range(client_id, count, concurrency):
+                queued = perf_counter_ns()
+                outstanding += 1
+                peak_outstanding = max(peak_outstanding, outstanding)
+                try:
+                    if asynchronous:
+                        # Submit to the next event-loop turn; CPU queueing stays in wall time.
+                        await asyncio.sleep(0)
+                        started = perf_counter_ns()
+                        plan = await session.acompile_query(
+                            "Who handles this case?", principal=ACTOR,
+                            model=deterministic_model, intent_registry=intents,
+                            model_visible_intent_ids=("case.lookup",),
+                            model_visible_concept_ids=("crm.status",),
+                            model_visible_tool_keys=(), rank_policy=policy,
+                            allow_unnamed_graph_discovery=True,
+                        )
+                        sample = finish(plan, queued, started)
+                    else:
+                        sample = await loop.run_in_executor(pool, sync_call, queued)
+                finally:
+                    outstanding -= 1
+                samples[request_id] = {"request_id": request_id, "client_id": client_id, **sample}
+
+        clients = [asyncio.create_task(client(i)) for i in range(min(concurrency, count))]
+        try:
+            await asyncio.gather(*clients)
+        except BaseException:
+            for task in clients:
+                task.cancel()
+            await asyncio.gather(*clients, return_exceptions=True)
+            raise
+        return samples
+
+    try:
+        await closed_loop(warmup)
+        peak_outstanding = 0
+        wall0, cpu0 = perf_counter_ns(), process_time_ns()
+        samples = await closed_loop(requests)
+        total_wall_ms = (perf_counter_ns() - wall0) / 1_000_000
+        total_cpu_ms = (process_time_ns() - cpu0) / 1_000_000
+    finally:
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
+    if model_calls != (warmup + requests if asynchronous else 0):
+        raise AssertionError("unexpected model stub call count")
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return {
+        "warmup_calls": warmup, "measured_calls": requests,
+        "concurrency": concurrency, "max_outstanding_requests_observed": peak_outstanding,
+        "scheduling": "closed-loop clients; one outstanding request per client; no burst backlog",
+        "dispatch": "single event loop" if asynchronous else "bounded thread pool",
+        "queue_boundary": "client submission to API entry (event-loop turn or worker entry)",
+        "service_boundary": "public compile plus exact-route oracle and receipt serialization",
+        "samples": samples, "wall_ms": _percentiles([s["wall_ms"] for s in samples]),
+        "threshold_exceedances": [{
+            "threshold_ms": threshold, "sample_count": len(samples),
+            "exceeded_count": sum(s["wall_ms"] > threshold for s in samples),
+        } for threshold in thresholds],
+        "percentiles_are_descriptive_not_slo_validation": True,
+        "total_wall_ms": total_wall_ms, "total_process_cpu_ms": total_cpu_ms,
+        "cpu_scope": "measured requests and harness scheduling; excludes warmup/build/shutdown",
+        "process_peak_rss_raw": rss,
+        "process_peak_rss_unit": "bytes" if sys.platform == "darwin" else "KiB",
+        "peak_rss_scope": "process lifetime high-water mark, shared across profile cases",
+        "max_python_threads_observed": max(s["python_threads"] for s in samples),
+        "exact_route_oracle": True, "model_stub_calls": model_calls,
+        "real_model_calls": 0, "provider_calls": 0,
+    }
+
+
+def benchmark_load_profile(
+    routes: int, *, requests: int = 1000, warmup: int = 30, concurrency: int = 1,
+    thresholds: tuple[float, ...] | list[float] = (10, 50, 100),
+) -> dict[str, Any]:
+    """Explicit, bounded closed-loop load; each public pathway gets `requests` calls."""
+    if (
+        type(routes) is not int or routes not in (100, 250, 500)
+        or type(requests) is not int or not 1 <= requests <= 1000
+        or type(warmup) is not int or not 0 <= warmup <= 30
+        or type(concurrency) is not int or concurrency not in (1, 4)
+        or not isinstance(thresholds, (tuple, list)) or not 1 <= len(thresholds) <= 20
+        or any(type(t) not in (int, float) or not isfinite(t) or t <= 0 for t in thresholds)
+    ):
+        raise ValueError("load profile requires 100/250/500 routes, 1-1000 requests per pathway, "
+                         "0-30 warmups, concurrency 1/4 and finite positive thresholds")
+    profile_wall0, profile_cpu0 = perf_counter_ns(), process_time_ns()
+    router, catalog, intents, expected = _build_public_case(routes, 1)
+    wall0, cpu0 = perf_counter_ns(), process_time_ns()
+    session = router.prepare_field_routing(catalog=catalog)
+    build_wall_ms = (perf_counter_ns() - wall0) / 1_000_000
+    build_cpu_ms = (process_time_ns() - cpu0) / 1_000_000
+    if session._index.field_index.indexed_route_count != routes:
+        raise AssertionError("synthetic benchmark registered route count drift")
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id, route_domains={expected[-1]: ("case",)},
+        route_priorities={expected[-1]: 90},
+    )
+    report = {
+        "schema_version": 3, "load_profile": True, "evidence_tier": EVIDENCE_TIER,
+        "registered_routes": routes, "expected_hops": 1, "strict_k": 5,
+        "expected_route_ids": list(expected), "source_snapshot_id": session.snapshot_id,
+        "prepared_build_wall_ms": build_wall_ms, "prepared_build_process_cpu_ms": build_cpu_ms,
+        "environment": _load_environment(), "independent_e2_qualified": False,
+        "slo_validated": False, "pinned_linux_run_qualified": False,
+        "model_latency_measured": False, "provider_execution_performed": False,
+        "limitations": [
+            "Synthetic source fixture, deterministic Understand stub, no provider execution",
+            "Single-event-loop async CPU work can serialize concurrent clients",
+            "Finite samples and threshold exceedance counts do not validate a p99 SLO",
+            "E0 Mac results and unpinned Linux runs do not qualify SLOs or independent E2",
+            "CPU quota files describe the visible cgroup mount; null means unknown, not unlimited",
+        ],
+    }
+    for name, asynchronous in (("prepared_sync", False), ("prepared_async_model_stub", True)):
+        report[name] = asyncio.run(_measure_load(
+            session, intents, policy, expected, asynchronous=asynchronous,
+            warmup=warmup, requests=requests, concurrency=concurrency, thresholds=thresholds,
+        ))
+    report["total_profile_wall_ms"] = (perf_counter_ns() - profile_wall0) / 1_000_000
+    report["total_profile_process_cpu_ms"] = (process_time_ns() - profile_cpu0) / 1_000_000
+    report["total_profile_scope"] = "source build, preparation, warmups and both measured paths"
+    return report
+
+
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--routes", type=int, choices=(500, 5000), default=500)
-    parser.add_argument("--hops", type=int, choices=(1, 2), default=1)
-    parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--routes", type=int, choices=(500, 5000))
+    parser.add_argument("--hops", type=int, choices=(1, 2))
+    parser.add_argument("--repeats", type=int)
+    parser.add_argument("--warmup", type=int)
     parser.add_argument("--measure-refresh", action="store_true")
-    args = parser.parse_args()
+    parser.add_argument("--load-profile", action="store_true",
+                        help="opt in: each catalog/concurrency runs 1000 sync + 1000 async calls")
+    parser.add_argument("--load-routes", type=int, choices=(100, 250, 500), nargs="+")
+    parser.add_argument("--load-concurrency", type=int, choices=(1, 4), nargs="+")
+    parser.add_argument("--load-requests", type=int, help="per pathway, 1-1000 (default: 1000)")
+    parser.add_argument("--load-warmup", type=int, help="per pathway, 0-30 (default: 30)")
+    parser.add_argument("--load-threshold-ms", type=float, nargs="+",
+                        help="wall-ms exceedance thresholds (default: 10 50 100)")
+    args = parser.parse_args(argv)
+    load_options = (args.load_routes, args.load_concurrency, args.load_requests,
+                    args.load_warmup, args.load_threshold_ms)
+    if args.load_profile:
+        if args.measure_refresh or any(
+            value is not None for value in (args.routes, args.hops, args.repeats, args.warmup)
+        ):
+            parser.error("--load-profile uses only --load-* conditions")
+        print(json.dumps({"schema_version": 3, "load_profile": True, "cases": [
+            benchmark_load_profile(
+                routes, concurrency=concurrency,
+                requests=args.load_requests if args.load_requests is not None else 1000,
+                warmup=args.load_warmup if args.load_warmup is not None else 30,
+                thresholds=args.load_threshold_ms if args.load_threshold_ms is not None
+                else (10, 50, 100),
+            ) for routes in (args.load_routes or (100, 250, 500))
+            for concurrency in (args.load_concurrency or (1, 4))
+        ]}, sort_keys=True, ensure_ascii=False))
+        return
+    if any(value is not None for value in load_options):
+        parser.error("--load-* conditions require --load-profile")
     print(json.dumps(
-        benchmark(args.routes, hops=args.hops, repeats=args.repeats,
-                  warmup=args.warmup, measure_refresh=args.measure_refresh),
+        benchmark(args.routes if args.routes is not None else 500,
+                  hops=args.hops if args.hops is not None else 1,
+                  repeats=args.repeats if args.repeats is not None else 3,
+                  warmup=args.warmup if args.warmup is not None else 1,
+                  measure_refresh=args.measure_refresh),
         sort_keys=True, ensure_ascii=False,
     ))
 
