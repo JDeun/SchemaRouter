@@ -76,6 +76,7 @@ jobs:
           tests/test_public_method_boundary_inventory.py
           tests/test_public_source_family_wiring.py
           tests/test_public_adapter_module_completeness.py
+          tests/test_public_execution_negative_gaps.py
 
   test:
     name: test (${{ matrix.python-version }})
