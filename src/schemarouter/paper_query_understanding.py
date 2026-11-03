@@ -9,6 +9,7 @@ import inspect
 import json
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
@@ -16,6 +17,7 @@ from .concept_retrieval import MAX_QUERY_BYTES, MAX_QUERY_CHARS, NativeConceptCa
 from .errors import ModelAnalysisError, PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
+from .models import PlanCoverage, SemanticFieldRequirement
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import PaperTypedToolPlan
 from .paper_understood_direct_plan import (
@@ -334,7 +336,7 @@ async def compile_model_query(
         offered_tools.append(tool_key)
 
     payload = {
-        "task": "Identify one reviewed intent and necessary concepts for schema fields only",
+        "task": "Extract all query information needs and constraints for schema field routing",
         "query": query,
         "offered_intents": [
             {"intent_id": i.intent_id, "required_concept_ids": list(i.required_concept_ids)}
@@ -345,10 +347,20 @@ async def compile_model_query(
             for c in offered_concepts
         ],
         "offered_tool_keys": offered_tools,
-        "response_fields": ["intent_id", "concept_ids", "named_tools"],
+        "response_fields": [
+            "intent_id", "concept_ids", "unresolved_concepts", "source_type",
+            "named_tools", "parameter_hints",
+        ],
         "rules": [
             "Use only offered IDs and offered tool keys; return one JSON object.",
-            "Do not suggest parameter values or request a provider execution.",
+            "Return intent_id=null if no offered intent fits the query.",
+            "Keep unmatched needs in unresolved_concepts; never drop a required concept.",
+            "Preserve temporal and source constraints; partial matches remain incomplete.",
+            "Exclude concepts the user negates; do not add unrelated concepts.",
+            "Use named_tools only for tool names stated by the user; otherwise return [].",
+            "Set source_type only for an explicit source-type constraint; otherwise use null.",
+            "Extract parameter_hints from the query; they never authorize execution.",
+            "Never invent fields, values, credentials or permissions, or invoke providers.",
         ],
     }
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
@@ -366,11 +378,34 @@ async def compile_model_query(
     verify()
     understood = _decode_bounded_response(response, max_model_output_bytes)
     if (
-        understood.intent_id not in {i.intent_id for i in offered_intents}
+        understood.intent_id is not None
+        and understood.intent_id not in {i.intent_id for i in offered_intents}
         or not set(understood.concept_ids) <= offered_ids
         or not set(understood.named_tools) <= set(offered_tools)
     ):
         raise ModelAnalysisError("model selected unoffered paper identities")
+    if understood.intent_id is None:
+        requirements = [
+            SemanticFieldRequirement(
+                semantic_id=field.semantic_id,
+                qualifiers=[
+                    f"concept_id={concept_id}", f"source_type={concept.source_type}",
+                    f"license={concept.license}",
+                    *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
+                ],
+            )
+            for concept_id in understood.concept_ids
+            for concept in [approved_concepts[concept_id]]
+            for field in concept.required_fields
+        ]
+        requirements.extend(SemanticFieldRequirement(
+            semantic_id="unresolved", qualifiers=[f"query_concept={proposal}"],
+        ) for proposal in understood.unresolved_concepts)
+        return replace(
+            abstain(),
+            coverage=PlanCoverage(required=requirements, uncovered=requirements, complete=False),
+            understanding_hints=understood.model_dump(mode="json"),
+        )
     try:
         plan = session.compile_understood(
             understood, principal=principal, intent_registry=intent_registry,
@@ -382,4 +417,4 @@ async def compile_model_query(
         verify()
         raise ModelAnalysisError("model understanding could not be compiled") from None
     verify()
-    return plan
+    return replace(plan, understanding_hints=understood.model_dump(mode="json"))

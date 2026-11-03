@@ -84,7 +84,7 @@ class PaperIntentRegistry(StrictModel):
 class PaperUnderstanding(StrictModel):
     """Untrusted externally understood routing hints; never execution claims."""
 
-    intent_id: str
+    intent_id: str | None
     concept_ids: tuple[str, ...] = ()
     unresolved_concepts: tuple[str, ...] = ()
     source_type: str | None = None
@@ -94,8 +94,9 @@ class PaperUnderstanding(StrictModel):
     @model_validator(mode="after")
     def validate_understanding(self) -> PaperUnderstanding:
         if (
-            type(self.intent_id) is not str
-            or not _ID_PATTERN.fullmatch(self.intent_id)
+            self.intent_id is not None and (
+                type(self.intent_id) is not str or not _ID_PATTERN.fullmatch(self.intent_id)
+            )
             or len(self.concept_ids) > 8
             or any(
                 type(cid) is not str or not _ID_PATTERN.fullmatch(cid)

@@ -58,6 +58,47 @@ def test_understanding_rejects_invalid_unresolved_query_needs(needs):
 
 
 @pytest.mark.asyncio
+async def test_model_query_preserves_unsupported_needs_and_null_intent():
+    session = build_fixture(500).prepare_field_routing(catalog=CATALOG)
+
+    def model(payload):
+        assert {"source_type", "parameter_hints", "unresolved_concepts"} <= set(
+            payload["response_fields"],
+        )
+        return {"intent_id": None, "unresolved_concepts": ["send a payment"]}
+
+    plan = await session.acompile_query(
+        "Send a payment", principal=ACTOR, model=model, intent_registry=INTENTS,
+        model_visible_intent_ids=("crm.owner_lookup",),
+        model_visible_concept_ids=("crm.owner",),
+    )
+    assert plan.status == "no_proven_hit" and plan.calls == ()
+    assert plan.coverage is not None and not plan.coverage.complete
+    assert plan.coverage.required == plan.coverage.uncovered
+    assert plan.coverage.uncovered[0].qualifiers == ["query_concept=send a payment"]
+    assert plan.understanding_hints["intent_id"] is None
+    assert plan.understanding_hints["unresolved_concepts"] == ["send a payment"]
+
+
+@pytest.mark.asyncio
+async def test_model_query_retains_detached_hints_without_binding_them():
+    session = build_fixture(500).prepare_field_routing(catalog=CATALOG)
+    response = {
+        "intent_id": "crm.owner_lookup", "concept_ids": ["crm.owner"],
+        "source_type": "crm", "parameter_hints": {"customer_id": "QUERY-12"},
+    }
+    plan = await session.acompile_query(
+        "Who owns customer QUERY-12?", principal=ACTOR, model=lambda _: response,
+        intent_registry=INTENTS, model_visible_intent_ids=("crm.owner_lookup",),
+        model_visible_concept_ids=("crm.owner",),
+    )
+    response["parameter_hints"]["customer_id"] = "CHANGED"
+    assert plan.calls and all(call.call.arguments == {} for call in plan.calls)
+    assert plan.understanding_hints["parameter_hints"] == {"customer_id": "QUERY-12"}
+    assert plan.executable_authority is False
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("query", [
     "Who owns customer twelve?", "고객 열둘의 담당자를 알려줘", "顧客12の担当者は誰ですか",
 ])
@@ -153,6 +194,8 @@ async def test_model_query_rejects_unreviewed_or_non_scoped_identity():
     for raw in (
         '{"intent_id":"crm.owner_lookup","intent_id":"other"}',
         {"intent_id": "unreviewed"},
+        {"intent_id": None, "concept_ids": ["unreviewed"]},
+        {"intent_id": None, "named_tools": ["unoffered"]},
         {"intent_id": "crm.owner_lookup", "named_tools": ["unoffered"]},
         {"intent_id": "crm.owner_lookup", "parameter_hints": {"id": float("nan")}},
     ):
