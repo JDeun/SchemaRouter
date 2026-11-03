@@ -142,8 +142,8 @@
     {
       "path": "getting-started/installation.md",
       "en_blob": "89757a5e5b4c5704a3e905b340238dceabedc67b",
-      "ko_blob": "b2db59d478c6a936abe7145960f5ce48f8893ee5",
-      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off."
+      "ko_blob": "546724649774275822d93ba4350123499973978f",
+      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off. 2026-11-03 AI-assisted paired review preserves stable-version badge and development-install distinction; Korean development-checkout link now has the explicit canonical anchor. No independent human sign-off."
     },
     {
       "path": "getting-started/quickstart.md",
@@ -453,9 +453,9 @@
     },
     {
       "path": "index.md",
-      "en_blob": "cc6e82f7c6c0566ccf3bfa5cc51893afbfb49283",
-      "ko_blob": "c7f58261bc46e48d89d207c858c1c01420fadf56",
-      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off."
+      "en_blob": "e6112170085c91c857c870279d23ef6226d43b70",
+      "ko_blob": "5d59192910c2964fd3e22a1b70bb9512b4f54161",
+      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off. 2026-11-03 AI-assisted paired review preserves stable-version badge and development-install distinction; Korean development-checkout link now has the explicit canonical anchor. No independent human sign-off."
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -905,7 +905,7 @@
       "path": "research/research-program-2026.md",
       "en_blob": "df4d026fe09935a0c39a34dfd56ab8be1d9331ca",
       "ko_blob": "92be2c6ff92f76454d5bf5512732959f0dd7efc8",
-      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off. 2026-11-03 delta: AI-assisted EN/KO comparison. New opt-in captures principal-scoped FULL and compares public field-session K5 with matching agents/prompt; private precision-preserving structured oracle AND execution, missing evidence null, usage-completeness false, no raw final/gold export, no free-text semantic or E2/release approval claim. Not independent human editorial sign-off."
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off. 2026-11-03 delta: AI-assisted EN/KO comparison. New opt-in captures principal-scoped FULL and compares public field-session K5 with matching agents/prompt; private precision-preserving structured oracle AND execution, missing evidence null, usage-completeness false, no raw final/gold export, no free-text semantic or E2/release approval claim. Not independent human editorial sign-off. 2026-11-03 AI-assisted paired review preserves stable-version badge and development-install distinction; Korean development-checkout link now has the explicit canonical anchor. No independent human sign-off."
     },
     {
       "path": "research/routing-status.md",

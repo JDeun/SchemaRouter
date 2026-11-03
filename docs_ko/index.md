@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter · 개발 문서</span>
+<span class="sr-kicker">SchemaRouter 0.17.0</span>
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 

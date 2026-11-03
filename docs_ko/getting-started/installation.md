@@ -17,7 +17,7 @@ pip install schemarouter
 
 [0.14.0 릴리스 노트 보기](../releases/0.14.0.md)
 
-## 개발 체크아웃
+## 개발 체크아웃 {#development-checkout}
 
 개발용 `main`의 버전은 `0.18.0.dev0`입니다. 이 문서는 해당 소스 브랜치를 따르며,
 미출시 변경은 공개된 `0.17.0` 패키지에 포함되지 않습니다.
