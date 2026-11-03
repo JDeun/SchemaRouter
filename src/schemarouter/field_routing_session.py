@@ -55,6 +55,10 @@ class SchemaFieldReviewField:
     json_type: str
     unit: str | None
     identifier: bool
+    aliases: tuple[str, ...] = ()
+    qualifiers: tuple[tuple[str, str], ...] = ()
+    source_path: tuple[str, ...] = ()
+    result_path: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +139,10 @@ def _attest_visible_review_route(
                 json_type=field.json_schema["type"],
                 unit=field.unit,
                 identifier=field.identifier,
+                aliases=tuple(field.aliases),
+                qualifiers=tuple(sorted(field.qualifiers.items())),
+                source_path=field.projection_path,
+                result_path=field.result_projection_path,
             )
             for field in scoped.output_fields
             if field.semantic_id is not None
@@ -470,8 +478,10 @@ class SchemaFieldRoutingSession:
             )
             for item in current.fields:
                 payload_bytes += 160 + 6 * sum(
-                    len(value.encode("utf-8")) for value in (
+                    2 + len(value.encode("utf-8")) for value in (
                         item.name, item.semantic_id, item.json_type, item.unit or "",
+                        *item.aliases, *item.source_path, *item.result_path,
+                        *(value for pair in item.qualifiers for value in pair),
                     )
                 )
             for item in current.parameters_meta:
