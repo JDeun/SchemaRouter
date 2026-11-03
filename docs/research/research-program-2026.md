@@ -96,6 +96,8 @@ Use a single pinned native source catalog, identities, principal, K=5, schema-by
 
 Preregister primary **task-level success** and safety gates; treat changes in route recall, score, or tokens as secondary until their causal effect is measured. Include paired uncertainty and language/catalog strata; fixed thresholds, valid controls, and no hidden-gold route refill. Failed E2 gates remain **VALID_NEGATIVE**, not an opportunity to repair using consumed test rows. Distinguish `E0` synthetic mechanism, `E1` source-exposed development, and `E2` independently authored holdout. Source network timeouts are `SOURCE_FAILURE`, not model misrouting. Abstaining above K and uncalibrated no-fit both require explicit denominators.
 
+The existing A10 no-fit diagnostic leaves `plan_within_declared_limits` and `candidate_within_declared_limits` **null (unresolved)** while any supported or unsupported case still needs arguments or an observation. Counts, error rates and denominators remain unchanged; a valid clarification or ambiguity in the other strata does not block this binary diagnostic. Null is never a pass, and a true E0 diagnostic still requires separately observed task completion and independent review before an E2 qualification.
+
 ## 5. Prior art: what changes our next experiment
 
 | Work and authoritative source | Relevant finding | Concrete transfer / limitation |

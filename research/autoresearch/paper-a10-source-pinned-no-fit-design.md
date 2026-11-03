@@ -23,6 +23,12 @@ publisher data are not available locally, so all local fixtures remain E0.
   and supported offers with no observed dispatch prevent a passing diagnostic.
   The distinct `plan_within_declared_limits` is planning-only and cannot
   represent task success or a production qualification.
+- Both `*_within_declared_limits` values remain **null** if any supported
+  or unsupported case still requests arguments or an observation. Such
+  deferrals keep their existing counts/rates and are not relabeled errors.
+  Correct clarification/ambiguity in the other strata does not block the
+  binary diagnostic. JSON null means **unresolved**, never pass; even a true
+  diagnostic needs separate observed task completion for an E2 claim.
 - The existing A7 paired-run result carries a `Decision` but not the exact
   original paper plan `status`. An explicit A7→A10 adapter may project this
   decision and observed host `tool_call_count` into a case observation. It must

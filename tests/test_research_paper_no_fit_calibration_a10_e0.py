@@ -240,6 +240,55 @@ def test_perfect_synthetic_outcomes_can_only_pass_unqualified_diagnostic():
     assert report["independent_e2_qualified"] is False
 
 
+@pytest.mark.parametrize("status", ("requires_arguments", "requires_observation"))
+@pytest.mark.parametrize("kind", ("supported", "unsupported", "both"))
+@pytest.mark.parametrize("only_one", (False, True))
+def test_unresolved_binary_plans_cannot_pass_even_with_complete_host_counters(
+    status, kind, only_one,
+):
+    source, observations = _fixture()
+    cases = json.loads(source[1])["cases"]
+    by_id = {case["id"]: case["expected_kind"] for case in cases}
+    observations = tuple(replace(
+        o, status={"supported": "ready", "unsupported": "no_proven_hit"}.get(
+            by_id[o.case_id], o.status,
+        ), agent_tool_calls=1 if by_id[o.case_id] == "supported" else 0,
+    ) for o in observations)
+    before = _run(source, observations, NoFitDiagnosticLimits(1, 0.0, 0.0))
+    assert before["candidate_within_declared_limits"] is True
+    assert before["totals"]["deferred"] == 3
+    assert before["totals"]["ambiguous_paths"] == 3
+    deferred_ids = [
+        o.case_id for o in observations
+        if by_id[o.case_id] == kind
+        or (kind == "both" and by_id[o.case_id] in ("supported", "unsupported"))
+    ]
+    if only_one:
+        deferred_ids = deferred_ids[:1]
+    deferred = tuple(
+        replace(
+            o, status=status,
+            agent_tool_calls=1 if (
+                status == "requires_observation" and by_id[o.case_id] == "supported"
+            ) else 0,
+        ) if o.case_id in deferred_ids
+        else o for o in observations
+    )
+    report = _run(source, deferred, NoFitDiagnosticLimits(1, 0.0, 0.0))
+    assert report["host_tool_attempt_counters_complete"] is True
+    assert report["plan_within_declared_limits"] is None
+    assert report["candidate_within_declared_limits"] is None
+    totals = report["totals"]
+    assert totals["supported_deferred"] + totals["unsupported_deferred"] == len(deferred_ids)
+    for name in (
+        "supported_denominator", "unsupported_denominator",
+        "supported_false_refusal", "unsupported_false_accept",
+        "supported_false_refusal_rate", "unsupported_false_accept_rate",
+    ):
+        assert totals[name] == before["totals"][name]
+    assert report["independent_e2_qualified"] is False
+
+
 def test_perfect_plan_does_not_pass_diagnostic_with_unsafe_host_attempts():
     source, observations = _fixture()
     planned = tuple(
@@ -276,8 +325,16 @@ def test_supported_offer_without_host_dispatch_blocks_qualified_diagnostic():
     assert result["candidate_within_declared_limits"] is False
 
 
-def test_command_line_consumes_exact_streams_without_echoing_private_source(tmp_path):
+@pytest.mark.parametrize("all_deferred", (False, True))
+def test_command_line_consumes_exact_streams_without_echoing_private_source(
+    tmp_path, all_deferred,
+):
     source, observations = _fixture()
+    if all_deferred:
+        observations = tuple(
+            replace(o, status="requires_arguments", agent_tool_calls=0)
+            for o in observations
+        )
     paths = []
     for name, contents in zip(
         ("manifest", "cases", "gold", "development", "native-inventory"),
@@ -288,7 +345,8 @@ def test_command_line_consumes_exact_streams_without_echoing_private_source(tmp_
         paths.extend((f"--{name}", str(target)))
     outcome_path = tmp_path / "observations.json"
     outcome_path.write_bytes(_raw({"observations": [
-        {"case_id": o.case_id, "status": o.status} for o in observations
+        {"case_id": o.case_id, "status": o.status, "agent_tool_calls": o.agent_tool_calls}
+        for o in observations
     ]}))
     command = [
         sys.executable, "-m", "scripts.research_paper_no_fit_calibration_a10_e0",
@@ -300,6 +358,11 @@ def test_command_line_consumes_exact_streams_without_echoing_private_source(tmp_
     receipt = json.loads(process.stdout)
     assert receipt["case_count"] == 15
     assert receipt["qualification_gate"] == "BLOCKED_EXTERNAL"
+    if all_deferred:
+        assert receipt["host_tool_attempt_counters_complete"] is True
+        assert receipt["plan_within_declared_limits"] is None
+        assert receipt["candidate_within_declared_limits"] is None
+        assert '"candidate_within_declared_limits": null' in process.stdout
     assert SECRET not in process.stdout
     assert "case-01" not in process.stdout
 

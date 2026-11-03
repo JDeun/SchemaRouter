@@ -903,9 +903,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "e1d9466aa92b1133c429abae16ce0c963c0a9423",
-      "ko_blob": "b0f099753db4d385b5a645e2e16223eec047cfcc",
-      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open."
+      "en_blob": "d09287555f0be5389d9907e5ca6858d4e4948546",
+      "ko_blob": "98e3c795fdc71f3110cb776c814b3bcea01bd32c",
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off."
     },
     {
       "path": "research/routing-status.md",

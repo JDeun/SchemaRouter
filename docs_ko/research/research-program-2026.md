@@ -94,6 +94,8 @@ PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
 
 사전 등록된 주 지표는 **실제 과제 완료율 및 안전 게이트**입니다. 별도로 도구·필드 재현율과 토큰·CPU를 보고, task-paired 신뢰구간 및 언어/카탈로그별 결과를 명시합니다. 공개 개발(`E1`) 점수로 임계값을 다시 맞추지 않고 독립 평가(`E2`)가 실패하면 `VALID_NEGATIVE`를 보존합니다. 합성 구현 검증은 `E0`, 이미 공개·반복 조회된 원본은 `E1`, 독립 작성된 미사용 데이터는 `E2`로 구분합니다. 네트워크 타임아웃은 `SOURCE_FAILURE`이며 라우팅 실패로 위장하지 않습니다.
 
+기존 A10 no-fit 진단은 지원 또는 미지원 과제에 인수·관측값 대기가 하나라도 남아 있으면 `plan_within_declared_limits`와 `candidate_within_declared_limits`를 **null(미확정)**로 유지합니다. 집계 수치·오류율·분모는 그대로이며, 다른 분류에서 올바르게 명확화나 모호성 처리를 한 경우에는 이 이진 진단을 막지 않습니다. null은 통과가 아니며, E0 진단이 true여도 E2 검증에는 별도로 관측한 실제 과제 완료와 독립 검토가 필요합니다.
+
 ## 5. 추가 선행연구와 실제 적용 의미
 
 | 논문·공식 자료 | 핵심 연구 결과 | SchemaRouter에 적용할 범위와 한계 |
