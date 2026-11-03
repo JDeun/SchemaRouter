@@ -34,9 +34,11 @@ original numeric value and type. This prepared path remains opt-in and does not 
 
 `router.prepare_field_routing(catalog=...)` prepares a source-pinned index with a host-reviewed
 concept catalog. `session.compile_understood(...)` checks a `PaperUnderstanding` against that catalog
-and the host's `PaperIntentRegistry`. `session.acompile_query(...)` additionally calls the
-application's model with the query and explicitly approved intent IDs, concept IDs/aliases and tool
-names; raw provider schemas are not sent. These APIs are opt-in. The default `KeywordAnalyzer` in
+and the host's `PaperIntentRegistry`. In `session.acompile_query(...)`, omitting
+`model_visible_concept_ids` selects the schema-independent model protocol: the application's model
+receives the query, fixed intent names and response format/rules, without concept aliases, field
+names, tool catalog or route IDs. Passing an explicit tuple retains the earlier offered-ID protocol,
+which discloses the approved concept IDs/aliases and tool names. These APIs are opt-in. The default `KeywordAnalyzer` in
 `router.plan(...)` remains lexical: it does not provide general multilingual understanding, temporal
 reasoning or extraction of argument values from query text.
 
@@ -46,14 +48,45 @@ licenses. Proven routes are combined, and repeated routes retain the union of se
 source declaration order. Identifiers and owner-required intent groups preserve recall; the result
 does not promise an unconditional minimum field count. The combined route set remains bounded by
 K5: a union exceeding five routes returns `budget_unsatisfied` without calls.
+Generic intents may declare `required_concept_ids=()`; they add no arbitrary representative field.
 
-For composed requirements, `plan.coverage` records `required`, `covered`, `uncovered` and `complete`;
-field semantic IDs carry concept/source/license qualifiers. A missing concept can leave proven
-partial `calls` with `status="no_proven_hit"` and `complete=False`. Model-reported
-`unresolved_concepts` stay uncovered as `semantic_id="unresolved"` with the raw proposal in a
-`query_concept=...` qualifier; they establish no source or type contract. In `acompile_query`,
-`intent_id=null` returns `no_proven_hit` with no calls and incomplete coverage. Requirements omitted
-by the model cannot be guaranteed by these checks.
+The schema-independent response uses `PaperQueryUnderstanding`. For example, this illustrates its
+shape; it supplies no source or execution authority:
+
+```json
+{
+  "intent_id": "information.lookup",
+  "needs": [{"concept": "temperature", "unit": "Cel", "source_type": "weather",
+             "qualifiers": {"time": "current"}}],
+  "needs_truncated": false,
+  "excluded_concepts": ["forecast temperature"],
+  "named_tools": ["weather"],
+  "parameter_hints": {"city": "Seoul"},
+  "source_type": null
+}
+```
+
+After understanding, each whole short English concept is matched exactly, using existing
+normalization, to a host-declared concept ID or complete alias. The host's contracts must also
+support its explicit unit, source type and qualifiers; unknown role/path/time conditions remain
+unproved. Units, source types and qualifier values must match declarations exactly, with one declared
+field supporting all conditions on a need together. This resolution infers no unit conversion or
+role/path/time mapping. This is bounded declared-alias resolution, not general semantic understanding.
+
+`plan.coverage` records `required`, `covered`, `uncovered` and `complete`. In this model protocol,
+requirements retain the raw concept labels and their unit/source/qualifier conditions. Exclusions
+and explicitly user-named sources also remain requirements: a named source must be currently visible
+and contribute requested fields. Negated fields cannot be restored by an intent's required group.
+A missing need can leave proven partial `calls` with `status="no_proven_hit"` and `complete=False`.
+`intent_id=null` returns `no_proven_hit` with no calls and incomplete coverage. Structured
+`compile_understood` coverage instead uses field semantic IDs with concept/source/license qualifiers;
+its `unresolved_concepts` remain uncovered with the raw proposal in `query_concept=...`.
+
+Schema-independent query input is bounded to 4,096 characters and 16,384 UTF-8 bytes. A response
+contains at most eight needs and 4,096 bytes. If more needs remain, the model must set
+`needs_truncated=true`; the receipt returns `budget_unsatisfied`, no calls and incomplete coverage.
+These checks cannot detect every requirement omitted by the model and do not establish commercial
+query-to-field accuracy.
 
 An otherwise complete direct mapping retains `requires_arguments` and
 `call.missing_required_arguments` when no proved dependency supplies its required inputs.
