@@ -15,6 +15,26 @@ from schemarouter.paper_query_needs import (
 )
 
 
+@pytest.mark.parametrize("key,value", [("unit", "eV"), ("source_type", "calculated")])
+def test_reserved_conditions_have_one_lossless_canonical_representation(key, value):
+    incoming = {"concept": "band gap", key: value, "qualifiers": {key: value, "phase": "solid"}}
+    need = PaperQueryNeed.model_validate(incoming)
+    assert getattr(need, key) == value and need.qualifiers == {"phase": "solid"}
+    assert incoming["qualifiers"] == {key: value, "phase": "solid"}
+    from_qualifier = PaperQueryNeed.model_validate({
+        "concept": "band gap", "qualifiers": {key: value},
+    })
+    assert getattr(from_qualifier, key) == value and from_qualifier.qualifiers == {}
+
+
+@pytest.mark.parametrize("key", ["unit", "source_type"])
+def test_conflicting_reserved_conditions_are_not_silently_replaced(key):
+    with pytest.raises(ValueError):
+        PaperQueryNeed.model_validate({
+            "concept": "band gap", key: "first", "qualifiers": {key: "second"},
+        })
+
+
 def _catalog(*fields, aliases=("temperature", "기온"), cid="weather.temperature"):
     return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id=cid, aliases=aliases, source_type="weather", license="reviewed",

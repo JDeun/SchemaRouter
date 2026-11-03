@@ -33,6 +33,28 @@ class PaperQueryNeed(StrictModel):
         description="All explicit role, path or temporal constraints as string keys and values.",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def canonical_conditions(cls, value: Any) -> Any:
+        if type(value) is not dict or type(value.get("qualifiers", {})) is not dict:
+            return value
+        qualifiers = dict(value.get("qualifiers", {}))
+        if len(qualifiers) > 8:
+            raise ValueError("too many raw query qualifiers")
+        normalized = dict(value)
+        # Preserve equivalent model encodings without weakening any requested condition.
+        for key in ("unit", "source_type"):
+            if key not in qualifiers:
+                continue
+            requested = qualifiers.pop(key)
+            if not _bounded_name(requested):
+                raise ValueError("invalid reserved query condition")
+            if normalized.get(key) is not None and normalized[key] != requested:
+                raise ValueError("conflicting reserved query conditions")
+            normalized[key] = requested
+        normalized["qualifiers"] = qualifiers
+        return normalized
+
     @model_validator(mode="after")
     def validate_need(self) -> PaperQueryNeed:
         if (
