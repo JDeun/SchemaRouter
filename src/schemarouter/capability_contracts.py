@@ -5,6 +5,7 @@ from collections import Counter
 from collections.abc import Iterable
 from typing import Literal
 
+from jsonschema import Draft202012Validator
 from pydantic import Field, model_validator
 
 from .canonical_json import canonical_json_text
@@ -285,7 +286,10 @@ def _type_compatible(required: dict, produced: dict) -> bool | None:
         }
         # shortcut: differing assertions stay unknown; add subsumption proof to accept more cases.
         try:
-            if canonical_json_text(required_assertions) != canonical_json_text(produced_assertions):
+            canonical_json_text((required_assertions, produced_assertions))
+            if not Draft202012Validator({"const": required_assertions}).is_valid(
+                produced_assertions,
+            ):
                 return None
         except (TypeError, ValueError, RecursionError):
             return None

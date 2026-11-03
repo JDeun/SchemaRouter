@@ -125,7 +125,7 @@ def test_principal_field_scope_prevents_a_partial_public_schema():
 
 def test_unknown_json_schema_and_unit_mismatch_do_not_prove_fieldgroup():
     group = GROUP.model_copy(deep=True)
-    group.required_fields[0].json_schema = {"type": "string", "pattern": "^X$"}
+    group.required_fields[0].json_schema = {"type": "string", "oneOf": [{"const": "X"}]}
     with pytest.raises(ValueError, match="invalid current native FieldGroup"):
         retrieve_authorized_field_group(
             _router(), GROUP.aliases[0], principal=ANALYST, group=group,
@@ -162,7 +162,7 @@ def test_rejected_query_or_k_does_not_fallback_to_default_retrieval():
         NativeDeclaredFieldGroup(
             aliases=("x",), required_fields=(
                 CapabilityFieldContract(
-                    semantic_id="support.status", json_schema={"type": "string", "enum": ["A"]},
+                    semantic_id="support.status", json_schema={"type": "string", "enum": []},
                 ),
             ),
         )

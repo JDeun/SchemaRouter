@@ -17,6 +17,19 @@ user query
   -> minimal ToolResult context
 ```
 
+The prepared `SchemaFieldRoutingSession` path accepts host-reviewed scalar requirements for strings,
+integers, numbers and booleans, including bounded `enum`, `const`, numeric bounds and multiples,
+and string length/pattern assertions. Schema syntax and validation-work limits are checked before
+the source field can qualify. References, unions and other unproved scalar shapes remain excluded
+from this path. Each complete required field group must survive current authorization, visibility,
+availability and source checks before K5 disclosure or typed planning.
+
+Requirements use the canonical output contract after an explicitly declared unit normalization.
+Raw source assertions are validated before conversion. Canonical bounds and finite values are
+transformed; predicates that cannot be proved after conversion are omitted only from the canonical
+description, so a stricter requirement remains unproved. Identity normalization preserves the
+original numeric value and type. This prepared path remains opt-in and does not change default routing.
+
 ## Why field-first matters
 
 If a user asks for one material property such as elastic modulus, fetching a complete material
