@@ -196,5 +196,5 @@ async def test_public_identity_normalization_rejects_non_finite_provider_values(
             EndpointSpec(name="read", read_only=True, output_fields=[field]),
         ]), lambda *_: {"length": raw},
     )
-    with pytest.raises(SchemaValidationError, match="non-finite normalized value"):
+    with pytest.raises(SchemaValidationError, match="non-finite"):
         await router.ainvoke(PlanRequest(query="length", preferred_tools=["lengths"]))

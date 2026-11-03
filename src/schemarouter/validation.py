@@ -63,6 +63,10 @@ class _RuntimeValidationBudgetExceeded(RuntimeError):
     pass
 
 
+class _NonFiniteRuntimeValueError(ValueError):
+    """A numeric runtime value cannot be represented as finite JSON."""
+
+
 @dataclass(frozen=True, slots=True)
 class _RuntimeSchemaFeatures:
     has_pattern_properties: bool = False
@@ -283,6 +287,8 @@ def _inspect_runtime_value(
             raise _budget_error("value node limit exceeded")
         if depth > budget.max_value_depth:
             raise _budget_error("value depth limit exceeded")
+        if isinstance(current, float) and not math.isfinite(current):
+            raise _NonFiniteRuntimeValueError
 
         if isinstance(current, str):
             if len(current) > budget.max_string_chars:
@@ -802,6 +808,10 @@ def validate_json_schema_value(
         runtime_validator_cls = _runtime_validator_class(validator_cls, effective_budget)
         validator = runtime_validator_cls(schema)
         first = next(validator.iter_errors(value), None)
+    except _NonFiniteRuntimeValueError as exc:
+        raise SchemaValidationError(
+            f"{context}: non-finite numeric values are not permitted"
+        ) from exc
     except _RuntimeValidationBudgetExceeded as exc:
         raise SchemaValidationError(
             f"{context}: JSON Schema validation work budget exceeded ({exc})"
