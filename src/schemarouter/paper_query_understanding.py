@@ -36,6 +36,7 @@ from .paper_query_needs import (
 )
 from .paper_typed_tool_plan import PaperPlanFieldMeta, PaperTypedToolPlan
 from .paper_understood_direct_plan import (
+    PaperIntentDeclaration,
     PaperIntentRegistry,
     PaperUnderstanding,
     _bounded_name,
@@ -128,7 +129,9 @@ def _may_be_excluded(meta: PaperPlanFieldMeta, requirement: CapabilityFieldContr
 
 def _compile_query_needs(
     raw: PaperQueryUnderstanding, *, query: str, catalog: NativeConceptCatalog,
-    intent_ids: set[str], compile_hint: Callable[[PaperUnderstanding], PaperTypedToolPlan],
+    intent_ids: set[str],
+    compile_hint: Callable[[PaperUnderstanding, tuple[tuple[str, str | None], ...]],
+                           PaperTypedToolPlan],
     abstain: Callable[[], PaperTypedToolPlan], resolve_tool: Callable[[str], str | None],
 ) -> PaperTypedToolPlan:
     if raw.intent_id is not None and raw.intent_id not in intent_ids:
@@ -157,7 +160,9 @@ def _compile_query_needs(
                 need.concept for need, (cid, _) in zip(raw.needs, resolved, strict=True)
                 if cid is None
             )),
-        ))
+        ), tuple((cid, need.source_type or raw.source_type)
+                 for need, (cid, _) in zip(raw.needs, resolved, strict=True)
+                 if cid is not None))
     covered_ids = {
         qualifier.removeprefix("concept_id=")
         for requirement in (plan.coverage.covered if plan.coverage else [])
@@ -193,7 +198,13 @@ def _compile_query_needs(
         if raw.source_type is not None and need.source_type not in (None, raw.source_type):
             qualifiers.append(f"global_source_type={raw.source_type}")
         add(SemanticFieldRequirement(semantic_id=need.concept, qualifiers=qualifiers),
-            cid is not None and cid in covered_ids)
+            cid is not None and cid in covered_ids and (
+                source_type is None or plan.coverage is None or any(
+                    f"concept_id={cid}" in item.qualifiers
+                    and f"source_type={source_type}" in item.qualifiers
+                    for item in plan.coverage.covered
+                )
+            ))
     for name, (cid, _) in zip(raw.excluded_concepts, excluded, strict=True):
         add(SemanticFieldRequirement(semantic_id=name, qualifiers=["excluded=true"]),
             cid is not None and not conflict)
@@ -393,19 +404,119 @@ async def compile_model_query(
             registry_version=witness[1], requested_k=k,
         )
 
-    def compile_hint(understood: PaperUnderstanding) -> PaperTypedToolPlan:
+    def compile_hint(
+        understood: PaperUnderstanding,
+        required_sources: tuple[tuple[str, str | None], ...] = (),
+    ) -> PaperTypedToolPlan:
         try:
-            plan = session.compile_understood(
-                understood, principal=principal, intent_registry=intent_registry,
-                host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
-                rank_policy=rank_policy,
-                allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
-            )
+            if any(source is not None and approved_concepts[cid].source_type is None
+                   for cid, source in required_sources):
+                plan = compile_source_needs(understood, required_sources)
+            else:
+                plan = session.compile_understood(
+                    understood, principal=principal, intent_registry=intent_registry,
+                    host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+                    rank_policy=rank_policy,
+                    allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
+                )
         except (ValueError, TypeError):
             verify()
             raise ModelAnalysisError("model understanding could not be compiled") from None
         verify()
         return plan
+
+    def compile_source_needs(
+        understood: PaperUnderstanding,
+        required_sources: tuple[tuple[str, str | None], ...],
+    ) -> PaperTypedToolPlan:
+        from .paper_understood_concept_plan import _merge_understood_plans
+
+        if host_source_arguments is not None and (
+            type(host_source_arguments) is not dict or len(host_source_arguments) > k
+            or any(
+                not _bounded_name(route) or type(values) is not dict or not 1 <= len(values) <= 4
+                for route, values in host_source_arguments.items()
+            )
+        ):
+            raise ValueError("invalid explicit paper host root inputs")
+        # One owner concept may be demanded from several sources; keep those proofs separate.
+        groups = list(dict.fromkeys(required_sources))
+        assert understood.intent_id is not None
+        intent = approved_intents[understood.intent_id]
+        groups.extend((cid, understood.source_type) for cid in intent.required_concept_ids
+                      if not any(previous == cid for previous, _ in groups))
+        groups = [(cid, source) for cid, source in groups if source is not None or not any(
+            other == cid and constraint is not None for other, constraint in groups
+        )]
+
+        def narrow_scope(sources: tuple[tuple[str, str | None], ...]):
+            narrowed = reviewed.model_dump(mode="python")
+            constraints = {cid: source for cid, source in sources if source is not None}
+            for concept in narrowed["concepts"]:
+                if concept["concept_id"] in constraints:
+                    concept["source_type"] = constraints[concept["concept_id"]]
+            return session.revise_catalog(catalog=NativeConceptCatalog.model_validate(
+                narrowed, strict=True,
+            ))
+
+        if len({cid for cid, _ in groups}) == len(groups):
+            # Preserve the existing whole-group-first Rank and independent-concept fallback.
+            scoped = narrow_scope(tuple(groups))
+            return scoped.compile_understood(
+                understood, principal=principal, intent_registry=intent_registry,
+                host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+                rank_policy=rank_policy,
+                allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
+            )
+
+        scoped_proofs = []
+        for cid, source in groups:
+            scoped = narrow_scope(((cid, source),))
+            single_intent = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+                intent_id=intent.intent_id, required_concept_ids=(cid,), domains=intent.domains,
+            ),))
+            single = understood.model_copy(update={
+                "concept_ids": (cid,), "unresolved_concepts": (),
+            })
+            scoped_proofs.append((scoped, single, single_intent))
+
+        def prove_groups() -> tuple[PaperTypedToolPlan, ...]:
+            plans = []
+            for scoped, single, single_intent in scoped_proofs:
+                verify()
+                options = dict(
+                    principal=principal, intent_registry=single_intent, k=k, max_hops=max_hops,
+                    rank_policy=rank_policy,
+                    allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
+                )
+                plan = scoped.compile_understood(single, **options)
+                routes = {call.route_id for call in plan.calls}
+                inputs = {route: values for route, values in (host_source_arguments or {}).items()
+                          if route in routes}
+                if inputs:
+                    plan = scoped.compile_understood(
+                        single, host_source_arguments=inputs, **options,
+                    )
+                plans.append(plan)
+                verify()
+            return tuple(plans)
+
+        def coverage(covered: set[int]) -> PlanCoverage:
+            required, present, missing = [], [], []
+            for position, (cid, source) in enumerate(groups):
+                requirement = SemanticFieldRequirement(semantic_id=cid, qualifiers=[
+                    f"concept_id={cid}", *([f"source_type={source}"] if source is not None else []),
+                ])
+                required.append(requirement)
+                (present if position in covered else missing).append(requirement)
+            return PlanCoverage(required=required, covered=present, uncovered=missing,
+                                complete=not missing)
+
+        return _merge_understood_plans(
+            router, principal=principal, index=session._index, k=k,
+            host_source_arguments=host_source_arguments,
+            prove_groups=prove_groups, verify_current=verify, coverage=coverage,
+        )
 
     if independent:
         payload = {
@@ -619,8 +730,9 @@ async def compile_model_query(
             SemanticFieldRequirement(
                 semantic_id=field.semantic_id,
                 qualifiers=[
-                    f"concept_id={concept_id}", f"source_type={concept.source_type}",
-                    f"license={concept.license}",
+                    f"concept_id={concept_id}",
+                    *([f"source_type={concept.source_type}"] if concept.source_type else []),
+                    *([f"license={concept.license}"] if concept.license else []),
                     *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
                 ],
             )

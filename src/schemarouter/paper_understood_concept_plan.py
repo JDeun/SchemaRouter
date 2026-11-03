@@ -160,6 +160,28 @@ def _compile_understood_concept_plan(
                            status="no_proven_hit" if group.calls and not report.complete
                            else group.status)
 
+    return _merge_understood_plans(
+        router, principal=principal, index=index, k=k,
+        host_source_arguments=host_source_arguments, prove_groups=prove_groups,
+        verify_current=verify_current,
+        coverage=lambda covered: coverage({concepts[position].concept_id for position in covered}),
+    )
+
+
+def _merge_understood_plans(
+    router: SchemaRouter,
+    *,
+    principal: PrincipalContext,
+    index: NativeSchemaGraphIndex,
+    k: int,
+    host_source_arguments: dict[str, dict[str, Any]] | None,
+    prove_groups: Callable[[], tuple[PaperTypedToolPlan, ...]],
+    verify_current: Callable[[], None],
+    coverage: Callable[[set[int]], PlanCoverage],
+) -> PaperTypedToolPlan:
+    """Union bounded source proofs, retaining each independent requirement position."""
+    witness = router._retrieval_authority_witness()
+    host_inputs = deepcopy(host_source_arguments or {})
     try:
         first = prove_groups()
     except Exception:
@@ -271,7 +293,7 @@ def _compile_understood_concept_plan(
     except Exception:
         raise PolicyViolationError("paper concept source eligibility changed") from None
     covered = {
-        concept.concept_id for concept, plan in zip(concepts, first, strict=True)
+        position for position, plan in enumerate(first)
         if plan.calls and plan.status in {"ready", "requires_arguments", "requires_observation"}
     }
     report = coverage(covered)
