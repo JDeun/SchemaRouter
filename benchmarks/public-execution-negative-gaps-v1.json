@@ -11,7 +11,7 @@
     "benchmarks/public-execution-entrypoints-v1.json"
   ],
   "wrapper_public_entrypoints": 22,
-  "notes": "Conservative evidence ledger for 19 source execution routes (not 22 public wrapper rows): NOT_TESTED requires independent scenario-specific public registered zero-I/O proof; NOT_APPLICABLE requires an explicit source-level read-only certificate. Neither constitutes provider-independent E2. Do not close #1821 until reviewed. Lines anchored to main 2004d38.",
+  "notes": "Source-audited evidence ledger for 19 public source routes (distinct from 22 wrappers). Original 30 scenario keys retained: DEV_VERIFIED has explicit registered public route test, pinned merged source commit and passing GitHub CI; NOT_TESTED remains open for contract adjudication. Neither is independent provider E2. #1821 and v0.18 release remain HOLD.",
   "paths": [
     {
       "id": "paper.direct.native.read",
@@ -30,13 +30,17 @@
         "test_direct_sdk_rejects_unsafe_execution_shapes"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "verified": [
         {
           "scenario": "stale_bound_invoker_generation",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_paper_direct_sdk_execution.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_direct_sdk_real_denials.py",
+          "proof_function": "test_direct_sdk_same_contract_binding_generation_drift_never_dispatches",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -56,25 +60,35 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_callable_execution_negatives.py",
+          "proof_function": "test_public_python_registered_callable_denial_availability_and_stale",
+          "proof_parameter": "sync",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         },
         {
           "scenario": "write_effect_policy",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_callable_execution_negatives.py",
+          "proof_function": "test_public_python_mutating_callable_requires_explicit_policy",
+          "proof_parameter": "sync",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -94,25 +108,35 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_callable_execution_negatives.py",
+          "proof_function": "test_public_python_registered_callable_denial_availability_and_stale",
+          "proof_parameter": "async",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         },
         {
           "scenario": "write_effect_policy",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_python_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_callable_execution_negatives.py",
+          "proof_function": "test_public_python_mutating_callable_requires_explicit_policy",
+          "proof_parameter": "async",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -132,18 +156,23 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_sqlite_database_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_sqlite_database_adapter.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_sqlite_database_adapter.py",
+          "proof_function": "test_sqlite_public_execute_denies_unavailable_and_stale_before_driver",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -163,18 +192,23 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_http_json_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_http_json_adapter.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_http_graphql_execution_negative.py",
+          "proof_function": "test_http_json_public_denial_unavailable_recovery_and_stale_zero_io",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -194,25 +228,33 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_graphql_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_graphql_adapter.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_http_graphql_execution_negative.py",
+          "proof_function": "test_graphql_readonly_public_denial_unavailable_recovery_and_stale_zero_io",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         },
         {
           "scenario": "denied_principal",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_graphql_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_http_graphql_execution_negative.py",
+          "proof_function": "test_graphql_readonly_public_denial_unavailable_recovery_and_stale_zero_io",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -230,13 +272,17 @@
         "test_openrpc_positional_params_fail_on_ambiguous_optional_gap"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "verified": [
         {
           "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_openrpc_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_remote_protocol_execution_wiring.py",
+          "proof_function": "test_openrpc_public_execute_denies_unavailable_and_missing_required_before_http",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -254,20 +300,27 @@
         "test_odata_denies_changed_principal_before_registered_get"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "verified": [
         {
           "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_odata_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_remote_protocol_execution_wiring.py",
+          "proof_function": "test_odata_public_execute_denies_undeclared_and_unavailable_before_http",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         },
         {
           "scenario": "unrecognized_input",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_odata_adapter.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_remote_protocol_execution_wiring.py",
+          "proof_function": "test_odata_public_execute_denies_undeclared_and_unavailable_before_http",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -288,18 +341,23 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_mcp_integration.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_mcp_integration.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_mcp_http_execution_negative.py",
+          "proof_function": "test_mcp_http_registered_unavailable_recovery_stale_zero_handler_calls",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -319,18 +377,24 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_graph_native_adapters.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_graph_native_adapters.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_native_source_execution_negative.py",
+          "proof_function": "test_registered_native_source_denies_unavailable_and_stale_without_io",
+          "proof_parameter": "graph",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -350,18 +414,24 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_record_native_adapters.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_record_native_adapters.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_native_source_execution_negative.py",
+          "proof_function": "test_registered_native_source_denies_unavailable_and_stale_without_io",
+          "proof_parameter": "record",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -381,18 +451,24 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_vector_native_adapters.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_vector_native_adapters.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_native_source_execution_negative.py",
+          "proof_function": "test_registered_native_source_denies_unavailable_and_stale_without_io",
+          "proof_parameter": "vector",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -412,18 +488,23 @@
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
       "unresolved": [
         {
-          "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
-          "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_public_openapi_execution_wiring.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
-        },
-        {
           "scenario": "stale_bound_invoker_generation",
           "status": "NOT_TESTED",
           "owner_issue": 1821,
           "baseline_command": "python -m pytest -q tests/test_public_openapi_execution_wiring.py",
           "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+        }
+      ],
+      "verified": [
+        {
+          "scenario": "temporarily_unavailable_source",
+          "status": "DEV_VERIFIED",
+          "owner_issue": 1821,
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_openapi_execution_wiring.py",
+          "proof_function": "test_openapi_source_unavailable_refuses_data_get_and_recovers_once",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -441,13 +522,17 @@
         "test_sqlalchemy_denied_principal_never_reaches_driver"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "verified": [
         {
           "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_public_sqlalchemy_execution_wiring.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_sqlalchemy_execution_wiring.py",
+          "proof_function": "test_sqlalchemy_public_execute_denies_unavailable_and_stale_before_driver",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -464,13 +549,17 @@
         "test_optimade_public_execution_denies_before_remote_data_and_stale_reuse"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "verified": [
         {
           "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_public_optimade_execution_wiring.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_public_optimade_execution_wiring.py",
+          "proof_function": "test_optimade_source_unavailable_refuses_data_get_and_recovers_once",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     },
@@ -498,7 +587,8 @@
           "proof_function": "_registered",
           "owner_issue": 1821
         }
-      ]
+      ],
+      "verified": []
     },
     {
       "id": "router.vector_store.generic",
@@ -524,7 +614,8 @@
           "proof_function": "_registered",
           "owner_issue": 1821
         }
-      ]
+      ],
+      "verified": []
     },
     {
       "id": "router.record_store.generic",
@@ -550,7 +641,8 @@
           "proof_function": "_registered",
           "owner_issue": 1821
         }
-      ]
+      ],
+      "verified": []
     },
     {
       "id": "router.mcp.stdio",
@@ -566,13 +658,17 @@
         "test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch"
       ],
       "evidence_limit": "DEV_TEST_NAMES_AND_LOCAL_FIXTURES_NOT_INDEPENDENT_E2",
-      "unresolved": [
+      "unresolved": [],
+      "verified": [
         {
           "scenario": "temporarily_unavailable_source",
-          "status": "NOT_TESTED",
+          "status": "DEV_VERIFIED",
           "owner_issue": 1821,
-          "baseline_command": "python -m pytest -q tests/test_mcp_integration.py",
-          "next_proof": "Add an actual registered public execution denial with zero I/O assertion for this exact scenario; link method and CI."
+          "evidence_tier": "DEV_REGISTERED_PUBLIC_NO_INDEPENDENT_E2",
+          "proof_file": "tests/test_mcp_integration.py",
+          "proof_function": "test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch",
+          "proof_commit": "0d59d2753e4a00ebffbd76d44d89cb0dbee7e56e",
+          "ci_run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/41547954823"
         }
       ]
     }
