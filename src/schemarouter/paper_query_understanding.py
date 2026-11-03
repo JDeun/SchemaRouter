@@ -10,12 +10,13 @@ import inspect
 import json
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
-from dataclasses import replace
+from dataclasses import asdict, replace
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_sha256
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import (
     MAX_QUERY_BYTES,
@@ -26,7 +27,7 @@ from .concept_retrieval import (
     _normalized,
 )
 from .errors import ModelAnalysisError, PolicyViolationError
-from .field_group_retrieval import NativeDeclaredFieldGroup
+from .field_group_retrieval import NativeDeclaredFieldGroup, _compatible_field
 from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
 from .paper_native_rank import PaperNativeRankPolicy
@@ -43,9 +44,11 @@ from .paper_understood_direct_plan import (
     PaperUnderstanding,
     _bounded_name,
 )
+from .validation import canonical_unit_value_schema
 
 if TYPE_CHECKING:
     from .field_routing_session import SchemaFieldRoutingSession
+    from .runtime import SchemaRouter
 
 
 PaperFieldModel = Callable[
@@ -177,12 +180,101 @@ def _owner_query_field_coverage(
     )
 
 
+def _named_query_contributors(
+    router: SchemaRouter, plan: PaperTypedToolPlan,
+    needs: tuple[tuple[PaperQueryNeed, NativeDeclaredConcept], ...],
+    *, principal: PrincipalContext, global_source_type: str | None, verify: Callable[[], None],
+) -> set[str]:
+    """Attest selected current scoped fields, never SID-only recall or raw hidden metadata."""
+    def collect() -> set[str]:
+        contributors = set()
+        permitted = router._authorization_predicate(principal)
+        if permitted is None:
+            raise PolicyViolationError("paper query named source authorization missing")
+        for call in plan.calls:
+            verify()
+            tool = router.registry.get(call.call.tool)
+            endpoint = tool.endpoint(call.call.endpoint)
+            if (
+                (tool.fingerprint, endpoint.fingerprint)
+                != (call.call.tool_fingerprint, call.call.schema_fingerprint)
+                or not permitted(tool.model_copy(deep=True), endpoint.model_copy(deep=True))
+            ):
+                raise PolicyViolationError("paper query named source changed")
+            availability = router.planner.availability_predicate
+            if availability is not None and not availability(
+                tool.model_copy(deep=True), endpoint.model_copy(deep=True),
+            ):
+                raise PolicyViolationError("paper query named source unavailable")
+            visible = router._data_scope_endpoint_view(principal, tool, endpoint)
+            if visible is None:
+                raise PolicyViolationError("paper query named source scope hidden")
+            visible = visible.model_copy(deep=True)
+            selected = [field for field in visible.output_fields if field.name in call.call.fields]
+            metadata = tuple(PaperPlanFieldMeta(
+                name=field.name, semantic_id=field.semantic_id, source_unit=field.unit,
+                unit=(field.unit_normalization.canonical_unit
+                      if field.unit_normalization else field.unit),
+                source_type=field.source_type or tool.source_type,
+                license=field.license or tool.license,
+                qualifiers=tuple(sorted(field.qualifiers.items())),
+                source_path=field.projection_path, result_path=field.result_projection_path,
+                json_schema=canonical_unit_value_schema(
+                    field.json_schema, field.unit_normalization,
+                ),
+            ) for field in selected)
+            if canonical_json_sha256([asdict(item) for item in metadata]) != canonical_json_sha256(
+                [asdict(item) for item in call.fields_meta],
+            ):
+                raise PolicyViolationError("paper query named source field scope changed")
+            for need, owner in needs:
+                for field, meta in zip(selected, metadata, strict=True):
+                    if any(source is not None and (
+                        meta.source_type != source or call.source_type != source
+                    ) for source in (owner.source_type, need.source_type, global_source_type)):
+                        continue
+                    if owner.license is not None and (
+                        meta.license != owner.license or call.license != owner.license
+                    ):
+                        continue
+                    produced = CapabilityFieldContract.from_field(field)
+                    if (
+                        produced is not None
+                        and (need.unit is None or produced.unit == need.unit)
+                        and all(produced.qualifiers.get(key) == value
+                                for key, value in need.qualifiers.items())
+                        and any(_compatible_field(required, field)
+                                for required in owner.required_fields)
+                    ):
+                        contributors.add(call.call.tool)
+            current = router.registry.get(call.call.tool)
+            if (current.fingerprint, current.endpoint(call.call.endpoint).fingerprint) != (
+                call.call.tool_fingerprint, call.call.schema_fingerprint,
+            ):
+                raise PolicyViolationError("paper query named source fingerprint changed")
+            verify()
+        return contributors
+
+    try:
+        first = collect()
+        if collect() != first:
+            raise PolicyViolationError("paper query named source contribution changed")
+        verify()
+        return first
+    except Exception:
+        verify()
+        raise PolicyViolationError(
+            "paper query named source contribution verification failed"
+        ) from None
+
+
 def _compile_query_needs(
     raw: PaperQueryUnderstanding, *, query: str, catalog: NativeConceptCatalog,
     intent_ids: set[str],
     compile_hint: Callable[[PaperUnderstanding, tuple[tuple[str, str | None], ...]],
                            PaperTypedToolPlan],
     abstain: Callable[[], PaperTypedToolPlan], resolve_tool: Callable[[str], str | None],
+    router: SchemaRouter, principal: PrincipalContext, verify: Callable[[], None],
 ) -> PaperTypedToolPlan:
     if raw.intent_id is not None and raw.intent_id not in intent_ids:
         raise ModelAnalysisError("model selected an unoffered paper intent")
@@ -258,11 +350,12 @@ def _compile_query_needs(
     for name, (cid, _) in zip(raw.excluded_concepts, excluded, strict=True):
         add(SemanticFieldRequirement(semantic_id=name, qualifiers=["excluded=true"]),
             cid is not None and not conflict)
-    answer_semantics = {field.semantic_id for cid in known for field in by_id[cid].required_fields}
-    contributing_tools = {
-        call.call.tool for call in plan.calls
-        if not conflict and any(meta.semantic_id in answer_semantics for meta in call.fields_meta)
-    }
+    contributing_tools = _named_query_contributors(
+        router, plan, tuple((need, by_id[cid]) for need, (cid, _) in zip(
+            raw.needs, resolved, strict=True,
+        ) if cid is not None), principal=principal,
+        global_source_type=raw.source_type, verify=verify,
+    ) if named_requirements and not conflict else set()
     for name, key in named_requirements:
         add(SemanticFieldRequirement(semantic_id=name, qualifiers=["named_tool=true"]),
             key is not None and key in contributing_tools)
@@ -514,7 +607,7 @@ async def compile_model_query(
             narrowed = reviewed.model_dump(mode="python")
             constraints = {cid: source for cid, source in sources if source is not None}
             for concept in narrowed["concepts"]:
-                if concept["concept_id"] in constraints:
+                if concept["concept_id"] in constraints and concept["source_type"] is None:
                     concept["source_type"] = constraints[concept["concept_id"]]
             return session.revise_catalog(catalog=NativeConceptCatalog.model_validate(
                 narrowed, strict=True,
@@ -636,6 +729,7 @@ async def compile_model_query(
         plan = _compile_query_needs(
             raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
             compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
+            router=router, principal=principal, verify=verify,
         )
         return finalize(plan, raw.parameter_hints)
 
