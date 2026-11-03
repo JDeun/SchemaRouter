@@ -441,3 +441,34 @@ def test_reservation_count_closes_native_sqlite_handle_on_success_and_error(
     with pytest.raises(RuntimeError, match="synthetic central counts unavailable"):
         store.reserved_for_test("church", GEO)
     assert closes == ["closed", "closed"]
+
+
+
+def test_reservation_connection_pragmas_fail_without_leaking_handle(
+    tmp_path, monkeypatch,
+):
+    """Failed connection initialization must not orphan a raw SQLite handle."""
+    path = tmp_path / "pragma-failure.sqlite3"
+    store = _fixture(path)
+    closed: list[bool] = []
+    original_connect = sqlite3.connect
+
+    class FailingPragmaConnection(sqlite3.Connection):
+        def execute(self, sql, parameters=(), /):
+            if sql.startswith("PRAGMA busy_timeout"):
+                raise sqlite3.OperationalError("synthetic pragma failure")
+            return super().execute(sql, parameters)
+
+        def close(self):
+            closed.append(True)
+            return super().close()
+
+    def failing_connect(*args, **kwargs):
+        return original_connect(
+            *args, factory=FailingPragmaConnection, **kwargs,
+        )
+
+    monkeypatch.setattr(sqlite3, "connect", failing_connect)
+    with pytest.raises(sqlite3.OperationalError, match="synthetic pragma failure"):
+        store._existing_connection()
+    assert closed == [True]
