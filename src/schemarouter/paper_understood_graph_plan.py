@@ -26,6 +26,7 @@ from .paper_typed_tool_plan import (
 from .paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
+    _source_owned_understood_concepts,
     _source_owned_understood_group,
     compile_paper_understood_direct_plan,
 )
@@ -92,6 +93,21 @@ def compile_paper_understood_graph_plan(
         if host_source_arguments != original_host_inputs:
             raise PolicyViolationError("paper named graph host source inputs changed")
 
+    approved, approved_intent, concepts = _source_owned_understood_concepts(
+        understanding, catalog, intent_registry,
+    )
+    if len(concepts) > 1 or approved.unresolved_concepts:
+        from .paper_understood_concept_plan import _compile_understood_concept_plan
+
+        return _compile_understood_concept_plan(
+            router, understanding, principal=principal, catalog=catalog,
+            intent_registry=intent_registry, index=index, k=k,
+            host_source_arguments=host_source_arguments, rank_policy=rank_policy,
+            approved=approved, intent=approved_intent, concepts=concepts,
+            compile_one=compile_paper_understood_graph_plan,
+            graph_options={"max_hops": max_hops,
+                           "allow_unnamed_graph_discovery": allow_unnamed_graph_discovery},
+        )
     approved, group = _source_owned_understood_group(
         understanding, catalog, intent_registry,
     )

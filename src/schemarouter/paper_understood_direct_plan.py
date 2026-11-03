@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import Field, model_validator
 
 from .authorization import PrincipalContext
-from .concept_retrieval import _ID_PATTERN, NativeConceptCatalog
+from .concept_retrieval import _ID_PATTERN, NativeConceptCatalog, NativeDeclaredConcept
 from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
@@ -125,16 +125,12 @@ class PaperUnderstanding(StrictModel):
         return self
 
 
-def _source_owned_understood_group(
+def _source_owned_understood_concepts(
     understanding: PaperUnderstanding,
     catalog: NativeConceptCatalog,
     intent_registry: PaperIntentRegistry,
-) -> tuple[PaperUnderstanding, NativeDeclaredFieldGroup]:
-    """Build a bounded original-paper required field AND from owner declarations.
-
-    Shared by direct and explicitly named typed-graph planning; model strings
-    never become aliases, field contracts or executable input values.
-    """
+) -> tuple[PaperUnderstanding, PaperIntentDeclaration, tuple[NativeDeclaredConcept, ...]]:
+    """Resolve the complete owner-reviewed intent without combining source contracts."""
     try:
         approved_hints = PaperUnderstanding.model_validate(
             understanding.model_dump(mode="python"), strict=True,
@@ -156,7 +152,17 @@ def _source_owned_understood_group(
     concept_ids = set(intent.required_concept_ids) | set(approved_hints.concept_ids)
     if not concept_ids <= concept_by_id.keys():
         raise ValueError("unregistered original paper concept")
-    concepts = [concept_by_id[cid] for cid in sorted(concept_ids)]
+    return approved_hints, intent, tuple(concept_by_id[cid] for cid in sorted(concept_ids))
+
+
+def _source_owned_understood_group(
+    understanding: PaperUnderstanding,
+    catalog: NativeConceptCatalog,
+    intent_registry: PaperIntentRegistry,
+) -> tuple[PaperUnderstanding, NativeDeclaredFieldGroup]:
+    approved_hints, _, concepts = _source_owned_understood_concepts(
+        understanding, catalog, intent_registry,
+    )
     sources = {(concept.source_type, concept.license) for concept in concepts}
     if len(sources) != 1:
         raise ValueError("incompatible source-owned intent concept contracts")
@@ -239,6 +245,19 @@ def compile_paper_understood_direct_plan(
     except (TypeError, ValueError, OverflowError, AttributeError) as exc:
         raise ValueError("paper understood declarations changed or invalid") from exc
 
+    approved_hints, approved_intent, concepts = _source_owned_understood_concepts(
+        understanding, catalog, intent_registry,
+    )
+    if len(concepts) > 1 or approved_hints.unresolved_concepts:
+        from .paper_understood_concept_plan import _compile_understood_concept_plan
+
+        return _compile_understood_concept_plan(
+            router, understanding, principal=principal, catalog=catalog,
+            intent_registry=intent_registry, index=index, k=k,
+            host_source_arguments=host_source_arguments, rank_policy=rank_policy,
+            approved=approved_hints, intent=approved_intent, concepts=concepts,
+            compile_one=compile_paper_understood_direct_plan,
+        )
     approved_hints, group = _source_owned_understood_group(
         understanding, catalog, intent_registry,
     )

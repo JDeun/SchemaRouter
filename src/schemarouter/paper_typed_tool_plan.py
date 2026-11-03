@@ -15,7 +15,7 @@ from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
 from .host_field_contract import _policy_contents_digest
-from .models import EndpointSpec, ToolCall, ToolSpec
+from .models import EndpointSpec, PlanCoverage, ToolCall, ToolSpec
 from .native_graph_index import (
     NativeSchemaGraphIndex,
     _host_source_input_names,
@@ -96,6 +96,7 @@ class PaperTypedToolPlan:
     bindings: tuple[PaperPlanBinding, ...] = ()
     executable_authority: bool = False
     ranked_unverified: bool = False
+    coverage: PlanCoverage | None = None
 
 
 def compile_paper_typed_tool_plan(
