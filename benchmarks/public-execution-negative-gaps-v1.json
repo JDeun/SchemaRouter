@@ -19,7 +19,7 @@
       "public_entrypoint": "schemarouter.SchemaFieldRoutingSession.aexecute_direct",
       "execution_location": {
         "file": "src/schemarouter/field_routing_session.py",
-        "line": 589
+        "line": 605
       },
       "observed_test_file": "tests/test_paper_direct_sdk_execution.py",
       "observed_test_names": [
