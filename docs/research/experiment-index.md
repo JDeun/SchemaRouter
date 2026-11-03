@@ -1,12 +1,16 @@
 # Complete experiment index
 
-This page exposes the full experiment ledger for SchemaRouter's routing research rather than only
-the latest or strongest results.
+This page preserves SchemaRouter's 92-record historical routing-research ledger through
+2026-09-30, including failed and superseded approaches. It is not a complete inventory of later work.
+For subsequent graph, CodeGraph, paper-alignment and local DEV records, use the
+[2026-11-04 branch and evidence reconciliation](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/repository-reconciliation-2026-11-04.json).
+That dated inventory separates code integration, measured outcomes and unresolved evidence;
+it does not rescore or replace this frozen ledger.
 
 The public summary page answers "where the research currently stands." This page
 answers a different question: what was actually tried?
 
-Current machine-readable ledger:
+Historical machine-readable ledger:
 
 - independent experiment records: 92;
 - legacy routing corpus lineage: 13 versioned corpora;
@@ -16,7 +20,7 @@ Current machine-readable ledger:
 
 The 92-record count includes the terminal 0.13 V6A–V6H/open-set controls and the active 0.14 agent-utility lineage. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
 
-The canonical machine-readable source is
+The canonical machine-readable source for these historical records is
 [`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json).
 The narrative source is
 [Design and experiment history](design-and-experiment-history.md).

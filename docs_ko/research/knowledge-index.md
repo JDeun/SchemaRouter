@@ -7,6 +7,28 @@
 > 정리 이슈: [#1712](https://github.com/JDeun/SchemaRouter/issues/1712),
 > 세션 간 연구 트래커: [#200](https://github.com/JDeun/SchemaRouter/issues/200).
 
+개발을 재개하거나 실험을 다시 실행하기 전에
+[2026-11-04 브랜치·근거 정리 기록](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/repository-reconciliation-2026-11-04.json)을 확인합니다.
+고정한 브랜치·워크트리 목록, 통합 판단과 후속 결과 기록을 연결합니다.
+이는 특정 시점의 목록이며 모든 브랜치의 병합이나 실험 성공을 입증하지 않습니다.
+조치 전에 실제 PR 상태를 다시 확인하며, 비공개 로컬 DEV 입력은 저장소 밖에 보존합니다.
+
+## 2026-11-04 위생 정리 후 상황
+
+정리 기록은 다음 상태를 구분합니다. 브랜치를 삭제해도 해당 제품 과제가 해결되는 것은 아닙니다.
+
+| 영역 | 현재 상태 | 근거 |
+| --- | --- | --- |
+| 원래 질문 → 필수 필드 | 기존 로컬 DEV 실패가 남아 있습니다. 추출된 요구의 coverage가 complete여도 모델이 모든 요구를 추출했다는 뜻은 아닙니다. | [정리 기록](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/repository-reconciliation-2026-11-04.json) |
+| 기본 API → 스키마 그래프 | 기본 계획은 어휘 기반이며, 준비된 모델·그래프 필드 라우팅은 명시적으로 선택해야 합니다. | [논문 정합성](original-paper-algorithm1-parity.md) |
+| 노출 범위 내 타입 기반 필드 계획 | 선언된 원본 계약·조건·바인딩에 대해 구현되어 있지만, 일반적인 의미 이해를 보장하지 않습니다. | [Field-first 실행](../concepts/field-first-execution.md) |
+| 상용 정확도·지연·비용 | 계약 테스트나 소규모 E0/E1 연구로 독립 검증된 상태가 아닙니다. | [인수 기준표](product-north-star-and-test-matrix.md) |
+| 배포 | v0.18은 계속 보류합니다. 위생 정리나 CI 성공만으로 릴리스 게이트를 통과하지 않습니다. | [보류된 PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356) |
+
+과거 변형은 모두 제품에 병합하는 대신 원래 결과와 함께 보존합니다.
+사용자가 알려 준 OpenClaw vLLM Qwen122B 연결은 이 정렬과 상황 보고를 마친 뒤 확인할 다음 모델 환경입니다.
+이번 위생 정리에는 새 모델 실행이 포함되지 않습니다.
+
 ## 다음 순서로 읽으세요
 
 1. [연구 프로그램과 현재 게이트](research-program-2026.md): 우선순위, 부정적 결과와 변경 금지 조건

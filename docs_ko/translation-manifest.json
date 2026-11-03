@@ -529,7 +529,7 @@
     },
     {
       "path": "research/experiment-index.md",
-      "source_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1"
+      "source_blob": "814aa31e04a1858ee322f6ace5188fa73fb742d4"
     },
     {
       "path": "research/external-validation-freeze.md",
@@ -557,7 +557,7 @@
     },
     {
       "path": "research/knowledge-index.md",
-      "source_blob": "863e96e358b07c447355b56c371468a926a380ae"
+      "source_blob": "5a146815cc69a190a1ba9241429a812a14220c5d"
     },
     {
       "path": "research/large-heldout-agent-utility.md",

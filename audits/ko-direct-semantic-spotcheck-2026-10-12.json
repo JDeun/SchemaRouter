@@ -807,9 +807,9 @@
     },
     {
       "path": "research/experiment-index.md",
-      "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
-      "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
-      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose. The explicit Korean source-preservation disclosure added in PR #1305 was separately checked: it preserves all ledger hypothesis strings and verdicts, marks untranslated verbatim hypotheses as not localized, and leaves immutable scientific evidence unchanged. This is an AI-assisted editorial check, not independent human certification."
+      "en_blob": "814aa31e04a1858ee322f6ace5188fa73fb742d4",
+      "ko_blob": "9303bf4912e0cd3158cb4f54642f908febb69b03",
+      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose. The explicit Korean source-preservation disclosure added in PR #1305 was separately checked: it preserves all ledger hypothesis strings and verdicts, marks untranslated verbatim hypotheses as not localized, and leaves immutable scientific evidence unchanged. This is an AI-assisted editorial check, not independent human certification. 2026-11-04 AI-assisted paired review: the92-record historical cutoff, dated branch/result reconciliation, archive versus code integration, source/field proof versus original-question completeness, lexical default, unqualified commercial performance and release HOLD agree. Private DEV inputs remain outside Git. Root and a separate AI reviewer compared the current source pair; not independent human sign-off."
     },
     {
       "path": "research/external-validation-freeze.md",
@@ -849,9 +849,9 @@
     },
     {
       "path": "research/knowledge-index.md",
-      "en_blob": "863e96e358b07c447355b56c371468a926a380ae",
-      "ko_blob": "ae7316c6218094c8e83a791532118c04fdffbf9f",
-      "notes": "2026-10-23 AI-assisted comparison of the expanded Korean research index against the canonical English navigation. Topic IDs SR-R01–SR-R07, source links, negative evidence, no-promotion and non-independent status are preserved; this is not independent human or sentence-level translation sign-off."
+      "en_blob": "5a146815cc69a190a1ba9241429a812a14220c5d",
+      "ko_blob": "35fa75183db420eeefefc00aada2ab3fd9de3693",
+      "notes": "2026-10-23 AI-assisted comparison of the expanded Korean research index against the canonical English navigation. Topic IDs SR-R01–SR-R07, source links, negative evidence, no-promotion and non-independent status are preserved; this is not independent human or sentence-level translation sign-off. 2026-11-04 AI-assisted paired review: the92-record historical cutoff, dated branch/result reconciliation, archive versus code integration, source/field proof versus original-question completeness, lexical default, unqualified commercial performance and release HOLD agree. Private DEV inputs remain outside Git. Root and a separate AI reviewer compared the current source pair; not independent human sign-off."
     },
     {
       "path": "research/large-heldout-agent-utility.md",

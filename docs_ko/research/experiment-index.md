@@ -1,10 +1,13 @@
 # 전체 실험 색인
 
-이 페이지는 최신 결과나 가장 높은 성능만 선별하지 않고, SchemaRouter 라우팅 연구의 전체 실험 기록을 공개합니다.
+이 페이지는 실패·대체된 접근법을 포함해 2026-09-30까지의 SchemaRouter 라우팅 연구 원장 92건을 보존합니다. 이후 작업 전체를 나열한 목록은 아닙니다.
+후속 그래프·CodeGraph·논문 정합성·로컬 DEV 기록은
+[2026-11-04 브랜치·근거 정리 기록](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/repository-reconciliation-2026-11-04.json)에서 확인합니다.
+특정 시점의 이 목록은 코드 통합, 측정 결과와 미해결 근거를 구분하며, 동결된 원장을 재채점하거나 대체하지 않습니다.
 
 공개 연구 요약 페이지가 "현재 연구가 어디까지 왔는가"에 답한다면, 이 페이지는 "실제로 무엇을 시도했는가"를 보여줍니다.
 
-현재 기계 판독형 실험 기록:
+과거 기계 판독형 실험 기록:
 
 - 별도의 실험으로 등록된 기록: 92건;
 - 기존 라우팅 코퍼스 계보: 버전이 명시된 코퍼스 13개;
@@ -14,7 +17,7 @@
 
 92건의 기록에는 종료된 0.13 V6A–V6H 및 오픈셋 대조 실험과 진행 중인 0.14 에이전트 작업 효용성 연구가 포함됩니다. 종료된 0.13 확인 실험의 평가 데이터는 별도의 명시적 기록이 없는 한 개봉되지 않은 상태로 유지됩니다.
 
-기계적으로 읽을 수 있는 정본은
+이 과거 기록을 기계적으로 읽을 수 있는 정본은
 [`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json)입니다.
 서술형 이력의 정본은
 [설계 및 실험 이력](design-and-experiment-history.md)입니다.
