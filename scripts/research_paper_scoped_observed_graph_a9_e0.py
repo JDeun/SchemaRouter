@@ -113,7 +113,7 @@ async def run_paper_scoped_named_graph_a9_e0(
     if (
         review_model_root_arguments is not None
         and host_source_arguments is None
-        and plan.status in ("requires_arguments", "requires_observation")
+        and plan.status == "requires_observation"
         and plan.calls
         and plan.calls[0].call.missing_required_arguments
     ):
@@ -136,7 +136,12 @@ async def run_paper_scoped_named_graph_a9_e0(
     if plan.executable_authority:
         raise PolicyViolationError("paper named graph is not an execution grant")
     if plan.status != "requires_observation":
-        return decision_from_plan_status(plan.status), None
+        # Direct field mappings remain valid planner receipts, but this
+        # G5-only executor neither observes nor offers those direct calls.
+        return (
+            "abstain" if plan.status in ("ready", "requires_arguments")
+            else decision_from_plan_status(plan.status)
+        ), None
     if (
         not 2 <= len(plan.calls) <= 3
         or not plan.bindings

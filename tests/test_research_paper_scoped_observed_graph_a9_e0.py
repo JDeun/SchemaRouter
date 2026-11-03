@@ -100,6 +100,41 @@ async def test_missing_root_host_input_defers_without_any_tool_call():
 
 
 @pytest.mark.asyncio
+async def test_ready_direct_receipt_is_not_offered_as_observed_g5():
+    from schemarouter import NativeSchemaGraphIndex
+    from schemarouter.paper_understood_direct_plan import PaperUnderstanding
+    from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
+    from scripts.research_paper_scoped_observed_graph_a9_e0 import (
+        run_paper_scoped_named_graph_a9_e0,
+    )
+
+    router, index, seen = _fixture(hops=1)
+    index = NativeSchemaGraphIndex.build(
+        index.field_index, approved_host_roots=frozenset({"target_0.read"}),
+    )
+    view = _view(router)
+    host_inputs = {"target_0.read": {"case_id": "host-case"}}
+    plan = compile_paper_understood_graph_plan(
+        router, PaperUnderstanding.model_validate(_response()),
+        principal=view._principal, catalog=CATALOG, intent_registry=INTENTS,
+        index=index, host_source_arguments=host_inputs,
+    )
+    assert plan.status == "ready"
+    assert [call.route_id for call in plan.calls] == ["target_0.read"]
+    assert plan.calls[0].call.fields == ["status"]
+    assert plan.bindings == ()
+
+    reviewed = []
+    decision, receipt = await run_paper_scoped_named_graph_a9_e0(
+        lambda payload: _response(), **_args(view, index),
+        host_source_arguments=host_inputs,
+        review_model_root_arguments=lambda proposal: reviewed.append(proposal) or True,
+    )
+    assert (decision, receipt) == ("abstain", None)
+    assert reviewed == [] and seen == []
+
+
+@pytest.mark.asyncio
 async def test_unknown_model_named_tool_abstains_without_execution():
     from scripts.research_paper_scoped_observed_graph_a9_e0 import (
         run_paper_scoped_named_graph_a9_e0,
