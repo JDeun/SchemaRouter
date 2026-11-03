@@ -351,6 +351,7 @@ async def compile_model_query(
             "intent_id", "concept_ids", "unresolved_concepts", "source_type",
             "named_tools", "parameter_hints",
         ],
+        "response_schema": PaperUnderstanding.model_json_schema(),
         "rules": [
             "Use only offered IDs and offered tool keys; return one JSON object.",
             "Return intent_id=null if no offered intent fits the query.",

@@ -65,6 +65,9 @@ async def test_model_query_preserves_unsupported_needs_and_null_intent():
         assert {"source_type", "parameter_hints", "unresolved_concepts"} <= set(
             payload["response_fields"],
         )
+        properties = payload["response_schema"]["properties"]
+        assert properties["parameter_hints"]["type"] == "object"
+        assert properties["unresolved_concepts"]["items"]["type"] == "string"
         return {"intent_id": None, "unresolved_concepts": ["send a payment"]}
 
     plan = await session.acompile_query(
