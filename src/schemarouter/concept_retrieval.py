@@ -20,6 +20,7 @@ from .field_group_retrieval import (
 )
 from .models import CapabilityRetrieval, StrictModel
 from .planner import _locale_lexical_text
+from .validation import json_schemas_compatible
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -138,7 +139,10 @@ def _merged_concept_fields(
     for concept in concepts:
         for field in concept.required_fields:
             previous = unique.get(field.semantic_id)
-            if previous is not None and previous != field:
+            if previous is not None and (
+                previous != field
+                or not json_schemas_compatible(previous.json_schema, field.json_schema)
+            ):
                 return None
             unique[field.semantic_id] = field
     return tuple(unique[key] for key in sorted(unique))

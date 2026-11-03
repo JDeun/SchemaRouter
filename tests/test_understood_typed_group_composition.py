@@ -27,6 +27,10 @@ CONDITIONS = (
     ({"json_schema": {"type": "string"}}, {"json_schema": {"type": "integer"}}),
     ({"json_schema": {"type": "string", "const": "first"}},
      {"json_schema": {"type": "string", "const": "second"}}),
+    ({"json_schema": {"type": ["integer", "boolean"], "const": 1}},
+     {"json_schema": {"type": ["integer", "boolean"], "const": True}}),
+    ({"json_schema": {"type": ["integer", "boolean"], "enum": [1]}},
+     {"json_schema": {"type": ["integer", "boolean"], "enum": [True]}}),
 )
 
 
