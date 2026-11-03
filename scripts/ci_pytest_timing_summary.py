@@ -53,7 +53,7 @@ def render_timing_summary(path: Path, *, count: int = 25) -> str:
         "| --- | ---: |",
     ]
     for name, secs, _ in sorted(cases, key=lambda x: x[1], reverse=True)[:count]:
-        lines.append(f"| \`{_cell(name)}\` | {secs:.2f} |")
+        lines.append(f"| `{_cell(name)}` | {secs:.2f} |")
 
     lines.extend([
         "",
@@ -65,7 +65,7 @@ def render_timing_summary(path: Path, *, count: int = 25) -> str:
     for module, secs in sorted(
         total_by_module.items(), key=lambda x: x[1], reverse=True
     )[:count]:
-        lines.append(f"| \`{_cell(module)}\` | {secs:.2f} |")
+        lines.append(f"| `{_cell(module)}` | {secs:.2f} |")
     lines.extend([
         "",
         "The source JUnit XML artifact contains all recorded cases, including failures.",
