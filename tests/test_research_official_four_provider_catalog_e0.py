@@ -57,12 +57,12 @@ def test_four_original_publishers_in_one_catalog_preserve_methods(four_tools: tu
 
 
 @pytest.fixture(scope="module")
-def original_four_receipt() -> dict:
+def original_four_receipt(four_tools: tuple) -> dict:
     from scripts.research_official_four_provider_catalog_e0 import (
         audit_original_four_provider_native_churn_e0,
     )
 
-    return audit_original_four_provider_native_churn_e0()
+    return audit_original_four_provider_native_churn_e0(prepared_tools=four_tools)
 
 
 def test_real_four_provider_1009_original_routes_have_one_native_index(
@@ -102,6 +102,7 @@ def test_real_four_provider_churn_records_observed_build_costs(
 
 def test_four_provider_churn_rejects_forged_noop_journal(
     monkeypatch: pytest.MonkeyPatch,
+    four_tools: tuple,
 ) -> None:
     from scripts.research_official_four_provider_catalog_e0 import (
         audit_original_four_provider_native_churn_e0,
@@ -113,4 +114,15 @@ def test_four_provider_churn_rejects_forged_noop_journal(
         classmethod(lambda cls, previous, registry: previous),
     )
     with pytest.raises(ValueError, match="stale|journal|snapshot"):
-        audit_original_four_provider_native_churn_e0()
+        audit_original_four_provider_native_churn_e0(prepared_tools=four_tools)
+
+
+def test_four_provider_prepared_fixture_cannot_omit_original_source(
+    four_tools: tuple,
+) -> None:
+    from scripts.research_official_four_provider_catalog_e0 import (
+        audit_original_four_provider_native_churn_e0,
+    )
+
+    with pytest.raises(ValueError, match="prepared four-provider fixture"):
+        audit_original_four_provider_native_churn_e0(prepared_tools=four_tools[:-1])
