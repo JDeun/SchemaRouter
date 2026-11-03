@@ -56,6 +56,7 @@ async def analyze_and_plan_paper_scoped_e0(
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     review_model_root_arguments: PaperRootArgumentReviewer | None = None,
+    experimental_field_session: bool = False,
 ) -> tuple[Decision, PaperTypedToolPlan | None]:
     """Exactly one scoped Understand call followed by a reauthorized plan.
 
@@ -64,6 +65,8 @@ async def analyze_and_plan_paper_scoped_e0(
     """
     if not isinstance(view, AuthorizedAgentToolSurface):
         raise ValueError("current principal-scoped view required")
+    if type(experimental_field_session) is not bool:
+        raise ValueError("field-session opt-in must be boolean")
     if not isinstance(index, NativeSchemaGraphIndex):
         raise ValueError("source-pinned graph index required")
     if host_source_arguments is not None and (
@@ -89,15 +92,25 @@ async def analyze_and_plan_paper_scoped_e0(
     check_host_inputs()
     if understanding is None:
         return "abstain", None
-    plan = compile_paper_understood_graph_plan(
-        view.router, understanding, principal=view._principal,
-        catalog=catalog, intent_registry=intent_registry, index=index,
-        host_source_arguments=pinned_host_inputs,
-    )
+    if experimental_field_session:
+        index.field_index._assert_source(view.router)
+        session = view.router.prepare_field_routing(
+            catalog=catalog, approved_host_roots=index.approved_host_roots,
+        )
+        plan = session.compile_understood(
+            understanding, principal=view._principal,
+            intent_registry=intent_registry, host_source_arguments=pinned_host_inputs,
+        )
+    else:
+        plan = compile_paper_understood_graph_plan(
+            view.router, understanding, principal=view._principal,
+            catalog=catalog, intent_registry=intent_registry, index=index,
+            host_source_arguments=pinned_host_inputs,
+        )
     # The graph-only compiler intentionally refuses an unproved dependency.
     # The existing agent may still request a genuinely scalar source input,
     # but a typed identifier dependency must never silently become one.
-    if plan.status == "no_proven_hit":
+    if plan.status == "no_proven_hit" and not experimental_field_session:
         direct = compile_paper_understood_direct_plan(
             view.router, understanding, principal=view._principal,
             catalog=catalog, intent_registry=intent_registry, index=index,

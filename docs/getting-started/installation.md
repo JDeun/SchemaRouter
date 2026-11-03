@@ -17,6 +17,9 @@ ecosystem validation. See the [0.14.0 release notes](../releases/0.14.0.md).
 
 ## Development checkout
 
+Development `main` identifies as `0.18.0.dev0`. These docs follow that source branch;
+unreleased changes are not included in the published `0.17.0` package.
+
 For local development and tests:
 
 ```bash

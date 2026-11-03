@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 from .authorization import PrincipalContext
@@ -15,14 +15,14 @@ from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
 from .host_field_contract import _policy_contents_digest
-from .models import EndpointSpec, ToolCall, ToolSpec
+from .models import EndpointSpec, PlanCoverage, ToolCall, ToolSpec
 from .native_graph_index import (
     NativeSchemaGraphIndex,
     _host_source_input_names,
     _native_required_inputs,
 )
 from .paper_field_retrieval import PaperFieldRoute, retrieve_paper_field_coverage
-from .validation import validate_json_schema_value
+from .validation import canonical_unit_value_schema, validate_json_schema_value
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -40,7 +40,7 @@ class PaperPlanBinding:
 
 @dataclass(frozen=True, slots=True)
 class PaperPlanFieldMeta:
-    """Field metadata copied only from the currently scoped source view."""
+    """Current scoped paths/contracts; policy may flatten or redact source metadata."""
 
     name: str
     semantic_id: str | None
@@ -49,6 +49,9 @@ class PaperPlanFieldMeta:
     source_type: str | None
     license: str | None
     qualifiers: tuple[tuple[str, str], ...]
+    source_path: tuple[str, ...] = ()
+    result_path: tuple[str, ...] = ()
+    json_schema: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +96,8 @@ class PaperTypedToolPlan:
     bindings: tuple[PaperPlanBinding, ...] = ()
     executable_authority: bool = False
     ranked_unverified: bool = False
+    coverage: PlanCoverage | None = None
+    understanding_hints: dict[str, Any] | None = field(default=None, compare=False)
 
 
 def compile_paper_typed_tool_plan(
@@ -336,6 +341,9 @@ def _compile_one_route(
         source_type=f.source_type or tool.source_type,
         license=f.license or tool.license,
         qualifiers=tuple(sorted(f.qualifiers.items())),
+        source_path=f.projection_path,
+        result_path=f.result_projection_path,
+        json_schema=canonical_unit_value_schema(f.json_schema, f.unit_normalization),
     ) for f in visible.output_fields if f.name in selected)
     if len(metadata) != len(route.output_fields):
         raise PolicyViolationError("paper typed route field metadata incomplete")

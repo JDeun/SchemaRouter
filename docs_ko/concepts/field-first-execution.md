@@ -18,6 +18,18 @@ user query
 
 필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 준비된 경로는 명시적으로 선택해야 하며 기본 라우팅을 바꾸지 않습니다.
 
+## 준비된 schema-only plan
+
+`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. `session.acompile_query(...)`는 추가로 질문과 명시적으로 승인된 intent ID, concept ID/alias, tool 이름을 애플리케이션의 모델에 전달하며, provider의 원본 schema는 보내지 않습니다. 이 API들은 명시적으로 선택해야 합니다. `router.plan(...)`의 기본 `KeywordAnalyzer`는 어휘 기반이며, 일반적인 다국어 이해·시간 조건 추론·질문에서 인자 값을 추출하는 기능을 제공하지 않습니다.
+
+각 concept의 필수 필드 집합 전체를 그 concept의 source type과 license에 따라 권한이 있는 endpoint에서 독립적으로 입증합니다. 따라서 독립적인 concept들은 서로 다른 tool과 license를 사용할 수 있습니다. 입증된 route들을 합치고, 반복되는 route는 선택 필드의 합집합을 원본 선언 순서로 보존합니다. Identifier와 호스트가 요구한 intent group은 recall을 보존하며, 결과가 항상 최소 필드 수라고 보장하지는 않습니다. 전체 route 집합은 K5 한도를 따르므로 합집합이 다섯 route를 넘으면 call 없이 `budget_unsatisfied`를 반환합니다.
+
+요구를 합성한 경우 `plan.coverage`는 `required`, `covered`, `uncovered`, `complete`를 기록하며, 필드 semantic ID에 concept/source/license qualifier를 붙입니다. Concept 일부를 충족하지 못하면 입증된 부분 `calls`를 남기되 `status="no_proven_hit"`, `complete=False`를 반환할 수 있습니다. 모델이 보고한 `unresolved_concepts`는 `semantic_id="unresolved"`로 미충족 목록에 남으며, 원문 제안은 `query_concept=...` qualifier에 기록합니다. 이 제안으로 source나 type 계약을 추정하지 않습니다. `acompile_query`에서 `intent_id=null`이면 call 없이 불완전한 coverage와 `no_proven_hit`를 반환합니다. 모델이 누락한 요구까지 이 검사가 보장할 수는 없습니다.
+
+그 밖의 요구가 충족된 direct mapping에서 입증된 dependency가 필수 입력을 공급하지 못하면 `requires_arguments`와 `call.missing_required_arguments`를 유지합니다. `parameter_hints`는 신뢰하지 않는 제안으로 남습니다. 승인된 root에 별도로 제공한 `host_source_arguments`만 기존 원본·값 검증을 거쳐 인자로 연결할 수 있습니다.
+
+각 call의 `fields_meta`는 현재 scoped schema view의 `PaperPlanFieldMeta.source_path`, `result_path`, `json_schema`와 정규화된 단위·값 계약을 제공합니다. Policy는 경로를 평탄화하거나 metadata를 숨길 수 있습니다. 모델 기반 query receipt에는 검증 후 분리 복사한 `understanding_hints`도 포함되지만, 이것은 검증된 질문의 의미나 입력 권한이 아닌 신뢰하지 않는 제안입니다. `status="ready"`인 경우에도 모든 receipt의 `executable_authority=False`를 유지합니다.
+
 ## Field-first가 중요한 이유
 
 Elastic modulus 하나만 필요한데 complete material record를 가져오면 upstream bytes/latency, JSON parsing/validation, downstream LLM의 irrelevant value, prompt token, distractor 위험이 증가합니다. 그래서 response field를 afterthought가 아니라 execution plan 일부로 취급합니다.

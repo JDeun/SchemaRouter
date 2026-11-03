@@ -163,7 +163,9 @@ def test_understood_intent_required_b_cannot_be_dropped_by_model_a():
     router = _router()
     plan = _compile(router, _understanding(named_tools=("partial",)))
     assert plan.status == "no_proven_hit"
-    assert plan.calls == ()
+    assert [call.route_id for call in plan.calls] == ["partial.read"]
+    assert plan.coverage is not None and not plan.coverage.complete
+    assert [field.semantic_id for field in plan.coverage.uncovered] == ["crm.priority"]
 
 
 @pytest.mark.parametrize("named_tools,principal", [
@@ -179,7 +181,14 @@ def test_understood_named_tool_does_not_bypass_host_authority(named_tools, princ
         router, _understanding(named_tools=named_tools), principal=principal,
     )
     assert result.status == "no_proven_hit"
-    assert result.calls == () and result.bindings == ()
+    assert result.bindings == ()
+    if principal == VIEWER:
+        assert [call.route_id for call in result.calls] == ["full_5.read"]
+        assert result.calls[0].call.fields == ["status", "case_id"]
+        assert result.coverage is not None and not result.coverage.complete
+        assert [field.semantic_id for field in result.coverage.uncovered] == ["crm.priority"]
+    else:
+        assert result.calls == ()
     assert "denied" not in repr(result)
 
 

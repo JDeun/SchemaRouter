@@ -45,11 +45,11 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "source_blob": "b209667ffff53733a683573bec4dd1ae307c4279"
+      "source_blob": "b54ccdbfd8fce60b8047dadb2e6e26038b7b435e"
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb"
+      "source_blob": "57c60af68bdcbb8b261414bb9aa65e0133ddcf4f"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -85,7 +85,7 @@
     },
     {
       "path": "getting-started/installation.md",
-      "source_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8"
+      "source_blob": "89757a5e5b4c5704a3e905b340238dceabedc67b"
     },
     {
       "path": "getting-started/quickstart.md",
@@ -117,7 +117,7 @@
     },
     {
       "path": "guides/candidate-indexing.md",
-      "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
+      "source_blob": "a804f7cb6a76cd7dfe73a4373da1a44d8d037bf7"
     },
     {
       "path": "guides/capability-artifacts.md",
@@ -293,7 +293,7 @@
     },
     {
       "path": "index.md",
-      "source_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc"
+      "source_blob": "e6112170085c91c857c870279d23ef6226d43b70"
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -393,7 +393,7 @@
     },
     {
       "path": "project/trust-and-evidence.md",
-      "source_blob": "cdc02abb82026528c0966e5308d28357cd262e08"
+      "source_blob": "9d88282479e3354a80761996bacaca3a7ce56dfc"
     },
     {
       "path": "project/why-not-all-tool-schemas.md",
@@ -585,7 +585,7 @@
     },
     {
       "path": "research/product-north-star-and-test-matrix.md",
-      "source_blob": "37471d8b023f264aadb621fbb00304603ac7c8a3"
+      "source_blob": "7a34fe38d92d3c8d041d75941ede67d1122fd6be"
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -593,7 +593,7 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "source_blob": "d09287555f0be5389d9907e5ca6858d4e4948546"
+      "source_blob": "df4d026fe09935a0c39a34dfd56ab8be1d9331ca"
     },
     {
       "path": "research/routing-status.md",

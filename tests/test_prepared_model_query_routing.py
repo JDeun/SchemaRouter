@@ -15,6 +15,7 @@ from schemarouter import (
     PaperIntentRegistry,
 )
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
+from schemarouter.paper_query_understanding import _decode_bounded_response
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     RIGHT,
@@ -32,6 +33,72 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
     intent_id="crm.owner_lookup", required_concept_ids=("crm.owner",),
 ),))
+
+
+def test_understanding_retains_unresolved_query_needs_without_creating_contracts():
+    understood = _decode_bounded_response({
+        "intent_id": "crm.owner_lookup", "concept_ids": ["crm.owner"],
+        "unresolved_concepts": ["tomorrow's availability", "연락 가능한 시간"],
+    }, 4096)
+    assert understood.concept_ids == ("crm.owner",)
+    assert understood.unresolved_concepts == (
+        "tomorrow's availability", "연락 가능한 시간",
+    )
+
+
+@pytest.mark.parametrize("needs", [
+    [""], [" padded"], ["line\nbreak"], ["bad\x7f"], ["x" * 161],
+    ["same", "same"], [f"need {i}" for i in range(9)], [17], "humidity",
+])
+def test_understanding_rejects_invalid_unresolved_query_needs(needs):
+    with pytest.raises(ModelAnalysisError, match="structured"):
+        _decode_bounded_response({
+            "intent_id": "crm.owner_lookup", "unresolved_concepts": needs,
+        }, 4096)
+
+
+@pytest.mark.asyncio
+async def test_model_query_preserves_unsupported_needs_and_null_intent():
+    session = build_fixture(500).prepare_field_routing(catalog=CATALOG)
+
+    def model(payload):
+        assert {"source_type", "parameter_hints", "unresolved_concepts"} <= set(
+            payload["response_fields"],
+        )
+        properties = payload["response_schema"]["properties"]
+        assert properties["parameter_hints"]["type"] == "object"
+        assert properties["unresolved_concepts"]["items"]["type"] == "string"
+        return {"intent_id": None, "unresolved_concepts": ["send a payment"]}
+
+    plan = await session.acompile_query(
+        "Send a payment", principal=ACTOR, model=model, intent_registry=INTENTS,
+        model_visible_intent_ids=("crm.owner_lookup",),
+        model_visible_concept_ids=("crm.owner",),
+    )
+    assert plan.status == "no_proven_hit" and plan.calls == ()
+    assert plan.coverage is not None and not plan.coverage.complete
+    assert plan.coverage.required == plan.coverage.uncovered
+    assert plan.coverage.uncovered[0].qualifiers == ["query_concept=send a payment"]
+    assert plan.understanding_hints["intent_id"] is None
+    assert plan.understanding_hints["unresolved_concepts"] == ["send a payment"]
+
+
+@pytest.mark.asyncio
+async def test_model_query_retains_detached_hints_without_binding_them():
+    session = build_fixture(500).prepare_field_routing(catalog=CATALOG)
+    response = {
+        "intent_id": "crm.owner_lookup", "concept_ids": ["crm.owner"],
+        "source_type": "crm", "parameter_hints": {"customer_id": "QUERY-12"},
+    }
+    plan = await session.acompile_query(
+        "Who owns customer QUERY-12?", principal=ACTOR, model=lambda _: response,
+        intent_registry=INTENTS, model_visible_intent_ids=("crm.owner_lookup",),
+        model_visible_concept_ids=("crm.owner",),
+    )
+    response["parameter_hints"]["customer_id"] = "CHANGED"
+    assert plan.calls and all(call.call.arguments == {} for call in plan.calls)
+    assert plan.understanding_hints["parameter_hints"] == {"customer_id": "QUERY-12"}
+    assert plan.executable_authority is False
 
 
 @pytest.mark.asyncio
@@ -130,6 +197,8 @@ async def test_model_query_rejects_unreviewed_or_non_scoped_identity():
     for raw in (
         '{"intent_id":"crm.owner_lookup","intent_id":"other"}',
         {"intent_id": "unreviewed"},
+        {"intent_id": None, "concept_ids": ["unreviewed"]},
+        {"intent_id": None, "named_tools": ["unoffered"]},
         {"intent_id": "crm.owner_lookup", "named_tools": ["unoffered"]},
         {"intent_id": "crm.owner_lookup", "parameter_hints": {"id": float("nan")}},
     ):

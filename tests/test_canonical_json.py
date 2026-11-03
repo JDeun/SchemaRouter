@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict
+from decimal import Decimal
 
 import pytest
 
@@ -59,6 +60,61 @@ def test_canonical_json_rejects_non_finite_floats(value: float) -> None:
 def test_canonical_json_rejects_non_string_object_keys() -> None:
     with pytest.raises(TypeError, match="keys must be strings"):
         canonical_json_bytes({1: "coerced-by-json-dumps"})
+
+
+@pytest.mark.parametrize(("value", "kind", "message"), [
+    ({"a": [1, {"b": float("inf")}]}, ValueError,
+     "canonical JSON rejects non-finite float at $.a[1].b"),
+    ({"a": (1, {7: "bad"})}, TypeError,
+     "canonical JSON object keys must be strings at $.a[1]"),
+    ({"a.[unescaped]": [Decimal("1.5")]}, TypeError,
+     "canonical JSON does not support Decimal at $.a.[unescaped][0]"),
+    (({"x": {"y": {None: 1}}},), TypeError,
+     "canonical JSON object keys must be strings at $[0].x.y"),
+    ([0, complex(1, 2)], TypeError,
+     "canonical JSON does not support complex at $[1]"),
+])
+def test_canonical_json_keeps_exact_nested_error_types_and_paths(value, kind, message):
+    with pytest.raises(kind) as error:
+        canonical_json_bytes(value)
+    assert str(error.value) == message
+
+
+@pytest.mark.parametrize("ensure_ascii", (True, False))
+def test_canonical_json_scalar_children_keep_original_bytes(ensure_ascii):
+    payload = {"unicode": "한글", "values": (0, -1, 10**400, True, False, None, 0.25)}
+    expected = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=ensure_ascii,
+        allow_nan=False,
+    ).encode("utf-8")
+    assert canonical_json_bytes(payload, ensure_ascii=ensure_ascii) == expected
+
+
+def test_canonical_json_revalidates_shared_mutable_values_for_every_fingerprint():
+    fields = ["finite", 1]
+    shared = {"fields": fields}
+    payload = [shared, shared]
+    first = canonical_json_sha256(payload)
+    fields.append(2)
+    assert canonical_json_sha256(payload) != first
+    fields.append(float("nan"))
+    with pytest.raises(ValueError) as error:
+        canonical_json_sha256(payload)
+    assert str(error.value) == "canonical JSON rejects non-finite float at $[0].fields[3]"
+
+
+def test_canonical_json_revisits_shared_containers_within_the_same_walk():
+    shared = {"value": 1}
+
+    class MutatingList(list):
+        def __iter__(self):
+            yield shared
+            shared["value"] = float("nan")
+            yield shared
+
+    with pytest.raises(ValueError) as error:
+        canonical_json_bytes(MutatingList([shared, shared]))
+    assert str(error.value) == "canonical JSON rejects non-finite float at $[1].value"
 
 
 def test_digest_surfaces_share_the_canonical_encoder_contract() -> None:

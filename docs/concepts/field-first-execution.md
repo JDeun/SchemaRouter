@@ -30,6 +30,42 @@ transformed; predicates that cannot be proved after conversion are omitted only 
 description, so a stricter requirement remains unproved. Identity normalization preserves the
 original numeric value and type. This prepared path remains opt-in and does not change default routing.
 
+## Prepared schema-only plans
+
+`router.prepare_field_routing(catalog=...)` prepares a source-pinned index with a host-reviewed
+concept catalog. `session.compile_understood(...)` checks a `PaperUnderstanding` against that catalog
+and the host's `PaperIntentRegistry`. `session.acompile_query(...)` additionally calls the
+application's model with the query and explicitly approved intent IDs, concept IDs/aliases and tool
+names; raw provider schemas are not sent. These APIs are opt-in. The default `KeywordAnalyzer` in
+`router.plan(...)` remains lexical: it does not provide general multilingual understanding, temporal
+reasoning or extraction of argument values from query text.
+
+Each concept's complete required field group is proved independently at an authorized endpoint
+under its own source type and license. Independent concepts can therefore use different tools and
+licenses. Proven routes are combined, and repeated routes retain the union of selected fields in
+source declaration order. Identifiers and owner-required intent groups preserve recall; the result
+does not promise an unconditional minimum field count. The combined route set remains bounded by
+K5: a union exceeding five routes returns `budget_unsatisfied` without calls.
+
+For composed requirements, `plan.coverage` records `required`, `covered`, `uncovered` and `complete`;
+field semantic IDs carry concept/source/license qualifiers. A missing concept can leave proven
+partial `calls` with `status="no_proven_hit"` and `complete=False`. Model-reported
+`unresolved_concepts` stay uncovered as `semantic_id="unresolved"` with the raw proposal in a
+`query_concept=...` qualifier; they establish no source or type contract. In `acompile_query`,
+`intent_id=null` returns `no_proven_hit` with no calls and incomplete coverage. Requirements omitted
+by the model cannot be guaranteed by these checks.
+
+An otherwise complete direct mapping retains `requires_arguments` and
+`call.missing_required_arguments` when no proved dependency supplies its required inputs.
+`parameter_hints` remain untrusted proposals. Only separately supplied `host_source_arguments`
+for approved roots can bind values, subject to the existing source and value validation.
+
+Each call's `fields_meta` exposes `PaperPlanFieldMeta.source_path`, `result_path` and `json_schema`
+from the current scoped schema view, including its canonical unit/value contract. Policy may flatten
+paths or redact metadata. The model-backed query receipt also carries detached, validated
+`understanding_hints`; these remain untrusted suggestions, not verified query meaning or input
+authority. All these receipts retain `executable_authority=False`, including `status="ready"`.
+
 ## Why field-first matters
 
 If a user asks for one material property such as elastic modulus, fetching a complete material

@@ -7,6 +7,22 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+- Preserve scoped field paths, value schemas and missing inputs in prepared schema-only plans.
+- Compose complete concept groups across endpoints while retaining unmet query needs and K5 limits.
+
+- Mark development snapshots as `0.18.0.dev0` and distinguish development docs from stable `0.17.0`.
+- Reduce original-schema preparation costs with prefix candidate path validation and scalar JSON
+  validation fast paths while retaining fingerprints and conflict diagnostics.
+
+- Support constrained scalar field routing and sound canonical unit contracts, preserving large
+  integer precision and live router/executor authorization.
+- Preserve required JSON Schema assertions for provider fallback/corroboration; require full
+  equality for reference-dependent contracts and reject schema-bound non-finite or complex numbers.
+- Add opt-in principal-scoped FULL versus public field-session comparisons with private,
+  precision-preserving structured-final checks; retain frozen scores and unknown missing evidence.
+- Add closed-loop public routing load profiles, reliable bilingual navigation and guarded release
+  preparation. Commercial targets are prospective; independent qualification and release HOLD remain.
+
 ## 0.17.0 - 2026-10-07
 
 ### Added

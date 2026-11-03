@@ -102,6 +102,8 @@ def unchanged_english_prose(en_text: str, ko_text: str) -> list[str]:
         normalized = " ".join(paragraph.split())
         if len(normalized) < 220 or normalized.startswith(("#", "<", "|")):
             continue
+        if re.search(r"[가-힣]", normalized):
+            continue  # Canonical launch drafts can already contain Korean quotations.
         if normalized in ko_normalized:
             copies.append(normalized)
     return copies

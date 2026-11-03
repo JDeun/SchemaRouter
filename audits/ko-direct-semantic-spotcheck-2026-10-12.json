@@ -80,16 +80,16 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "b209667ffff53733a683573bec4dd1ae307c4279",
-      "ko_blob": "8371cbd12d728df7e6d6e8ee07c6dfe8dd590d15",
-      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off.",
+      "en_blob": "b54ccdbfd8fce60b8047dadb2e6e26038b7b435e",
+      "ko_blob": "bb1e814b1968e2388ed6b3a64cde3573484b1a06",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off. 2026-11-03 AI-assisted paired source review of opt-in prepared query/structured planning: source-separated complete concept groups, partial/unresolved coverage, K5 union bounds, retained direct missing arguments, scoped field paths/canonical schema, untrusted hints/null intent, identifier/intent recall and omitted-model-need limits. Not independent human sign-off.",
       "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off."
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb",
-      "ko_blob": "d861a028bd4093470cdc490d43ddf3e21709eacd",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership."
+      "en_blob": "57c60af68bdcbb8b261414bb9aa65e0133ddcf4f",
+      "ko_blob": "2e141bc69158b8c2e4000aa2bfbcdfccf0b02a03",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -141,9 +141,9 @@
     },
     {
       "path": "getting-started/installation.md",
-      "en_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8",
-      "ko_blob": "5c05e7cddcaff971d8c0ef0a0103751b20b83b7d",
-      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation."
+      "en_blob": "89757a5e5b4c5704a3e905b340238dceabedc67b",
+      "ko_blob": "546724649774275822d93ba4350123499973978f",
+      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off. 2026-11-03 AI-assisted paired review preserves stable-version badge and development-install distinction; Korean development-checkout link now has the explicit canonical anchor. No independent human sign-off."
     },
     {
       "path": "getting-started/quickstart.md",
@@ -189,9 +189,9 @@
     },
     {
       "path": "guides/candidate-indexing.md",
-      "en_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce",
-      "ko_blob": "e8dd1e38f5f16c5a854c4e9dcc1905477a5c7e3b",
-      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement."
+      "en_blob": "a804f7cb6a76cd7dfe73a4373da1a44d8d037bf7",
+      "ko_blob": "ed253f323c76dab39c85db74e5cbc5e09be5dc5b",
+      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement. 2026-11-03 delta: AI-assisted EN/KO comparison. Public prepared-session closed-loop profiles use each pathway 30 warmups/1000 samples, bounded 1/4 clients, submission queue boundaries, CPU/lifetime RSS/platform nulls and threshold counts; E0 is not SLO/E2. Not independent human editorial sign-off. AI-assisted EN/KO preparation delta: complete-segment prefix candidates preserve source/result/wildcard predicates and declaration-order errors, mutable registration validation stays before snapshot storage, scalar validation preserves canonical bytes/fingerprints/diagnostics; no SLO qualification claim."
     },
     {
       "path": "guides/capability-artifacts.md",
@@ -453,9 +453,9 @@
     },
     {
       "path": "index.md",
-      "en_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc",
-      "ko_blob": "2cd5a502abdec080568c14b5cd5829d1231e50c8",
-      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims."
+      "en_blob": "e6112170085c91c857c870279d23ef6226d43b70",
+      "ko_blob": "5d59192910c2964fd3e22a1b70bb9512b4f54161",
+      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off. 2026-11-03 AI-assisted paired review preserves stable-version badge and development-install distinction; Korean development-checkout link now has the explicit canonical anchor. No independent human sign-off."
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -603,9 +603,9 @@
     },
     {
       "path": "project/trust-and-evidence.md",
-      "en_blob": "cdc02abb82026528c0966e5308d28357cd262e08",
-      "ko_blob": "c51761197890806581fc50882022ff99ba977c8b",
-      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed."
+      "en_blob": "9d88282479e3354a80761996bacaca3a7ce56dfc",
+      "ko_blob": "b10810074b78dd2e6485bde683df0cebb246c473",
+      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed. 2026-11-03 delta: AI-assisted EN/KO comparison distinguishes main0.18.0.dev0/unreleased source from published stable0.17.0, retains HOLD and directs development installation appropriately; stable release link matches verified GitHubv0.17.0. No independent human editorial sign-off."
     },
     {
       "path": "project/why-not-all-tool-schemas.md",
@@ -891,9 +891,9 @@
     },
     {
       "path": "research/product-north-star-and-test-matrix.md",
-      "en_blob": "37471d8b023f264aadb621fbb00304603ac7c8a3",
-      "ko_blob": "67b303ae5fdb02478712feb1af46c668ca2aafe0",
-      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison of original-paper typed ontology graph and query-to-concept-to-field gap; external agent owns tool selection/action; graph DB not required; #1530 code parity audit; #1532/#1450 P0 privacy/source gate; #1531 synthetic alias E0 non-product; #1346 independent source/gold before #1477 E2; frozen #432 and v0.18 hold. Existing G/S/R/A/E matrix retained. No independent human/sentence-level verification."
+      "en_blob": "7a34fe38d92d3c8d041d75941ede67d1122fd6be",
+      "ko_blob": "1c08aa6cb6fbfb2c293a00e10e1d87a44c3e9ffd",
+      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison of original-paper typed ontology graph and query-to-concept-to-field gap; external agent owns tool selection/action; graph DB not required; #1530 code parity audit; #1532/#1450 P0 privacy/source gate; #1531 synthetic alias E0 non-product; #1346 independent source/gold before #1477 E2; frozen #432 and v0.18 hold. Existing G/S/R/A/E matrix retained. No independent human/sentence-level verification. 2026-11-03 delta: AI-assisted EN/KO comparison of prospective, unscored commercial targets: per-language and paired completion, per-task complete tool/field conjunction, independent final-answer oracle, confidence/error budgets, total metered cost, pinned CPU load/tail/RSS boundaries. All historical negatives, 19-row qualifications and release/default HOLD remain unchanged. No independent human editorial sign-off. Clarifies per-language/stratum gates and preserves correctly labelled clarification/ambiguity outcomes; only unresolved binary outcomes and missing required execution are disqualifying deferrals."
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -903,9 +903,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "d09287555f0be5389d9907e5ca6858d4e4948546",
-      "ko_blob": "98e3c795fdc71f3110cb776c814b3bcea01bd32c",
-      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off."
+      "en_blob": "df4d026fe09935a0c39a34dfd56ab8be1d9331ca",
+      "ko_blob": "92be2c6ff92f76454d5bf5512732959f0dd7efc8",
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open. 2026-11-03 delta: AI-assisted comparison of the added A10 paragraph confirms binary supported/unsupported deferrals leave both diagnostic gates null (unresolved), preserve counts/rates/denominators, permit appropriate nonbinary clarification/ambiguity, and never establish E2 without observed completion and independent review. This is not independent human editorial sign-off. 2026-11-03 delta: AI-assisted EN/KO comparison. New opt-in captures principal-scoped FULL and compares public field-session K5 with matching agents/prompt; private precision-preserving structured oracle AND execution, missing evidence null, usage-completeness false, no raw final/gold export, no free-text semantic or E2/release approval claim. Not independent human editorial sign-off. 2026-11-03 AI-assisted paired review preserves stable-version badge and development-install distinction; Korean development-checkout link now has the explicit canonical anchor. No independent human sign-off."
     },
     {
       "path": "research/routing-status.md",

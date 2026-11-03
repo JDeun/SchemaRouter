@@ -57,6 +57,7 @@ FINAL_ANSWER_CATALOG_SIZES = (100, 250)
 
 BASE_CONDITIONS = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
 EXPERIMENTAL_FIXED5_CONDITION = "EVAL-FIXED5-OPTIN"
+EXPERIMENTAL_FULL_CONDITION = "EVAL-FULL-OPTIN"
 CORRECTIVE_CONDITIONS = (
     "SR-5-STATIC",
     "SR-PROGRESSIVE-STATIC",
@@ -487,6 +488,7 @@ def run_generated_episode(
     experimental_candidate_selector: Callable[[str, tuple[str, ...]], list[str]]
     | None = None,
     experimental_agent_tool_surface: AuthorizedAgentToolSurface | None = None,
+    experimental_final_answer_oracle: bool = False,
     experimental_e0_trace_provenance: E0TraceProvenance | None = None,
     experimental_block_unavailable_observation: bool = False,
     experimental_preserve_candidate_order: bool = False,
@@ -530,7 +532,28 @@ def run_generated_episode(
     A separately authorized opt-in E0 host may bind a first, offered direct
     call's exact original-source scalar inputs just before the EXISTING
     frozen executor dispatch. This never creates a tool call for the agent.
+
+    EVAL-FULL-OPTIN requires an explicitly complete principal-visible capture
+    and its entire unchanged menu. It never changes historical FULL/fixed5.
+    The private structured final oracle runs only after all model turns;
+    `passed` retains execution-only meaning and absent usage stays unknown.
     """
+    scoped_conditions = (EXPERIMENTAL_FIXED5_CONDITION, EXPERIMENTAL_FULL_CONDITION)
+    if type(experimental_final_answer_oracle) is not bool or (
+        experimental_final_answer_oracle and (
+            condition not in scoped_conditions
+            or experimental_agent_tool_surface is None
+            or experimental_candidate_selector is None
+            or candidate_condition is not None
+        )
+    ):
+        raise ValueError("private final oracle requires explicit scoped E0")
+    if condition == EXPERIMENTAL_FULL_CONDITION and (
+        experimental_agent_tool_surface is None
+        or experimental_agent_tool_surface.full_catalog_captured is not True
+        or not experimental_final_answer_oracle
+    ):
+        raise ValueError("FULL requires complete scoped capture and private oracle opt-in")
     if experimental_scoped_call_binding is not None and (
         not callable(experimental_scoped_call_binding)
         or condition != EXPERIMENTAL_FIXED5_CONDITION
@@ -542,7 +565,7 @@ def run_generated_episode(
     if (
         type(experimental_host_empty_menu_terminal) is not bool
         or (experimental_host_empty_menu_terminal and (
-            condition != EXPERIMENTAL_FIXED5_CONDITION
+            condition not in scoped_conditions
             or candidate_condition is not None
             or experimental_candidate_selector is None
             or experimental_agent_tool_surface is None
@@ -565,7 +588,7 @@ def run_generated_episode(
         or (experimental_block_unavailable_observation and (
             experimental_agent_tool_surface is None
             or experimental_candidate_selector is None
-            or condition != EXPERIMENTAL_FIXED5_CONDITION
+            or condition not in scoped_conditions
         ))
     ):
         raise ValueError("blocked unsupported observation only allowed for scoped E0")
@@ -609,7 +632,7 @@ def run_generated_episode(
         # query and the source-registered route IDs are passed, never gold,
         # expected steps, labels, test outcomes or the executor fixture.
         if (
-            condition != EXPERIMENTAL_FIXED5_CONDITION
+            condition not in scoped_conditions
             or candidate_condition is not None
         ):
             raise ValueError("experimental selector requires isolated fixed5 condition")
@@ -629,7 +652,8 @@ def run_generated_episode(
             experimental_agent_tool_surface.assert_source_unchanged()
         if (
             type(selected) is not list
-            or len(selected) > 5
+            or (condition == EXPERIMENTAL_FIXED5_CONDITION and len(selected) > 5)
+            or (condition == EXPERIMENTAL_FULL_CONDITION and selected != list(source_ids))
             or any(type(route) is not str for route in selected)
             or len(set(selected)) != len(selected)
             or not set(selected).issubset(source_ids)
@@ -654,7 +678,7 @@ def run_generated_episode(
     else:
         if experimental_agent_tool_surface is not None:
             raise ValueError("scoped tool view requires isolated fixed5 selector")
-        if condition == EXPERIMENTAL_FIXED5_CONDITION:
+        if condition in scoped_conditions:
             raise ValueError("experimental fixed5 condition requires explicit selector")
         visible_routes, progressive_stages = condition_initial_routes(
             registry,
@@ -687,6 +711,7 @@ def run_generated_episode(
     total_input = 0
     total_output = 0
     total_tool_tokens = 0
+    missing_usage: set[str] = set()
     total_generation_latency = 0.0
     final_text = "REQUEST_MORE_TOOLS" if host_empty_menu_terminal else ""
     context_overflow = False
@@ -698,14 +723,29 @@ def run_generated_episode(
         if experimental_agent_tool_surface is None:
             model_tools = _visible_tools(registry, visible_routes)
         else:
-            model_tools = experimental_agent_tool_surface.tool_definitions(visible_routes)
+            model_tools = (
+                experimental_agent_tool_surface.full_tool_definitions()
+                if condition == EXPERIMENTAL_FULL_CONDITION
+                else experimental_agent_tool_surface.tool_definitions(visible_routes)
+            )
         generated = agent.generate(messages, model_tools)
         assert_experimental_task_unchanged()
         if experimental_agent_tool_surface is not None:
             experimental_agent_tool_surface.assert_source_unchanged()
-        total_input += int(generated["input_tokens"])
-        total_output += int(generated["output_tokens"])
-        total_tool_tokens += int(generated["tool_tokens"])
+        if experimental_final_answer_oracle:
+            for usage_name in ("input_tokens", "output_tokens", "tool_tokens"):
+                usage = generated.get(usage_name)
+                if usage is None:
+                    missing_usage.add(usage_name)
+                elif type(usage) is not int or usage < 0:
+                    raise ValueError("invalid reported agent usage")
+            total_input += generated.get("input_tokens") or 0
+            total_output += generated.get("output_tokens") or 0
+            total_tool_tokens += generated.get("tool_tokens") or 0
+        else:
+            total_input += int(generated["input_tokens"])
+            total_output += int(generated["output_tokens"])
+            total_tool_tokens += int(generated["tool_tokens"])
         total_generation_latency += float(generated["latency_ms"])
 
         if generated["context_overflow"]:
@@ -1037,7 +1077,26 @@ def run_generated_episode(
         # Never hand this record, or the HMAC key, to the agent/selector.
         assert_experimental_task_unchanged()
         public = experimental_agent_tool_surface.public_trace(episode_record)
+        if experimental_final_answer_oracle:
+            from scripts.research_private_final_answer_e0 import private_structured_final_result
+
+            public.update(private_structured_final_result(
+                task, final_text, execution_passed=bool(passed and executor.complete),
+            ))
+            for usage_name, public_name in (
+                ("input_tokens", "input_tokens"), ("output_tokens", "output_tokens"),
+                ("tool_tokens", "tool_schema_tokens"),
+            ):
+                if usage_name in missing_usage:
+                    public[public_name] = None
+            public["agent_usage_complete"] = not missing_usage and bool(turn_rows)
+            assert_experimental_task_unchanged()
+            experimental_agent_tool_surface.assert_source_unchanged()
         if experimental_e0_trace_provenance is not None:
+            if experimental_final_answer_oracle and missing_usage:
+                # Legacy stage receipts require measured integer counters;
+                # never export the internal partial sum as complete usage.
+                raise ValueError("stage evidence requires complete reported agent usage")
             provenance = experimental_e0_trace_provenance
             public["e0_stage_evidence"] = sanitized_e0_trace(
                 episode_record,

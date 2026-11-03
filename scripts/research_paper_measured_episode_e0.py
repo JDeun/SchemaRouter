@@ -54,9 +54,9 @@ class PaperStageMeasurement:
     understand_request_utf8_bytes: int | None
     understand_input_tokens_provider_reported: int | None
     understand_output_tokens_provider_reported: int | None
-    agent_input_tokens_reported: int
-    agent_output_tokens_reported: int
-    agent_tool_schema_tokens_reported: int
+    agent_input_tokens_reported: int | None
+    agent_output_tokens_reported: int | None
+    agent_tool_schema_tokens_reported: int | None
     agent_tool_schema_utf8_bytes_exposed: int
     agent_wall_latency_ms: float
     total_wall_latency_ms: float
@@ -90,6 +90,7 @@ async def run_paper_measured_agent_episode_e0(
     index: NativeSchemaGraphIndex,
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
+    experimental_full_final_oracle: bool = False,
 ) -> PaperMeteredAgentEpisode:
     """Meter the original A5 pipeline once; do not create a second agent.
 
@@ -143,6 +144,7 @@ async def run_paper_measured_agent_episode_e0(
         intent_registry=intent_registry, index=index,
         model_visible_intent_ids=model_visible_intent_ids,
         model_visible_concept_ids=model_visible_concept_ids,
+        experimental_full_final_oracle=experimental_full_final_oracle,
     )
     # The original A5 adapter's source check executes before it returns.
     elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
@@ -152,9 +154,9 @@ async def run_paper_measured_agent_episode_e0(
         understand_request_utf8_bytes=understand_request_bytes,
         understand_input_tokens_provider_reported=input_tokens,
         understand_output_tokens_provider_reported=output_tokens,
-        agent_input_tokens_reported=int(episode["input_tokens"]),
-        agent_output_tokens_reported=int(episode["output_tokens"]),
-        agent_tool_schema_tokens_reported=int(episode["tool_schema_tokens"]),
+        agent_input_tokens_reported=episode["input_tokens"],
+        agent_output_tokens_reported=episode["output_tokens"],
+        agent_tool_schema_tokens_reported=episode["tool_schema_tokens"],
         agent_tool_schema_utf8_bytes_exposed=agent_schema_bytes,
         agent_wall_latency_ms=float(episode["episode_wall_latency_ms"]),
         total_wall_latency_ms=elapsed_ms,

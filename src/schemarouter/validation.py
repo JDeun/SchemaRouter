@@ -4,12 +4,19 @@ import math
 import re
 from copy import deepcopy
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
-from jsonschema import exceptions, validators
+from jsonschema import Draft202012Validator, exceptions, validators
 
+from .canonical_json import canonical_json_text
 from .errors import SchemaValidationError
 from .models import EndpointSpec, UnitNormalizationSpec, _schema_at_projection_path
+
+_SCHEMA_ANNOTATIONS = {
+    "title", "description", "default", "examples", "deprecated",
+    "readOnly", "writeOnly", "$comment",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +62,14 @@ _DEFAULT_RUNTIME_VALIDATION_BUDGET = RuntimeValidationBudget()
 
 class _RuntimeValidationBudgetExceeded(RuntimeError):
     pass
+
+
+class _NonFiniteRuntimeValueError(ValueError):
+    """A numeric runtime value cannot be represented as finite JSON."""
+
+
+class _NonRealRuntimeValueError(ValueError):
+    """Complex runtime numbers cannot represent JSON numeric values."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -277,6 +292,13 @@ def _inspect_runtime_value(
             raise _budget_error("value node limit exceeded")
         if depth > budget.max_value_depth:
             raise _budget_error("value depth limit exceeded")
+        if (
+            isinstance(current, float) and not math.isfinite(current)
+            or isinstance(current, Decimal) and not Decimal.is_finite(current)
+        ):
+            raise _NonFiniteRuntimeValueError
+        if isinstance(current, complex):
+            raise _NonRealRuntimeValueError
 
         if isinstance(current, str):
             if len(current) > budget.max_string_chars:
@@ -595,23 +617,48 @@ def json_schemas_compatible(
     required: dict[str, Any],
     candidate: dict[str, Any],
 ) -> bool:
-    """Conservatively compare field value-shape compatibility."""
+    """Prove type assignability and preserved assertions without general subsumption."""
 
+    try:
+        encoded = canonical_json_text((required, candidate))
+        # Nested references can change meaning when any enclosing type/items schema changes.
+        if any(f'"{key}":' in encoded for key in ("$ref", "$dynamicRef", "$recursiveRef")):
+            return Draft202012Validator({"const": required}).is_valid(candidate)
+    except (TypeError, ValueError, RecursionError):
+        return False
     required_types = json_schema_types(required)
     candidate_types = json_schema_types(candidate)
     if not json_types_compatible(required_types, candidate_types):
         return False
-    if not required_types:
-        return True
+    ignored = _SCHEMA_ANNOTATIONS | {"type"}
+    # References/combinators can depend on items; retain their complete assertion comparison.
+    if (
+        required.keys() | candidate.keys() <= _SCHEMA_ANNOTATIONS | {
+            "type", "items", "enum", "const", "minItems", "maxItems", "uniqueItems",
+            "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf",
+            "minLength", "maxLength", "pattern",
+        }
+        and (
+            "items" not in required or required["items"] is True
+            or isinstance(required["items"], dict)
+        )
+    ):
+        ignored |= {"items"}
+    required_assertions = {key: value for key, value in required.items() if key not in ignored}
+    if required_assertions:
+        candidate_assertions = {
+            key: value for key, value in candidate.items() if key not in ignored
+        }
+        # shortcut: differing assertions remain unproved; add subsumption only with a proof.
+        try:
+            if not Draft202012Validator({"const": required_assertions}).is_valid(
+                candidate_assertions,
+            ):
+                return False
+        except (TypeError, ValueError, RecursionError):
+            return False
 
-    if "array" in required_types:
-        if "array" not in candidate_types:
-            # A union can still be compatible through another shared type.
-            shared_non_array = (required_types & candidate_types) - {"array"}
-            numeric = {"number", "integer"}
-            return bool(shared_non_array) or bool(
-                required_types & numeric and candidate_types & numeric
-            )
+    if "array" in candidate_types or not candidate_types:
         required_items = required.get("items")
         candidate_items = candidate.get("items")
         if isinstance(required_items, dict):
@@ -771,6 +818,14 @@ def validate_json_schema_value(
         runtime_validator_cls = _runtime_validator_class(validator_cls, effective_budget)
         validator = runtime_validator_cls(schema)
         first = next(validator.iter_errors(value), None)
+    except _NonFiniteRuntimeValueError as exc:
+        raise SchemaValidationError(
+            f"{context}: non-finite numeric values are not permitted"
+        ) from exc
+    except _NonRealRuntimeValueError as exc:
+        raise SchemaValidationError(
+            f"{context}: non-real numeric values are not permitted"
+        ) from exc
     except _RuntimeValidationBudgetExceeded as exc:
         raise SchemaValidationError(
             f"{context}: JSON Schema validation work budget exceeded ({exc})"

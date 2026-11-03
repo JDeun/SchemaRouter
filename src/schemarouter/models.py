@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Iterator
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
@@ -41,6 +42,21 @@ _TOOL_RUNTIME_KEYS_BY_ADAPTER = {
     },
     "python": {"adapter"},
 }
+
+
+def _overlapping_projection_pairs(
+    paths: list[tuple[str, ...]],
+) -> Iterator[tuple[int, int]]:
+    """Yield original index pairs whose paths overlap, in prefix traversal order."""
+    ancestors: list[int] = []
+    for index in sorted(range(len(paths)), key=paths.__getitem__):
+        path = paths[index]
+        while ancestors and path[: len(paths[ancestors[-1]])] != paths[ancestors[-1]]:
+            ancestors.pop()
+        # Every ancestor can conflict; an adjacent pair alone misses remapped paths.
+        for ancestor in ancestors:
+            yield min(ancestor, index), max(ancestor, index)
+        ancestors.append(index)
 
 
 def _schema_types(schema: dict[str, Any]) -> set[str]:
@@ -672,33 +688,43 @@ class EndpointSpec(StrictModel):
             (field.name, field.projection_path, field.result_projection_path)
             for field in self.output_fields
         ]
-        for index, (left_name, left_path, left_result) in enumerate(projection_entries):
-            for right_name, right_path, right_result in projection_entries[index + 1 :]:
-                source_shorter, source_longer = (
-                    (left_path, right_path)
-                    if len(left_path) <= len(right_path)
-                    else (right_path, left_path)
-                )
-                result_shorter, result_longer = (
-                    (left_result, right_result)
-                    if len(left_result) <= len(right_result)
-                    else (right_result, left_result)
-                )
-                source_overlaps = (
-                    source_longer[: len(source_shorter)] == source_shorter
-                )
-                result_overlaps = (
-                    result_longer[: len(result_shorter)] == result_shorter
-                )
-                wildcard_mergeable = (
-                    "*" in source_longer
-                    and "*" in result_longer
-                )
-                if source_overlaps and result_overlaps and not wildcard_mergeable:
-                    raise ValueError(
-                        "overlapping output field paths in endpoint "
-                        f"{self.name!r}: {left_name!r} and {right_name!r}"
-                    )
+        result_projection_paths = [entry[2] for entry in projection_entries]
+        source_conflict: tuple[int, int] | None = None
+        for index, right_index in _overlapping_projection_pairs(result_projection_paths):
+            _, left_path, left_result = projection_entries[index]
+            _, right_path, right_result = projection_entries[right_index]
+            source_shorter, source_longer = (
+                (left_path, right_path)
+                if len(left_path) <= len(right_path)
+                else (right_path, left_path)
+            )
+            result_shorter, result_longer = (
+                (left_result, right_result)
+                if len(left_result) <= len(right_result)
+                else (right_result, left_result)
+            )
+            source_overlaps = (
+                source_longer[: len(source_shorter)] == source_shorter
+            )
+            result_overlaps = (
+                result_longer[: len(result_shorter)] == result_shorter
+            )
+            wildcard_mergeable = (
+                "*" in source_longer
+                and "*" in result_longer
+            )
+            if source_overlaps and result_overlaps and not wildcard_mergeable:
+                pair = (index, right_index)
+                if source_conflict is None or pair < source_conflict:
+                    source_conflict = pair
+        # Prefix order differs from input order; preserve the historical first error.
+        if source_conflict is not None:
+            left_name = projection_entries[source_conflict[0]][0]
+            right_name = projection_entries[source_conflict[1]][0]
+            raise ValueError(
+                "overlapping output field paths in endpoint "
+                f"{self.name!r}: {left_name!r} and {right_name!r}"
+            )
 
         result_paths = [
             (field.name, field.result_projection_path)
@@ -706,21 +732,29 @@ class EndpointSpec(StrictModel):
         ]
         if len({path for _, path in result_paths}) != len(result_paths):
             raise ValueError(f"duplicate output result path in endpoint {self.name!r}")
-        for index, (left_name, left_path) in enumerate(result_paths):
-            for right_name, right_path in result_paths[index + 1 :]:
-                shorter, longer = (
-                    (left_path, right_path)
-                    if len(left_path) <= len(right_path)
-                    else (right_path, left_path)
-                )
-                if (
-                    longer[: len(shorter)] == shorter
-                    and "*" not in longer
-                ):
-                    raise ValueError(
-                        "overlapping output result paths in endpoint "
-                        f"{self.name!r}: {left_name!r} and {right_name!r}"
-                    )
+        result_conflict: tuple[int, int] | None = None
+        for index, right_index in _overlapping_projection_pairs(result_projection_paths):
+            _, left_path = result_paths[index]
+            _, right_path = result_paths[right_index]
+            shorter, longer = (
+                (left_path, right_path)
+                if len(left_path) <= len(right_path)
+                else (right_path, left_path)
+            )
+            if (
+                longer[: len(shorter)] == shorter
+                and "*" not in longer
+            ):
+                pair = (index, right_index)
+                if result_conflict is None or pair < result_conflict:
+                    result_conflict = pair
+        if result_conflict is not None:
+            left_name = result_paths[result_conflict[0]][0]
+            right_name = result_paths[result_conflict[1]][0]
+            raise ValueError(
+                "overlapping output result paths in endpoint "
+                f"{self.name!r}: {left_name!r} and {right_name!r}"
+            )
         return self
 
     @model_serializer(mode="wrap")

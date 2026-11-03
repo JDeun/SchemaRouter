@@ -37,6 +37,7 @@ async def run_paper_scoped_agent_episode_e0(
     model_visible_concept_ids: tuple[str, ...],
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     review_model_root_arguments: PaperRootArgumentReviewer | None = None,
+    experimental_full_final_oracle: bool = False,
 ) -> tuple[Decision, dict[str, Any]]:
     """Perform one scoped model analysis before the unchanged frozen executor.
 
@@ -65,6 +66,7 @@ async def run_paper_scoped_agent_episode_e0(
         model_visible_concept_ids=model_visible_concept_ids,
         host_source_arguments=host_source_arguments,
         review_model_root_arguments=review_model_root_arguments,
+        experimental_field_session=experimental_full_final_oracle,
     )
     check_host_inputs()
     view.assert_source_unchanged()
@@ -90,6 +92,7 @@ async def run_paper_scoped_agent_episode_e0(
     episode = run_paper_fixed5_episode_e0(
         agent, view=view, task=task, plan=episode_plan,
         scoped_host_call_binding=source_binding,
+        experimental_final_answer_oracle=experimental_full_final_oracle,
     )
     view.assert_source_unchanged()
     check_host_inputs()

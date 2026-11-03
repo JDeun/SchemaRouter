@@ -17,10 +17,12 @@ from typing import Any
 
 from schemarouter import (
     AuthorizationPolicy,
+    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
 )
+from schemarouter.planner import KeywordAnalyzer
 from scripts.research_bounded_authorized_semantic_diagnostic import (
     CapturedAuthorizedSemanticRoute,
     scoped_semantic_model_description,
@@ -66,6 +68,7 @@ def _checked_scoped_view_receipt(view: AuthorizedAgentToolSurface) -> str:
             "registered_route_count": view.registered_route_count,
             "registry_version": view.witness[1],
             "visible_route_ids": view.visible_route_ids,
+            "full_catalog_captured": view.full_catalog_captured,
             "tool_definitions": view._tool_definitions,
             "output_names": {
                 name: sorted(fields)
@@ -152,6 +155,7 @@ class AuthorizedAgentToolSurface:
     visible_route_ids: tuple[str, ...]
     _tool_definitions: dict[str, dict[str, Any]]
     _visible_output_names: dict[str, frozenset[str]]
+    full_catalog_captured: bool = False
     _semantic_source_routes: tuple[CapturedAuthorizedSemanticRoute, ...] = dataclass_field(
         default_factory=tuple, repr=False,
     )
@@ -246,6 +250,16 @@ class AuthorizedAgentToolSurface:
             or any(route not in self._tool_definitions for route in selected_route_ids)
         ):
             raise PolicyViolationError("candidate not in principal-visible source set")
+        return self._disclose_definitions(selected_route_ids)
+
+    def full_tool_definitions(self) -> list[dict[str, Any]]:
+        """Explicit complete authorized-source baseline, never a larger K5."""
+        self.assert_source_unchanged()
+        if self.full_catalog_captured is not True:
+            raise ValueError("FULL requires explicit complete source capture")
+        return self._disclose_definitions(list(self.visible_route_ids))
+
+    def _disclose_definitions(self, selected_route_ids: list[str]) -> list[dict[str, Any]]:
         result = [
             copy.deepcopy(self._tool_definitions[route])
             for route in selected_route_ids
@@ -374,10 +388,17 @@ def capture_authorized_agent_tool_surface(
     *,
     principal: PrincipalContext,
     max_registered_routes: int = MAX_SOURCE_ENDPOINTS,
+    experimental_full_catalog: bool = False,
 ) -> AuthorizedAgentToolSurface:
     """Construct agent-visible definitions from the real SOURCE-SCOPED output."""
     if type(query) is not str or not query.strip():
         raise ValueError("original nonempty query required")
+    if type(experimental_full_catalog) is not bool:
+        raise ValueError("FULL source capture requires boolean opt-in")
+    if experimental_full_catalog and type(router.planner.analyzer) is not KeywordAnalyzer:
+        # An arbitrary analyzer can discard the enumeration preferences.
+        # Refuse a silently incomplete baseline instead of calling it FULL.
+        raise ValueError("FULL enumeration requires the native keyword analyzer")
     if (
         type(max_registered_routes) is not int
         or not 1 <= max_registered_routes <= MAX_SOURCE_ENDPOINTS
@@ -390,11 +411,17 @@ def capture_authorized_agent_tool_surface(
     if physical > max_registered_routes:
         raise ValueError("original catalog exceeds research cap")
 
-    # The public API enforces principal-scoped RBAC/ABAC, data-rule
-    # projection and availability. Only positively scored visible routes can
-    # become a model tool definition; hidden route cardinality is not shown.
+    # The public API enforces principal-scoped RBAC/ABAC, data-rule projection
+    # and availability. Default capture includes positively scored routes;
+    # hidden route cardinality is never disclosed in either mode.
+    # Preferences enumerate even zero-lexical-score endpoints through the
+    # SAME public RBAC/data-scope/availability boundary. Source IDs never
+    # reach a model before principal authorization and projection have run.
+    request = PlanRequest(
+        query=query, preferred_tools=[tool.key for tool in router.registry.tools()],
+    ) if experimental_full_catalog else query
     result = router.retrieve_authorized(
-        query, principal=principal, k=max(1, physical),
+        request, principal=principal, k=max(1, physical),
     )
     router._check_retrieval_authority_witness(witness)
     if _authorization_policy_receipt(router.authorization_policy) != policy_receipt_before:
@@ -487,6 +514,7 @@ def capture_authorized_agent_tool_surface(
         _tool_definitions=definitions,
         _visible_output_names=visible,
         _semantic_source_routes=tuple(semantic_routes),
+        full_catalog_captured=experimental_full_catalog,
     )
     object.__setattr__(view, "_scoped_view_receipt", _checked_scoped_view_receipt(view))
     object.__setattr__(view, "_authorization_policy_receipt", policy_receipt_before)

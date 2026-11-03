@@ -118,6 +118,9 @@ async def observe_and_execute_paper_understood_graph(
     observer before the independently authorized next tool runs. No partial
     receipt is published when any step fails or the source proof changes.
     """
+    intent_id = understanding.intent_id
+    if intent_id is None:
+        raise ValueError("paper named graph requires a registered intent")
     if (
         rank_policy is not None
         and not isinstance(rank_policy, PaperNativeRankPolicy)
@@ -224,7 +227,7 @@ async def observe_and_execute_paper_understood_graph(
         if not actual.executable or actual.missing_required_arguments:
             raise SchemaValidationError("paper named graph tool input is incomplete")
         results = await router.execute(ExecutionPlan(
-            query=understanding.intent_id,
+            query=intent_id,
             registry_version=original.registry_version,
             calls=[actual],
         ), config=RunConfig(

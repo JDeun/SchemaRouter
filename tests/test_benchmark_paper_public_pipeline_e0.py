@@ -1,15 +1,21 @@
 """Public Algorithm 1 planning profile is an E0 source-owned benchmark only."""
 from __future__ import annotations
 
+import json
 from dataclasses import replace
+from threading import current_thread, main_thread
+from time import sleep
 
 import pytest
 
+from schemarouter.field_routing_session import SchemaFieldRoutingSession
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from scripts.benchmark_paper_public_pipeline_e0 import (
     EVIDENCE_TIER,
     benchmark,
+    benchmark_load_profile,
     build_synthetic_public_case,
+    main,
 )
 
 
@@ -103,3 +109,190 @@ def test_public_algorithm1_refresh_profile_rejects_graph_parity_drift(monkeypatc
     )
     with pytest.raises(AssertionError, match="graph|parity|snapshot"):
         benchmark(500, hops=2, repeats=1, warmup=0, measure_refresh=True)
+
+
+@pytest.mark.parametrize("concurrency", [1, 4])
+def test_load_profile_calls_real_public_paths_with_bounded_closed_loop(monkeypatch, concurrency):
+    sync_calls = []
+    async_calls = []
+    original_sync = SchemaFieldRoutingSession.compile_understood
+    original_async = SchemaFieldRoutingSession.acompile_query
+
+    def compile_sync(self, *args, **kwargs):
+        if current_thread() is not main_thread():
+            sync_calls.append(1)
+        return original_sync(self, *args, **kwargs)
+
+    async def compile_async(self, *args, **kwargs):
+        async_calls.append(1)
+        return await original_async(self, *args, **kwargs)
+
+    monkeypatch.setattr(SchemaFieldRoutingSession, "compile_understood", compile_sync)
+    monkeypatch.setattr(SchemaFieldRoutingSession, "acompile_query", compile_async)
+    report = benchmark_load_profile(100, requests=5, warmup=2, concurrency=concurrency)
+    assert len(sync_calls) == len(async_calls) == 7
+    assert report["registered_routes"] == 100
+    assert report["evidence_tier"] == EVIDENCE_TIER
+    assert report["slo_validated"] is report["independent_e2_qualified"] is False
+    assert report["pinned_linux_run_qualified"] is False
+    assert report["environment"]["logical_cpu_count"]
+    assert "cgroup_v2_cpu_max" in report["environment"]
+    for path in ("prepared_sync", "prepared_async_model_stub"):
+        result = report[path]
+        assert result["measured_calls"] == len(result["samples"]) == 5
+        assert result["warmup_calls"] == 2
+        assert result["max_outstanding_requests_observed"] == concurrency
+        assert {s["request_id"] for s in result["samples"]} == set(range(5))
+        assert len({s["client_id"] for s in result["samples"]}) == concurrency
+        assert result["total_process_cpu_ms"] > 0
+        assert result["process_peak_rss_raw"] > 0
+        assert result["provider_calls"] == result["real_model_calls"] == 0
+        assert result["percentiles_are_descriptive_not_slo_validation"]
+        for sample in result["samples"]:
+            assert sample["queue_ms"] >= 0
+            assert sample["service_ms"] > 0
+            assert sample["wall_ms"] == pytest.approx(sample["queue_ms"] + sample["service_ms"])
+        for threshold in result["threshold_exceedances"]:
+            assert threshold["sample_count"] == 5
+            assert threshold["exceeded_count"] == sum(
+                s["wall_ms"] > threshold["threshold_ms"] for s in result["samples"]
+            )
+    assert report["prepared_async_model_stub"]["model_stub_calls"] == 7
+    assert report["prepared_sync"]["model_stub_calls"] == 0
+
+
+@pytest.mark.parametrize("routes", [250, 500])
+def test_load_profile_reuses_exact_source_catalog_sizes(routes):
+    report = benchmark_load_profile(routes, requests=1, warmup=0)
+    assert report["registered_routes"] == routes
+    assert report["expected_route_ids"] == ["contact_directory.read", "case_service.read"]
+
+
+def test_load_profile_includes_event_loop_cpu_queue_before_api_entry(monkeypatch):
+    original = SchemaFieldRoutingSession.acompile_query
+
+    async def blocking_compile(self, *args, **kwargs):
+        sleep(0.015)  # Deliberately block the loop; later clients must report this wait.
+        return await original(self, *args, **kwargs)
+
+    monkeypatch.setattr(SchemaFieldRoutingSession, "acompile_query", blocking_compile)
+    report = benchmark_load_profile(100, requests=4, warmup=0, concurrency=4, thresholds=(1,))
+    result = report["prepared_async_model_stub"]
+    assert result["samples"][1]["queue_ms"] >= 10
+    assert all(s["service_ms"] >= 10 for s in result["samples"])
+    assert result["threshold_exceedances"] == [
+        {"threshold_ms": 1, "sample_count": 4, "exceeded_count": 4},
+    ]
+
+
+def test_load_profile_callback_failure_propagates_without_a_success_report(monkeypatch):
+    from schemarouter import ModelAnalysisError
+
+    original = SchemaFieldRoutingSession.acompile_query
+
+    async def failed_model(payload):
+        raise RuntimeError("callback failed")
+
+    async def failed_compile(self, *args, **kwargs):
+        kwargs["model"] = failed_model
+        return await original(self, *args, **kwargs)
+
+    monkeypatch.setattr(SchemaFieldRoutingSession, "acompile_query", failed_compile)
+    with pytest.raises(ModelAnalysisError, match="model"):
+        benchmark_load_profile(100, requests=5, warmup=0, concurrency=4)
+
+
+@pytest.mark.parametrize("conditions", [
+    {"routes": 5000}, {"routes": True}, {"requests": 0}, {"requests": 1001},
+    {"requests": True}, {"warmup": 31}, {"warmup": -1}, {"concurrency": 2},
+    {"concurrency": True}, {"thresholds": ()}, {"thresholds": (float("nan"),)},
+    {"thresholds": (float("inf"),)}, {"thresholds": (-1,)}, {"thresholds": (True,)},
+])
+def test_load_profile_rejects_invalid_conditions_before_source_build(conditions):
+    with pytest.raises(ValueError):
+        benchmark_load_profile(**{"routes": 100, **conditions})
+
+
+@pytest.mark.parametrize("argv", [
+    ["--load-requests", "1"], ["--load-profile", "--routes", "500"],
+    ["--load-profile", "--warmup", "0"], ["--load-profile", "--measure-refresh"],
+])
+def test_load_profile_cli_conditions_require_separate_opt_in(argv):
+    with pytest.raises(SystemExit) as exc:
+        main(argv)
+    assert exc.value.code == 2
+
+
+def test_load_profile_cli_preserves_legacy_defaults_and_5000_options(monkeypatch, capsys):
+    from scripts import benchmark_paper_public_pipeline_e0 as module
+
+    calls = []
+
+    def record(routes, **kwargs):
+        calls.append((routes, kwargs))
+        return {}
+
+    monkeypatch.setattr(module, "benchmark", record)
+    main([])
+    main(["--routes", "5000", "--hops", "2", "--repeats", "1", "--warmup", "0"])
+    assert calls == [
+        (500, {"hops": 1, "repeats": 3, "warmup": 1, "measure_refresh": False}),
+        (5000, {"hops": 2, "repeats": 1, "warmup": 0, "measure_refresh": False}),
+    ]
+    capsys.readouterr()
+
+
+def test_load_profile_cli_defaults_to_six_cases_with_1000_requests_per_path(monkeypatch, capsys):
+    from scripts import benchmark_paper_public_pipeline_e0 as module
+
+    calls = []
+
+    def record(routes, **kwargs):
+        calls.append((routes, kwargs))
+        return {}
+
+    monkeypatch.setattr(module, "benchmark_load_profile", record)
+    main(["--load-profile"])
+    assert {(r, k["concurrency"]) for r, k in calls} == {
+        (100, 1), (100, 4), (250, 1), (250, 4), (500, 1), (500, 4),
+    }
+    assert all(k["requests"] == 1000 and k["warmup"] == 30 for _, k in calls)
+    assert len(json.loads(capsys.readouterr().out)["cases"]) == 6
+
+
+def test_legacy_module_imports_without_unix_resource(monkeypatch):
+    import builtins
+    import runpy
+
+    from scripts import benchmark_paper_public_pipeline_e0 as module
+
+    original_import = builtins.__import__
+
+    def without_resource(name, *args, **kwargs):
+        if name == "resource":
+            raise ModuleNotFoundError("resource unavailable on this platform")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_resource)
+    namespace = runpy.run_path(module.__file__)
+    assert namespace["resource"] is None
+    assert callable(namespace["benchmark"])
+
+
+@pytest.mark.parametrize("probe_error", (AttributeError, OSError))
+def test_load_profile_preserves_unavailable_platform_metrics(monkeypatch, probe_error):
+    from scripts import benchmark_paper_public_pipeline_e0 as module
+
+    def unavailable(*args):
+        raise probe_error("platform probe unavailable")
+
+    monkeypatch.setattr(module, "resource", None)
+    monkeypatch.setattr(module.os, "getloadavg", unavailable, raising=False)
+    monkeypatch.setattr(module.os, "sched_getaffinity", unavailable, raising=False)
+    report = benchmark_load_profile(100, requests=1, warmup=0)
+    assert report["environment"]["load_average"] is None
+    assert report["environment"]["cpu_affinity"] is None
+    for path in ("prepared_sync", "prepared_async_model_stub"):
+        assert report[path]["process_peak_rss_raw"] is None
+        assert report[path]["process_peak_rss_unit"] is None
+    assert not report["slo_validated"]

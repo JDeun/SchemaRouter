@@ -146,6 +146,13 @@ request = PlanRequest(
 동일 provider의 access path가 다른 provider의 candidate보다 먼저 배치됩니다. 서로 다른 field
 name을 노출하는 access path 사이의 semantic compatibility는 field alias로 증명합니다.
 
+Fallback과 provider 간 교차 검증은 타입·정규화된 단위뿐 아니라 필요한 JSON Schema
+조건도 비교합니다. enum/const, 범위, 패턴, 배열 조건의 차이가 충족 관계를 입증하지
+못하면 필드 호환성의 근거로 삼지 않으며, 일반적인 스키마 포함 관계를 판정하지는 않습니다.
+참조가 있는 스키마는 상위 타입 변경으로 중첩 참조의 의미가 달라질 수 있어 전체 스키마
+동등성을 요구합니다. 명시적인 JSON Schema 입력·출력 검증은 NaN·무한대·복소수를 각각 호출 전·결과
+반환 전에 거절하며 큰 정수와 nullable 값은 선언된 동작을 유지합니다.
+
 Fallback은 model-driven replanning이 아니며 기본값은 비활성입니다.
 [Provider-aware fallback](../guides/provider-fallback.md)을 참고하십시오.
 

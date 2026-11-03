@@ -342,14 +342,12 @@ def _source_native_graph_contracts(
                 if host_root:
                     accepted.add(route)
             elif host_root:
-                # A reviewed remote source may expose a genuine scalar value
-                # (for example MCP `result: string`) without an identifier.
+                # Reviewed direct scalars may carry units without being IDs.
                 # Such a route is eligible for source-owned *direct* P2
                 # lookup, but MUST NOT become a dependency producer: graph
                 # consumers can bind only genuine identifier fields.
                 scalar_output = any(
-                    field.unit is None and field.unit_normalization is None
-                    and _scalar_contract(field.json_schema)
+                    _scalar_contract(field.json_schema)
                     and CapabilityFieldContract.from_field(field) is not None
                     for field in endpoint.output_fields
                 )

@@ -24,6 +24,20 @@ from schemarouter.paper_understood_direct_plan import PaperUnderstanding
 from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 
 
+@pytest.mark.asyncio
+async def test_unsupported_understanding_never_invokes_a_graph_tool():
+    from schemarouter.paper_consumer_execution import observe_and_execute_paper_understood_graph
+
+    router, index, seen = _fixture()
+    with pytest.raises(ValueError):
+        await observe_and_execute_paper_understood_graph(
+            router, PaperUnderstanding(intent_id=None, unresolved_concepts=("send money",)),
+            principal=PrincipalContext(subject="reader", roles=("reader",)),
+            catalog=CATALOG, intent_registry=INTENTS, index=index,
+        )
+    assert seen == []
+
+
 def _fixture(
     *, hops: int = 2, host_root: bool = False, root_value: object = "contact-7",
     middle_value: object = "case-42", target_value: object = "open", on_step=None,

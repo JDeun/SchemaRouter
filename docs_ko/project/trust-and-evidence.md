@@ -11,9 +11,13 @@ SchemaRouter는 **안정적인 제품 보장**, **릴리스/프로세스 근거*
 | 상태 | Beta / pre-1.0 |
 | Python | 3.10–3.14는 릴리스 차단 CI 대상이며, 3.15는 비차단 preview입니다 |
 | 라이선스 | MIT |
-| 릴리스 | [SchemaRouter 0.15.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.15.0) |
+| 릴리스 | [SchemaRouter 0.17.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.17.0) |
 | 안정 코어 계약 | [안정 코어](../stable-core.md) |
 | 보안 정책 | [SECURITY.md](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md) |
+
+개발용 `main`의 버전은 `0.18.0.dev0`이며 이 문서에는 미출시 변경이 포함될 수 있습니다.
+위의 안정판은 공개된 아티팩트입니다. 개발 버전은 출시 승인이 아니며, 보류 중인
+`0.18.0` 후보에는 별도의 검증 게이트가 계속 적용됩니다.
 
 0.14.0 이후에는 정확한 릴리스 소스 SHA와 아티팩트 digest가 GitHub Release에 첨부되는 기계 생성 `release-manifest.json` 및 `SHA256SUMS.txt`에 기록됩니다.
 annotated tag를 GPG 서명 태그라고 표현하지 않으며, 아티팩트 provenance는 GitHub artifact attestation으로 제공합니다.

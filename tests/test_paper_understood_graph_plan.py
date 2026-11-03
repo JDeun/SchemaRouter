@@ -210,7 +210,7 @@ def test_explicit_named_sixth_target_survives_graph_fixed_k():
 @pytest.mark.parametrize("reason", [
     "unknown", "hidden", "denied", "wrong_type", "unsafe",
 ])
-def test_named_graph_never_returns_unproved_or_unauthorized_path(reason):
+def test_named_graph_never_returns_unproved_or_unauthorized_dependency(reason):
     router = _router(
         hops=2, hidden_middle=reason == "hidden",
         deny_middle=reason == "denied",
@@ -220,8 +220,16 @@ def test_named_graph_never_returns_unproved_or_unauthorized_path(reason):
     plan = _compile(router, named_tools=(
         "unregistered" if reason == "unknown" else "target_0",
     ))
-    assert plan.status == "no_proven_hit"
-    assert plan.calls == () and plan.bindings == ()
+    if reason in {"unknown", "unsafe"}:
+        assert plan.status == "no_proven_hit" and plan.calls == ()
+    else:
+        # The target's visible field proof survives; no unavailable middle
+        # route, producer value or dependency edge has been established.
+        assert plan.status == "requires_arguments"
+        assert [item.route_id for item in plan.calls] == ["target_0.read"]
+        assert plan.calls[0].call.missing_required_arguments == ["case_id"]
+        assert not plan.calls[0].call.arguments
+    assert plan.bindings == () and plan.executable_authority is False
     assert "middle.read" not in repr(plan)
 
 
@@ -268,7 +276,10 @@ def test_unmentioned_target_retains_no_direct_proof_without_disclosing_graph():
 
 def test_one_hop_bound_does_not_accidentally_search_two_hop():
     plan = _compile(_router(hops=2), max_hops=1)
-    assert plan.status == "no_proven_hit" and plan.calls == ()
+    assert plan.status == "requires_arguments"
+    assert [item.route_id for item in plan.calls] == ["target_0.read"]
+    assert plan.calls[0].call.missing_required_arguments == ["case_id"]
+    assert not plan.bindings and plan.executable_authority is False
 
 
 def test_named_source_type_constraint_cannot_disclose_other_source_dependency():
