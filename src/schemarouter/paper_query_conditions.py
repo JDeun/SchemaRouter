@@ -163,6 +163,16 @@ def _input_matches(
     ]
 
 
+def _conflicting_input_targets(
+    assignments: dict[tuple[int, str], list[tuple[int, Any]]],
+) -> set[tuple[int, str]]:
+    return {
+        target
+        for target, values in assignments.items()
+        if any(not _same_json_scalar(value, values[0][1]) for _, value in values)
+    }
+
+
 def _input_proof(
     plan: PaperTypedToolPlan,
     matches: list[tuple[int, ParameterSpec, bool]],
@@ -359,26 +369,25 @@ def _prove_query_need_conditions(
             if len(matches) == 1:
                 position, parameter, _ = matches[0]
                 assignments.setdefault((position, parameter.name), []).append((-1, value))
-        for (position, name), values in assignments.items():
-            if any(not _same_json_scalar(value, values[0][1]) for _, value in values):
-                for index, _ in values:
-                    if index >= 0:
-                        inputs = tuple(
-                            _failed_input_evidence(item, "conflicting_query_input")
-                            if (
-                                f"route={plan.calls[position].route_id}" in item.qualifiers
-                                and f"parameter={name}" in item.qualifiers
-                            )
-                            else (item, fits)
-                            for item, fits in proofs[index].inputs
+        for position, name in _conflicting_input_targets(assignments):
+            for index, _ in assignments[(position, name)]:
+                if index >= 0:
+                    inputs = tuple(
+                        _failed_input_evidence(item, "conflicting_query_input")
+                        if (
+                            f"route={plan.calls[position].route_id}" in item.qualifiers
+                            and f"parameter={name}" in item.qualifiers
                         )
-                        proofs[index] = replace(
-                            proofs[index],
-                            present=False,
-                            pending=False,
-                            tools=frozenset(),
-                            inputs=inputs,
-                        )
+                        else (item, fits)
+                        for item, fits in proofs[index].inputs
+                    )
+                    proofs[index] = replace(
+                        proofs[index],
+                        present=False,
+                        pending=False,
+                        tools=frozenset(),
+                        inputs=inputs,
+                    )
         if (
             collect() != scopes
             or before
@@ -420,10 +429,31 @@ def _apply_query_input_conditions(
             list(plan.coverage.covered),
             list(plan.coverage.uncovered),
         )
+        matches_by_key = {key: _input_matches(key, scopes) for key in parameter_hints}
+        assignments: dict[tuple[int, str], list[tuple[int, Any]]] = {}
+        for key, proposed in parameter_hints.items():
+            matches = matches_by_key[key]
+            if len(matches) == 1:
+                position, parameter, _ = matches[0]
+                assignments.setdefault((position, parameter.name), []).append((-1, proposed))
+        conflicts = _conflicting_input_targets(assignments)
+        # The preceding per-need proof may already have found a joint conflict.
+        conflicts.update(
+            target
+            for target in assignments
+            if any(
+                "proof=conflicting_query_input" in item.qualifiers
+                and f"route={plan.calls[target[0]].route_id}" in item.qualifiers
+                and f"parameter={target[1]}" in item.qualifiers
+                for item in uncovered
+            )
+        )
         pending = False
         for key, proposed in parameter_hints.items():
-            matches = _input_matches(key, scopes)
+            matches = matches_by_key[key]
             present, waits, proof = _input_proof(plan, matches, proposed)
+            if len(matches) == 1 and (matches[0][0], matches[0][1].name) in conflicts:
+                present, waits, proof = False, False, "conflicting_query_input"
             pending |= waits
             requirement = _input_requirement(plan, key, matches, proof)
             required.append(requirement)
