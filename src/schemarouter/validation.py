@@ -4,6 +4,7 @@ import math
 import re
 from copy import deepcopy
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from jsonschema import Draft202012Validator, exceptions, validators
@@ -65,6 +66,10 @@ class _RuntimeValidationBudgetExceeded(RuntimeError):
 
 class _NonFiniteRuntimeValueError(ValueError):
     """A numeric runtime value cannot be represented as finite JSON."""
+
+
+class _NonRealRuntimeValueError(ValueError):
+    """Complex runtime numbers cannot represent JSON numeric values."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -287,8 +292,13 @@ def _inspect_runtime_value(
             raise _budget_error("value node limit exceeded")
         if depth > budget.max_value_depth:
             raise _budget_error("value depth limit exceeded")
-        if isinstance(current, float) and not math.isfinite(current):
+        if (
+            isinstance(current, float) and not math.isfinite(current)
+            or isinstance(current, Decimal) and not Decimal.is_finite(current)
+        ):
             raise _NonFiniteRuntimeValueError
+        if isinstance(current, complex):
+            raise _NonRealRuntimeValueError
 
         if isinstance(current, str):
             if len(current) > budget.max_string_chars:
@@ -811,6 +821,10 @@ def validate_json_schema_value(
     except _NonFiniteRuntimeValueError as exc:
         raise SchemaValidationError(
             f"{context}: non-finite numeric values are not permitted"
+        ) from exc
+    except _NonRealRuntimeValueError as exc:
+        raise SchemaValidationError(
+            f"{context}: non-real numeric values are not permitted"
         ) from exc
     except _RuntimeValidationBudgetExceeded as exc:
         raise SchemaValidationError(
