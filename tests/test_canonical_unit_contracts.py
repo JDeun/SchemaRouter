@@ -184,3 +184,17 @@ async def test_public_identity_normalization_preserves_large_integer_const(raw: 
     contract = CapabilityFieldContract.from_field(field)
     assert contract is not None and contract.json_schema == schema
     Draft202012Validator(contract.json_schema).validate(value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("raw", (float("nan"), float("inf"), float("-inf")))
+async def test_public_identity_normalization_rejects_non_finite_provider_values(raw: float) -> None:
+    field = _field({"type": "number"}, scale=1)
+    router = SchemaRouter()
+    router.add_bound_tool(
+        ToolSpec(name="lengths", endpoints=[
+            EndpointSpec(name="read", read_only=True, output_fields=[field]),
+        ]), lambda *_: {"length": raw},
+    )
+    with pytest.raises(SchemaValidationError, match="non-finite normalized value"):
+        await router.ainvoke(PlanRequest(query="length", preferred_tools=["lengths"]))

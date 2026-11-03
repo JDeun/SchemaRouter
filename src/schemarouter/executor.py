@@ -2140,13 +2140,14 @@ class RegistryExecutor:
                         "for unit normalization"
                     )
                 if _spec.scale == 1 and _spec.offset == 0:
-                    return item
-                try:
-                    converted = item * _spec.scale + _spec.offset
-                except OverflowError as exc:
-                    raise SchemaValidationError(
-                        f"projected field {_field_name!r} overflowed during unit normalization"
-                    ) from exc
+                    converted = item
+                else:
+                    try:
+                        converted = item * _spec.scale + _spec.offset
+                    except OverflowError as exc:
+                        raise SchemaValidationError(
+                            f"projected field {_field_name!r} overflowed during unit normalization"
+                        ) from exc
                 if isinstance(converted, float) and not math.isfinite(converted):
                     raise SchemaValidationError(
                         f"projected field {_field_name!r} produced a non-finite normalized value"
