@@ -32,8 +32,9 @@ jobs:
         run: |
           ruff check tests/test_sqlite_native_graph_journal_e0.py tests/test_sqlite_native_posting_journal_e0.py tests/test_sqlite_registry_mutation_journal_e0.py tests/test_sqlite_native_g5_graph_journal_e0.py tests/test_research_central_durable_reservation_e0.py
       - name: Exercise SQLite close, rollback, damaged journal and affected Python preview regressions
-        env:
-          PYTHONTRACEMALLOC: "25"
+        # A global PYTHONTRACEMALLOC setting is inherited by spawned worker
+        # processes and can exceed their independent 30-second test deadlines.
+        # ResourceWarnings still fail the run explicitly below.
         run: |
           python -m pytest -q -W error::ResourceWarning \
             tests/test_sqlite_native_graph_journal_e0.py \
