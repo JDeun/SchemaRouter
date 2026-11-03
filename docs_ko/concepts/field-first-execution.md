@@ -44,6 +44,8 @@ Schema-independent 응답은 `PaperQueryUnderstanding`을 사용합니다. 다�
 }
 ```
 
+모델 요청은 모든 응답 채널과 각 need의 조건 항목을 명시적으로 요구하며, 해당하지 않으면 빈 collection이나 `null`을 사용하게 합니다. 공개 DTO의 기본값은 선택 항목을 생략한 기존 응답도 계속 디코딩합니다. 추출 규칙은 지원되지 않거나 `intent_id=null`인 경우에도 요청한 모든 긍정적인 데이터 항목·행동·목표와 명시적인 조건·스칼라 값을 보존하도록 요구합니다. 적용 가능한 가장 좁은 listed intent와 추가 need를 요청하며, 호스트가 요구한 intent group은 계속 엄격하게 유지합니다. 부정된 concept은 긍정적인 need나 qualifier가 아닌 `excluded_concepts`에만 둡니다. 명시적인 literal 경로는 원래 표기대로 `qualifiers.source_path` 또는 `qualifiers.result_path`에 둡니다. 스칼라 hint는 명시된 parameter 라벨을 유지하고, 라벨이 없으면 짧은 영어 의미 역할 이름을 사용합니다. `source_type`은 주제가 아닌 명시적인 출처·원본 종류 제한을 뜻합니다. 이러한 추출 지침은 모델이 요청한 모든 의미를 보존한다고 보장하거나 과거에 기록된 정확도를 높였다고 입증하지 않습니다.
+
 질문을 이해한 뒤에는 짧은 영어 concept 전체를 기존 정규화 규칙에 따라 호스트가 선언한 concept ID 또는 alias 전체와 정확히 대조합니다. 명시적인 단위, source type과 qualifier도 호스트의 계약이 지원해야 하며, 알 수 없는 role/path/time 조건은 미입증 상태로 남습니다. 단위, source type과 qualifier 값은 선언과 정확히 일치해야 하며 한 need의 모든 조건을 동일한 선언 필드가 함께 지원해야 합니다. 이 해석 과정에서 단위 변환이나 role/path/time 매핑을 추정하지 않습니다. 이는 범위가 제한된 선언 alias 해석이며 일반적인 의미 이해를 보장하지 않습니다.
 
 Owner가 선언한 source type, 단위 또는 qualifier로 concept을 구별할 수 있을 때만 같은 alias 전체를 공유할 수 있습니다. 질문의 명시적 조건을 적용한 뒤 정확히 하나의 concept만 남아야 합니다. 조건이 없거나 부족하면 source 접근 권한이나 가용성과 관계없이 모호한 상태로 남습니다. Need별 source 조건은 owner가 `source_type=None`으로 둔 경우에만 concept의 source 범위를 좁힙니다. Intent recall에 필요한 concept을 포함해 owner가 선언한 source 제약을 덮어쓸 수 없습니다.

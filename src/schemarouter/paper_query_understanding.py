@@ -672,23 +672,40 @@ async def compile_model_query(
         )
 
     if independent:
+        response_schema = PaperQueryUnderstanding.model_json_schema()
+        # Require explicit model channels without changing legacy DTO decode defaults.
+        response_schema["required"] = list(response_schema["properties"])
+        need_schema = response_schema["$defs"]["PaperQueryNeed"]
+        need_schema["required"] = list(need_schema["properties"])
         payload = {
             "task": "Understand the question before looking up any tool or schema.",
             "query": query,
             "intents": list(model_visible_intent_ids),
-            "response_schema": PaperQueryUnderstanding.model_json_schema(),
+            "response_schema": response_schema,
             "rules": [
-                "Return one JSON object matching response_schema.",
-                "Use a listed intent_id; use null if the requested task has no listed intent.",
-                "Extract EVERY positive data need, including ones a provider might not support.",
+                "Return one JSON object with every response_schema channel, "
+                "even when empty or null.",
+                "Use the narrowest applicable listed intent_id and preserve additional needs; "
+                "do not choose an unrelated broad intent. Use null if no listed intent applies.",
+                "Extract EVERY requested positive data, action or goal, "
+                "including unsupported ones; "
+                "retain the requested action and object even when intent_id is null.",
                 "If more than eight needs are requested, set needs_truncated=true.",
-                "Use short English concept names, preserving creator, assignee and other roles.",
-                "Keep explicit time, role and other conditions in needs.qualifiers.",
-                "Keep requested units and source types; do not invent conditions.",
-                "Use canonical symbols for requested units, such as Cel for Celsius.",
-                "Negated concepts belong only in excluded_concepts, never in positive needs.",
+                "Use short English need names, preserving semantic roles and requested actions.",
+                "Keep explicit time, role and other positive conditions in needs.qualifiers.",
+                "Put explicit source/result paths in qualifiers.source_path or "
+                "qualifiers.result_path respectively; "
+                "preserve their spelling and never invent schema paths.",
+                "Keep requested units using canonical symbols; do not invent conditions.",
+                "source_type is only an explicit provenance/source-kind restriction, "
+                "not subject matter; otherwise use null.",
+                "Put every negated concept or goal only in excluded_concepts, "
+                "not in needs or qualifiers.",
                 "Copy named_tools only from source names explicitly stated in the question.",
-                "parameter_hints contains explicit scalar values, not permissions or tool calls.",
+                "Keep explicit scalar values in parameter_hints with explicit parameter labels; "
+                "otherwise use short English semantic role names, not generic substitutes. "
+                "Retain these values even when intent_id is null; "
+                "they are not permissions or tool calls.",
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }

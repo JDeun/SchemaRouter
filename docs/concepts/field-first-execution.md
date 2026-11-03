@@ -81,6 +81,17 @@ shape; it supplies no source or execution authority:
 }
 ```
 
+The model request requires every response channel and every need's condition slots explicitly,
+using empty collections or `null` where appropriate. Public DTO defaults still decode older responses
+that omit optional slots. Extraction rules request every positive data item, action or goal even when
+unsupported or `intent_id=null`, with explicit conditions and scalar values preserved. They request
+the narrowest applicable listed intent plus additional needs; host-required intent groups remain strict.
+Negated concepts belong only in `excluded_concepts`, not positive needs or qualifiers. Literal paths
+use `qualifiers.source_path` or `qualifiers.result_path` with their original spelling. Scalar hints keep
+explicit parameter labels, or short English semantic role names when unlabeled. `source_type` means an
+explicit provenance/source-kind restriction, not subject matter. These extraction instructions do not
+guarantee that a model preserves every requested meaning or demonstrate improved accuracy over any recorded result.
+
 After understanding, each whole short English concept is matched exactly, using existing
 normalization, to a host-declared concept ID or complete alias. The host's contracts must also
 support its explicit unit, source type and qualifiers; unknown role/path/time conditions remain
