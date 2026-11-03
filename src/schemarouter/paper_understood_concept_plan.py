@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
@@ -44,6 +45,7 @@ def _compile_understood_concept_plan(
     intent: PaperIntentDeclaration,
     concepts: tuple[NativeDeclaredConcept, ...],
     compile_one: Callable[..., PaperTypedToolPlan],
+    compile_group: Callable[..., PaperTypedToolPlan],
     graph_options: dict[str, Any] | None = None,
 ) -> PaperTypedToolPlan:
     witness = router._retrieval_authority_witness()
@@ -91,11 +93,6 @@ def _compile_understood_concept_plan(
         verify_current()
         return tuple(plans)
 
-    try:
-        first = prove_groups()
-    except Exception:
-        raise PolicyViolationError("paper concept source eligibility changed") from None
-
     def coverage(covered: set[str]) -> PlanCoverage:
         required, present, missing = [], [], []
         for concept in concepts:
@@ -118,6 +115,43 @@ def _compile_understood_concept_plan(
             missing.append(unresolved)
         return PlanCoverage(required=required, covered=present, uncovered=missing,
                             complete=not missing)
+
+    # Preserve the original complete-field AND and its owner Rank before
+    # independently ranking smaller concepts with potentially different menus.
+    if len({(concept.source_type, concept.license) for concept in concepts}) == 1:
+        kwargs = dict(principal=principal, catalog=catalog, intent_registry=intent_registry,
+                      index=index, k=k, rank_policy=rank_policy, **(graph_options or {}))
+        try:
+            group = compile_group(router, approved, **kwargs)
+            verify_current()
+        except Exception:
+            raise PolicyViolationError("paper concept source eligibility changed") from None
+        if group.status != "no_proven_hit":
+            if not host_inputs.keys() <= {item.route_id for item in group.calls}:
+                raise ValueError("host concept arguments name an unproved source route")
+            if host_inputs:
+                try:
+                    group = compile_group(
+                        router, approved, host_source_arguments=host_inputs, **kwargs,
+                    )
+                    verify_current()
+                except Exception:
+                    raise PolicyViolationError("paper concept source eligibility changed") from None
+            group = replace(group, calls=tuple(
+                replace(item, call=item.call.model_copy(update={
+                    "fields": [field.name for field in item.fields_meta],
+                })) for item in group.calls
+            ))
+            covered = {concept.concept_id for concept in concepts} if group.calls else set()
+            report = coverage(covered)
+            return replace(group, coverage=report,
+                           status="no_proven_hit" if group.calls and not report.complete
+                           else group.status)
+
+    try:
+        first = prove_groups()
+    except Exception:
+        raise PolicyViolationError("paper concept source eligibility changed") from None
 
     def empty(status: str) -> PaperTypedToolPlan:
         try:

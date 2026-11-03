@@ -338,3 +338,42 @@ def test_foreign_host_input_route_is_not_silently_discarded():
     with pytest.raises(ValueError, match="unproved source route"):
         _compile(_router(), PaperUnderstanding(intent_id="research.summary"),
                  inputs={"private.read": {"secret": "NOT_BOUND"}})
+
+
+@pytest.mark.parametrize("unresolved", ((), ("unregistered thermal lifetime",)))
+def test_complete_homogeneous_rank_precedes_independent_concept_menus(unresolved):
+    from test_paper_native_rank import (
+        ANALYST,
+        _paper_catalog,
+        _paper_intents,
+        _paper_router,
+        _paper_understanding,
+    )
+
+    from schemarouter import PaperNativeRankPolicy
+
+    router = _paper_router()
+    catalog, intents = _paper_catalog(), _paper_intents()
+    session = router.prepare_field_routing(catalog=catalog)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id, route_priorities={"full_5.read": 10},
+    )
+    hints = _paper_understanding().model_copy(update={"unresolved_concepts": unresolved})
+    plan = compile_paper_understood_direct_plan(
+        router, hints, principal=ANALYST, catalog=catalog, intent_registry=intents,
+        index=session._index, rank_policy=policy,
+    )
+    assert plan.status == ("no_proven_hit" if unresolved else "ready")
+    assert len(plan.calls) == 5 and plan.calls[0].route_id == "full_5.read"
+    assert all({"status", "priority"} <= set(item.call.fields) for item in plan.calls)
+    assert plan.ranked_unverified is True
+    assert plan.coverage.complete is (not unresolved)
+    assert len(plan.coverage.uncovered) == len(unresolved)
+
+
+def test_disjoint_same_source_fields_still_split_after_complete_group_no_hit():
+    router = _router()
+    router.add_tool(_tool("density", "material", [_field("density", "density", "number")]))
+    plan = _compile(router, PaperUnderstanding(intent_id="material.properties"))
+    assert plan.status == "ready" and plan.coverage.complete
+    assert {item.route_id for item in plan.calls} == {"materials.read", "density.read"}

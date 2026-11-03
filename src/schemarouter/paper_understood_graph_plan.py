@@ -7,6 +7,7 @@ does not execute calls, trust a language-model parameter, or grant authority.
 from __future__ import annotations
 
 from copy import deepcopy
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
@@ -26,9 +27,9 @@ from .paper_typed_tool_plan import (
 from .paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
+    _compile_paper_understood_direct_plan,
     _source_owned_understood_concepts,
     _source_owned_understood_group,
-    compile_paper_understood_direct_plan,
 )
 
 if TYPE_CHECKING:
@@ -48,6 +49,30 @@ def compile_paper_understood_graph_plan(
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     rank_policy: PaperNativeRankPolicy | None = None,
     allow_unnamed_graph_discovery: bool = False,
+) -> PaperTypedToolPlan:
+    """Plan original direct fields or proved dependencies without execution authority."""
+    return _compile_paper_understood_graph_plan(
+        router, understanding, principal=principal, catalog=catalog,
+        intent_registry=intent_registry, index=index, k=k, max_hops=max_hops,
+        host_source_arguments=host_source_arguments, rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
+    )
+
+
+def _compile_paper_understood_graph_plan(
+    router: SchemaRouter,
+    understanding: PaperUnderstanding,
+    *,
+    principal: PrincipalContext,
+    catalog: NativeConceptCatalog,
+    intent_registry: PaperIntentRegistry,
+    index: NativeSchemaGraphIndex,
+    k: int = 5,
+    max_hops: int = 2,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
+    _compose_concepts: bool = True,
 ) -> PaperTypedToolPlan:
     """Compile one exact model-named target path without source execution.
 
@@ -96,7 +121,7 @@ def compile_paper_understood_graph_plan(
     approved, approved_intent, concepts = _source_owned_understood_concepts(
         understanding, catalog, intent_registry,
     )
-    if len(concepts) > 1 or approved.unresolved_concepts:
+    if _compose_concepts and (len(concepts) > 1 or approved.unresolved_concepts):
         from .paper_understood_concept_plan import _compile_understood_concept_plan
 
         return _compile_understood_concept_plan(
@@ -105,6 +130,7 @@ def compile_paper_understood_graph_plan(
             host_source_arguments=host_source_arguments, rank_policy=rank_policy,
             approved=approved, intent=approved_intent, concepts=concepts,
             compile_one=compile_paper_understood_graph_plan,
+            compile_group=partial(_compile_paper_understood_graph_plan, _compose_concepts=False),
             graph_options={"max_hops": max_hops,
                            "allow_unnamed_graph_discovery": allow_unnamed_graph_discovery},
         )
@@ -121,10 +147,11 @@ def compile_paper_understood_graph_plan(
         raise ValueError("paper named graph declarations are invalid") from exc
 
     # A source type suggestion may only NARROW an already owner-reviewed type.
-    direct = compile_paper_understood_direct_plan(
+    direct = _compile_paper_understood_direct_plan(
         router, understanding, principal=principal, catalog=catalog,
         intent_registry=intent_registry, index=index, k=k,
         rank_policy=rank_policy,
+        _compose_concepts=False,
     )
     verify_host_inputs()
     direct_routes = {call.route_id for call in direct.calls}
@@ -132,11 +159,12 @@ def compile_paper_understood_graph_plan(
         # A declared scalar root is a direct tool, not a graph dependency.
         # Reuse the same exact original-source host-input validator, only
         # after proving the complete principal-visible direct route.
-        direct = compile_paper_understood_direct_plan(
+        direct = _compile_paper_understood_direct_plan(
             router, understanding, principal=principal, catalog=catalog,
             intent_registry=intent_registry, index=index, k=k,
             rank_policy=rank_policy,
             host_source_arguments=host_source_arguments,
+            _compose_concepts=False,
         )
         verify_host_inputs()
     elif host_inputs and direct.status == "ready":
@@ -231,10 +259,11 @@ def compile_paper_understood_graph_plan(
         # the original direct receipt rather than returning stale evidence.
         if direct.status == "requires_arguments":
             try:
-                current_direct = compile_paper_understood_direct_plan(
+                current_direct = _compile_paper_understood_direct_plan(
                     router, understanding, principal=principal,
                     catalog=catalog, intent_registry=intent_registry,
                     index=index, k=k, rank_policy=rank_policy,
+                    _compose_concepts=False,
                 )
                 if current_direct != direct:
                     raise PolicyViolationError("paper graph direct proof changed")

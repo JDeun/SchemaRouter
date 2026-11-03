@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 from copy import deepcopy
+from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, model_validator
@@ -203,6 +204,27 @@ def compile_paper_understood_direct_plan(
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     rank_policy: PaperNativeRankPolicy | None = None,
 ) -> PaperTypedToolPlan:
+    """Plan original direct fields from reviewed concepts, without execution authority."""
+    return _compile_paper_understood_direct_plan(
+        router, understanding, principal=principal, catalog=catalog,
+        intent_registry=intent_registry, index=index, k=k,
+        host_source_arguments=host_source_arguments, rank_policy=rank_policy,
+    )
+
+
+def _compile_paper_understood_direct_plan(
+    router: SchemaRouter,
+    understanding: PaperUnderstanding,
+    *,
+    principal: PrincipalContext,
+    catalog: NativeConceptCatalog,
+    intent_registry: PaperIntentRegistry,
+    index: NativeSchemaGraphIndex,
+    k: int = 5,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    _compose_concepts: bool = True,
+) -> PaperTypedToolPlan:
     """Plan field-complete original *direct* tools from structured hints.
 
     The structured understanding need not lexically mention an owner alias:
@@ -249,7 +271,7 @@ def compile_paper_understood_direct_plan(
     approved_hints, approved_intent, concepts = _source_owned_understood_concepts(
         understanding, catalog, intent_registry,
     )
-    if len(concepts) > 1 or approved_hints.unresolved_concepts:
+    if _compose_concepts and (len(concepts) > 1 or approved_hints.unresolved_concepts):
         from .paper_understood_concept_plan import _compile_understood_concept_plan
 
         return _compile_understood_concept_plan(
@@ -258,6 +280,7 @@ def compile_paper_understood_direct_plan(
             host_source_arguments=host_source_arguments, rank_policy=rank_policy,
             approved=approved_hints, intent=approved_intent, concepts=concepts,
             compile_one=compile_paper_understood_direct_plan,
+            compile_group=partial(_compile_paper_understood_direct_plan, _compose_concepts=False),
         )
     approved_hints, group = _source_owned_understood_group(
         understanding, catalog, intent_registry,
