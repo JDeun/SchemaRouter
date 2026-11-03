@@ -26,6 +26,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentDeclaration,
     PaperIntentRegistry,
     PaperUnderstanding,
+    compile_paper_understood_direct_plan,
 )
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
@@ -212,6 +213,29 @@ def test_paper_understood_absent_hidden_or_wrong_license_has_same_empty_menu(
     assert selector.last_status == "no_proven_hit"
     assert selector.calibrated_no_fit is False
     assert name not in repr(routes)
+
+
+def test_partial_core_diagnostics_offer_no_agent_tools_or_dispatch():
+    router = _router(hidden=True)
+    selector = _selector(router)
+    proof = compile_paper_understood_direct_plan(
+        router, selector.understanding, principal=PRINCIPAL, catalog=selector.catalog,
+        intent_registry=selector.intent_registry, index=selector.index,
+    )
+    assert proof.status == "no_proven_hit" and proof.calls
+    assert proof.coverage is not None and not proof.coverage.complete
+    agent = ScriptedAgent()
+    row = run_generated_episode(
+        agent, router.registry, _task(), EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=selector,
+        experimental_agent_tool_surface=selector.view,
+        experimental_host_empty_menu_terminal=True,
+    )
+    assert agent.turns == 0 and agent.seen_tools == []
+    assert row["host_empty_menu_terminal"] is True
+    assert row["tool_call_count"] == 0 and row["visible_candidate_counts"] == [0]
+    assert row["passed"] is False
+    assert selector.last_status == "no_proven_hit" and selector.calibrated_no_fit is False
 
 
 def test_paper_understood_unnamed_over_k_is_not_a_semantic_no_fit():

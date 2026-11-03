@@ -455,8 +455,8 @@ class AuthorizedPaperUnderstoodDirectFixed5Selector(AuthorizedConceptFixed5Selec
         if plan.status in {
             "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
         }:
-            if plan.calls:
-                raise PolicyViolationError("paper selector abstention exposed tools")
+            # Core diagnostics may retain a proved subset. An incomplete
+            # task still offers NO tools through this fixed5 agent surface.
             self.last_status = plan.status
             return []
         if plan.status not in {"ready", "requires_arguments"} or not plan.calls:
