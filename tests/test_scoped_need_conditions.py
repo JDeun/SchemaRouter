@@ -363,6 +363,10 @@ async def test_per_need_and_global_proposals_cannot_conflict_on_one_optional_par
         "proof=conflicting_query_input" in item.qualifiers and "need_index=0" in item.qualifiers
         for item in plan.coverage.uncovered
     )
+    assert any(
+        "proof=conflicting_query_input" in item.qualifiers and item.semantic_id == "facility_code"
+        for item in plan.coverage.uncovered
+    )
     assert plan.calls[0].call.arguments == {}
 
 
@@ -604,3 +608,48 @@ async def test_public_path_proof_rejects_scope_change_between_observations(monke
     with pytest.raises(PolicyViolationError) as caught:
         await query(session, {"source_path": "/packet/reading"})
     assert "PRIVATE_CHANGED_PATH" not in str(caught.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind,left,right,complete",
+    [
+        ("string", "A", "B", False),
+        ("string", "A", "A", True),
+        ("number", 1, 1.0, True),
+        ("boolean", True, True, True),
+        ("number", True, 1, False),
+        ("number", 9007199254740993, 9007199254740992.0, False),
+    ],
+)
+async def test_global_aliases_to_one_input_must_agree_as_exact_json_values(
+    kind,
+    left,
+    right,
+    complete,
+):
+    parameter = ParameterSpec(
+        name="facility_code", aliases=["site_tag"], json_schema={"type": kind}
+    )
+    router, session = source(parameters=[parameter])
+    plan = await query(session, {}, hints={"site_tag": left, "facility_code": right})
+    assert plan.coverage.complete is complete
+    assert plan.status == ("requires_arguments" if complete else "no_proven_hit")
+    evidence = [
+        item for item in plan.coverage.required if "query_input_condition=true" in item.qualifiers
+    ]
+    assert len(evidence) == 2
+    expected = "proof=pending_host_input" if complete else "proof=conflicting_query_input"
+    assert all(expected in item.qualifiers for item in evidence)
+    assert all(
+        "route=facility.read" in item.qualifiers and "parameter=facility_code" in item.qualifiers
+        for item in evidence
+    )
+    assert plan.calls[0].call.arguments == {}
+    assert plan.calls[0].call.missing_required_arguments == []
+    assert plan.calls[0].parameters_meta[0].required is False
+    assert router.registry.get("facility").endpoint("read").parameters[0].required is False
+    assert all(
+        not any(str(value) in qualifier for value in (left, right) for qualifier in item.qualifiers)
+        for item in evidence
+    )
