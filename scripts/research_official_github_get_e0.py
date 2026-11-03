@@ -210,7 +210,7 @@ def audit_official_github_get_churn_e0(
         }
         if (
             not isinstance(prepared_github, ToolSpec)
-            or prepared_github.name != "github_rest_original_get_source"
+            or prepared_github.key != "github_rest_original_get_source"
             or prepared_github.source_type is not None
             or prepared_github.license is not None
             or len(prepared_github.endpoints) != 651
@@ -226,6 +226,19 @@ def audit_official_github_get_churn_e0(
             )
         ):
             raise ValueError("prepared GitHub publisher source identity or safety drift")
+        for endpoint in prepared_github.endpoints:
+            original = document["paths"][endpoint.path]["get"]
+            original_security = original.get("security", document.get("security"))
+            required_paths = set(re.findall(r"\{([^{}]+)\}", endpoint.path))
+            actual_paths = {
+                p.name for p in endpoint.parameters
+                if p.required and p.location == "path"
+            }
+            if (
+                (original_security and not endpoint.auth_requirements)
+                or not required_paths.issubset(actual_paths)
+            ):
+                raise ValueError("prepared GitHub publisher auth/path safety drift")
         github = prepared_github.model_copy(deep=True)
     other = _previous_two_providers()
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="deny"))
