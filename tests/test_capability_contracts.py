@@ -85,6 +85,22 @@ def test_preserved_assertions_and_narrower_types_prove_compatibility() -> None:
     assert result.satisfies
 
 
+@pytest.mark.parametrize("keyword,integer_value,float_value", [
+    ("minimum", 1, 1.0),
+    ("maximum", 1, 1.0),
+    ("enum", [1], [1.0]),
+    ("const", 1, 1.0),
+])
+def test_json_numeric_assertions_preserve_equal_values_after_normalization(
+    keyword, integer_value, float_value,
+) -> None:
+    result = compare_capability_fields(
+        contract("value", json_schema={"type": "number", keyword: integer_value}),
+        contract("value", json_schema={"type": "number", keyword: float_value}),
+    )
+    assert result.satisfies
+
+
 def test_unproven_constraints_cannot_satisfy_downstream_contract_consumers() -> None:
     from schemarouter import (
         CapabilityNegotiationRequest,

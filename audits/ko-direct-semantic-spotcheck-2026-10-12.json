@@ -80,9 +80,9 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "fdcd804497d469dd15001734f3cb51d031df188e",
-      "ko_blob": "07afaee53d8812877f6b34b72f39200b7adfea4d",
-      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits.",
+      "en_blob": "b209667ffff53733a683573bec4dd1ae307c4279",
+      "ko_blob": "8371cbd12d728df7e6d6e8ee07c6dfe8dd590d15",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off.",
       "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off."
     },
     {
@@ -237,9 +237,9 @@
     },
     {
       "path": "guides/capability-negotiation.md",
-      "en_blob": "4cfb4f05c9f9f528361b87e8f6e43fab3a3453b3",
-      "ko_blob": "94ab58994cb165301f6101e875324ff844c8383f",
-      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority. 2026-11-03 AI-assisted paired review: both languages retain schema assertions, unknown for unproved differences, annotation exclusion, integer-to-number compatibility and separate runtime validation; no independent human sign-off."
+      "en_blob": "9ae529fea12ca542f3f76a3d9dfe3d62a808eea7",
+      "ko_blob": "7cb20a3ca639f8f014979c3981446b58f4e0e5c4",
+      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority. 2026-11-03 AI-assisted paired review: both languages retain schema assertions, unknown for unproved differences, annotation exclusion, integer-to-number compatibility and separate runtime validation; no independent human sign-off. 2026-11-03 AI-assisted source comparison: constrained scalar qualification, canonical units and JSON numeric equality; no independent human sign-off."
     },
     {
       "path": "guides/capability-snapshots.md",

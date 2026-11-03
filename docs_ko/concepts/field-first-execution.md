@@ -14,6 +14,10 @@ user query
   -> minimal ToolResult context
 ```
 
+준비된 `SchemaFieldRoutingSession` 경로는 호스트가 검토한 문자열·정수·숫자·불리언 필드 요건을 받으며, 제한된 `enum`, `const`, 숫자 범위·배수, 문자열 길이·패턴 제약을 지원합니다. 원본 필드를 적합 후보로 판단하기 전에 스키마 문법과 검증 작업량 한도를 검사합니다. 참조·유니온 등 입증하지 못한 스칼라 형태는 이 경로에서 제외합니다. 필수 필드 집합 전체가 현재 권한·노출 범위·가용성·원본 검사를 통과해야 K5 후보 공개와 타입 기반 계획 수립으로 이어집니다.
+
+필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 준비된 경로는 명시적으로 선택해야 하며 기본 라우팅을 바꾸지 않습니다.
+
 ## Field-first가 중요한 이유
 
 Elastic modulus 하나만 필요한데 complete material record를 가져오면 upstream bytes/latency, JSON parsing/validation, downstream LLM의 irrelevant value, prompt token, distractor 위험이 증가합니다. 그래서 response field를 afterthought가 아니라 execution plan 일부로 취급합니다.
