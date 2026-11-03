@@ -88,6 +88,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PaperIntentDeclaration",
         "PaperIntentRegistry",
         "PaperUnderstanding",
+        "PaperQueryNeed",
+        "PaperQueryUnderstanding",
             "discover_optimade_paper_source",
             "register_reviewed_optimade_paper_source",
         "NativeIndexedGraphCandidate",
