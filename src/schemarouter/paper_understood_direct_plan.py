@@ -21,6 +21,7 @@ from .concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     _merged_concept_constraints,
+    _merged_concept_fields,
 )
 from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
@@ -177,14 +178,10 @@ def _source_owned_understood_group(
     source_type, license_id = constraints
     source_type = source_type or approved_hints.source_type
 
-    demanded = {}
-    for concept in concepts:
-        for field in concept.required_fields:
-            previous = demanded.get(field.semantic_id)
-            if previous is not None and previous != field:
-                raise ValueError("conflicting original paper typed field contracts")
-            demanded[field.semantic_id] = field
-    if not 1 <= len(demanded) <= 8:
+    fields = _merged_concept_fields(concepts)
+    if fields is None:
+        raise ValueError("conflicting original paper typed field contracts")
+    if not 1 <= len(fields) <= 8:
         raise ValueError("original paper intent field group exceeds bound")
     canonical_query = " ".join(concept.aliases[0] for concept in concepts)
     if (
@@ -197,7 +194,7 @@ def _source_owned_understood_group(
         })
     return approved_hints, NativeDeclaredFieldGroup(
         aliases=(canonical_query,),
-        required_fields=tuple(demanded[key] for key in sorted(demanded)),
+        required_fields=fields,
         source_type=source_type, license=license_id,
     )
 

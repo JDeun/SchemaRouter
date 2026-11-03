@@ -11,6 +11,7 @@ from .concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     _merged_concept_constraints,
+    _merged_concept_fields,
 )
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
@@ -126,10 +127,8 @@ def _compile_understood_concept_plan(
     # independently ranking smaller concepts with potentially different menus.
     # A single native group holds eight semantics; larger valid concept unions
     # retain their per-concept proof instead of widening that source contract.
-    group_semantics = {
-        field.semantic_id for concept in concepts for field in concept.required_fields
-    }
-    if (len(group_semantics) <= 8
+    group_fields = _merged_concept_fields(concepts)
+    if (group_fields is not None and 1 <= len(group_fields) <= 8
             and _merged_concept_constraints(concepts) is not None):
         kwargs = dict(principal=principal, catalog=catalog, intent_registry=intent_registry,
                       index=index, k=k, rank_policy=rank_policy, **(graph_options or {}))

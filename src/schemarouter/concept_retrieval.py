@@ -130,6 +130,20 @@ def _merged_concept_constraints(
     return next(iter(sources), None), next(iter(licenses), None)
 
 
+def _merged_concept_fields(
+    concepts: Iterable[NativeDeclaredConcept],
+) -> tuple[CapabilityFieldContract, ...] | None:
+    """Merge one SID-keyed group only when repeated typed contracts agree."""
+    unique: dict[str, CapabilityFieldContract] = {}
+    for concept in concepts:
+        for field in concept.required_fields:
+            previous = unique.get(field.semantic_id)
+            if previous is not None and previous != field:
+                return None
+            unique[field.semantic_id] = field
+    return tuple(unique[key] for key in sorted(unique))
+
+
 class ResolvedNativeConcepts(StrictModel):
     concept_ids: tuple[str, ...]
     field_group: NativeDeclaredFieldGroup
@@ -215,20 +229,16 @@ def resolve_native_concepts(
     if constraints is None:
         raise ValueError("incompatible source policy across concepts")
 
-    unique: dict[str, CapabilityFieldContract] = {}
-    for concept in selected:
-        for field in concept.required_fields:
-            previous = unique.get(field.semantic_id)
-            if previous is not None and previous != field:
-                raise ValueError("conflicting typed requirements for semantic field")
-            unique[field.semantic_id] = field
-    if len(unique) > 8:
+    fields = _merged_concept_fields(selected)
+    if fields is None:
+        raise ValueError("conflicting typed requirements for semantic field")
+    if len(fields) > 8:
         raise ValueError("merged FieldGroup exceeds field budget")
 
     source_type, license_id = constraints
     group = NativeDeclaredFieldGroup(
         aliases=(query,),
-        required_fields=tuple(unique[key] for key in sorted(unique)),
+        required_fields=fields,
         source_type=source_type,
         license=license_id,
     )
