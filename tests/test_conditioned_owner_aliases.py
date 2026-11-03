@@ -148,7 +148,8 @@ def test_reused_aliases_still_count_toward_the_original_total_budget():
         ))
 
 
-def test_resolved_owner_role_reuses_public_field_proof_and_live_acl():
+@pytest.mark.asyncio
+async def test_resolved_owner_role_reuses_public_field_proof_and_live_acl():
     catalog = _roles()
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
@@ -183,3 +184,21 @@ def test_resolved_owner_role_reuses_public_field_proof_and_live_acl():
         )
         if plan.calls:
             assert plan.calls[0].fields_meta[0].source_path == ("author", "login")
+        query_plan = await session.acompile_query(
+            f"Get the {role} login", principal=principal, intent_registry=intents,
+            model_visible_intent_ids=("lookup",), model=lambda _, role=role: {
+                "intent_id": "lookup", "needs": [
+                    {"concept": "login", "qualifiers": {"role": role}},
+                ],
+            },
+        )
+        assert query_plan.calls == plan.calls
+        assert query_plan.coverage.complete is (role == "author")
+    ambiguous = await session.acompile_query(
+        "Get the login", principal=principal, intent_registry=intents,
+        model_visible_intent_ids=("lookup",), model=lambda _: {
+            "intent_id": "lookup", "needs": [{"concept": "login"}],
+        },
+    )
+    assert ambiguous.status == "ambiguous_paths" and ambiguous.calls == ()
+    assert not ambiguous.coverage.complete

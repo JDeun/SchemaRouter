@@ -1,7 +1,8 @@
 """Bounded, host-owned Understand(q) callback for schema-only field routing.
 
-Model output proposes reviewed IDs; only currently authorized source contracts
-can produce a field plan. No tool call, data read, or answer synthesis occurs.
+Model output proposes query needs, or explicitly disclosed IDs in legacy mode;
+only current authorized source contracts can produce a field plan. No tool
+call, data read, or answer synthesis occurs.
 """
 from __future__ import annotations
 
@@ -250,9 +251,9 @@ async def compile_model_query(
 ) -> PaperTypedToolPlan:
     """Understand before source resolution, or use the earlier scoped-ID protocol.
 
-    The caller deliberately chooses which IDs/tool *names* may be disclosed
-    to its model. Live field and source checks independently constrain those
-    names. Model-suggested parameter values never become host arguments.
+    By default, only fixed intent names accompany the query and response
+    contract. Explicit concept IDs select the earlier disclosure protocol.
+    Live source checks constrain both; model hints never become host arguments.
     """
     independent = model_visible_concept_ids is None
     if (
