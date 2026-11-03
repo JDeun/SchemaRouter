@@ -6227,3 +6227,11 @@ class ConfiguredSchemaRouter:
             config=self.config,
             trace_store=trace_store,
         )
+
+
+# Preserve original callback identities even if applications replace methods on the class.
+_NATIVE_SOURCE_ROUTER_METHODS = {
+    name: getattr(SchemaRouter, name) for name in (
+        "_authorization_predicate", "_data_scope_endpoint_view", "_is_snapshot_access_available",
+    )
+}

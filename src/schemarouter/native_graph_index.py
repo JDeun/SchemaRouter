@@ -32,7 +32,7 @@ from .field_group_retrieval import (
     _scalar_contract,
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
-from .native_semantic_index import NativeSchemaPostingIndex
+from .native_semantic_index import NativeSchemaPostingIndex, _NativeSourcePass
 from .paper_native_rank import (
     PaperNativeRankPolicy,
     rank_authorized_paper_graph_one_hop,
@@ -886,6 +886,7 @@ class NativeSchemaGraphIndex:
         )
         # This graph is not authorization-scoped and must never be surfaced
         # directly. All native endpoints are reloaded and checked at lookup.
+        source_pass = _NativeSourcePass(self.field_index, router)
         permitted = router._authorization_predicate(actor)
         if permitted is None:
             raise PolicyViolationError("G5 explicit authorization required")
@@ -911,9 +912,8 @@ class NativeSchemaGraphIndex:
             pinned = self.field_index.route_fingerprints.get(route_id)
             if where is None or pinned is None:
                 raise PolicyViolationError("G5 missing pinned native route")
-            tool = router.registry.get(where[0])
-            endpoint = tool.endpoint(where[1])
-            if (tool.fingerprint, endpoint.fingerprint) != pinned:
+            tool, endpoint, fingerprint = source_pass.get(*where)
+            if (fingerprint, endpoint.fingerprint) != pinned:
                 raise PolicyViolationError("G5 native route source drift")
             if (
                 not tool.source_type or not tool.license
@@ -927,7 +927,7 @@ class NativeSchemaGraphIndex:
             # truthiness evaluation raises with provider-owned information.
             if availability is not None:
                 try:
-                    available_now = bool(availability(tool, endpoint))
+                    available_now = bool(source_pass.available(tool, endpoint, availability))
                 except Exception:
                     raise PolicyViolationError(
                         "G5 availability check failed during lookup"
@@ -1048,6 +1048,7 @@ class NativeSchemaGraphIndex:
         # candidate OR the qualified count, including over-K abstention.
         # A registry version/authorization witness alone cannot detect
         # closure-state revocation from another candidate's callback.
+        source_pass.reset()
         try:
             for candidate in found:
                 root_now = authorized(candidate.producer_route_id)
@@ -1196,6 +1197,7 @@ class NativeSchemaGraphIndex:
             # originally qualified paths, not only the chosen K, because
             # qualified_path_count is also published to the caller.
             # These checks never grant access or invoke source tools.
+            source_pass.reset()
             try:
                 for candidate in found:
                     current_root = authorized(candidate.producer_route_id)
@@ -1348,6 +1350,7 @@ class NativeSchemaGraphIndex:
             repr(router.authorization_policy.rules),
             repr(router.authorization_policy.data_rules),
         )
+        source_pass = _NativeSourcePass(self.field_index, router)
         permitted = router._authorization_predicate(actor)
         if permitted is None:
             raise PolicyViolationError("G5 two-hop explicit authorization required")
@@ -1358,9 +1361,8 @@ class NativeSchemaGraphIndex:
             pinned = self.field_index.route_fingerprints.get(route)
             if where is None or pinned is None:
                 raise PolicyViolationError("G5 two-hop original route missing")
-            tool = router.registry.get(where[0])
-            endpoint = tool.endpoint(where[1])
-            if (tool.fingerprint, endpoint.fingerprint) != pinned:
+            tool, endpoint, fingerprint = source_pass.get(*where)
+            if (fingerprint, endpoint.fingerprint) != pinned:
                 raise PolicyViolationError("G5 two-hop original source changed")
             if (
                 not tool.source_type or not tool.license
@@ -1368,7 +1370,9 @@ class NativeSchemaGraphIndex:
                 or not permitted(tool, endpoint)
             ):
                 return None
-            if availability is not None and not bool(availability(tool, endpoint)):
+            if availability is not None and not bool(
+                source_pass.available(tool, endpoint, availability),
+            ):
                 return None
             scoped = router._data_scope_endpoint_view(actor, tool, endpoint)
             return (tool, scoped) if scoped is not None else None
@@ -1514,6 +1518,7 @@ class NativeSchemaGraphIndex:
                             )
             # Every previously qualified route is re-read AFTER all health
             # callbacks, even if >K would return a count-only abstention.
+            source_pass.reset()
             for candidate in qualified:
                 root_id, middle_id, target_id = candidate.route_ids
                 reread = tuple(authorized(route) for route in candidate.route_ids)
