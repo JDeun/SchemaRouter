@@ -1,7 +1,7 @@
 """Versioned catalog-wide *structural* semantic postings, opt-in E0.
 
 The registry stores ALL native tool contracts; this index stores only
-verified scalar semantic postings and source revisions. Query-time checks
+verified JSON response semantic postings and source revisions. Query-time checks
 use the original principal/policy/data scope and availability. It is not
 an execution engine, graph path planner, or new lexical ranker.
 """
@@ -16,6 +16,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
 
 from .authorization import AuthorizationPolicy, AuthorizationRule, DataScopeRule, PrincipalContext
+from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError, RegistrationError
 from .executor import RegistryExecutor
@@ -23,8 +24,8 @@ from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
     _complete_fields,
+    _response_contract,
     _root_envelope_empty,
-    _scalar_contract,
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
 from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
@@ -186,21 +187,22 @@ def _native_review_views(
 
 
 def _indexable_semantic_field(field: FieldSpec) -> bool:
-    """Index only declared scalar semantics, including explicit numeric normalization.
+    """Index declared JSON response semantics, including explicit numeric normalization.
 
     A provider unit string alone cannot create a conversion. Canonicalized fields
     must carry a source unit and a locally declared UnitNormalizationSpec; the
     source tool and license remain mandatory in build/refresh. Actual candidate
     qualification still uses the original scoped canonical comparator.
     """
-    if field.semantic_id is None or not _scalar_contract(field.json_schema):
+    if field.semantic_id is None or not _response_contract(field.json_schema):
         return False
     normalization = field.unit_normalization
     if normalization is None:
         return True
     return (
         field.unit is not None
-        and field.json_schema.get("type") in {"number", "integer"}
+        and (contract := CapabilityFieldContract.from_field(field)) is not None
+        and _response_contract(contract.json_schema)
     )
 
 
@@ -282,7 +284,7 @@ class NativeSchemaPostingIndex:
                     raise ValueError("duplicated registered native route")
                 revisions[route] = (tool_fingerprint, endpoint.fingerprint)
                 locations[route] = (tool_key, endpoint.name)
-                # Index all schema nodes but only scalar source-typed output
+                # Index all schema nodes but only declared source-typed output
                 # semantics; no inferred IDs from descriptions or task gold.
                 if not tool.source_type or not tool.license:
                     continue

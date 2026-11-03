@@ -25,6 +25,7 @@ from .models import CapabilityRetrieval, EndpointSpec, FieldSpec, PlanRequest, S
 from .planner import KeywordAnalyzer
 from .validation import (
     RuntimeValidationBudget,
+    _has_declared_json_shape,
     _inspect_runtime_schema,
     _RuntimeValidationBudgetExceeded,
 )
@@ -79,6 +80,31 @@ def _scalar_contract(schema: dict) -> bool:
     return _validated_scalar_contract(encoded)
 
 
+@lru_cache(maxsize=256)
+def _validated_response_contract(encoded_schema: str) -> bool:
+    """Bounded JSON output contracts; references must be local and acyclic.
+
+    This never grants an identifier/host-input contract. Keep the narrower
+    scalar predicate for graph dependency producers and trusted host inputs.
+    """
+    return _has_declared_json_shape(json.loads(encoded_schema))
+
+
+def _response_contract(schema: dict) -> bool:
+    """A declared JSON response shape, not an empty/unknown schema."""
+    if _scalar_contract(schema):
+        return True
+    if type(schema) is not dict or not (
+        schema.keys() & {"type", "$ref", "anyOf", "oneOf", "allOf"}
+    ):
+        return False
+    try:
+        encoded = canonical_json_text(schema)
+        return len(encoded.encode("utf-8")) <= 16_384 and _validated_response_contract(encoded)
+    except (TypeError, ValueError, OverflowError, RecursionError):
+        return False
+
+
 def _root_envelope_empty(endpoint: EndpointSpec) -> bool:
     """Proof of an input-free native endpoint, shared by FieldGroup and G5."""
     if endpoint.parameters or endpoint.auth_requirements:
@@ -119,7 +145,7 @@ class NativeDeclaredFieldGroup(StrictModel):
             or len({field.semantic_id for field in self.required_fields})
             != len(self.required_fields)
             or any(
-                not _scalar_contract(field.json_schema)
+                not _response_contract(field.json_schema)
                 or any(not key or not val for key, val in field.qualifiers.items())
                 for field in self.required_fields
             )
@@ -140,7 +166,7 @@ class NativeDeclaredFieldGroup(StrictModel):
 def _compatible_field(required: CapabilityFieldContract, field: FieldSpec) -> bool:
     if (
         field.semantic_id is None
-        or not _scalar_contract(field.json_schema)
+        or not _response_contract(field.json_schema)
     ):
         return False
     produced = CapabilityFieldContract.from_field(field)

@@ -250,9 +250,51 @@ def test_direct_candidate_revoked_by_live_availability_during_graph_lookup(
 
 def test_graph_owner_catalog_mutation_refused() -> None:
     catalog = _catalog()
-    catalog.concepts[0].required_fields[0].json_schema["type"] = "object"
+    catalog.concepts[0].required_fields[0].json_schema["type"] = "unsupported_json_type"
     with pytest.raises(ValueError):
         _select(_joined_router(), catalog=catalog)
+
+
+@pytest.mark.parametrize("declared_type", ("number", "object"))
+@pytest.mark.parametrize("indexed_direct", (False, True))
+def test_supported_prelookup_owner_contract_change_still_requires_source_match(
+    declared_type: str, indexed_direct: bool,
+) -> None:
+    # The standalone API revalidates the current owner declaration on entry.
+    # Scalar and object changes are valid contracts, but neither matches the
+    # actual string source; entry validation must not become source evidence.
+    router = _joined_router()
+    catalog = _catalog()
+    catalog.concepts[0].required_fields[0].json_schema["type"] = declared_type
+    result = retrieve_authorized_concept_graph(
+        router, "case status", principal=ACTOR, catalog=catalog, index=_index(router),
+        experimental_indexed_direct=indexed_direct,
+    )
+    assert result.status == "no_proven_hit"
+    assert result.route_sets == () and result.route_ids == ()
+
+
+@pytest.mark.parametrize("declared_type", ("number", "object"))
+@pytest.mark.parametrize("indexed_direct", (False, True))
+def test_supported_inflight_owner_contract_change_is_refused(
+    monkeypatch, declared_type: str, indexed_direct: bool,
+) -> None:
+    router = _joined_router()
+    catalog = _catalog()
+    index = _index(router)
+    original = NativeSchemaGraphIndex.lookup
+
+    def mutate(*args, **kwargs):
+        result = original(*args, **kwargs)
+        catalog.concepts[0].required_fields[0].json_schema["type"] = declared_type
+        return result
+
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup", mutate)
+    with pytest.raises(PolicyViolationError, match="concept catalog changed during lookup"):
+        retrieve_authorized_concept_graph(
+            router, "case status", principal=ACTOR, catalog=catalog, index=index,
+            experimental_indexed_direct=indexed_direct,
+        )
 
 
 @pytest.mark.parametrize("query", ("case status", "문의 상태", "問い合わせ状態"))

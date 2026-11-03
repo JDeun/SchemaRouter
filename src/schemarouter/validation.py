@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
-from jsonschema import Draft202012Validator, exceptions, validators
+from jsonschema import Draft202012Validator, SchemaError, exceptions, validators
 
 from .canonical_json import canonical_json_text
 from .errors import SchemaValidationError
@@ -591,6 +591,122 @@ def json_schema_types(schema: dict[str, Any]) -> frozenset[str]:
             if isinstance(value, str)
         )
     return frozenset()
+
+
+def _has_declared_json_shape(schema: dict[str, Any]) -> bool:
+    """Conservative type evidence, not inference from arbitrary predicates.
+
+    A typeless union must prove every branch; a local reference must resolve
+    inside this very field document. Empty/boolean wrappers stay unknown.
+    """
+    try:
+        _inspect_runtime_schema(schema, RuntimeValidationBudget())
+        Draft202012Validator.check_schema(schema)
+    except (SchemaError, _RuntimeValidationBudgetExceeded,
+            TypeError, ValueError, OverflowError, RecursionError):
+        return False
+    maps = {"properties", "patternProperties", "$defs", "definitions", "dependentSchemas"}
+    sequences = {"anyOf", "oneOf", "allOf", "prefixItems"}
+    singles = {"items", "additionalProperties", "contains", "propertyNames", "not",
+               "if", "then", "else", "unevaluatedProperties", "unevaluatedItems"}
+    allowed = _SCHEMA_ANNOTATIONS | maps | sequences | singles | {
+        "$ref", "type", "enum", "const", "required", "dependentRequired",
+        "minProperties", "maxProperties", "minItems", "maxItems", "uniqueItems",
+        "minContains", "maxContains", "minimum", "maximum", "exclusiveMinimum",
+        "exclusiveMaximum", "multipleOf", "minLength", "maxLength", "pattern", "format",
+    }
+    active: set[int] = set()
+    visits = 0
+    max_visits = RuntimeValidationBudget().max_schema_nodes
+
+    def visit(node: object) -> bool:
+        nonlocal visits
+        visits += 1
+        if visits > max_visits:
+            return False
+        if type(node) is bool:
+            return True
+        if (
+            not isinstance(node, dict) or not node.keys() <= allowed
+            or ("enum" in node and not node["enum"])
+        ):
+            return False
+        identity = id(node)
+        if identity in active:
+            return False
+        active.add(identity)
+        children = []
+        for key in maps & node.keys():
+            children.extend(node[key].values())
+        for key in sequences & node.keys():
+            children.extend(node[key])
+        children.extend(node[key] for key in singles & node.keys())
+        if "$ref" in node:
+            ref = node["$ref"]
+            # No external fetch, anchors, changed resolution bases or implicit
+            # endpoint-root context. Preserve the original schema in the plan.
+            if not isinstance(ref, str) or not ref.startswith("#/"):
+                return False
+            target = schema
+            try:
+                for part in ref[2:].split("/"):
+                    target = target[part.replace("~1", "/").replace("~0", "~")]
+            except (KeyError, TypeError):
+                return False
+            children.append(target)
+        if not all(visit(child) for child in children):
+            return False
+        active.remove(identity)
+        return True
+
+    try:
+        if not visit(schema):
+            return False
+    except (TypeError, ValueError, RecursionError):
+        return False
+
+    visits = 0
+    active: set[int] = set()
+    known = {"null", "boolean", "integer", "number", "string", "array", "object"}
+
+    def check(node: Any, depth: int) -> bool:
+        nonlocal visits
+        visits += 1
+        if visits > 10_000 or depth > 64 or not isinstance(node, dict):
+            return False
+        types = json_schema_types(node)
+        declared = node.get("type")
+        if types and types <= known and (
+            isinstance(declared, str)
+            or isinstance(declared, list) and all(isinstance(value, str) for value in declared)
+        ):
+            return True
+        if id(node) in active:
+            return False
+        active.add(id(node))
+        try:
+            if "$ref" in node:
+                ref = node["$ref"]
+                if not isinstance(ref, str) or not ref.startswith("#/"):
+                    return False
+                target: Any = schema
+                try:
+                    for part in ref[2:].split("/"):
+                        target = target[part.replace("~1", "/").replace("~0", "~")]
+                except (KeyError, TypeError):
+                    return False
+                return check(target, depth + 1)
+            for keyword in ("anyOf", "oneOf", "allOf"):
+                branches = node.get(keyword)
+                if isinstance(branches, list) and branches and all(
+                    check(branch, depth + 1) for branch in branches
+                ):
+                    return True
+            return False
+        finally:
+            active.remove(id(node))
+
+    return check(schema, 0)
 
 
 def json_types_compatible(

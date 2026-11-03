@@ -28,6 +28,7 @@ from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
     _complete_fields,
+    _response_contract,
     _root_envelope_empty,
     _scalar_contract,
 )
@@ -342,16 +343,16 @@ def _source_native_graph_contracts(
                 if host_root:
                     accepted.add(route)
             elif host_root:
-                # Reviewed direct scalars may carry units without being IDs.
+                # Reviewed direct response fields need not be scalar IDs.
                 # Such a route is eligible for source-owned *direct* P2
                 # lookup, but MUST NOT become a dependency producer: graph
                 # consumers can bind only genuine identifier fields.
-                scalar_output = any(
-                    _scalar_contract(field.json_schema)
+                response_output = any(
+                    _response_contract(field.json_schema)
                     and CapabilityFieldContract.from_field(field) is not None
                     for field in endpoint.output_fields
                 )
-                if not scalar_output:
+                if not response_output:
                     raise ValueError("G5 host-approved source has no typed output")
                 contracts.append(CapabilityContract(capability_id=route))
                 roots += 1

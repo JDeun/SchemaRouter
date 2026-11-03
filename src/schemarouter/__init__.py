@@ -484,6 +484,7 @@ from .paper_optimade_registration import (
     discover_optimade_paper_source,
     register_reviewed_optimade_paper_source,
 )
+from .paper_query_needs import PaperQueryNeed, PaperQueryUnderstanding
 from .paper_typed_tool_plan import (
     PaperPlanBinding,
     PaperPlanCall,
@@ -663,6 +664,8 @@ __all__ = [
     "PaperIntentDeclaration",
     "PaperIntentRegistry",
     "PaperUnderstanding",
+    "PaperQueryNeed",
+    "PaperQueryUnderstanding",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "PaperFieldRoute",

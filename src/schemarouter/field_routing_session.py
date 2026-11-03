@@ -8,11 +8,12 @@ from __future__ import annotations
 
 from bisect import bisect_right
 from collections.abc import Callable, Container
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
-from .canonical_json import canonical_json_sha256
+from .canonical_json import canonical_json_sha256, canonical_json_text
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .host_field_contract import _policy_contents_digest
@@ -48,13 +49,18 @@ _MAX_REVIEW_PAGE_BYTES = 262144
 
 @dataclass(frozen=True, slots=True)
 class SchemaFieldReviewField:
-    """One authorized public scalar source field, not an approved concept."""
+    """One authorized public JSON source field, not an approved concept."""
 
     name: str
     semantic_id: str
-    json_type: str
+    json_type: str  # Legacy primitive label; unions/ref contracts use "schema".
     unit: str | None
     identifier: bool
+    aliases: tuple[str, ...] = ()
+    qualifiers: tuple[tuple[str, str], ...] = ()
+    source_path: tuple[str, ...] = ()
+    result_path: tuple[str, ...] = ()
+    json_schema: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,9 +138,16 @@ def _attest_visible_review_route(
             SchemaFieldReviewField(
                 name=field.name,
                 semantic_id=field.semantic_id,
-                json_type=field.json_schema["type"],
+                json_type=(field.json_schema["type"]
+                    if isinstance(field.json_schema.get("type"), str)
+                    else "schema"),
                 unit=field.unit,
                 identifier=field.identifier,
+                aliases=tuple(field.aliases),
+                qualifiers=tuple(sorted(field.qualifiers.items())),
+                source_path=field.projection_path,
+                result_path=field.result_projection_path,
+                json_schema=deepcopy(field.json_schema),
             )
             for field in scoped.output_fields
             if field.semantic_id is not None
@@ -367,7 +380,7 @@ class SchemaFieldRoutingSession:
         after_route: str | None = None,
         limit: int = 32,
     ) -> SchemaFieldReviewPage:
-        """Page current authorized native scalar fields for human catalog review.
+        """Page current authorized native JSON response fields for human catalog review.
 
         This does not infer/approve concepts, reuse permission across pages,
         fetch data or issue provider calls. Returned cursors are opaque sort
@@ -470,8 +483,11 @@ class SchemaFieldRoutingSession:
             )
             for item in current.fields:
                 payload_bytes += 160 + 6 * sum(
-                    len(value.encode("utf-8")) for value in (
+                    2 + len(value.encode("utf-8")) for value in (
                         item.name, item.semantic_id, item.json_type, item.unit or "",
+                        *item.aliases, *item.source_path, *item.result_path,
+                        *(value for pair in item.qualifiers for value in pair),
+                        canonical_json_text(item.json_schema),
                     )
                 )
             for item in current.parameters_meta:
@@ -696,7 +712,7 @@ class SchemaFieldRoutingSession:
         model: PaperFieldModel,
         intent_registry: PaperIntentRegistry,
         model_visible_intent_ids: tuple[str, ...],
-        model_visible_concept_ids: tuple[str, ...],
+        model_visible_concept_ids: tuple[str, ...] | None = None,
         model_visible_tool_keys: tuple[str, ...] = (),
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         k: int = 5,
@@ -706,8 +722,11 @@ class SchemaFieldRoutingSession:
         rank_policy: PaperNativeRankPolicy | None = None,
         allow_unnamed_graph_discovery: bool = False,
     ) -> PaperTypedToolPlan:
-        """Use a caller-owned model to suggest IDs, then prove source fields.
+        """Understand a query, then prove its fields against current source contracts.
 
+        Omit model_visible_concept_ids for schema-independent understanding:
+        the model receives only the query, fixed intent names and output format.
+        Supplying IDs retains the earlier scoped-ID selection protocol.
         No provider data is fetched. The model cannot authorize a route,
         expand source scope, or bind its proposed argument values.
         """

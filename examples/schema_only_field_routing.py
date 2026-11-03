@@ -85,7 +85,7 @@ def main() -> None:
     # The owner now explicitly reviews/declares the meanings to route.
     catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id="customer.overview",
-        aliases=("customer status and owner", "고객 상태와 담당자"),
+        aliases=("customer overview", "고객 상태와 담당자"),
         required_fields=(
             CapabilityFieldContract(
                 semantic_id="customer.status", json_schema={"type": "string"},
@@ -95,7 +95,14 @@ def main() -> None:
             ),
         ),
         source_type="host-owned", license="internal",
-    ),))
+    ), *(
+        NativeDeclaredConcept(
+            concept_id=f"customer.{name}", aliases=(f"customer {name}",),
+            required_fields=(CapabilityFieldContract(
+                semantic_id=f"customer.{name}", json_schema={"type": "string"},
+            ),), source_type="host-owned", license="internal",
+        ) for name in ("status", "owner")
+    )))
     active = session.revise_catalog(
         catalog=catalog,
         approved_host_roots=frozenset({"directory.lookup"}),
@@ -112,7 +119,7 @@ def main() -> None:
 
     # Optional metadata and argument-shape inspection, not data fetching.
     plan = active.compile(
-        "customer status and owner", principal=principal,
+        "customer overview", principal=principal,
         host_source_arguments={
             "directory.lookup": {"customer_id": "host-supplied-customer-1"},
         },
@@ -128,10 +135,10 @@ def main() -> None:
     )
     assert revoked.catalog_revision_id != active.catalog_revision_id
     assert revoked.discover(
-        "customer status and owner", principal=principal,
+        "customer overview", principal=principal,
     ).status == "no_proven_hit"
     assert active.compile(
-        "customer status and owner", principal=principal,
+        "customer overview", principal=principal,
         host_source_arguments={
             "directory.lookup": {"customer_id": "host-supplied-customer-1"},
         },
@@ -222,11 +229,10 @@ def main() -> None:
     # This deterministic callback emulates the JSON contract. Swap the
     # callback for an actual host-controlled model; the router stays offline.
     async def owner_model(payload):
-        assert "output_fields" not in payload  # no raw provider schemas
+        assert "offered_concepts" not in payload  # no schema or alias inventory
         return {
             "intent_id": "customer.lookup",
-            "concept_ids": ["customer.overview"],
-            "named_tools": ["directory"],
+            "needs": [{"concept": "customer owner"}, {"concept": "customer status"}],
             "parameter_hints": {"customer_id": "MODEL_VALUE_IS_NOT_USED"},
         }
 
@@ -236,8 +242,8 @@ def main() -> None:
         model=owner_model,
         intent_registry=reviewed_intents,
         model_visible_intent_ids=("customer.lookup",),
-        model_visible_concept_ids=("customer.overview",),
-        model_visible_tool_keys=("directory",),
+        rank_policy=PaperNativeRankPolicy(snapshot_id=graph_session.snapshot_id),
+        allow_unnamed_graph_discovery=True,
     ))
     print("model-assisted schema-only path:", natural_plan.status,
           tuple(call.route_id for call in natural_plan.calls))

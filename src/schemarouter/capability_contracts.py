@@ -10,7 +10,11 @@ from pydantic import Field, model_validator
 from .canonical_json import canonical_json_text
 from .models import FieldSpec, StrictModel
 from .validation import _SCHEMA_ANNOTATIONS as _SCHEMA_ANNOTATIONS
-from .validation import canonical_unit_value_schema, json_schemas_compatible
+from .validation import (
+    _has_declared_json_shape,
+    canonical_unit_value_schema,
+    json_schemas_compatible,
+)
 
 CompatibilityStatus = Literal["exact", "compatible", "convertible", "incompatible", "unknown"]
 EffectKind = Literal["read", "write", "external_side_effect"]
@@ -264,7 +268,12 @@ def _type_compatible(required: dict, produced: dict) -> bool | None:
     required_types = _types(required)
     produced_types = _types(produced)
     if not required_types or not produced_types:
-        return None
+        # Typeless combinators/local refs need a complete assertion proof.
+        # Empty schemas remain unknown rather than becoming typed evidence.
+        return True if (
+            _has_declared_json_shape(required) and _has_declared_json_shape(produced)
+            and json_schemas_compatible(required, produced)
+        ) else None
     for value in produced_types:
         if value in required_types:
             continue

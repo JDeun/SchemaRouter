@@ -14,17 +14,43 @@ user query
   -> minimal ToolResult context
 ```
 
-준비된 `SchemaFieldRoutingSession` 경로는 호스트가 검토한 문자열·정수·숫자·불리언 필드 요건을 받으며, 제한된 `enum`, `const`, 숫자 범위·배수, 문자열 길이·패턴 제약을 지원합니다. 원본 필드를 적합 후보로 판단하기 전에 스키마 문법과 검증 작업량 한도를 검사합니다. 참조·유니온 등 입증하지 못한 스칼라 형태는 이 경로에서 제외합니다. 필수 필드 집합 전체가 현재 권한·노출 범위·가용성·원본 검사를 통과해야 K5 후보 공개와 타입 기반 계획 수립으로 이어집니다.
+준비된 `SchemaFieldRoutingSession` 경로는 호스트가 검토한 직접 응답 요건으로 스칼라·nullable·배열·객체·map 필드와 선언된 제약을 지원합니다. 같은 필드 descriptor 내부에서 객체 키를 가리키는 JSON pointer 참조도 작업량이 제한되고 순환하지 않으면 지원합니다. 외부 참조, anchor, endpoint-root 문맥 복구, 알 수 없는 schema와 무제약 wrapper는 제외합니다. 원본 필드를 적합 후보로 판단하기 전에 스키마 문법, 검증 작업량 한도와 보수적인 제약 호환성을 검사합니다. 필수 필드 집합 전체가 현재 권한·노출 범위·가용성·원본 검사를 통과해야 K5 후보 공개와 타입 기반 계획 수립으로 이어집니다.
+
+G5 dependency producer에는 계속 단위 없는 스칼라 identifier가 필요하며, 신뢰된 호스트 입력의 기존 스칼라 한도도 유지합니다. 원본 container가 선언된 숨김 하위 필드와 겹치면 결과 경로가 달라도 제외합니다. 제한된 view의 schema stripping도 유지합니다. 필드 요건을 입증하려고 raw registry에서 제거된 중첩 계약 정보를 복구하지 않습니다.
 
 필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 준비된 경로는 명시적으로 선택해야 하며 기본 라우팅을 바꾸지 않습니다.
 
 ## 준비된 schema-only plan
 
-`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. `session.acompile_query(...)`는 추가로 질문과 명시적으로 승인된 intent ID, concept ID/alias, tool 이름을 애플리케이션의 모델에 전달하며, provider의 원본 schema는 보내지 않습니다. 이 API들은 명시적으로 선택해야 합니다. `router.plan(...)`의 기본 `KeywordAnalyzer`는 어휘 기반이며, 일반적인 다국어 이해·시간 조건 추론·질문에서 인자 값을 추출하는 기능을 제공하지 않습니다.
+`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. `session.acompile_query(...)`에서 `model_visible_concept_ids`를 생략하면 schema-independent 모델 프로토콜을 사용합니다. 애플리케이션의 모델에는 질문, 고정된 intent 이름과 응답 형식·규칙만 전달하며 concept alias, 필드 이름, tool catalog, route ID는 보내지 않습니다. 명시적인 tuple을 전달하면 승인된 concept ID/alias와 tool 이름을 공개하는 기존 offered-ID 프로토콜을 유지합니다. 이 API들은 명시적으로 선택해야 합니다. `router.plan(...)`의 기본 `KeywordAnalyzer`는 어휘 기반이며, 일반적인 다국어 이해·시간 조건 추론·질문에서 인자 값을 추출하는 기능을 제공하지 않습니다.
 
 각 concept의 필수 필드 집합 전체를 그 concept의 source type과 license에 따라 권한이 있는 endpoint에서 독립적으로 입증합니다. 따라서 독립적인 concept들은 서로 다른 tool과 license를 사용할 수 있습니다. 입증된 route들을 합치고, 반복되는 route는 선택 필드의 합집합을 원본 선언 순서로 보존합니다. Identifier와 호스트가 요구한 intent group은 recall을 보존하며, 결과가 항상 최소 필드 수라고 보장하지는 않습니다. 전체 route 집합은 K5 한도를 따르므로 합집합이 다섯 route를 넘으면 call 없이 `budget_unsatisfied`를 반환합니다.
+일반 intent는 `required_concept_ids=()`를 선언할 수 있으며, 임의의 대표 필드를 추가하지 않습니다.
 
-요구를 합성한 경우 `plan.coverage`는 `required`, `covered`, `uncovered`, `complete`를 기록하며, 필드 semantic ID에 concept/source/license qualifier를 붙입니다. Concept 일부를 충족하지 못하면 입증된 부분 `calls`를 남기되 `status="no_proven_hit"`, `complete=False`를 반환할 수 있습니다. 모델이 보고한 `unresolved_concepts`는 `semantic_id="unresolved"`로 미충족 목록에 남으며, 원문 제안은 `query_concept=...` qualifier에 기록합니다. 이 제안으로 source나 type 계약을 추정하지 않습니다. `acompile_query`에서 `intent_id=null`이면 call 없이 불완전한 coverage와 `no_proven_hit`를 반환합니다. 모델이 누락한 요구까지 이 검사가 보장할 수는 없습니다.
+`session.inspect_visible_fields(principal=...)`는 owner 검토를 위해 현재 노출 범위의 필드 JSON schema, alias, qualifier와 원본·결과 경로를 제공합니다. 호스트는 원본과 분리된 이 선언으로 비공개 registry 상태를 읽지 않고 concept·alias 관계를 검토할 수 있습니다. 제한된 view는 metadata를 생략하거나 경로를 공개 필드 이름으로 바꿀 수 있습니다. 검토 API는 숨겨진 원본 정보를 복구하거나 concept catalog를 자동 승인하지 않습니다.
+
+Schema-independent 응답은 `PaperQueryUnderstanding`을 사용합니다. 다음 예시는 그 형식만 보여 주며, source나 execution 권한을 부여하지 않습니다.
+
+```json
+{
+  "intent_id": "information.lookup",
+  "needs": [{"concept": "temperature", "unit": "Cel", "source_type": "weather",
+             "qualifiers": {"time": "current"}}],
+  "needs_truncated": false,
+  "excluded_concepts": ["forecast temperature"],
+  "named_tools": ["weather"],
+  "parameter_hints": {"city": "Seoul"},
+  "source_type": null
+}
+```
+
+질문을 이해한 뒤에는 짧은 영어 concept 전체를 기존 정규화 규칙에 따라 호스트가 선언한 concept ID 또는 alias 전체와 정확히 대조합니다. 명시적인 단위, source type과 qualifier도 호스트의 계약이 지원해야 하며, 알 수 없는 role/path/time 조건은 미입증 상태로 남습니다. 단위, source type과 qualifier 값은 선언과 정확히 일치해야 하며 한 need의 모든 조건을 동일한 선언 필드가 함께 지원해야 합니다. 이 해석 과정에서 단위 변환이나 role/path/time 매핑을 추정하지 않습니다. 이는 범위가 제한된 선언 alias 해석이며 일반적인 의미 이해를 보장하지 않습니다.
+
+Owner가 선언한 source type, 단위 또는 qualifier로 concept을 구별할 수 있을 때만 같은 alias 전체를 공유할 수 있습니다. 질문의 명시적 조건을 적용한 뒤 정확히 하나의 concept만 남아야 합니다. 조건이 없거나 부족하면 source 접근 권한이나 가용성과 관계없이 모호한 상태로 남습니다.
+
+`plan.coverage`는 `required`, `covered`, `uncovered`, `complete`를 기록합니다. 이 모델 프로토콜에서는 요구에 raw concept 라벨과 unit/source/qualifier 조건을 보존합니다. 제외 조건과 사용자가 명시한 source도 요구로 남으며, 명시된 source는 현재 노출 범위에 있고 요청 필드를 실제로 기여해야 합니다. Intent의 필수 group이 부정된 필드를 복원할 수는 없습니다. 요구 일부를 충족하지 못하면 입증된 부분 `calls`를 남기되 `status="no_proven_hit"`, `complete=False`를 반환할 수 있습니다. `intent_id=null`이면 call 없이 불완전한 coverage와 `no_proven_hit`를 반환합니다. 구조화된 `compile_understood`의 coverage는 필드 semantic ID에 concept/source/license qualifier를 붙이며, `unresolved_concepts`는 원문 제안을 `query_concept=...`에 담아 미충족 목록에 남깁니다.
+
+Schema-independent 질문 입력 한도는 4,096자와 UTF-8 16,384바이트입니다. 응답은 최대 8개 need와 4,096바이트로 제한합니다. 담지 못한 요구가 더 있으면 모델은 `needs_truncated=true`를 설정해야 하며, receipt는 call 없이 `budget_unsatisfied`와 불완전한 coverage를 반환합니다. 이 검사는 모델이 누락한 모든 요구를 찾아낼 수 없으며 상용 query-to-field 정확도를 입증하지 않습니다.
 
 그 밖의 요구가 충족된 direct mapping에서 입증된 dependency가 필수 입력을 공급하지 못하면 `requires_arguments`와 `call.missing_required_arguments`를 유지합니다. `parameter_hints`는 신뢰하지 않는 제안으로 남습니다. 승인된 root에 별도로 제공한 `host_source_arguments`만 기존 원본·값 검증을 거쳐 인자로 연결할 수 있습니다.
 

@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import Field, model_validator
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_sha256
 from .concept_retrieval import _ID_PATTERN, NativeConceptCatalog, NativeDeclaredConcept
 from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
@@ -53,7 +54,7 @@ class PaperIntentDeclaration(StrictModel):
         if (
             type(self.intent_id) is not str
             or not _ID_PATTERN.fullmatch(self.intent_id)
-            or not 1 <= len(self.required_concept_ids) <= 8
+            or len(self.required_concept_ids) > 8
             or any(
                 type(cid) is not str or not _ID_PATTERN.fullmatch(cid)
                 for cid in self.required_concept_ids
@@ -184,7 +185,10 @@ def _source_owned_understood_group(
         len(canonical_query) > 256
         or len(canonical_query.encode("utf-8")) > 512
     ):
-        raise ValueError("source-owned paper canonical lookup key exceeds bound")
+        canonical_query = "paper-understood-" + canonical_json_sha256({
+            "concept_ids": [concept.concept_id for concept in concepts],
+            "query": canonical_query,
+        })
     return approved_hints, NativeDeclaredFieldGroup(
         aliases=(canonical_query,),
         required_fields=tuple(demanded[key] for key in sorted(demanded)),
