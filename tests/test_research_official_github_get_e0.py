@@ -53,13 +53,20 @@ def test_source_or_license_byte_mutation_never_loads(
         )
 
 
-def test_real_github_get_bundle_keeps_all_651_source_operations(
-    source_bytes: tuple[bytes, bytes],
-) -> None:
+@pytest.fixture(scope="module")
+def compiled_github(source_bytes: tuple[bytes, bytes]):
     from scripts import research_official_github_get_e0 as mod
 
+    # Exactly one fully source-pinned conversion for the positive/negative
+    # audit tests; each audit still parses the pinned source for its oracle.
     document = mod.parse_pinned_github_rest_source(*source_bytes)
-    bundle = mod.compile_official_github_get_bundle_e0(document)
+    return mod.compile_official_github_get_bundle_e0(document)
+
+
+def test_real_github_get_bundle_keeps_all_651_source_operations(
+    compiled_github,
+) -> None:
+    bundle = compiled_github
     assert len(bundle.endpoints) == 651
     assert len({endpoint.name for endpoint in bundle.endpoints}) == 651
     assert all(e.method == "GET" and e.read_only and not e.destructive for e in bundle.endpoints)
@@ -68,10 +75,10 @@ def test_real_github_get_bundle_keeps_all_651_source_operations(
 
 
 @pytest.fixture(scope="module")
-def churn_receipt() -> dict:
+def churn_receipt(compiled_github) -> dict:
     from scripts.research_official_github_get_e0 import audit_official_github_get_churn_e0
 
-    return audit_official_github_get_churn_e0()
+    return audit_official_github_get_churn_e0(prepared_github=compiled_github)
 
 
 def test_actual_github_source_provider_remove_restore_is_atomically_indexed(
@@ -95,6 +102,7 @@ def test_actual_github_source_provider_remove_restore_is_atomically_indexed(
 
 def test_provider_churn_rejects_noop_journal_replay(
     monkeypatch: pytest.MonkeyPatch,
+    compiled_github,
 ) -> None:
     from scripts.research_official_github_get_e0 import audit_official_github_get_churn_e0
 
@@ -103,4 +111,15 @@ def test_provider_churn_rejects_noop_journal_replay(
         classmethod(lambda cls, previous, registry: previous),
     )
     with pytest.raises(ValueError, match="stale|journal|snapshot"):
-        audit_official_github_get_churn_e0()
+        audit_official_github_get_churn_e0(prepared_github=compiled_github)
+
+
+def test_prepared_github_source_does_not_accept_weakened_write_safety(
+    compiled_github,
+) -> None:
+    from scripts.research_official_github_get_e0 import audit_official_github_get_churn_e0
+
+    forged = compiled_github.model_copy(deep=True)
+    forged.endpoints[0].read_only = False
+    with pytest.raises(ValueError, match="prepared GitHub publisher source"):
+        audit_official_github_get_churn_e0(prepared_github=forged)
