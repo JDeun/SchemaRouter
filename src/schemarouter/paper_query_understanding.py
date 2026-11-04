@@ -10,13 +10,12 @@ import inspect
 import json
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
-from dataclasses import asdict, replace
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
 
 from .authorization import PrincipalContext
-from .canonical_json import canonical_json_sha256
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import (
     MAX_QUERY_BYTES,
@@ -27,15 +26,16 @@ from .concept_retrieval import (
     _normalized,
 )
 from .errors import ModelAnalysisError, PolicyViolationError
-from .field_group_retrieval import NativeDeclaredFieldGroup, _compatible_field
+from .field_group_retrieval import NativeDeclaredFieldGroup
 from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
 from .paper_native_rank import PaperNativeRankPolicy
-from .paper_query_conditions import _apply_query_input_conditions
+from .paper_query_conditions import _apply_query_input_conditions, _prove_query_need_conditions
 from .paper_query_needs import (
     PaperQueryNeed,
     PaperQueryUnderstanding,
     _resolve_query_need,
+    _resolve_query_need_candidate,
 )
 from .paper_typed_tool_plan import PaperPlanFieldMeta, PaperTypedToolPlan
 from .paper_understood_direct_plan import (
@@ -44,7 +44,6 @@ from .paper_understood_direct_plan import (
     PaperUnderstanding,
     _bounded_name,
 )
-from .validation import canonical_unit_value_schema
 
 if TYPE_CHECKING:
     from .field_routing_session import SchemaFieldRoutingSession
@@ -179,94 +178,6 @@ def _owner_query_field_coverage(
     )
 
 
-def _named_query_contributors(
-    router: SchemaRouter, plan: PaperTypedToolPlan,
-    needs: tuple[tuple[PaperQueryNeed, NativeDeclaredConcept], ...],
-    *, principal: PrincipalContext, global_source_type: str | None, verify: Callable[[], None],
-) -> set[str]:
-    """Attest selected current scoped fields, never SID-only recall or raw hidden metadata."""
-    def collect() -> set[str]:
-        contributors = set()
-        permitted = router._authorization_predicate(principal)
-        if permitted is None:
-            raise PolicyViolationError("paper query named source authorization missing")
-        for call in plan.calls:
-            verify()
-            tool = router.registry.get(call.call.tool)
-            endpoint = tool.endpoint(call.call.endpoint)
-            if (
-                (tool.fingerprint, endpoint.fingerprint)
-                != (call.call.tool_fingerprint, call.call.schema_fingerprint)
-                or not permitted(tool.model_copy(deep=True), endpoint.model_copy(deep=True))
-            ):
-                raise PolicyViolationError("paper query named source changed")
-            availability = router.planner.availability_predicate
-            if availability is not None and not availability(
-                tool.model_copy(deep=True), endpoint.model_copy(deep=True),
-            ):
-                raise PolicyViolationError("paper query named source unavailable")
-            visible = router._data_scope_endpoint_view(principal, tool, endpoint)
-            if visible is None:
-                raise PolicyViolationError("paper query named source scope hidden")
-            visible = visible.model_copy(deep=True)
-            selected = [field for field in visible.output_fields if field.name in call.call.fields]
-            metadata = tuple(PaperPlanFieldMeta(
-                name=field.name, semantic_id=field.semantic_id, source_unit=field.unit,
-                unit=(field.unit_normalization.canonical_unit
-                      if field.unit_normalization else field.unit),
-                source_type=field.source_type or tool.source_type,
-                license=field.license or tool.license,
-                qualifiers=tuple(sorted(field.qualifiers.items())),
-                source_path=field.projection_path, result_path=field.result_projection_path,
-                json_schema=canonical_unit_value_schema(
-                    field.json_schema, field.unit_normalization,
-                ),
-            ) for field in selected)
-            if canonical_json_sha256([asdict(item) for item in metadata]) != canonical_json_sha256(
-                [asdict(item) for item in call.fields_meta],
-            ):
-                raise PolicyViolationError("paper query named source field scope changed")
-            for need, owner in needs:
-                for field, meta in zip(selected, metadata, strict=True):
-                    if any(source is not None and (
-                        meta.source_type != source or call.source_type != source
-                    ) for source in (owner.source_type, need.source_type, global_source_type)):
-                        continue
-                    if owner.license is not None and (
-                        meta.license != owner.license or call.license != owner.license
-                    ):
-                        continue
-                    produced = CapabilityFieldContract.from_field(field)
-                    if (
-                        produced is not None
-                        and (need.unit is None or produced.unit == need.unit)
-                        and all(produced.qualifiers.get(key) == value
-                                for key, value in need.qualifiers.items())
-                        and any(_compatible_field(required, field)
-                                for required in owner.required_fields)
-                    ):
-                        contributors.add(call.call.tool)
-            current = router.registry.get(call.call.tool)
-            if (current.fingerprint, current.endpoint(call.call.endpoint).fingerprint) != (
-                call.call.tool_fingerprint, call.call.schema_fingerprint,
-            ):
-                raise PolicyViolationError("paper query named source fingerprint changed")
-            verify()
-        return contributors
-
-    try:
-        first = collect()
-        if collect() != first:
-            raise PolicyViolationError("paper query named source contribution changed")
-        verify()
-        return first
-    except Exception:
-        verify()
-        raise PolicyViolationError(
-            "paper query named source contribution verification failed"
-        ) from None
-
-
 def _compile_query_needs(
     raw: PaperQueryUnderstanding, *, query: str, catalog: NativeConceptCatalog,
     intent_ids: set[str],
@@ -277,7 +188,7 @@ def _compile_query_needs(
 ) -> PaperTypedToolPlan:
     if raw.intent_id is not None and raw.intent_id not in intent_ids:
         raise ModelAnalysisError("model selected an unoffered paper intent")
-    resolved = [_resolve_query_need(need, catalog, raw.source_type) for need in raw.needs]
+    resolved = [_resolve_query_need_candidate(need, catalog, raw.source_type) for need in raw.needs]
     excluded = [_resolve_query_need(PaperQueryNeed(concept=name), catalog)
                 for name in raw.excluded_concepts]
     named_tools = []
@@ -314,6 +225,13 @@ def _compile_query_needs(
     ):
         covered_ids.update(known)
     by_id = {concept.concept_id: concept for concept in catalog.concepts}
+    proofs = _prove_query_need_conditions(
+        router, plan, tuple(
+            (need, by_id[cid] if cid is not None else None)
+            for need, (cid, _) in zip(raw.needs, resolved, strict=True)
+        ), principal=principal, global_source_type=raw.source_type,
+        parameter_hints=raw.parameter_hints, verify=verify,
+    )
     forbidden = [
         field for cid, _ in excluded if cid is not None
         for field in by_id[cid].required_fields
@@ -329,7 +247,7 @@ def _compile_query_needs(
         required.append(requirement)
         (covered if present else uncovered).append(requirement)
 
-    for need, (cid, _) in zip(raw.needs, resolved, strict=True):
+    for need, (cid, _), proof in zip(raw.needs, resolved, proofs, strict=True):
         qualifiers = [f"{key}={value}" for key, value in sorted(need.qualifiers.items())]
         if need.unit is not None:
             qualifiers.append(f"unit={need.unit}")
@@ -339,7 +257,7 @@ def _compile_query_needs(
         if raw.source_type is not None and need.source_type not in (None, raw.source_type):
             qualifiers.append(f"global_source_type={raw.source_type}")
         add(SemanticFieldRequirement(semantic_id=need.concept, qualifiers=qualifiers),
-            cid is not None and cid in covered_ids and (
+            proof.present and cid is not None and cid in covered_ids and (
                 source_type is None or plan.coverage is None or any(
                     f"concept_id={cid}" in item.qualifiers
                     and f"source_type={source_type}" in item.qualifiers
@@ -349,15 +267,14 @@ def _compile_query_needs(
     for name, (cid, _) in zip(raw.excluded_concepts, excluded, strict=True):
         add(SemanticFieldRequirement(semantic_id=name, qualifiers=["excluded=true"]),
             cid is not None and not conflict)
-    contributing_tools = _named_query_contributors(
-        router, plan, tuple((need, by_id[cid]) for need, (cid, _) in zip(
-            raw.needs, resolved, strict=True,
-        ) if cid is not None), principal=principal,
-        global_source_type=raw.source_type, verify=verify,
-    ) if named_requirements and not conflict else set()
+    contributing_tools = {tool for proof, (cid, _) in zip(proofs, resolved, strict=True)
+                          if not conflict and cid in covered_ids for tool in proof.tools}
     for name, key in named_requirements:
         add(SemanticFieldRequirement(semantic_id=name, qualifiers=["named_tool=true"]),
             key is not None and key in contributing_tools)
+    for proof in proofs:
+        for requirement, present in proof.inputs:
+            add(requirement, present and not conflict)
     if not raw.needs:
         add(SemanticFieldRequirement(semantic_id="query requirements"), False)
     if raw.needs_truncated:
@@ -375,6 +292,11 @@ def _compile_query_needs(
         status = "ambiguous_paths"
     elif uncovered and status in ("ready", "requires_arguments", "requires_observation"):
         status = "no_proven_hit"
+    elif status == "ready" and any(proof.pending for proof in proofs):
+        status = "requires_arguments"
+    if not any(proof.present for proof in proofs) and not any(proof.inputs for proof in proofs):
+        # A meaning-only candidate does not expose unrelated intent fields as an answer.
+        plan = replace(plan, calls=(), bindings=())
     return replace(
         plan, status=status,
         calls=() if conflict else plan.calls, bindings=() if conflict else plan.bindings,
@@ -672,23 +594,40 @@ async def compile_model_query(
         )
 
     if independent:
+        response_schema = PaperQueryUnderstanding.model_json_schema()
+        # Require explicit model channels without changing legacy DTO decode defaults.
+        response_schema["required"] = list(response_schema["properties"])
+        need_schema = response_schema["$defs"]["PaperQueryNeed"]
+        need_schema["required"] = list(need_schema["properties"])
         payload = {
             "task": "Understand the question before looking up any tool or schema.",
             "query": query,
             "intents": list(model_visible_intent_ids),
-            "response_schema": PaperQueryUnderstanding.model_json_schema(),
+            "response_schema": response_schema,
             "rules": [
-                "Return one JSON object matching response_schema.",
-                "Use a listed intent_id; use null if the requested task has no listed intent.",
-                "Extract EVERY positive data need, including ones a provider might not support.",
+                "Return one JSON object with every response_schema channel, "
+                "even when empty or null.",
+                "Use the narrowest applicable listed intent_id and preserve additional needs; "
+                "do not choose an unrelated broad intent. Use null if no listed intent applies.",
+                "Extract EVERY requested positive data, action or goal, "
+                "including unsupported ones; "
+                "retain the requested action and object even when intent_id is null.",
                 "If more than eight needs are requested, set needs_truncated=true.",
-                "Use short English concept names, preserving creator, assignee and other roles.",
-                "Keep explicit time, role and other conditions in needs.qualifiers.",
-                "Keep requested units and source types; do not invent conditions.",
-                "Use canonical symbols for requested units, such as Cel for Celsius.",
-                "Negated concepts belong only in excluded_concepts, never in positive needs.",
+                "Use short English need names, preserving semantic roles and requested actions.",
+                "Keep explicit time, role and other positive conditions in needs.qualifiers.",
+                "Put explicit source/result paths in qualifiers.source_path or "
+                "qualifiers.result_path respectively; "
+                "preserve their spelling and never invent schema paths.",
+                "Keep requested units using canonical symbols; do not invent conditions.",
+                "source_type is only an explicit provenance/source-kind restriction, "
+                "not subject matter; otherwise use null.",
+                "Put every negated concept or goal only in excluded_concepts, "
+                "not in needs or qualifiers.",
                 "Copy named_tools only from source names explicitly stated in the question.",
-                "parameter_hints contains explicit scalar values, not permissions or tool calls.",
+                "Keep explicit scalar values in parameter_hints with explicit parameter labels; "
+                "otherwise use short English semantic role names, not generic substitutes. "
+                "Retain these values even when intent_id is null; "
+                "they are not permissions or tool calls.",
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }

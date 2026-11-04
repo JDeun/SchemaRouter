@@ -12,13 +12,14 @@ from .planner import _normalize
 
 
 class PaperQueryNeed(StrictModel):
-    """One untrusted raw information need, including every explicit constraint."""
+    """One untrusted requested data item, action or goal, with explicit constraints."""
 
     model_config = ConfigDict(strict=True)
 
     concept: str = Field(
         max_length=160,
-        description="Short English name of one positive data concept, including its semantic role.",
+        description=("Short English name of one requested positive data item, action or goal, "
+                     "including unsupported requests and its semantic role."),
     )
     unit: str | None = Field(
         default=None, max_length=160,
@@ -26,11 +27,14 @@ class PaperQueryNeed(StrictModel):
     )
     source_type: str | None = Field(
         default=None, max_length=160,
-        description="Explicit source-type constraint for this need; never permission.",
+        description=("Explicit provenance/source-kind restriction for this need, not subject "
+                     "matter or permission; null when unspecified."),
     )
     qualifiers: dict[str, str] = Field(
         default_factory=dict, max_length=8,
-        description="All explicit role, path or temporal constraints as string keys and values.",
+        description=("All explicit positive role, temporal and other conditions as string keys "
+                     "and values. Literal paths use source_path or result_path with their "
+                     "original spelling. Negation belongs only in excluded_concepts."),
     )
 
     @model_validator(mode="before")
@@ -74,11 +78,13 @@ class PaperQueryUnderstanding(StrictModel):
     model_config = ConfigDict(strict=True)
 
     intent_id: str | None = Field(
-        description="One fixed task-intent vocabulary entry; null for unsupported or OOD intent.",
+        description=("Narrowest applicable listed intent; null if none applies. Preserve every "
+                     "explicit goal, condition and scalar even when null."),
     )
     needs: tuple[PaperQueryNeed, ...] = Field(
         default=(), max_length=8,
-        description="All positive raw needs, including unsupported ones; at most eight.",
+        description=("All positive requested data items, actions and goals, including unsupported "
+                     "ones even when intent_id is null; at most eight."),
     )
     needs_truncated: bool = Field(
         default=False,
@@ -86,7 +92,8 @@ class PaperQueryUnderstanding(StrictModel):
     )
     excluded_concepts: tuple[str, ...] = Field(
         default=(), max_length=8,
-        description="Raw concepts explicitly negated by the user; never positive requirements.",
+        description=("All raw concepts or goals explicitly negated by the user; never positive "
+                     "needs or qualifiers."),
     )
     named_tools: tuple[str, ...] = Field(
         default=(), max_length=5,
@@ -94,11 +101,14 @@ class PaperQueryUnderstanding(StrictModel):
     )
     parameter_hints: dict[str, Any] = Field(
         default_factory=dict, max_length=8,
-        description="Explicit argument values as bounded scalar hints; never host arguments.",
+        description=("Explicit scalar values keyed by their explicit parameter labels, or short "
+                     "English semantic role names if unlabeled; never host arguments or "
+                     "authority."),
     )
     source_type: str | None = Field(
         default=None, max_length=160,
-        description="Explicit source-type constraint for the entire query; never permission.",
+        description=("Explicit provenance/source-kind restriction for the entire query, not "
+                     "subject matter or permission; null when unspecified."),
     )
 
     @model_validator(mode="after")
@@ -152,3 +162,24 @@ def _resolve_query_need(
         )
     )]
     return (qualified[0].concept_id, False) if len(qualified) == 1 else (None, len(qualified) > 1)
+
+
+def _resolve_query_need_candidate(
+    need: PaperQueryNeed, catalog: NativeConceptCatalog, global_source_type: str | None = None,
+) -> tuple[str | None, bool]:
+    """Select meaning only; actual scoped fields must prove every raw condition."""
+    resolved = _resolve_query_need(need, catalog, global_source_type)
+    if resolved[0] is not None or resolved[1]:
+        return resolved
+    # Retain owner-declared meaning discriminators (for example roles), while
+    # deferring input and structural conditions to actual scoped descriptors.
+    keys = {key for concept in catalog.concepts if any(
+        _normalize(alias) == _normalize(need.concept)
+        for alias in (concept.concept_id, *concept.aliases)
+    ) for field in concept.required_fields for key in field.qualifiers}
+    return _resolve_query_need(
+        need.model_copy(update={"qualifiers": {
+            key: value for key, value in need.qualifiers.items()
+            if key in keys and key not in ("source_path", "result_path")
+        }}), catalog, global_source_type,
+    )

@@ -81,17 +81,30 @@ shape; it supplies no source or execution authority:
 }
 ```
 
+The model request requires every response channel and every need's condition slots explicitly,
+using empty collections or `null` where appropriate. Public DTO defaults still decode older responses
+that omit optional slots. Extraction rules request every positive data item, action or goal even when
+unsupported or `intent_id=null`, with explicit conditions and scalar values preserved. They request
+the narrowest applicable listed intent plus additional needs; host-required intent groups remain strict.
+Negated concepts belong only in `excluded_concepts`, not positive needs or qualifiers. Literal paths
+use `qualifiers.source_path` or `qualifiers.result_path` with their original spelling. Scalar hints keep
+explicit parameter labels, or short English semantic role names when unlabeled. `source_type` means an
+explicit provenance/source-kind restriction, not subject matter. These extraction instructions do not
+guarantee that a model preserves every requested meaning or demonstrate improved accuracy over any recorded result.
+
 After understanding, each whole short English concept is matched exactly, using existing
-normalization, to a host-declared concept ID or complete alias. The host's contracts must also
-support its explicit unit, source type and qualifiers; unknown role/path/time conditions remain
-unproved. Units, source types and qualifier values must match declarations exactly, with one declared
-field supporting all conditions on a need together. This resolution infers no unit conversion or
-role/path/time mapping. This is bounded declared-alias resolution, not general semantic understanding.
+normalization, to a host-declared concept ID or complete alias. Owner-declared meaning conditions
+narrow candidates; an alias match alone does not prove the requested conditions. A current scoped,
+selected field must support the owner contract and the same need's unit/source/output conditions,
+with input and structural path conditions proved below. Unknown conditions remain unproved; this
+step infers no unit conversion or undeclared role/time mapping. This is bounded declared-alias
+resolution, not general semantic understanding.
 Owners may share a complete alias between concepts only when their declared source types, units or
 qualifiers distinguish them. Explicit query conditions must leave exactly one matching concept;
 missing or insufficient conditions remain ambiguous, regardless of source access or availability.
 A per-need source condition narrows a concept only where its owner left `source_type=None`; it
 cannot overwrite a declared owner source constraint, including one required by intent recall.
+Global and per-need source restrictions must both hold; conflicts remain uncovered.
 
 `plan.coverage` records `required`, `covered`, `uncovered` and `complete`. In this model protocol,
 requirements retain the raw concept labels and their unit/source/qualifier conditions. Exclusions
@@ -118,15 +131,38 @@ automatically bound as arguments or treated as evidence of an implicit output po
 Only separately supplied `host_source_arguments` for approved roots can bind values, subject to the
 existing source and value validation.
 
+In the schema-independent protocol, each need's `qualifiers` can also propose an input on the same
+selected call. The key must exactly match a declared parameter name, explicit alias or semantic ID; all
+conditions must share one compatible selected field. Qualifier values remain strings: a numeric-looking
+string is not cast to a number to fit an input schema. A condition with both output-qualifier and input
+interpretations remains unproved. Per-need inputs cannot broadcast to multiple routes; conflicting
+per-need proposals or a conflict with global `parameter_hints` remain uncovered. Per-need proposals
+do not replace the global hints' unique-target check.
+
+Canonical `source_path` and `result_path` conditions compare the current scoped field's structural
+paths. They accept exact `/`-prefixed RFC 6901 JSON pointers or unambiguous dotted paths; a dotted
+spelling that collides with another path in the same scoped endpoint does not prove a match.
+`source_field` and `target_field` are not structural aliases for these keys. A path key that also names a source input is ambiguous.
+No removed path or private input declaration is recovered to prove a condition.
+
+Source-input evidence retains the original raw need requirement and adds a coverage row with
+`query_input_condition=true` and `proof=...`. Per-need rows include their zero-based `need_index`;
+when there is a unique target, `route` and `parameter` identify the selected route and canonical
+parameter name. Global hint rows have no `need_index`. A successful proof is `matching_host_input`
+or `pending_host_input`; failed or ambiguous mappings remain in `uncovered` with their diagnostic proof.
+
 An unbound proposal that fits the fully exposed scalar input contract can prove the input mapping
 with `proof=pending_host_input`. Coverage may then be complete while an otherwise ready plan waits
 with `requires_arguments`. This also applies to a source-optional input needed by the question:
-`ParameterSpec.required` and `call.missing_required_arguments` retain the original source requirements.
+`ParameterSpec.required`, the required flags in `parameters_meta` and
+`call.missing_required_arguments` retain the original source requirements.
 A matching, already validated host argument proves the condition using exact JSON scalar agreement.
 Invalid proposals, conflicting host values, ambiguous inputs and unproved source relations remain
 uncovered. Removed private schema constraints are not recovered to test proposed values; their fit
 remains unproved. Uncovered conditions change an otherwise ready plan to `no_proven_hit`, while
-existing `requires_arguments` or `requires_observation` diagnoses remain intact.
+the global hint overlay preserves existing `requires_arguments` or `requires_observation` diagnoses.
+An uncovered per-need condition also changes those otherwise proven source-plan statuses to
+`no_proven_hit`; a pending, covered per-need input changes an otherwise ready plan to `requires_arguments`.
 
 Each call's `fields_meta` exposes `PaperPlanFieldMeta.source_path`, `result_path` and `json_schema`
 from the current scoped schema view, including its canonical unit/value contract. Policy may flatten
