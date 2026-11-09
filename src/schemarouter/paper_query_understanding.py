@@ -56,6 +56,22 @@ PaperFieldModel = Callable[
 _Response = TypeVar("_Response", bound=BaseModel)
 
 
+def _public_concept_vocabulary(value: dict[str, str] | None) -> dict[str, str] | None:
+    """Validate and detach host-public meaning text without consulting sources."""
+    if value is None:
+        return None
+    if (
+        type(value) is not dict or not 1 <= len(value) <= 64
+        or any(not _bounded_name(key) or (
+            type(definition) is not str or not 1 <= len(definition) <= 512
+            or definition != definition.strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in definition)
+        ) for key, definition in value.items())
+    ):
+        raise ValueError("invalid bounded public concept vocabulary")
+    return dict(value)
+
+
 def _decode_bounded_response(raw: dict[str, Any] | str, limit: int) -> PaperUnderstanding:
     return _decode_model_response(raw, limit, PaperUnderstanding)
 
@@ -315,6 +331,7 @@ async def compile_model_query(
     intent_registry: PaperIntentRegistry,
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...] | None = None,
+    model_concept_vocabulary: dict[str, str] | None = None,
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
@@ -328,6 +345,7 @@ async def compile_model_query(
 
     By default, only fixed intent names accompany the query and response
     contract. Explicit concept IDs select the earlier disclosure protocol.
+    Optional fixed public vocabulary is meaning context, never source authority.
     Live source checks constrain both; model hints never become host arguments.
     """
     independent = model_visible_concept_ids is None
@@ -366,6 +384,9 @@ async def compile_model_query(
         or not 1 <= max_model_output_bytes <= 4096
     ):
         raise ValueError("invalid paper model byte budget")
+    if model_concept_vocabulary is not None and not independent:
+        raise ValueError("public concept vocabulary requires schema-independent understanding")
+    vocabulary = _public_concept_vocabulary(model_concept_vocabulary)
 
     # Review-only sessions have no approved concept authority. The public
     # session entrypoint already enforces this; the standalone compiler must
@@ -380,7 +401,8 @@ async def compile_model_query(
         )
         before = (catalog.model_dump_json(), intent_registry.model_dump_json(),
                   principal.model_dump_json(), deepcopy(host_source_arguments),
-                  rank_policy.model_dump_json() if rank_policy else None)
+                  rank_policy.model_dump_json() if rank_policy else None,
+                  deepcopy(vocabulary))
     except (ValueError, TypeError, AttributeError, OverflowError):
         raise PolicyViolationError("paper query owner declarations invalid") from None
 
@@ -446,6 +468,7 @@ async def compile_model_query(
                 catalog.model_dump_json(), intent_registry.model_dump_json(),
                 principal.model_dump_json(), host_source_arguments,
                 rank_policy.model_dump_json() if rank_policy else None,
+                _public_concept_vocabulary(model_concept_vocabulary),
             )
             owner_changed = current_owner != before
         except Exception:
@@ -631,6 +654,18 @@ async def compile_model_query(
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }
+        if vocabulary is not None:
+            payload["concept_vocabulary"] = vocabulary
+            payload["rules"][-1] = (
+                "Do not guess schema fields, tool/endpoint IDs, providers or execution authority."
+            )
+            payload["rules"].extend([
+                "concept_vocabulary contains fixed public meaning labels and definitions, "
+                "independent of available tools; it does not assert capabilities or permission.",
+                "When a meaning fits, use its exact concept_vocabulary key in needs.concept "
+                "or excluded_concepts. Preserve every unknown or unsupported goal outside "
+                "this vocabulary; never discard it or replace it with a merely related meaning.",
+            ])
         raw = await _understand_query(
             model, payload, response_type=PaperQueryUnderstanding,
             max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
