@@ -23,7 +23,8 @@ class PaperQueryNeed(StrictModel):
     )
     unit: str | None = Field(
         default=None, max_length=160,
-        description="Canonical unit symbol requested by the user; null when no unit was requested.",
+        description=("Requested unit symbol, copied verbatim when explicit; "
+                     "null when no unit was requested."),
     )
     source_type: str | None = Field(
         default=None, max_length=160,
@@ -32,8 +33,9 @@ class PaperQueryNeed(StrictModel):
     )
     qualifiers: dict[str, str] = Field(
         default_factory=dict, max_length=8,
-        description=("All explicit positive role, temporal and other conditions as string keys "
-                     "and values. Literal paths use source_path or result_path with their "
+        description=("All explicit conditions restricting the requested data or action as string "
+                     "keys and values, including role and time. Reporting purpose alone is not "
+                     "a predicate. Literal paths use source_path or result_path with their "
                      "original spelling. Negation belongs only in excluded_concepts."),
     )
 
@@ -92,8 +94,8 @@ class PaperQueryUnderstanding(StrictModel):
     )
     excluded_concepts: tuple[str, ...] = Field(
         default=(), max_length=8,
-        description=("All raw concepts or goals explicitly negated by the user; never positive "
-                     "needs or qualifiers."),
+        description=("All full concepts or goals explicitly negated by the user, including "
+                     "their objects and domains; never positive needs or qualifiers."),
     )
     named_tools: tuple[str, ...] = Field(
         default=(), max_length=5,
@@ -101,8 +103,8 @@ class PaperQueryUnderstanding(StrictModel):
     )
     parameter_hints: dict[str, Any] = Field(
         default_factory=dict, max_length=8,
-        description=("Explicit scalar values keyed by their explicit parameter labels, or short "
-                     "English semantic role names if unlabeled; never host arguments or "
+        description=("Explicit scalar values keyed by their verbatim explicit parameter labels, "
+                     "or short English semantic role names if unlabeled; never host arguments or "
                      "authority."),
     )
     source_type: str | None = Field(

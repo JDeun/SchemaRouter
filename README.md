@@ -235,7 +235,9 @@ Omit `model_visible_concept_ids` for schema-independent understanding. An option
 `model_concept_vocabulary={"material.band_gap": "Energy gap of a material"}`
 supplies fixed public meanings, independent of available tools. Model proposals
 still require owner-declared concepts and current authorized field contracts;
-unknown goals remain unmet. See [prepared query plans](docs/concepts/field-first-execution.md).
+unknown goals remain unmet. Optional `model_intent_vocabulary` defines every listed
+intent independently of source availability; it does not relax owner-required groups.
+See [prepared query plans](docs/concepts/field-first-execution.md).
 
 For original-paper **Algorithm 1 `Rank(Tcand, C)`**, a trusted host can
 optionally declare `PaperNativeRankPolicy(snapshot_id=session.snapshot_id,

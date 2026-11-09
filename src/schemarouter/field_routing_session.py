@@ -714,6 +714,7 @@ class SchemaFieldRoutingSession:
         model_visible_intent_ids: tuple[str, ...],
         model_visible_concept_ids: tuple[str, ...] | None = None,
         model_concept_vocabulary: dict[str, str] | None = None,
+        model_intent_vocabulary: dict[str, str] | None = None,
         model_visible_tool_keys: tuple[str, ...] = (),
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         k: int = 5,
@@ -730,6 +731,8 @@ class SchemaFieldRoutingSession:
         Supplying IDs retains the earlier scoped-ID selection protocol.
         Optional model_concept_vocabulary supplies fixed public meaning text,
         independent of available sources; it never declares source capabilities.
+        Optional model_intent_vocabulary defines exactly the model-visible intents
+        with fixed public text; it does not change their required concept groups.
         No provider data is fetched. The model cannot authorize a route,
         expand source scope, or bind its proposed argument values.
         """
@@ -740,6 +743,7 @@ class SchemaFieldRoutingSession:
             model_visible_intent_ids=model_visible_intent_ids,
             model_visible_concept_ids=model_visible_concept_ids,
             model_concept_vocabulary=model_concept_vocabulary,
+            model_intent_vocabulary=model_intent_vocabulary,
             model_visible_tool_keys=model_visible_tool_keys,
             host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
             max_model_input_bytes=max_model_input_bytes,

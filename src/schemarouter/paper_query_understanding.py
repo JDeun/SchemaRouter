@@ -56,7 +56,7 @@ PaperFieldModel = Callable[
 _Response = TypeVar("_Response", bound=BaseModel)
 
 
-def _public_concept_vocabulary(value: dict[str, str] | None) -> dict[str, str] | None:
+def _public_vocabulary(value: dict[str, str] | None) -> dict[str, str] | None:
     """Validate and detach host-public meaning text without consulting sources."""
     if value is None:
         return None
@@ -68,7 +68,7 @@ def _public_concept_vocabulary(value: dict[str, str] | None) -> dict[str, str] |
             or any(ord(char) < 32 or ord(char) == 127 for char in definition)
         ) for key, definition in value.items())
     ):
-        raise ValueError("invalid bounded public concept vocabulary")
+        raise ValueError("invalid bounded public vocabulary")
     return dict(value)
 
 
@@ -332,6 +332,7 @@ async def compile_model_query(
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...] | None = None,
     model_concept_vocabulary: dict[str, str] | None = None,
+    model_intent_vocabulary: dict[str, str] | None = None,
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
@@ -345,7 +346,8 @@ async def compile_model_query(
 
     By default, only fixed intent names accompany the query and response
     contract. Explicit concept IDs select the earlier disclosure protocol.
-    Optional fixed public vocabulary is meaning context, never source authority.
+    Optional fixed public vocabularies are meaning context, never source authority.
+    Intent definitions must describe exactly the model-visible intent IDs.
     Live source checks constrain both; model hints never become host arguments.
     """
     independent = model_visible_concept_ids is None
@@ -386,7 +388,10 @@ async def compile_model_query(
         raise ValueError("invalid paper model byte budget")
     if model_concept_vocabulary is not None and not independent:
         raise ValueError("public concept vocabulary requires schema-independent understanding")
-    vocabulary = _public_concept_vocabulary(model_concept_vocabulary)
+    if model_intent_vocabulary is not None and not independent:
+        raise ValueError("public intent vocabulary requires schema-independent understanding")
+    vocabulary = _public_vocabulary(model_concept_vocabulary)
+    intent_vocabulary = _public_vocabulary(model_intent_vocabulary)
 
     # Review-only sessions have no approved concept authority. The public
     # session entrypoint already enforces this; the standalone compiler must
@@ -402,7 +407,7 @@ async def compile_model_query(
         before = (catalog.model_dump_json(), intent_registry.model_dump_json(),
                   principal.model_dump_json(), deepcopy(host_source_arguments),
                   rank_policy.model_dump_json() if rank_policy else None,
-                  deepcopy(vocabulary))
+                  deepcopy(vocabulary), deepcopy(intent_vocabulary))
     except (ValueError, TypeError, AttributeError, OverflowError):
         raise PolicyViolationError("paper query owner declarations invalid") from None
 
@@ -450,6 +455,8 @@ async def compile_model_query(
         or len(set(model_visible_tool_keys)) != len(model_visible_tool_keys)
     ):
         raise ValueError("invalid host-approved model disclosure")
+    if intent_vocabulary is not None and set(intent_vocabulary) != set(model_visible_intent_ids):
+        raise ValueError("public intent vocabulary must define exactly the model-visible intents")
 
     router = session._router
     witness = router._retrieval_authority_witness()
@@ -468,7 +475,8 @@ async def compile_model_query(
                 catalog.model_dump_json(), intent_registry.model_dump_json(),
                 principal.model_dump_json(), host_source_arguments,
                 rank_policy.model_dump_json() if rank_policy else None,
-                _public_concept_vocabulary(model_concept_vocabulary),
+                _public_vocabulary(model_concept_vocabulary),
+                _public_vocabulary(model_intent_vocabulary),
             )
             owner_changed = current_owner != before
         except Exception:
@@ -620,6 +628,7 @@ async def compile_model_query(
         response_schema = PaperQueryUnderstanding.model_json_schema()
         # Require explicit model channels without changing legacy DTO decode defaults.
         response_schema["required"] = list(response_schema["properties"])
+        response_schema["properties"]["intent_id"]["enum"] = [*model_visible_intent_ids, None]
         need_schema = response_schema["$defs"]["PaperQueryNeed"]
         need_schema["required"] = list(need_schema["properties"])
         payload = {
@@ -638,19 +647,30 @@ async def compile_model_query(
                 "If more than eight needs are requested, set needs_truncated=true.",
                 "Use short English need names, preserving semantic roles and requested actions.",
                 "Keep explicit time, role and other positive conditions in needs.qualifiers.",
+                "Only conditions restricting the requested data or action are predicates. "
+                "A reporting purpose or intended use is not a data predicate; "
+                "do not turn it into a qualifier.",
                 "Put explicit source/result paths in qualifiers.source_path or "
                 "qualifiers.result_path respectively; "
                 "preserve their spelling and never invent schema paths.",
-                "Keep requested units using canonical symbols; do not invent conditions.",
+                "Copy explicit unit symbols verbatim, including case; "
+                "do not rename or convert them. Do not invent conditions.",
                 "source_type is only an explicit provenance/source-kind restriction, "
-                "not subject matter; otherwise use null.",
+                "not subject matter; otherwise use null. "
+                "A provenance name is not a source_path or result_path.",
                 "Put every negated concept or goal only in excluded_concepts, "
                 "not in needs or qualifiers.",
+                "Retain the full negated goal, including its object and domain; "
+                "never reduce it to a generic verb.",
                 "Copy named_tools only from source names explicitly stated in the question.",
                 "Keep explicit scalar values in parameter_hints with explicit parameter labels; "
+                "copy those labels verbatim, including case; "
                 "otherwise use short English semantic role names, not generic substitutes. "
                 "Retain these values even when intent_id is null; "
                 "they are not permissions or tool calls.",
+                "Units, provenance and output paths belong in their dedicated need slots; "
+                "do not duplicate them in parameter_hints unless the question explicitly "
+                "requests them as input parameters.",
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }
@@ -666,6 +686,19 @@ async def compile_model_query(
                 "or excluded_concepts. Preserve every unknown or unsupported goal outside "
                 "this vocabulary; never discard it or replace it with a merely related meaning.",
             ])
+        if intent_vocabulary is not None:
+            payload["intent_vocabulary"] = intent_vocabulary
+            payload["rules"].append(
+                "intent_vocabulary contains fixed public definitions of the listed intents, "
+                "independent of available sources. Use these definitions to select the "
+                "narrowest applicable intent; they do not grant capabilities or permission "
+                "or replace the requested needs and conditions."
+            )
+            payload["rules"].append(
+                "An intent's entire described meaning must be requested; partial overlap "
+                "is insufficient. Prefer an applicable narrower or generic intent and "
+                "preserve every additional need."
+            )
         raw = await _understand_query(
             model, payload, response_type=PaperQueryUnderstanding,
             max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
