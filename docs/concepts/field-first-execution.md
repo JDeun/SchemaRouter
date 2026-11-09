@@ -43,10 +43,31 @@ concept catalog. `session.compile_understood(...)` checks a `PaperUnderstanding`
 and the host's `PaperIntentRegistry`. In `session.acompile_query(...)`, omitting
 `model_visible_concept_ids` selects the schema-independent model protocol: the application's model
 receives the query, fixed intent names and response format/rules, without concept aliases, field
-names, tool catalog or route IDs. Passing an explicit tuple retains the earlier offered-ID protocol,
+names, tool catalog or route IDs derived from the registered sources. Passing an explicit tuple retains the earlier offered-ID protocol,
 which discloses the approved concept IDs/aliases and tool names. These APIs are opt-in. The default `KeywordAnalyzer` in
 `router.plan(...)` remains lexical: it does not provide general multilingual understanding, temporal
 reasoning or extraction of argument values from query text.
+
+The optional `model_concept_vocabulary={"material.band_gap": "Energy gap of a material"}`
+adds host-defined public meaning labels and short definitions to schema-independent understanding.
+Keep this dictionary fixed across source inventories, principals and availability states; the router
+does not build or filter it from registered capabilities. It accepts 1–64 entries, bounded label
+names and definitions of at most 512 characters, within the existing model-input byte budget.
+It cannot be combined with `model_visible_concept_ids`. The callback receives detached text;
+changing the host dictionary during understanding invalidates the receipt.
+The model proposes an exact public key for a matching positive or excluded meaning, while retaining
+unsupported and unknown goals. Each proposal still needs an independently declared owner concept
+and the same current scoped field, input, path, unit and provenance proof. Public definitions do
+not add aliases or capabilities, rescue a null intent, bind arguments, or prove extraction accuracy.
+
+An optional `model_intent_vocabulary` supplies the public meaning of every listed intent,
+with exactly the same keys as `model_visible_intent_ids`. It uses the same bounded definitions,
+detached callback text and host-mutation checks, and is available only in the schema-independent
+protocol. Keep it fixed across source inventories and access scopes, like the concept vocabulary.
+Describe the intended request, including any required meaning group, rather than available tools.
+The request schema limits `intent_id` to the listed IDs or `null`; source-side validation still
+checks the proposal. An intent description does not weaken required groups, infer a capability,
+or rescue a null intent.
 
 Each concept's complete required field group is proved independently at an authorized endpoint
 under its own source type and license. In `NativeDeclaredConcept`, `source_type=None` and
@@ -88,8 +109,13 @@ unsupported or `intent_id=null`, with explicit conditions and scalar values pres
 the narrowest applicable listed intent plus additional needs; host-required intent groups remain strict.
 Negated concepts belong only in `excluded_concepts`, not positive needs or qualifiers. Literal paths
 use `qualifiers.source_path` or `qualifiers.result_path` with their original spelling. Scalar hints keep
-explicit parameter labels, or short English semantic role names when unlabeled. `source_type` means an
-explicit provenance/source-kind restriction, not subject matter. These extraction instructions do not
+explicit parameter labels, or short English semantic role names when unlabeled. Explicit unit symbols
+and parameter labels retain their original spelling. Conditions constrain the requested data or action;
+the purpose of writing or presenting the answer is not a source predicate. Negated goals retain their
+object and domain rather than only a generic verb. `source_type` means an explicit provenance/source-kind
+restriction, not subject matter; a provenance value does not imply a literal source path.
+Units, provenance and output paths use their dedicated need slots, without becoming parameter hints
+unless explicitly requested as input parameters. These extraction instructions do not
 guarantee that a model preserves every requested meaning or demonstrate improved accuracy over any recorded result.
 
 After understanding, each whole short English concept is matched exactly, using existing

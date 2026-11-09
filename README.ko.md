@@ -101,6 +101,11 @@ asyncio.run(main())
 [빠른 시작 문서 →](docs_ko/getting-started/quickstart.md) ·
 [실행 가능한 예제 →](examples/README.md)
 
+Schema-independent 질문 이해에는 선택 인자 `model_concept_vocabulary`로 고정된 공개 의미를,
+`model_intent_vocabulary`로 공개한 모든 intent의 의미를 전달할 수 있습니다. 이 정의는 원본의
+가용성과 무관하게 유지하며, owner의 필수 group이나 현재 접근 가능한 필드 계약 검증을 완화하지 않습니다.
+알 수 없는 목표는 미충족 상태로 남습니다. [질문 기반 필드 계획 →](docs_ko/concepts/field-first-execution.md)
+
 ## 어디에 위치하는가
 
 ```mermaid
