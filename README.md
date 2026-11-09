@@ -231,6 +231,12 @@ disclose; the router never fetches provider rows, promotes model suggestions
 to source authority, or binds model-proposed parameter values. An independent
 model-understanding benchmark is still required.
 
+Omit `model_visible_concept_ids` for schema-independent understanding. An optional
+`model_concept_vocabulary={"material.band_gap": "Energy gap of a material"}`
+supplies fixed public meanings, independent of available tools. Model proposals
+still require owner-declared concepts and current authorized field contracts;
+unknown goals remain unmet. See [prepared query plans](docs/concepts/field-first-execution.md).
+
 For original-paper **Algorithm 1 `Rank(Tcand, C)`**, a trusted host can
 optionally declare `PaperNativeRankPolicy(snapshot_id=session.snapshot_id,
 route_priorities={"already.reviewed.route": 2})` and pass it as

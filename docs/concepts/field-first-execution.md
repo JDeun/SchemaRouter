@@ -43,10 +43,22 @@ concept catalog. `session.compile_understood(...)` checks a `PaperUnderstanding`
 and the host's `PaperIntentRegistry`. In `session.acompile_query(...)`, omitting
 `model_visible_concept_ids` selects the schema-independent model protocol: the application's model
 receives the query, fixed intent names and response format/rules, without concept aliases, field
-names, tool catalog or route IDs. Passing an explicit tuple retains the earlier offered-ID protocol,
+names, tool catalog or route IDs derived from the registered sources. Passing an explicit tuple retains the earlier offered-ID protocol,
 which discloses the approved concept IDs/aliases and tool names. These APIs are opt-in. The default `KeywordAnalyzer` in
 `router.plan(...)` remains lexical: it does not provide general multilingual understanding, temporal
 reasoning or extraction of argument values from query text.
+
+The optional `model_concept_vocabulary={"material.band_gap": "Energy gap of a material"}`
+adds host-defined public meaning labels and short definitions to schema-independent understanding.
+Keep this dictionary fixed across source inventories, principals and availability states; the router
+does not build or filter it from registered capabilities. It accepts 1–64 entries, bounded label
+names and definitions of at most 512 characters, within the existing model-input byte budget.
+It cannot be combined with `model_visible_concept_ids`. The callback receives detached text;
+changing the host dictionary during understanding invalidates the receipt.
+The model proposes an exact public key for a matching positive or excluded meaning, while retaining
+unsupported and unknown goals. Each proposal still needs an independently declared owner concept
+and the same current scoped field, input, path, unit and provenance proof. Public definitions do
+not add aliases or capabilities, rescue a null intent, bind arguments, or prove extraction accuracy.
 
 Each concept's complete required field group is proved independently at an authorized endpoint
 under its own source type and license. In `NativeDeclaredConcept`, `source_type=None` and
