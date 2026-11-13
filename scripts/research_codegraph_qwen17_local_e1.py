@@ -37,6 +37,7 @@ async def evaluate_candidate(
     experimental_bare_schema_request: bool = False,
     experimental_graph_path_order_prompt: bool = False,
     experimental_graph_frontier: bool = False,
+    experimental_strict_unwrapped_json: bool = False,
 ) -> dict:
     """Run one local synthetic task under genuine four-arm K5 constraints."""
     if type(agent) is not LocalQwen17BRealAgent:
@@ -56,6 +57,10 @@ async def evaluate_candidate(
         optional["experimental_graph_path_order_prompt"] = True
     if experimental_graph_frontier:
         optional["experimental_graph_frontier"] = True
+    if type(experimental_strict_unwrapped_json) is not bool:
+        raise ValueError("research strict envelope flag must be boolean")
+    if experimental_strict_unwrapped_json:
+        optional["experimental_strict_unwrapped_json"] = True
     report = await run_local_multiroute_codegraph_e1(
         agent, language=language, condition="joined", catalog_size=4,
         **optional,
@@ -71,7 +76,12 @@ async def evaluate_candidate(
         raise ValueError("pinned candidate study lacks comparable K5 local source")
     return {
         **report,
-        "study": "CODEGRAPH_QWEN17_LOCAL_FOUR_ARM_E1_DEV",
+        "study": (
+            "CODEGRAPH_QWEN17_STRICT_JSON_ENVELOPE_E1_DEV"
+            if experimental_strict_unwrapped_json
+            else "CODEGRAPH_QWEN17_LOCAL_FOUR_ARM_E1_DEV"
+        ),
+        "strict_unwrapped_json_treatment": experimental_strict_unwrapped_json,
         "model_id": MODEL_ID,
         "model_revision": REVISION,
         "actual_pinned_model_inference": True,
@@ -96,11 +106,24 @@ def main() -> None:
     parser.add_argument("--experimental-bare-schema-request", action="store_true")
     parser.add_argument("--experimental-graph-path-order-prompt", action="store_true")
     parser.add_argument("--experimental-graph-frontier", action="store_true")
+    parser.add_argument("--strict-unwrapped-tool-json", action="store_true")
+    parser.add_argument("--paired-envelope-comparison", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
     # source SHA before loading and shares exactly the legacy generation API.
+    if args.paired_envelope_comparison and (
+        args.strict_unwrapped_tool_json or args.diagnose_model_actions
+        or args.experimental_bare_native_json or args.experimental_graph_frontier
+        or args.experimental_bare_schema_request or args.experimental_single_step_prompt
+        or args.experimental_g5_verified_continuation
+        or args.experimental_graph_path_order_prompt
+    ):
+        parser.error("paired strict envelope comparison must be a single isolated treatment")
     agent = LocalQwen17BRealAgent()
+    control = None
+    if args.paired_envelope_comparison:
+        control = asyncio.run(evaluate_candidate(agent, language=args.language))
     report = asyncio.run(evaluate_candidate(
         agent, language=args.language,
         diagnose_model_actions=args.diagnose_model_actions,
@@ -110,7 +133,24 @@ def main() -> None:
         experimental_bare_schema_request=args.experimental_bare_schema_request,
         experimental_graph_path_order_prompt=args.experimental_graph_path_order_prompt,
         experimental_graph_frontier=args.experimental_graph_frontier,
+        experimental_strict_unwrapped_json=(
+            args.strict_unwrapped_tool_json or args.paired_envelope_comparison
+        ),
     ))
+    if control is not None:
+        if control["source_receipt_digest"] != report["source_receipt_digest"]:
+            raise ValueError("paired original source drift")
+        report = {
+            "study": "CODEGRAPH_QWEN17_PAIRED_STRICT_ENVELOPE_E1_DEV",
+            "model_id": MODEL_ID, "model_revision": REVISION,
+            "language": args.language,
+            "source_receipt_digest": control["source_receipt_digest"],
+            "strict_k": 5,
+            "intervention": "canonical_offered_unwrapped_tool_json_only",
+            "independent_e2_qualified": False, "release_qualified": False,
+            "results": {"original_strict_control": control,
+                        "exact_json_envelope_treatment": report},
+        }
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
         check=True, capture_output=True, timeout=10,
@@ -120,16 +160,28 @@ def main() -> None:
     args.out.write_text(json.dumps(
         report, indent=2, sort_keys=True, allow_nan=False,
     ) + "\n", encoding="utf-8")
-    print(json.dumps({
-        "study": report["study"],
-        "status": report["status"],
-        "language": report["language"],
-        "qualified_task_denominator": report["qualified_task_denominator"],
-        "actual_source_calls": report["source_call_count"],
-        "model_turns": {
-            row["condition"]: row["model_turns"] for row in report["outcomes"]
-        },
-    }, sort_keys=True))
+    if control is not None:
+        printed = {
+            "study": report["study"],
+            "language": report["language"],
+            "full_task_counts": {
+                arm: sum(row["full_task_complete"] is True
+                         for row in experiment["outcomes"])
+                for arm, experiment in report["results"].items()
+            },
+        }
+    else:
+        printed = {
+            "study": report["study"],
+            "status": report["status"],
+            "language": report["language"],
+            "qualified_task_denominator": report["qualified_task_denominator"],
+            "actual_source_calls": report["source_call_count"],
+            "model_turns": {
+                row["condition"]: row["model_turns"] for row in report["outcomes"]
+            },
+        }
+    print(json.dumps(printed, sort_keys=True))
 
 
 if __name__ == "__main__":
