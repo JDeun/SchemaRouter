@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "id": "WEB-001",
+      "kind": "external-documentation-mention",
+      "name": "OpenSmartRoute Research Foundations",
+      "url": "https://opensmartroute.ai/docs/RESEARCH",
+      "location": "sections 2.12 and 7",
+      "evidence_status": "reported-verified-document",
+      "observed_on": "2026-11-23",
+      "software_adoption_verified": false,
+      "independent_reproduction": false,
+      "note": "Prior-work mention only; not a scholarly citation or evidence of package deployment."
+    }
+  ]
+}
