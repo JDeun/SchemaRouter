@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "subject": {
+    "title": "SchemaRouter: Field-Aware Tool Routing for Efficient Heterogeneous Agentic RAG",
+    "arxiv_id": "2608.21375",
+    "url": "https://arxiv.org/abs/2608.21375"
+  },
+  "records": [
+    {
+      "id": "CIT-001",
+      "work_id": "arxiv:2609.39989",
+      "title": "Component Replacement in LLM Agents: A Critical Scoping Review of Task Benefit and Attribution",
+      "authors": "Shuyang Zhang; Jianshuo Chang",
+      "version": "v2",
+      "date_version": "2026-10-31",
+      "url": "https://arxiv.org/html/2609.39989v2#S3.SS4",
+      "evidence_url": "https://arxiv.cnoctave.top/pdf/2609.39989",
+      "location": "section 3.4; PDF page 10; bibliography PDF page 22",
+      "context": "Reports field F1 0.59 to 0.75 while answer accuracy 0.71 to 0.56 under a same-tool-selection comparison.",
+      "evidence_status": "verified-mirror",
+      "independent_reproduction": false,
+      "observed_on": "2026-11-23",
+      "method": "PDF mirror text inspected; official arXiv HTML not independently retrieved in this check",
+      "next_action": "Recheck official arXiv v2 primary text and bibliographic reference before upgrading evidence status"
+    }
+  ]
+}
