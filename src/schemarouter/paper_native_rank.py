@@ -11,7 +11,7 @@ import re
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
-from pydantic import Field, StrictInt, model_validator
+from pydantic import Field, StrictBool, StrictInt, model_validator
 
 from .field_group_retrieval import _alias_key
 from .models import StrictModel
@@ -37,6 +37,10 @@ class PaperNativeRankPolicy(StrictModel):
     route_domains: dict[str, tuple[str, ...]] = Field(default_factory=dict)
     route_priorities: dict[str, StrictInt] = Field(default_factory=dict)
     web_route_ids: tuple[str, ...] = ()
+    # The original experimental router focuses on one unnamed source. Keep
+    # the existing Top-K5 mode as the default for compatibility. This option
+    # affects direct discovery only, never named overrides or dependency paths.
+    focus_direct: StrictBool = False
 
     @model_validator(mode="after")
     def validate_owner_policy(self) -> PaperNativeRankPolicy:
@@ -148,7 +152,8 @@ def rank_authorized_paper_direct(
             route_id,
         )
 
-    return tuple(heapq.nsmallest(k, range(len(candidates)), key=rank_key))
+    limit = 1 if policy.focus_direct else k
+    return tuple(heapq.nsmallest(limit, range(len(candidates)), key=rank_key))
 
 
 _MAX_RANKABLE_GRAPH_PATHS = 5_000
