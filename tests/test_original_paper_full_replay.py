@@ -315,6 +315,29 @@ def _build():
             concept_id="paper.record", aliases=("research papers",), source_type="literature",
             required_fields=(contracts["paper.title"], contracts["paper.abstract"]),
         ),
+        NativeDeclaredConcept(
+            concept_id="mat.magnetic_properties",
+            aliases=("magnetic_property", "magnetic properties", "magnetic property"),
+            source_type="calculated",
+            required_fields=(
+                contracts["mat.magnetic_moment"], contracts["mat.magnetic_ordering"],
+            ),
+        ),
+        NativeDeclaredConcept(
+            concept_id="mat.elastic_properties",
+            aliases=("elastic moduli", "bulk and shear moduli"),
+            source_type="calculated",
+            required_fields=(contracts["mat.bulk_modulus"], contracts["mat.shear_modulus"]),
+        ),
+        NativeDeclaredConcept(
+            concept_id="mat.experimental_lattice_lengths",
+            aliases=("lattice_lengths", "lattice lengths", "cell lengths"),
+            source_type="experimental",
+            required_fields=tuple(
+                CapabilityFieldContract.from_field(fields[f"cod:{name}"])
+                for name in ("_cod_a", "_cod_b", "_cod_c")
+            ),
+        ),
     ))
     session = router.prepare_field_routing(catalog=NativeConceptCatalog(concepts=tuple(concepts)))
     # Intent groups are discovery/recall memberships, NOT an invented global AND.
@@ -454,11 +477,20 @@ async def test_stability_indicator_and_boolean_are_distinct_native_proofs(
         assert metas["is_stable"].unit is None
 
 
-def _fixed_understanding(case, *, role_aware=False):
+def _fixed_understanding(case, *, role_aware=False, topic_only=False):
     named, source, hints = _literal_hints(case)
     labels = case["concepts"]
-    if role_aware and case["category"] == "literature_search":
-        labels = ["research papers"]
+    if case["category"] == "literature_search":
+        if topic_only:
+            # Correct only a literal lookup subject; retain EVERY other
+            # archived output label, including unsupported keywords.
+            topic = hints.get("search topic")
+            if topic:
+                labels = [label for label in labels if _norm(label) != _norm(topic)]
+                if not labels:
+                    labels = ["research papers"]
+        elif role_aware:
+            labels = ["research papers"]
     needs = [{"concept": label} for label in labels[:8]]
     # Preserve explicit units when the original labels identify the quantity.
     unit_labels = {
@@ -479,8 +511,8 @@ def _fixed_understanding(case, *, role_aware=False):
     }
 
 
-async def _replay(session, intents, rank, case, *, role_aware=False):
-    raw = _fixed_understanding(case, role_aware=role_aware)
+async def _replay(session, intents, rank, case, *, role_aware=False, topic_only=False):
+    raw = _fixed_understanding(case, role_aware=role_aware, topic_only=topic_only)
     observed = []
 
     def model(payload):
@@ -552,12 +584,14 @@ async def test_full_original_inventory_conditional_library_replay():
             errors.append({"query_id": case["query_id"], "error": type(exc).__name__,
                            "detail": str(exc)[:500]})
     role_aware = []
+    topic_only = []
     for case in CASES:
         if case["category"] == "literature_search":
             try:
                 role_aware.append(await _replay(session, intents, rank, case, role_aware=True))
+                topic_only.append(await _replay(session, intents, rank, case, topic_only=True))
             except Exception as exc:
-                errors.append({"query_id": case["query_id"], "arm": "role_aware_literature",
+                errors.append({"query_id": case["query_id"], "arm": "literature_role_control",
                                "error": type(exc).__name__, "detail": str(exc)[:500]})
     positive = [row for row in rows if row["historical"]]
     categories = {}
@@ -576,6 +610,12 @@ async def test_full_original_inventory_conditional_library_replay():
         "supported_coverage_complete": sum(row["coverage_complete"] for row in positive),
         "statuses": dict(Counter(row["status"] for row in rows)),
         "categories": {key: dict(value) for key, value in categories.items()},
+        "topic_only_literature": {
+            "n": len(topic_only),
+            "coverage_complete": sum(row["coverage_complete"] for row in topic_only),
+            "field_exact": sum(row["field_exact"] for row in topic_only),
+            "statuses": dict(Counter(row["status"] for row in topic_only)),
+        },
         "role_aware_literature": {
             "n": len(role_aware), "tool_exact": sum(row["tool_exact"] for row in role_aware),
             "field_exact": sum(row["field_exact"] for row in role_aware),
@@ -588,11 +628,17 @@ async def test_full_original_inventory_conditional_library_replay():
     if report:
         Path(report).write_text(json.dumps(
             {"provenance": FIXTURE["provenance"], "summary": summary, "rows": rows,
-             "role_aware_literature": role_aware}, ensure_ascii=False, indent=2,
+             "role_aware_literature": role_aware, "topic_only_literature": topic_only},
+            ensure_ascii=False, indent=2,
         ) + "\n", encoding="utf-8")
     # Fail engineering errors, not scientifically informative mismatches.
     assert not errors, errors
-    assert len(rows) == 110 and len(role_aware) == 10
+    assert len(rows) == 110 and len(role_aware) == len(topic_only) == 10
+    assert sum(row["coverage_complete"] for row in topic_only) == 9
+    assert "keywords" in next(row for row in topic_only if row["query_id"] == "g068")["uncovered"]
+    assert all(row["coverage_complete"] for row in rows
+               if "magnetic_property" in row["raw_needs"][0]["concept"]
+               and row["query_id"] == "g039")
     # No expected historical labels enter the planner. Verify the specific
     # union-input seam on the full cohort after execution, not a tuned route
     # selection or overall task-quality target.
@@ -625,3 +671,43 @@ async def test_full_original_inventory_conditional_library_replay():
             assert row["proposals"]["materials_project"]["formula"] == hints["formula"]
             assert row["proposals"]["oqmd"]["composition"] == hints["formula"]
             assert row["status"] == "requires_arguments"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("label,tool,source,expected,complete", [
+    ("magnetic properties", "materials_project", "calculated",
+     {"total_magnetization", "magnetic_ordering"}, True),
+    ("elastic moduli", "materials_project", "calculated", {"k_vrh", "g_vrh"}, True),
+    ("youngs_modulus", "materials_project", "calculated", set(), False),
+    ("elastic_modulus", "materials_project", "calculated", set(), False),
+    ("lattice_lengths", "cod", "experimental", {"_cod_a", "_cod_b", "_cod_c"}, True),
+    ("lattice_parameters", "cod", "experimental", set(), False),
+    ("crystal_structure", "cod", "experimental", set(), False),
+    ("boiling_point", "pubchem", "experimental", set(), False),
+    ("keywords", "arxiv", "literature", set(), False),
+])
+async def test_residual_source_meanings_do_not_invent_unavailable_properties(
+    stability_session, label, tool, source, expected, complete,
+):
+    session, intents, rank = stability_session
+    intent = {
+        "materials_project": "find_structure", "cod": "find_structure",
+        "pubchem": "find_compound", "arxiv": "find_paper",
+    }[tool]
+    raw = {
+        "intent_id": intent, "needs": [{"concept": label}],
+        "named_tools": [tool], "source_type": source,
+    }
+    plan = await session.acompile_query(
+        f"Return {label} from {tool}.", principal=ACTOR, intent_registry=intents,
+        rank_policy=rank, model=lambda _: raw, model_visible_intent_ids=(intent,),
+    )
+    assert not plan.executable_authority and not plan.bindings
+    assert plan.coverage.complete is complete
+    if complete:
+        assert len(plan.calls) == 1
+        assert expected <= set(plan.calls[0].call.fields)
+        assert plan.calls[0].call.arguments == {}
+    else:
+        assert not plan.calls
+        assert any(item.semantic_id == label for item in plan.coverage.uncovered)
