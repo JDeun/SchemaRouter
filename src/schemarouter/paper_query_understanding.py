@@ -547,9 +547,9 @@ async def compile_model_query(
         scoped_proofs = []
         for cid, source in groups:
             scoped = narrow_scope(((cid, source),))
-            single_intent = PaperIntentRegistry(intents=(PaperIntentDeclaration(
-                intent_id=intent.intent_id, required_concept_ids=(cid,), domains=intent.domains,
-            ),))
+            single_intent = intents.model_copy(update={"intents": (
+                intent.model_copy(update={"required_concept_ids": (cid,)}),
+            )})
             single = understood.model_copy(update={
                 "concept_ids": (cid,), "unresolved_concepts": (),
             })
