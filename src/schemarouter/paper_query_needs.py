@@ -18,8 +18,10 @@ class PaperQueryNeed(StrictModel):
 
     concept: str = Field(
         max_length=160,
-        description=("Short English name of one requested positive data item, action or goal, "
-                     "including unsupported requests and its semantic role."),
+        description=("Short English name of one requested returned data item, action or "
+                     "retrieval goal, including unsupported output requirements. A lookup "
+                     "subject or scalar input value belongs in parameter_hints unless "
+                     "it is itself requested as output."),
     )
     unit: str | None = Field(
         default=None, max_length=160,

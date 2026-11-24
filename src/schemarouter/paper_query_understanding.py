@@ -623,6 +623,17 @@ async def compile_model_query(
                 "retain the requested action and object even when intent_id is null.",
                 "If more than eight needs are requested, set needs_truncated=true.",
                 "Use short English need names, preserving semantic roles and requested actions.",
+                "Distinguish the requested result or retrieval goal from a lookup subject. "
+                "For a search about a topic, keep the requested records or search goal in "
+                "needs and copy the topic as a scalar in parameter_hints. Use the explicit "
+                "parameter label, or a short semantic role such as search topic. "
+                "A search subject is not itself a requested output field.",
+                "Keep explicitly requested output properties in needs, even when unsupported. "
+                "Do not move them to parameter_hints to avoid an unknown output requirement.",
+                "Preserve ordering and filtering requests as input conditions when they "
+                "constrain the search. For example, latest is an ordering condition, not "
+                "merely a request for a date field. Keep literal values and do not invent "
+                "provider-specific sort tokens, parameter names or query syntax.",
                 "Keep explicit time, role and other positive conditions in needs.qualifiers.",
                 "Put explicit source/result paths in qualifiers.source_path or "
                 "qualifiers.result_path respectively; "
