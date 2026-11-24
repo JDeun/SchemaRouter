@@ -75,6 +75,8 @@ on:
       - "research/autoresearch/paper-understood-observed-graph-a9-e0-plan.md"
       - "research/autoresearch/paper-scoped-answered-graph-a9-e0-design.md"
       - "research/autoresearch/paper-scoped-answered-graph-a9-e0-plan.md"
+      - "scripts/research_original_paper_model_replay.py"
+      - ".github/workflows/original-paper-actual-model-replay-dev.yml"
       - ".github/workflows/original-paper-toolcall-plan-e0.yml"
   workflow_dispatch:
 
@@ -147,3 +149,15 @@ jobs:
           name: original-paper-110-conditional-replay
           path: ${{ runner.temp }}/original-paper-110-replay.json
           if-no-files-found: warn
+
+  # Research-only, explicit one-shot opt-in on the maintainer's trusted PR.
+  # Removing the title marker stops later synchronizations from rerunning it.
+  actual-model-replay-dev:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.number == 1894 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.title, '[model-pilot]')
+    uses: ./.github/workflows/original-paper-actual-model-replay-dev.yml
+    with:
+      cohort: pilot
