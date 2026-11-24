@@ -12,6 +12,7 @@ import pytest
 
 from schemarouter import (
     AuthorizationPolicy,
+    AuthorizationRule,
     CapabilityFieldContract,
     DataScopeRule,
     EndpointSpec,
@@ -223,3 +224,141 @@ async def test_original_cross_source_schema_independent_model_boundary(replay):
     assert {call.call.tool: set(call.call.fields) for call in plan.calls} == {
         expected["tool"]: set(expected["fields"]) for expected in case["expected"]
     }
+
+
+def _candidate_replay():
+    """Actual source group layouts plus explicit synthetic distractors."""
+    original, intents = _build()
+    router = original._router
+    groups = {route: dict(value) for route, value in intents.route_field_groups.items()}
+    domains = dict(_rank_policy(original).route_domains)
+    priorities = {}
+    names = (
+        *(f"no_group_{i}" for i in range(6)),
+        "wrong_domain", "wrong_source", "hidden_group", "denied",
+        *(f"eligible_{i}" for i in range(6)),
+    )
+    for name in names:
+        route = f"{name}.search"
+        router.add_tool(ToolSpec(
+            name=name, license="synthetic-fixture",
+            source_type="experimental" if name == "wrong_source" else "calculated",
+            endpoints=[EndpointSpec(name="search", read_only=True, output_fields=[
+                FieldSpec(name="band_gap", semantic_id=CONCEPT,
+                          json_schema={"type": "number"}, unit="eV"),
+                FieldSpec(name="aux", semantic_id=f"{name}.aux",
+                          json_schema={"type": "number"}),
+            ])],
+        ))
+        domains[route] = ("finance",) if name == "wrong_domain" else ("materials",)
+        priorities[route] = 100
+        # These decoys are not historical providers. They deliberately have
+        # the right band-gap semantics but different discovery eligibility.
+        group_id = (
+            "unrelated" if name.startswith(("no_group_", "eligible_")) else "elastic"
+        )
+        if name.startswith("eligible_"):
+            group_id = "electronic"
+        groups[route] = {group_id: ("aux",)}
+
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="allow",
+        rules=(AuthorizationRule(effect="deny", operation="denied.search"),),
+        data_rules=(DataScopeRule(operation="hidden_group.search", hidden_fields=("aux",)),),
+    )
+    session = router.prepare_field_routing(catalog=original._require_catalog())
+    intents = intents.model_copy(update={
+        "projection_snapshot_id": session.snapshot_id,
+        "route_field_groups": groups,
+    })
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id, route_domains=domains,
+        route_priorities=priorities,
+    )
+    return session, intents, policy
+
+
+def _discover(session, intents, policy, *, groups, targets=(), named=(),
+              allow_graph=False):
+    intent = intents.intents[0].model_copy(update={
+        "recall_group_ids": groups,
+        "target_tool_keys": targets,
+    })
+    return session.compile_understood(
+        PaperUnderstanding(intent_id=intent.intent_id, concept_ids=(CONCEPT,),
+                           named_tools=named),
+        principal=ACTOR, intent_registry=intents.model_copy(update={"intents": (intent,)}),
+        rank_policy=policy, allow_unnamed_graph_discovery=allow_graph,
+    )
+
+
+def test_intent_group_overlap_filters_before_rank_and_k():
+    session, intents, policy = _candidate_replay()
+    plan = _discover(
+        session, intents, policy, groups=("elastic", "thermoelectric"),
+    )
+    # Only MP has a visible eligible group; it need not have both groups.
+    # Higher priority, semantic-compatible synthetic decoys cannot crowd it out.
+    assert plan.status == "ready"
+    assert [call.route_id for call in plan.calls] == [MP]
+    assert "k_vrh" in plan.calls[0].call.fields
+    assert not plan.executable_authority
+
+
+def test_empty_group_overlap_does_not_fall_back_to_unrestricted_search():
+    session, intents, policy = _candidate_replay()
+    plan = _discover(
+        session, intents, policy, groups=("unregistered_group",), allow_graph=True,
+    )
+    assert plan.status == "no_proven_hit"
+    assert plan.calls == () and not plan.executable_authority
+
+
+def test_named_source_overrides_group_domain_and_owner_target_only():
+    session, intents, policy = _candidate_replay()
+    named = _discover(
+        session, intents, policy, groups=("elastic",),
+        targets=("materials_project",), named=("wrong_domain",),
+    )
+    assert named.status == "ready"
+    assert [call.route_id for call in named.calls] == ["wrong_domain.search"]
+    assert not named.executable_authority
+    for tool in ("denied", "wrong_source"):
+        blocked = _discover(
+            session, intents, policy, groups=("elastic",),
+            targets=("materials_project",), named=(tool,),
+        )
+        assert blocked.status == "no_proven_hit"
+        assert not blocked.calls
+
+
+def test_owner_targets_keep_eligible_sources_without_bypassing_domain_group_or_acl():
+    session, intents, policy = _candidate_replay()
+    plan = _discover(
+        session, intents, policy, groups=("electronic", "elastic"),
+        targets=("materials_project", "oqmd", "no_group_0", "wrong_domain",
+                 "wrong_source", "hidden_group", "denied"),
+    )
+    assert plan.status == "ready"
+    assert {call.route_id for call in plan.calls} == {MP, OQMD}
+    assert not plan.ranked_unverified
+    assert not plan.executable_authority
+
+
+def test_owner_multi_target_over_k_abstains_instead_of_truncating():
+    session, intents, policy = _candidate_replay()
+    plan = _discover(
+        session, intents, policy, groups=("electronic",),
+        targets=tuple(f"eligible_{i}" for i in range(6)),
+    )
+    assert plan.status == "over_k_unranked"
+    assert not plan.calls and not plan.executable_authority
+
+
+def test_group_membership_must_be_real_before_unnamed_rank():
+    session, intents, policy = _candidate_replay()
+    groups = {route: dict(value) for route, value in intents.route_field_groups.items()}
+    groups[MP]["elastic"] += ("invented_field",)
+    invalid = intents.model_copy(update={"route_field_groups": groups})
+    with pytest.raises(PolicyViolationError):
+        _discover(session, invalid, policy, groups=("elastic",))
