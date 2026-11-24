@@ -655,3 +655,60 @@ def test_mixed_depth_rank_rejects_combined_5001_path_receipts():
             short, long, concept_aliases=(("case status",),),
             policy=PaperNativeRankPolicy(snapshot_id=SNAPSHOT),
         )
+
+
+def test_original_direct_focus_selects_one_after_authorization_and_full_field_proof():
+    router = _paper_router()
+    session = router.prepare_field_routing(catalog=_paper_catalog())
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_priorities={"full_5.read": 10, "partial.read": 99, "denied.read": 100},
+        focus_direct=True,
+    )
+    plan = session.compile_understood(
+        _paper_understanding(), principal=ANALYST,
+        intent_registry=_paper_intents(), rank_policy=policy,
+    )
+    assert plan.status == "ready"
+    assert plan.ranked_unverified and not plan.executable_authority
+    assert [call.route_id for call in plan.calls] == ["full_5.read"]
+    assert plan.calls[0].call.fields == ["status", "priority", "case_id"]
+
+
+def test_original_direct_focus_preserves_multiple_explicitly_named_sources():
+    router = _paper_router()
+    session = router.prepare_field_routing(catalog=_paper_catalog())
+    policy = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id, focus_direct=True,
+    )
+    plan = session.compile_understood(
+        _paper_understanding(named_tools=("full_4", "full_5")),
+        principal=ANALYST, intent_registry=_paper_intents(), rank_policy=policy,
+    )
+    assert plan.status == "ready"
+    assert {call.route_id for call in plan.calls} == {"full_4.read", "full_5.read"}
+    assert not plan.executable_authority
+
+
+def test_original_direct_focus_applies_even_below_k():
+    router = _router(many_complete=2)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.snapshot_id, focus_direct=True,
+        route_priorities={"full_1.read": 10},
+    )
+    result = index.lookup(
+        router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+        _paper_rank_policy=policy,
+        _paper_rank_aliases=(("case status",), ("case priority",)),
+    )
+    assert result.status == "complete" and result.qualified_count == 3
+    assert [candidate.route_id for candidate in result.candidates] == ["full_1.read"]
+    assert result.deterministic_paper_ranked
+
+
+def test_original_direct_focus_refuses_string_flag():
+    with pytest.raises(ValueError):
+        PaperNativeRankPolicy.model_validate({
+            "snapshot_id": SNAPSHOT, "focus_direct": "true",
+        })
