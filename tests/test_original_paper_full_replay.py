@@ -56,10 +56,14 @@ MEANINGS = (
         "materials_project:formation_energy_per_atom", "oqmd:delta_e",
         "jarvis:formation_energy_peratom",
     )),
-    ("mat.hull_energy", ("energy_above_hull",), "calculated", (
+    # For this host's broad thermodynamic assessment vocabulary, "stability"
+    # requests the continuous hull-energy indicator. The frozen OQMD source
+    # explicitly equates its stability field with MP energy_above_hull.
+    # This is NOT a universal alias for Boolean stability or decomposition energy.
+    ("mat.hull_energy", ("energy_above_hull", "stability"), "calculated", (
         "materials_project:energy_above_hull", "oqmd:stability", "jarvis:ehull",
     )),
-    ("mat.stability_flag", ("is_stable", "thermodynamic_stability"), "calculated", (
+    ("mat.stability_flag", ("is_stable", "stable", "thermodynamic_stability"), "calculated", (
         "materials_project:is_stable",
     )),
     ("mat.crystal_system", ("crystal_structure", "crystal_system"), "calculated", (
@@ -109,8 +113,8 @@ MEANINGS = (
     )),
 )
 # No reviewed semantics for broad elastic_modulus, missing Young's modulus,
-# unspecified stability quantity, lattice angles, unsupported PubChem
-# properties, topic words, logP vs xlogp, or date/year equivalence.
+# decomposition energy, lattice angles, unsupported PubChem properties,
+# topic words, logP vs xlogp, or date/year equivalence.
 # Both source inventory descriptions identify the chemistry formula input.
 # The OQMD composition domain also admits element systems; only the common
 # literal formula role is approved for this fixed comparison intent.
@@ -361,6 +365,95 @@ def test_frozen_original_reference_matches_all_archived_plans():
     assert call_count == 110 and missing_required == 24
 
 
+def test_stability_meaning_is_grounded_in_frozen_source_contracts():
+    mp = {field["name"]: field for field in APIS["materials_project"]["fields"]}
+    oqmd = {field["name"]: field for field in APIS["oqmd"]["fields"]}
+    jarvis = {field["name"]: field for field in APIS["jarvis"]["fields"]}
+    indicators = (mp["energy_above_hull"], oqmd["stability"], jarvis["ehull"])
+    assert all(
+        field["type"] == "float" and field["unit"] == "eV/atom"
+        and field["source_type"] == "calculated" for field in indicators
+    )
+    assert any(
+        equivalent["api_name"] == "materials_project"
+        and equivalent["field_name"] == "energy_above_hull"
+        for equivalent in oqmd["stability"]["equivalent_to"]
+    )
+    assert mp["is_stable"]["type"] == "boolean" and mp["is_stable"]["unit"] is None
+    # Source aliases describe source-specific meanings, not global equivalence.
+    assert "stability" in mp["is_stable"]["aliases"]
+    assert "stability" in oqmd["stability"]["aliases"]
+
+
+@pytest.fixture(scope="module")
+def stability_session():
+    return _build()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool,display,concept,unit,source,expected_field,expected_sid", [
+    ("materials_project", "Materials Project", "stability", "eV/atom", "calculated",
+     "energy_above_hull", "mat.hull_energy"),
+    ("oqmd", "OQMD", "stability", "eV/atom", "calculated",
+     "stability", "mat.hull_energy"),
+    ("jarvis", "JARVIS", "stability", "eV/atom", "calculated",
+     "ehull", "mat.hull_energy"),
+    ("materials_project", "Materials Project", "is_stable", None, "calculated",
+     "is_stable", "mat.stability_flag"),
+    ("materials_project", "Materials Project", "stable", None, "calculated",
+     "is_stable", "mat.stability_flag"),
+    ("oqmd", "OQMD", "is_stable", None, "calculated", None, None),
+    ("oqmd", "OQMD", "thermodynamic_stability", None, "calculated", None, None),
+    ("materials_project", "Materials Project", "stability", "GPa", "calculated", None, None),
+    ("materials_project", "Materials Project", "is_stable", "eV/atom",
+     "calculated", None, None),
+    ("materials_project", "Materials Project", "stability", "eV/atom",
+     "experimental", None, None),
+    ("materials_project", "Materials Project", "decomposition_energy", "eV/atom",
+     "calculated", None, None),
+])
+async def test_stability_indicator_and_boolean_are_distinct_native_proofs(
+    stability_session, tool, display, concept, unit, source, expected_field, expected_sid,
+):
+    session, intents, rank = stability_session
+    need = {"concept": concept}
+    if unit is not None:
+        need["unit"] = unit
+    raw = {
+        "intent_id": "check_stability", "needs": [need],
+        "named_tools": [display], "source_type": source,
+    }
+    plan = await session.acompile_query(
+        f"Find {concept} for a material using {display}.",
+        principal=ACTOR, intent_registry=intents, rank_policy=rank,
+        model=lambda _: raw, model_visible_intent_ids=("check_stability",),
+    )
+    assert not plan.executable_authority and not plan.bindings
+    assert plan.coverage is not None
+    if expected_field is None:
+        assert not plan.coverage.complete
+        assert not plan.calls
+        assert any(item.semantic_id == concept for item in plan.coverage.uncovered)
+        return
+    assert plan.coverage.complete
+    assert [call.call.tool for call in plan.calls] == [tool]
+    call = plan.calls[0]
+    assert call.call.arguments == {}
+    metas = {meta.name: meta for meta in call.fields_meta}
+    meta = metas[expected_field]
+    assert meta.semantic_id == expected_sid
+    assert meta.unit == unit
+    assert meta.json_schema["type"] == ("number" if unit else "boolean")
+    if tool == "materials_project":
+        # Recall expansion may return both quantities, but their typed
+        # contracts remain distinct. No bool<->number conversion is inferred.
+        assert metas["energy_above_hull"].semantic_id == "mat.hull_energy"
+        assert metas["energy_above_hull"].unit == "eV/atom"
+        assert metas["is_stable"].semantic_id == "mat.stability_flag"
+        assert metas["is_stable"].json_schema["type"] == "boolean"
+        assert metas["is_stable"].unit is None
+
+
 def _fixed_understanding(case, *, role_aware=False):
     named, source, hints = _literal_hints(case)
     labels = case["concepts"]
@@ -512,6 +605,20 @@ async def test_full_original_inventory_conditional_library_replay():
         if set(row["selected"]) == {"pubchem"} and "identifier" in hints:
             assert row["proposals"]["pubchem"].get("identifier") == hints["identifier"]
             assert "identifier" not in row["uncovered"]
+        # A broad stability request in this frozen host vocabulary uses
+        # quantitative hull energy. Do not select an expected provider by
+        # case ID or archived output. Check unchanged historical results only
+        # after the native router has selected its sources.
+        if (
+            raw_case["intent"] == "check_stability"
+            and set(raw_case["concepts"]) == {"formation_energy", "stability"}
+        ):
+            assert row["coverage_complete"], row["query_id"]
+            assert row["tool_exact"] and row["field_exact"], row["query_id"]
+            assert row["status"] == "requires_arguments"
+        if "decomposition_energy" in raw_case["concepts"]:
+            assert "decomposition_energy" in row["uncovered"]
+            assert not row["coverage_complete"]
         if row["category"] == "cross_source_comparison":
             assert set(row["selected"]) == {"materials_project", "oqmd"}
             assert row["coverage_complete"]
