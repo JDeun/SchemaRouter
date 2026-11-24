@@ -1,0 +1,1762 @@
+{
+  "schema_version": 1,
+  "scope": "Historical conditional response-field replay on Materials Project only; selected tool known; not retrieval quality, argument binding or independent E2",
+  "provenance": {
+    "repository": "JDeun/paper_SchemaRouter",
+    "commit": "368116746170d6dd0d95a91352daba8abc42ca13",
+    "blobs": {
+      "experiments/schema/inventory.json": "71713203dd7145898201868bf1c2435229cdb709",
+      "experiments/runs/run_schema_router.jsonl": "858ded8f3fd873e0927b13bc154aa0e923abf96d",
+      "experiments/dataset/queries.jsonl": "ae4c25155b90bb5b7c7f775e8a9bf23fbefe6f95",
+      "experiments/routers/schema_router.py": "09d84bda0f7354ce2e46016b74ff12c3ee0fba5c"
+    },
+    "source_total_queries": 110,
+    "selection": "Exactly one historical selected tool, materials_project; all matching rows retained."
+  },
+  "api": {
+    "name": "materials_project",
+    "display_name": "Materials Project",
+    "domain": "materials",
+    "source_type": "calculated",
+    "license": "CC BY 4.0 (GNoME 제외)",
+    "fields": [
+      {
+        "name": "material_id",
+        "type": "string",
+        "unit": null,
+        "is_identifier": true,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "formula_pretty",
+        "type": "string",
+        "unit": null,
+        "is_identifier": true,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "crystal_system",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [
+          "crystal structure",
+          "lattice system",
+          "crystal_structure"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "spacegroup_number",
+        "type": "integer",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [
+          "space_group",
+          "spacegroup",
+          "space group number",
+          "sg"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "density",
+        "type": "float",
+        "unit": "g/cm³",
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "volume",
+        "type": "float",
+        "unit": "Å³",
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "nsites",
+        "type": "integer",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [
+          "number of sites",
+          "num_sites",
+          "atom count"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "band_gap",
+        "type": "float",
+        "unit": "eV",
+        "is_identifier": false,
+        "aliases": [
+          "bandgap",
+          "gap",
+          "electronic gap"
+        ],
+        "equivalent_to": [
+          {
+            "api_name": "jarvis",
+            "field_name": "optb88vdw_bandgap",
+            "note": "OptB88vdW 범함수"
+          },
+          {
+            "api_name": "oqmd",
+            "field_name": "band_gap",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "name": "is_gap_direct",
+        "type": "boolean",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "is_metal",
+        "type": "boolean",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [
+          "metallic",
+          "metal"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "efermi",
+        "type": "float",
+        "unit": "eV",
+        "is_identifier": false,
+        "aliases": [
+          "fermi_energy",
+          "fermi level",
+          "fermi"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "formation_energy_per_atom",
+        "type": "float",
+        "unit": "eV/atom",
+        "is_identifier": false,
+        "aliases": [
+          "formation_energy",
+          "formation energy",
+          "eform"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "energy_above_hull",
+        "type": "float",
+        "unit": "eV/atom",
+        "is_identifier": false,
+        "aliases": [
+          "hull_energy",
+          "hull",
+          "e_above_hull",
+          "ehull",
+          "above hull energy"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "is_stable",
+        "type": "boolean",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [
+          "stability",
+          "stable",
+          "thermodynamic stability"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "total_magnetization",
+        "type": "float",
+        "unit": "μB",
+        "is_identifier": false,
+        "aliases": [
+          "magnetic_moment",
+          "magnetization",
+          "total magnetic moment",
+          "moment"
+        ],
+        "equivalent_to": [
+          {
+            "api_name": "jarvis",
+            "field_name": "magmom_outcar",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "name": "magnetic_ordering",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "k_vrh",
+        "type": "float",
+        "unit": "GPa",
+        "is_identifier": false,
+        "aliases": [
+          "bulk_modulus",
+          "bulk modulus",
+          "k",
+          "kv"
+        ],
+        "equivalent_to": [
+          {
+            "api_name": "jarvis",
+            "field_name": "bulk_modulus_kv",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "name": "g_vrh",
+        "type": "float",
+        "unit": "GPa",
+        "is_identifier": false,
+        "aliases": [
+          "shear_modulus",
+          "shear modulus",
+          "g",
+          "gv"
+        ],
+        "equivalent_to": [
+          {
+            "api_name": "jarvis",
+            "field_name": "shear_modulus_gv",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "name": "poisson_ratio",
+        "type": "float",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "e_total",
+        "type": "float",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [
+          "dielectric_constant",
+          "dielectric constant",
+          "total dielectric"
+        ],
+        "equivalent_to": []
+      },
+      {
+        "name": "e_ionic",
+        "type": "float",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      },
+      {
+        "name": "e_electronic",
+        "type": "float",
+        "unit": null,
+        "is_identifier": false,
+        "aliases": [],
+        "equivalent_to": []
+      }
+    ],
+    "field_groups": [
+      {
+        "name": "identifier",
+        "field_names": [
+          "material_id",
+          "formula_pretty"
+        ],
+        "always_include": true
+      },
+      {
+        "name": "electronic",
+        "field_names": [
+          "band_gap",
+          "is_gap_direct",
+          "is_metal",
+          "efermi"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "stability",
+        "field_names": [
+          "formation_energy_per_atom",
+          "energy_above_hull",
+          "is_stable"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "structural",
+        "field_names": [
+          "crystal_system",
+          "spacegroup_number",
+          "density",
+          "volume",
+          "nsites"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "magnetic",
+        "field_names": [
+          "total_magnetization",
+          "magnetic_ordering"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "elastic",
+        "field_names": [
+          "k_vrh",
+          "g_vrh",
+          "poisson_ratio"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "dielectric",
+        "field_names": [
+          "e_total",
+          "e_ionic",
+          "e_electronic"
+        ],
+        "always_include": false
+      }
+    ]
+  },
+  "intents": [
+    {
+      "name": "find_band_gap",
+      "required_groups": [
+        "electronic"
+      ],
+      "applicable_domains": [
+        "materials"
+      ]
+    },
+    {
+      "name": "check_stability",
+      "required_groups": [
+        "stability"
+      ],
+      "applicable_domains": [
+        "materials"
+      ]
+    },
+    {
+      "name": "find_structure",
+      "required_groups": [
+        "structural"
+      ],
+      "applicable_domains": [
+        "materials"
+      ]
+    },
+    {
+      "name": "find_elastic",
+      "required_groups": [
+        "elastic"
+      ],
+      "applicable_domains": [
+        "materials"
+      ]
+    },
+    {
+      "name": "cross_validate",
+      "required_groups": [
+        "electronic",
+        "stability",
+        "structural"
+      ],
+      "applicable_domains": [
+        "materials"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "query_id": "g001",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g002",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g003",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g004",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g005",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g006",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "stability"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g007",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g008",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g009",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g010",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g011",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g012",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g013",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g014",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g015",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g016",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g017",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g018",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g019",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g020",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g021",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g022",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g023",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g024",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g025",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g026",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g027",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g028",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g029",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g030",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "stability"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g031",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g032",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g033",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "stability"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g034",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g035",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g036",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g037",
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap",
+        "crystal_structure"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g038",
+      "intent": "find_elastic",
+      "concepts": [
+        "elastic_modulus",
+        "crystal_structure"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites",
+        "k_vrh",
+        "g_vrh",
+        "poisson_ratio"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g039",
+      "intent": "cross_validate",
+      "concepts": [
+        "magnetic_property",
+        "band_gap"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g040",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "crystal_structure"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g041",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap",
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g042",
+      "intent": "find_structure",
+      "concepts": [
+        "band_gap",
+        "crystal_structure"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g043",
+      "intent": "find_structure",
+      "concepts": [
+        "elastic_modulus",
+        "crystal_structure"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g044",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap",
+        "magnetic_moment",
+        "magnetic_ordering"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "total_magnetization",
+        "magnetic_ordering",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g045",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "crystal_structure",
+        "space_group",
+        "lattice_parameters"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g046",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap",
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g083",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g084",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g085",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g086",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g087",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g088",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g090",
+      "intent": "find_structure",
+      "concepts": [
+        "crystal_structure",
+        "density"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g091",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g092",
+      "intent": "find_elastic",
+      "concepts": [
+        "elastic_modulus"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "k_vrh",
+        "g_vrh",
+        "poisson_ratio"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g093",
+      "intent": "find_structure",
+      "concepts": [
+        "crystal_structure",
+        "density"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g094",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g096",
+      "intent": "find_structure",
+      "concepts": [
+        "crystal_structure",
+        "density"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    },
+    {
+      "query_id": "g097",
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "decomposition_energy",
+        "thermodynamic_stability"
+      ],
+      "expected_fields": [
+        "material_id",
+        "formula_pretty",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable"
+      ],
+      "evidence": {
+        "unit_required": true,
+        "provenance_required": true,
+        "source_type": "calculated",
+        "license_required": true,
+        "license": "CC BY 4.0 (GNoME 제외)"
+      }
+    }
+  ],
+  "model_smoke": {
+    "query_id": "g001",
+    "query": "LiFePO4의 밴드갭을(를) Materials Project에서 알려줘."
+  }
+}
