@@ -54,6 +54,8 @@ class PaperIntentDeclaration(StrictModel):
     intent_id: str
     required_concept_ids: tuple[str, ...]
     domains: tuple[str, ...] = ()
+    # Recall-only source-local groups, distinct from mandatory semantic fields.
+    recall_group_ids: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def validate_declaration(self) -> PaperIntentDeclaration:
@@ -66,6 +68,10 @@ class PaperIntentDeclaration(StrictModel):
                 for cid in self.required_concept_ids
             )
             or len(set(self.required_concept_ids)) != len(self.required_concept_ids)
+            or len(self.recall_group_ids) > 16
+            or len(set(self.recall_group_ids)) != len(self.recall_group_ids)
+            or any(type(group) is not str or not _ID_PATTERN.fullmatch(group)
+                   for group in self.recall_group_ids)
             or len(self.domains) > 8
             or len(set(self.domains)) != len(self.domains)
             or any(type(domain) is not str or not _ID_PATTERN.fullmatch(domain)
@@ -77,15 +83,36 @@ class PaperIntentDeclaration(StrictModel):
 
 class PaperIntentRegistry(StrictModel):
     intents: tuple[PaperIntentDeclaration, ...]
+    # Owner-reviewed memberships in the exact native source snapshot. These
+    # are not model suggestions, permissions or executable field contracts.
+    projection_snapshot_id: str | None = None
+    route_field_groups: dict[str, dict[str, tuple[str, ...]]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_registry(self) -> PaperIntentRegistry:
         if (
             not 1 <= len(self.intents) <= 16
             or len({intent.intent_id for intent in self.intents}) != len(self.intents)
+            or len(self.route_field_groups) > 64
+            or bool(self.route_field_groups) != (self.projection_snapshot_id is not None)
+            or self.projection_snapshot_id is not None and (
+                len(self.projection_snapshot_id) != 64
+                or any(char not in "0123456789abcdef" for char in self.projection_snapshot_id)
+            )
             or len(self.model_dump_json().encode("utf-8")) > 8192
         ):
             raise ValueError("invalid bounded paper intent registry")
+        for route, groups in self.route_field_groups.items():
+            if not _bounded_name(route) or not 1 <= len(groups) <= 16:
+                raise ValueError("invalid owner-reviewed route field groups")
+            for group, names in groups.items():
+                if (
+                    not _ID_PATTERN.fullmatch(group)
+                    or not 1 <= len(names) <= 64
+                    or len(set(names)) != len(names)
+                    or any(not _bounded_name(name) for name in names)
+                ):
+                    raise ValueError("invalid owner-reviewed route field groups")
         return self
 
 
@@ -278,6 +305,12 @@ def _compile_paper_understood_direct_plan(
     approved_hints, approved_intent, concepts = _source_owned_understood_concepts(
         understanding, catalog, intent_registry,
     )
+    projection_groups = deepcopy(intent_registry.route_field_groups)
+    if projection_groups and (
+        intent_registry.projection_snapshot_id != index.field_index.snapshot_id
+        or not projection_groups.keys() <= index.field_index.route_locations.keys()
+    ):
+        raise PolicyViolationError("paper recall group source snapshot mismatch")
     if _compose_concepts and (len(concepts) > 1 or approved_hints.unresolved_concepts):
         from .paper_understood_concept_plan import _compile_understood_concept_plan
 
@@ -374,8 +407,20 @@ def _compile_paper_understood_direct_plan(
             if visible is None:
                 raise PolicyViolationError("paper understood route no longer visible")
             required_names = set(candidate.required_output_fields)
+            # Algorithm 1 recall safety net: a matched concept activates its
+            # source-local groups; the intent may activate other local groups.
+            # Only visible registered fields are returned. A hidden adjunct
+            # cannot grant coverage or disclose its name. Do not recursively
+            # expand groups via adjunct fields, or share groups across routes.
+            selected_names = set(required_names)
+            original_names = {field.name for field in endpoint.output_fields}
+            for group_id, members in projection_groups.get(candidate.route_id, {}).items():
+                if not set(members) <= original_names:
+                    raise PolicyViolationError("paper recall group source fields changed")
+                if group_id in intent.recall_group_ids or required_names.intersection(members):
+                    selected_names.update(members)
             names = tuple(field.name for field in visible.output_fields if (
-                field.name in required_names or field.identifier
+                field.name in selected_names or field.identifier
             ))
             if not required_names.issubset(names):
                 raise PolicyViolationError("paper understood required fields hidden")
