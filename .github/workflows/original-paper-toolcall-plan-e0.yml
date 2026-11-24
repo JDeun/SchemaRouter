@@ -27,6 +27,8 @@ on:
       - "tests/test_original_paper_arxiv_input_output.py"
       - "tests/fixtures/original_paper_arxiv_input_output.json"
       - "tests/test_original_paper_full_replay.py"
+      - "scripts/research_original_paper_inventory.py"
+      - "scripts/research_original_paper_model_replay.py"
       - "tests/test_paper_direct_union_parameters.py"
       - "tests/fixtures/original_paper_full_replay.json"
       - "tests/test_original_paper_mp_projection_replay.py"
@@ -110,6 +112,7 @@ jobs:
       - name: Replay all 110 original archived queries on the full frozen catalog
         run: |
           ruff check tests/test_original_paper_full_replay.py tests/test_original_paper_mp_projection_replay.py
+          ruff check scripts/research_original_paper_inventory.py scripts/research_original_paper_model_replay.py
           python -m pytest -q -s tests/test_original_paper_full_replay.py tests/test_original_paper_mp_projection_replay.py
         env:
           SCHEMAROUTER_PAPER_REPLAY_REPORT: ${{ runner.temp }}/original-paper-110-replay.json

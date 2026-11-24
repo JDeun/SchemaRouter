@@ -13,7 +13,6 @@ import hashlib
 import importlib
 import json
 import os
-import runpy
 import subprocess
 import sys
 import time
@@ -22,6 +21,9 @@ from pathlib import Path
 from statistics import mean
 from typing import Any
 from urllib.parse import urlsplit
+
+from schemarouter import PrincipalContext
+from scripts.research_original_paper_inventory import build_original_paper_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 PAPER_REVISION = "368116746170d6dd0d95a91352daba8abc42ca13"
@@ -269,12 +271,9 @@ async def main():
     args = parser.parse_args()
     paper = args.paper_root.resolve()
     hashes = _verify_original(paper)
-    fixture = runpy.run_path(str(ROOT / "tests/test_original_paper_full_replay.py"))
     inventory = json.loads((paper / "experiments/schema/inventory.json").read_text())
-    if inventory != fixture["FIXTURE"]["inventory"]:
-        raise ValueError("current fixture inventory differs from original")
-    session, intents, rank = fixture["_build"]()
-    actor = fixture["ACTOR"]
+    session, intents, rank = build_original_paper_inventory(inventory)
+    actor = PrincipalContext(subject="original-paper-actual-model-replay")
     queries = _cohort(_jsonl(paper / "experiments/dataset/queries.jsonl"), args.cohort)
     sys.path.insert(0, str(paper))
     llm = importlib.import_module("experiments.common.llm")
