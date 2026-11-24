@@ -186,7 +186,7 @@ def _compile_query_needs(
     abstain: Callable[[], PaperTypedToolPlan], resolve_tool: Callable[[str], str | None],
     router: SchemaRouter, principal: PrincipalContext, verify: Callable[[], None],
     retain_raw_rank_concepts: bool = False,
-) -> PaperTypedToolPlan:
+) -> tuple[PaperTypedToolPlan, frozenset[str]]:
     if raw.intent_id is not None and raw.intent_id not in intent_ids:
         raise ModelAnalysisError("model selected an unoffered paper intent")
     resolved = [_resolve_query_need_candidate(need, catalog, raw.source_type) for need in raw.needs]
@@ -307,7 +307,7 @@ def _compile_query_needs(
         coverage=PlanCoverage(required=required, covered=covered, uncovered=uncovered,
                               complete=not uncovered),
         understanding_hints=raw.model_dump(mode="json"),
-    )
+    ), frozenset(named_tools)
 
 
 async def compile_model_query(
@@ -414,7 +414,7 @@ async def compile_model_query(
             raise PolicyViolationError("paper query rank source preflight failed") from None
 
     annotated = intents.annotated_routes()
-    if annotated and (
+    if intents.projection_snapshot_id is not None and (
         intents.projection_snapshot_id != session.snapshot_id
         or not annotated <= session._index.field_index.route_locations.keys()
     ):
@@ -486,15 +486,32 @@ async def compile_model_query(
 
     def finalize(
         plan: PaperTypedToolPlan, parameter_hints: dict[str, Any],
+        *,
+        intent_id: str | None = None,
+        verified_named_tools: frozenset[str] = frozenset(),
     ) -> PaperTypedToolPlan:
         resolve = (
             independent and not plan.bindings and rank_policy is not None
             and rank_policy.direct_score_mode == "paper_v1"
         )
+        # A multi-route result is not, by itself, permission to copy one
+        # value to every route. Only the complete set of explicitly mentioned,
+        # source-resolved and output-proved tools can use owner shared semantics.
+        shared = (
+            approved_intents[intent_id].shared_parameter_semantics
+            if (
+                resolve and intent_id is not None
+                and plan.coverage is not None and plan.coverage.complete
+                and plan.status in ("ready", "requires_arguments")
+                and 2 <= len(verified_named_tools) == len(plan.calls)
+                and {call.call.tool for call in plan.calls} == verified_named_tools
+            ) else None
+        )
         plan = _apply_query_input_conditions(
             router, plan, principal=principal, parameter_hints=parameter_hints,
             resolve_proposals=resolve,
             value_aliases=intents.route_parameter_value_aliases if resolve else None,
+            shared_parameter_semantics=shared,
         )
         # The condition helper also calls host callbacks. Recheck the caller's
         # complete catalog/intent/Rank/host-input witness after both protocols.
@@ -700,7 +717,7 @@ async def compile_model_query(
             verify()
             return matches[0] if len(matches) == 1 else None
 
-        plan = _compile_query_needs(
+        plan, verified_named_tools = _compile_query_needs(
             raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
             compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
             router=router, principal=principal, verify=verify,
@@ -708,7 +725,10 @@ async def compile_model_query(
                 rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
             ),
         )
-        return finalize(plan, raw.parameter_hints)
+        return finalize(
+            plan, raw.parameter_hints, intent_id=raw.intent_id,
+            verified_named_tools=verified_named_tools,
+        )
 
     # These are owner-reviewed concepts that still have a current, accessible,
     # field-complete proof. Never disclose unreachable concepts to the model.

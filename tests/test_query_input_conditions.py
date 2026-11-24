@@ -15,6 +15,7 @@ from schemarouter import (
     NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
+    PaperNativeRankPolicy,
     ParameterSpec,
     PrincipalContext,
     SchemaRouter,
@@ -380,3 +381,182 @@ async def test_unsupported_hint_preserves_another_required_input_diagnosis():
     assert plan.status == "requires_arguments" and not plan.coverage.complete
     assert plan.calls[0].call.missing_required_arguments == ["city"]
     assert plan.calls[0].call.arguments == {}
+
+
+
+# Direct comparison input semantics are separately host-approved, not a
+# relaxation of the legacy unique-target/G5 contract tested above.
+SHARED_SID = "weather.city"
+SHARED_INTENT = "weather.compare"
+SHARED_ROUTES = ("north.read", "south.read")
+
+
+def _shared_fixture(*, approved=True, wrong_semantic=False, missing=False,
+                    ambiguous=False, hidden=False, invalid_value=False,
+                    owner_targets=False, header=False, alias_collision=False):
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="allow",
+        data_rules=(DataScopeRule(operation="south.read", hidden_fields=("private",)),)
+        if hidden else (),
+    ))
+    for tool, parameter in (("north", "city"), ("south", "location")):
+        params = [ParameterSpec(
+            name=parameter,
+            semantic_id=("weather.other" if tool == "south" and wrong_semantic else SHARED_SID),
+            aliases=["place"],
+            json_schema=(
+                {"type": "string", "enum": ["Busan"]}
+                if tool == "south" and invalid_value else
+                {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]}
+            ),
+            location="header" if tool == "south" and header else "query",
+        )]
+        if tool == "south" and missing:
+            params = []
+        if tool == "south" and ambiguous:
+            params.append(ParameterSpec(
+                name="region", semantic_id=SHARED_SID, json_schema={"type": "string"},
+            ))
+        if tool == "south" and alias_collision:
+            params.append(ParameterSpec(
+                name="place", semantic_id="weather.other", json_schema={"type": "string"},
+            ))
+        router.add_tool(ToolSpec(
+            name=tool, source_type="weather", license="reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True, parameters=params,
+                output_fields=[
+                    FieldSpec(name="temperature", semantic_id="weather.temperature",
+                              json_schema={"type": "number"}),
+                    FieldSpec(name="private", json_schema={"type": "string"}),
+                ],
+                input_schema={
+                    "type": "object", "properties": {p.name: p.json_schema for p in params},
+                    "required": [], "additionalProperties": False,
+                },
+            )],
+        ))
+    session = router.prepare_field_routing(catalog=CATALOG)
+    intents = PaperIntentRegistry(
+        intents=(PaperIntentDeclaration(
+            intent_id=SHARED_INTENT, required_concept_ids=("weather.temperature",),
+            shared_parameter_semantics={"place": SHARED_SID} if approved else {},
+            target_tool_keys=("north", "south") if owner_targets else (),
+        ),),
+        projection_snapshot_id=session.snapshot_id,
+        approved_direct_parameter_routes=SHARED_ROUTES,
+    )
+    rank = PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id, direct_score_mode="paper_v1", focus_direct=True,
+    )
+    return session, intents, rank
+
+
+async def _shared_query(*, named=("north", "south"), hints=None, host=None,
+                        original=True, text=None, **fixture):
+    session, intents, rank = _shared_fixture(**fixture)
+    raw = {
+        "intent_id": SHARED_INTENT, "needs": [{"concept": "air temperature"}],
+        "named_tools": list(named), "parameter_hints": hints if hints is not None else {
+            "place": "Seoul",
+        },
+    }
+    plan = await session.acompile_query(
+        text or "Compare the air temperature in Seoul from north and south.",
+        principal=ACTOR, model=lambda _: raw, intent_registry=intents,
+        model_visible_intent_ids=(SHARED_INTENT,), rank_policy=rank if original else None,
+        host_source_arguments=host,
+    )
+    assert not plan.executable_authority and not plan.bindings
+    return plan
+
+
+@pytest.mark.asyncio
+async def test_owner_shared_input_is_a_per_source_proposal_not_an_argument():
+    plan = await _shared_query()
+    assert plan.status == "requires_arguments" and plan.coverage.complete
+    assert {c.route_id: dict(c.parameter_proposals) for c in plan.calls} == {
+        "north.read": {"city": "Seoul"}, "south.read": {"location": "Seoul"},
+    }
+    assert all(c.call.arguments == {} for c in plan.calls)
+    evidence = [item for item in plan.coverage.covered
+                if "shared_input=true" in item.qualifiers]
+    assert len(evidence) == 2
+    assert all("proof=pending_host_input" in item.qualifiers for item in evidence)
+
+
+@pytest.mark.parametrize("options", [
+    {"approved": False},
+    {"wrong_semantic": True},
+    {"missing": True},
+    {"ambiguous": True},
+    {"hidden": True},
+    {"invalid_value": True},
+    {"header": True},
+    {"alias_collision": True},
+    {"original": False},
+    {"owner_targets": True, "named": ()},
+])
+@pytest.mark.asyncio
+async def test_shared_input_never_silently_broadcasts_or_partially_certifies(options):
+    plan = await _shared_query(**options)
+    assert not plan.coverage.complete
+    assert all(not c.parameter_proposals and c.call.arguments == {} for c in plan.calls)
+    assert any(item.semantic_id == "place" for item in plan.coverage.uncovered)
+
+
+@pytest.mark.asyncio
+async def test_fabricated_named_provider_cannot_activate_shared_semantics():
+    plan = await _shared_query(text="Get the air temperature from north in Seoul.")
+    assert not plan.coverage.complete and not plan.calls
+
+
+@pytest.mark.asyncio
+async def test_conflict_with_another_hint_blocks_the_entire_shared_group():
+    plan = await _shared_query(hints={"place": "Seoul", "city": "Busan"})
+    assert not plan.coverage.complete
+    assert all(not c.parameter_proposals for c in plan.calls)
+    assert {"place", "city"} <= {item.semantic_id for item in plan.coverage.uncovered}
+
+
+@pytest.mark.asyncio
+async def test_failed_shared_group_cannot_propose_through_a_matching_native_alias():
+    plan = await _shared_query(
+        invalid_value=True, hints={"place": "Seoul", "city": "Seoul"},
+    )
+    assert not plan.coverage.complete
+    assert all(not c.parameter_proposals for c in plan.calls)
+
+
+@pytest.mark.asyncio
+async def test_shared_value_requires_matching_explicit_host_arguments_on_each_source():
+    host = {"north.read": {"city": "Seoul"}, "south.read": {"location": "Seoul"}}
+    plan = await _shared_query(host=host)
+    assert plan.status == "ready" and plan.coverage.complete
+    assert {call.route_id: call.call.arguments for call in plan.calls} == host
+    assert all(not call.parameter_proposals for call in plan.calls)
+    host["south.read"]["location"] = "Busan"
+    conflict = await _shared_query(host=host)
+    assert not conflict.coverage.complete
+    assert all(not call.parameter_proposals for call in conflict.calls)
+
+
+@pytest.mark.asyncio
+async def test_partial_host_approval_keeps_remaining_shared_input_pending():
+    plan = await _shared_query(host={"north.read": {"city": "Seoul"}})
+    assert plan.status == "requires_arguments" and plan.coverage.complete
+    assert {c.route_id: dict(c.parameter_proposals) for c in plan.calls} == {
+        "north.read": {}, "south.read": {"location": "Seoul"},
+    }
+    assert {c.route_id: c.call.arguments for c in plan.calls} == {
+        "north.read": {"city": "Seoul"}, "south.read": {},
+    }
+
+
+def test_shared_input_semantics_require_a_snapshot_even_without_route_annotations():
+    intent = PaperIntentDeclaration(
+        intent_id=SHARED_INTENT, required_concept_ids=("weather.temperature",),
+        shared_parameter_semantics={"place": SHARED_SID},
+    )
+    with pytest.raises(ValueError):
+        PaperIntentRegistry(intents=(intent,))

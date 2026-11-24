@@ -111,6 +111,13 @@ MEANINGS = (
 # No reviewed semantics for broad elastic_modulus, missing Young's modulus,
 # unspecified stability quantity, lattice angles, unsupported PubChem
 # properties, topic words, logP vs xlogp, or date/year equivalence.
+# Both source inventory descriptions identify the chemistry formula input.
+# The OQMD composition domain also admits element systems; only the common
+# literal formula role is approved for this fixed comparison intent.
+PARAMETER_SEMANTICS = {
+    ("materials_project", "formula"): "material.formula",
+    ("oqmd", "composition"): "material.formula",
+}
 PARAMETER_ALIASES = {
     "oqmd": {"composition": ("formula",)},
     "arxiv": {"search_query": ("search topic",), "sortBy": ("sort order",)},
@@ -267,6 +274,7 @@ def _build():
             parameters.append(ParameterSpec(
                 name=raw["name"], required=raw["required"], json_schema=schema,
                 aliases=list(PARAMETER_ALIASES.get(key, {}).get(raw["name"], ())),
+                semantic_id=PARAMETER_SEMANTICS.get((key, raw["name"])),
             ))
         router.add_tool(ToolSpec(
             name=key, source_type=api["source_type"], license=api["license"],
@@ -312,6 +320,9 @@ def _build():
             domains=tuple(i["applicable_domains"]),
             recall_group_ids=tuple(i["required_groups"]),
             target_tool_keys=tuple(i["target_api_names"]),
+            shared_parameter_semantics=(
+                {"formula": "material.formula"} if i["name"] == "cross_validate" else {}
+            ),
         ) for i in INTENTS.values()),
         projection_snapshot_id=session.snapshot_id,
         route_field_groups={f"{key}.search": {
@@ -501,3 +512,9 @@ async def test_full_original_inventory_conditional_library_replay():
         if set(row["selected"]) == {"pubchem"} and "identifier" in hints:
             assert row["proposals"]["pubchem"].get("identifier") == hints["identifier"]
             assert "identifier" not in row["uncovered"]
+        if row["category"] == "cross_source_comparison":
+            assert set(row["selected"]) == {"materials_project", "oqmd"}
+            assert row["coverage_complete"]
+            assert row["proposals"]["materials_project"]["formula"] == hints["formula"]
+            assert row["proposals"]["oqmd"]["composition"] == hints["formula"]
+            assert row["status"] == "requires_arguments"

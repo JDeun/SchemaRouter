@@ -59,6 +59,9 @@ class PaperIntentDeclaration(StrictModel):
     recall_group_ids: tuple[str, ...] = ()
     # Owner-selected intent targets are distinct from user-named overrides.
     target_tool_keys: tuple[str, ...] = ()
+    # Explicit query-input label -> shared source-owned parameter semantic ID.
+    # Only complete, explicitly named direct comparisons may use this map.
+    shared_parameter_semantics: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_declaration(self) -> PaperIntentDeclaration:
@@ -78,6 +81,11 @@ class PaperIntentDeclaration(StrictModel):
             or len(self.target_tool_keys) > 16
             or len(set(self.target_tool_keys)) != len(self.target_tool_keys)
             or any(not _bounded_name(key) for key in self.target_tool_keys)
+            or len(self.shared_parameter_semantics) > 8
+            or any(
+                not _bounded_name(key) or not _ID_PATTERN.fullmatch(sid)
+                for key, sid in self.shared_parameter_semantics.items()
+            )
             or len(self.domains) > 8
             or len(set(self.domains)) != len(self.domains)
             or any(type(domain) is not str or not _ID_PATTERN.fullmatch(domain)
@@ -114,6 +122,7 @@ class PaperIntentRegistry(StrictModel):
             or bool(
                 self.route_field_groups or self.route_parameter_value_aliases
                 or self.approved_direct_parameter_routes
+                or any(intent.shared_parameter_semantics for intent in self.intents)
             ) != (self.projection_snapshot_id is not None)
             or self.projection_snapshot_id is not None and (
                 len(self.projection_snapshot_id) != 64
@@ -355,7 +364,7 @@ def _compile_paper_understood_direct_plan(
     approved_direct_parameter_routes = frozenset(
         intent_registry.approved_direct_parameter_routes,
     )
-    if annotated and (
+    if intent_registry.projection_snapshot_id is not None and (
         intent_registry.projection_snapshot_id != index.field_index.snapshot_id
         or not annotated <= index.field_index.route_locations.keys()
     ):
