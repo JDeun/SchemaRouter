@@ -20,6 +20,7 @@ from schemarouter import (
     NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
+    PaperNativeRankPolicy,
     PaperUnderstanding,
     PrincipalContext,
     SchemaRouter,
@@ -86,11 +87,21 @@ def _build(*, hidden: tuple[str, ...] = ()):
     return session, intents
 
 
+def _rank_policy(session):
+    # Domains are trusted source annotations, not model-generated metadata.
+    return PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        route_domains={
+            f"{api['name']}.search": (api["domain"],) for api in FIXTURE["apis"]
+        },
+    )
+
+
 def _compile(session, intents):
     return session.compile_understood(
         PaperUnderstanding(intent_id=FIXTURE["intent"]["name"],
                            concept_ids=(CONCEPT,), named_tools=TOOLS),
-        principal=ACTOR, intent_registry=intents,
+        principal=ACTOR, intent_registry=intents, rank_policy=_rank_policy(session),
     )
 
 
@@ -204,6 +215,7 @@ async def test_original_cross_source_schema_independent_model_boundary(replay):
     plan = await session.acompile_query(
         case["query"], principal=ACTOR, intent_registry=intents,
         model=model, model_visible_intent_ids=(case["intent"],),
+        rank_policy=_rank_policy(session),
     )
     assert len(seen) == 1
     assert "schema_catalog" not in seen[0] and "offered_concepts" not in seen[0]
