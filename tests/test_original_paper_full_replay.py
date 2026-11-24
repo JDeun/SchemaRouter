@@ -636,9 +636,7 @@ async def test_full_original_inventory_conditional_library_replay():
     assert len(rows) == 110 and len(role_aware) == len(topic_only) == 10
     assert sum(row["coverage_complete"] for row in topic_only) == 9
     assert "keywords" in next(row for row in topic_only if row["query_id"] == "g068")["uncovered"]
-    assert all(row["coverage_complete"] for row in rows
-               if "magnetic_property" in row["raw_needs"][0]["concept"]
-               and row["query_id"] == "g039")
+    assert next(row for row in rows if row["query_id"] == "g039")["coverage_complete"]
     # No expected historical labels enter the planner. Verify the specific
     # union-input seam on the full cohort after execution, not a tuned route
     # selection or overall task-quality target.
