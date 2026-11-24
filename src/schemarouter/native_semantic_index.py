@@ -560,6 +560,8 @@ class NativeSchemaPostingIndex:
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
         _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
         _paper_rank_domains: tuple[str, ...] = (),
+        _paper_group_members: Mapping[str, frozenset[str]] | None = None,
+        _paper_target_tools: tuple[str, ...] = (),
     ) -> IndexedNativeFieldResult:
         """Conjunctive source-owned lookup with optional bounded E0 ranking.
 
@@ -645,6 +647,19 @@ class NativeSchemaPostingIndex:
             )
             if not annotated <= self.route_locations.keys():
                 raise PolicyViolationError("paper Rank contains unregistered routes")
+        # Private, detached inputs from the owner-pinned intent registry.
+        # None means no group constraint; an empty mapping means no eligible
+        # unnamed group. Explicit user-named tools bypass discovery only.
+        group_members = (
+            dict(_paper_group_members)
+            if _paper_group_members is not None and allowed_tool_keys is None else None
+        )
+        target_tools = frozenset(_paper_target_tools) if allowed_tool_keys is None else frozenset()
+        if group_members is not None and (
+            not group_members.keys() <= self.route_locations.keys()
+            or any(type(names) is not frozenset or not names for names in group_members.values())
+        ):
+            raise PolicyViolationError("invalid paper candidate group declaration")
         witness = router._retrieval_authority_witness()
         original_policy = (
             router.authorization_policy.default_effect,
@@ -663,7 +678,11 @@ class NativeSchemaPostingIndex:
         availability = router.planner.availability_predicate
         qualified: list[IndexedNativeFieldCandidate] = []
         visible_field_counts: dict[str, int] = {}
-        use_paper_rank = rank_policy is not None and allowed_tool_keys is None
+        use_paper_domains = rank_policy is not None and allowed_tool_keys is None
+        # An intent-defined target list is not a user named-tool override:
+        # domain/group constraints still apply, but retain all eligible targets
+        # rather than allowing the focus ranker to collapse a comparison.
+        use_paper_rank = use_paper_domains and not target_tools
         for route in sorted(matched):
             # Key is an opaque exact registered route; never parse a route ID
             # with split because tool namespaces may contain separators.
@@ -676,7 +695,11 @@ class NativeSchemaPostingIndex:
             tool_key, endpoint_name = location
             if allowed_tool_keys is not None and tool_key not in allowed_tool_keys:
                 continue
-            if (use_paper_rank and rank_policy is not None
+            if target_tools and tool_key not in target_tools:
+                continue
+            if group_members is not None and route not in group_members:
+                continue
+            if (use_paper_domains and rank_policy is not None
                     and not rank_policy.permits_domain(route, _paper_rank_domains)):
                 continue
             tool, endpoint, fingerprint = source.get(tool_key, endpoint_name)
@@ -712,6 +735,12 @@ class NativeSchemaPostingIndex:
             if (visible is None or not _complete_fields(
                     visible.output_fields, declaration.required_fields)):
                 continue
+            if group_members is not None:
+                members = group_members[route]
+                if not members <= {field.name for field in endpoint.output_fields}:
+                    raise PolicyViolationError("paper candidate group source fields changed")
+                if not members.intersection(field.name for field in visible.output_fields):
+                    continue
             matched_names: list[str] = []
             for required in declaration.required_fields:
                 matched_names.extend(
@@ -795,6 +824,10 @@ class NativeSchemaPostingIndex:
                     )
                 ):
                     raise PolicyViolationError("indexed candidate scope changed")
+                if group_members is not None and not group_members[candidate.route_id].intersection(
+                    field.name for field in scoped.output_fields
+                ):
+                    raise PolicyViolationError("paper candidate group scope changed")
                 current_names = tuple(sorted({
                     field.name for required in declaration.required_fields
                     for field in scoped.output_fields
