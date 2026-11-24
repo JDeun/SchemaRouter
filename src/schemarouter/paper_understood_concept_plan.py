@@ -79,9 +79,9 @@ def _compile_understood_concept_plan(
         plans = []
         for concept in concepts:
             # Narrow only the internal proof. The outer receipt retains EVERY owner demand.
-            single_intent = PaperIntentRegistry(intents=(intent.model_copy(update={
-                "required_concept_ids": (concept.concept_id,),
-            }),))
+            single_intent = intent_registry.model_copy(update={"intents": (
+                intent.model_copy(update={"required_concept_ids": (concept.concept_id,)}),
+            )})
             single = approved.model_copy(update={
                 "concept_ids": (concept.concept_id,), "unresolved_concepts": (),
             })
