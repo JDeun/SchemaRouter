@@ -54,8 +54,11 @@ class PaperIntentDeclaration(StrictModel):
     intent_id: str
     required_concept_ids: tuple[str, ...]
     domains: tuple[str, ...] = ()
-    # Recall-only source-local groups, distinct from mandatory semantic fields.
+    # Source-local group names constrain unnamed discovery and expand recall;
+    # they are distinct from mandatory semantic field contracts.
     recall_group_ids: tuple[str, ...] = ()
+    # Owner-selected intent targets are distinct from user-named overrides.
+    target_tool_keys: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def validate_declaration(self) -> PaperIntentDeclaration:
@@ -72,6 +75,9 @@ class PaperIntentDeclaration(StrictModel):
             or len(set(self.recall_group_ids)) != len(self.recall_group_ids)
             or any(type(group) is not str or not _ID_PATTERN.fullmatch(group)
                    for group in self.recall_group_ids)
+            or len(self.target_tool_keys) > 16
+            or len(set(self.target_tool_keys)) != len(self.target_tool_keys)
+            or any(not _bounded_name(key) for key in self.target_tool_keys)
             or len(self.domains) > 8
             or len(set(self.domains)) != len(self.domains)
             or any(type(domain) is not str or not _ID_PATTERN.fullmatch(domain)
@@ -376,11 +382,26 @@ def _compile_paper_understood_direct_plan(
         return empty("no_proven_hit")
 
     keys = approved_hints.named_tools or None
+    # The original unnamed Filter uses any overlap with required group IDs,
+    # not an intersection of all groups' fields. The typed mandatory proof
+    # remains a separate gate. An empty overlap must not become unrestricted.
+    candidate_groups = None
+    if intent.recall_group_ids and keys is None:
+        candidate_groups = {
+            route: frozenset(
+                name for group_id, members in groups.items()
+                if group_id in intent.recall_group_ids for name in members
+            )
+            for route, groups in projection_groups.items()
+            if any(group_id in groups for group_id in intent.recall_group_ids)
+        }
     first = index.field_index.lookup(
         router, group.aliases[0], principal=principal, group=group,
         k=k, allowed_tool_keys=keys,
         _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
         _paper_rank_domains=intent.domains,
+        _paper_group_members=candidate_groups,
+        _paper_target_tools=intent.target_tool_keys,
     )
     ranked = first.status == "ranked_unverified" and first.deterministic_paper_ranked
     if first.status != "complete" and not ranked:
@@ -454,6 +475,8 @@ def _compile_paper_understood_direct_plan(
             k=k, allowed_tool_keys=keys,
             _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
             _paper_rank_domains=intent.domains,
+            _paper_group_members=candidate_groups,
+            _paper_target_tools=intent.target_tool_keys,
         )
         if first != second or materialize(second.candidates) != initial_calls:
             raise PolicyViolationError("paper understood source proof changed")
