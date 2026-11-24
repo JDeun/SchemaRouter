@@ -1,0 +1,860 @@
+{
+  "schema_version": 1,
+  "scope": "Conditional historical cross-source field projection; fixed model output, named sources, no argument binding or provider calls.",
+  "provenance": {
+    "repository": "JDeun/paper_SchemaRouter",
+    "commit": "368116746170d6dd0d95a91352daba8abc42ca13",
+    "blobs": {
+      "experiments/schema/inventory.json": "71713203dd7145898201868bf1c2435229cdb709",
+      "experiments/runs/run_schema_router.jsonl": "858ded8f3fd873e0927b13bc154aa0e923abf96d",
+      "experiments/dataset/queries.jsonl": "ae4c25155b90bb5b7c7f775e8a9bf23fbefe6f95"
+    },
+    "original_query_count": 110,
+    "selection": "All rows selecting exactly Materials Project and OQMD."
+  },
+  "apis": [
+    {
+      "name": "materials_project",
+      "display_name": "Materials Project",
+      "domain": "materials",
+      "source_type": "calculated",
+      "license": "CC BY 4.0 (GNoME 제외)",
+      "fields": [
+        {
+          "name": "material_id",
+          "type": "string",
+          "unit": null,
+          "is_identifier": true,
+          "equivalent_to": []
+        },
+        {
+          "name": "formula_pretty",
+          "type": "string",
+          "unit": null,
+          "is_identifier": true,
+          "equivalent_to": []
+        },
+        {
+          "name": "crystal_system",
+          "type": "string",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "spacegroup_number",
+          "type": "integer",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "density",
+          "type": "float",
+          "unit": "g/cm³",
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "volume",
+          "type": "float",
+          "unit": "Å³",
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "nsites",
+          "type": "integer",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "band_gap",
+          "type": "float",
+          "unit": "eV",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "jarvis",
+              "field_name": "optb88vdw_bandgap",
+              "note": "OptB88vdW 범함수"
+            },
+            {
+              "api_name": "oqmd",
+              "field_name": "band_gap",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "is_gap_direct",
+          "type": "boolean",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "is_metal",
+          "type": "boolean",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "efermi",
+          "type": "float",
+          "unit": "eV",
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "formation_energy_per_atom",
+          "type": "float",
+          "unit": "eV/atom",
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "energy_above_hull",
+          "type": "float",
+          "unit": "eV/atom",
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "is_stable",
+          "type": "boolean",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "total_magnetization",
+          "type": "float",
+          "unit": "μB",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "jarvis",
+              "field_name": "magmom_outcar",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "magnetic_ordering",
+          "type": "string",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "k_vrh",
+          "type": "float",
+          "unit": "GPa",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "jarvis",
+              "field_name": "bulk_modulus_kv",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "g_vrh",
+          "type": "float",
+          "unit": "GPa",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "jarvis",
+              "field_name": "shear_modulus_gv",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "poisson_ratio",
+          "type": "float",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "e_total",
+          "type": "float",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "e_ionic",
+          "type": "float",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "e_electronic",
+          "type": "float",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        }
+      ],
+      "field_groups": [
+        {
+          "name": "identifier",
+          "field_names": [
+            "material_id",
+            "formula_pretty"
+          ],
+          "always_include": true
+        },
+        {
+          "name": "electronic",
+          "field_names": [
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "stability",
+          "field_names": [
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "structural",
+          "field_names": [
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "magnetic",
+          "field_names": [
+            "total_magnetization",
+            "magnetic_ordering"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "elastic",
+          "field_names": [
+            "k_vrh",
+            "g_vrh",
+            "poisson_ratio"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "dielectric",
+          "field_names": [
+            "e_total",
+            "e_ionic",
+            "e_electronic"
+          ],
+          "always_include": false
+        }
+      ]
+    },
+    {
+      "name": "oqmd",
+      "display_name": "Open Quantum Materials Database",
+      "domain": "materials",
+      "source_type": "calculated",
+      "license": "CC BY 4.0",
+      "fields": [
+        {
+          "name": "entry_id",
+          "type": "integer",
+          "unit": null,
+          "is_identifier": true,
+          "equivalent_to": []
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "unit": null,
+          "is_identifier": true,
+          "equivalent_to": []
+        },
+        {
+          "name": "spacegroup",
+          "type": "string",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "ntypes",
+          "type": "integer",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "natoms",
+          "type": "integer",
+          "unit": null,
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "volume",
+          "type": "float",
+          "unit": "Å³",
+          "is_identifier": false,
+          "equivalent_to": []
+        },
+        {
+          "name": "delta_e",
+          "type": "float",
+          "unit": "eV/atom",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "materials_project",
+              "field_name": "formation_energy_per_atom",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "stability",
+          "type": "float",
+          "unit": "eV/atom",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "materials_project",
+              "field_name": "energy_above_hull",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "band_gap",
+          "type": "float",
+          "unit": "eV",
+          "is_identifier": false,
+          "equivalent_to": [
+            {
+              "api_name": "materials_project",
+              "field_name": "band_gap",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "field_groups": [
+        {
+          "name": "identifier",
+          "field_names": [
+            "entry_id",
+            "name"
+          ],
+          "always_include": true
+        },
+        {
+          "name": "electronic",
+          "field_names": [
+            "band_gap"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "stability",
+          "field_names": [
+            "delta_e",
+            "stability"
+          ],
+          "always_include": false
+        },
+        {
+          "name": "structural",
+          "field_names": [
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "always_include": false
+        }
+      ]
+    }
+  ],
+  "intent": {
+    "name": "cross_validate",
+    "required_groups": [
+      "electronic",
+      "stability",
+      "structural"
+    ],
+    "applicable_domains": [
+      "materials"
+    ]
+  },
+  "cases": [
+    {
+      "query_id": "g069",
+      "query": "LiFePO4의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g070",
+      "query": "TiO2의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g071",
+      "query": "Fe2O3의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g072",
+      "query": "GaN의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g073",
+      "query": "ZnO의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g074",
+      "query": "SrTiO3의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g075",
+      "query": "BaTiO3의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    },
+    {
+      "query_id": "g076",
+      "query": "Si의 밴드갭을 Materials Project와 OQMD에서 각각 조회해 비교해줘.",
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "expected": [
+        {
+          "tool": "materials_project",
+          "fields": [
+            "material_id",
+            "formula_pretty",
+            "band_gap",
+            "is_gap_direct",
+            "is_metal",
+            "efermi",
+            "formation_energy_per_atom",
+            "energy_above_hull",
+            "is_stable",
+            "crystal_system",
+            "spacegroup_number",
+            "density",
+            "volume",
+            "nsites"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0 (GNoME 제외)"
+          }
+        },
+        {
+          "tool": "oqmd",
+          "fields": [
+            "entry_id",
+            "name",
+            "band_gap",
+            "delta_e",
+            "stability",
+            "spacegroup",
+            "natoms",
+            "volume"
+          ],
+          "evidence_requirements": {
+            "unit_required": true,
+            "provenance_required": true,
+            "source_type": "calculated",
+            "license_required": true,
+            "license": "CC BY 4.0"
+          }
+        }
+      ]
+    }
+  ]
+}
