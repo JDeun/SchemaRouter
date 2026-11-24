@@ -562,6 +562,7 @@ class NativeSchemaPostingIndex:
         _paper_rank_domains: tuple[str, ...] = (),
         _paper_group_members: Mapping[str, frozenset[str]] | None = None,
         _paper_target_tools: tuple[str, ...] = (),
+        _paper_raw_rank_concepts: tuple[str, ...] | None = None,
     ) -> IndexedNativeFieldResult:
         """Conjunctive source-owned lookup with optional bounded E0 ranking.
 
@@ -683,6 +684,13 @@ class NativeSchemaPostingIndex:
         # domain/group constraints still apply, but retain all eligible targets
         # rather than allowing the focus ranker to collapse a comparison.
         use_paper_rank = use_paper_domains and not target_tools
+        use_paper_v1 = (
+            use_paper_rank and rank_policy is not None
+            and rank_policy.direct_score_mode == "paper_v1"
+        )
+        # Only the opt-in historical comparator needs the complete visible
+        # field names. Keep those internal; never disclose hidden schema names.
+        visible_rank_fields: dict[str, tuple[str, ...]] = {}
         for route in sorted(matched):
             # Key is an opaque exact registered route; never parse a route ID
             # with split because tool namespaces may contain separators.
@@ -756,6 +764,10 @@ class NativeSchemaPostingIndex:
             ))
             if use_paper_rank:
                 visible_field_counts[route] = len(visible.output_fields)
+            if use_paper_v1:
+                visible_rank_fields[route] = tuple(sorted(
+                    field.name for field in visible.output_fields
+                ))
         count = len(qualified)
         ranked_offsets: tuple[int, ...] | None = None
         if use_paper_rank and rank_policy is not None:
@@ -763,6 +775,8 @@ class NativeSchemaPostingIndex:
                 tuple(qualified), concept_aliases=_paper_rank_aliases,
                 visible_field_count=visible_field_counts,
                 policy=rank_policy, k=k,
+                raw_concepts=_paper_raw_rank_concepts,
+                visible_field_names=visible_rank_fields if use_paper_v1 else None,
             )
         elif (
             count > k and _research_ranker is not None
@@ -839,6 +853,10 @@ class NativeSchemaPostingIndex:
                 if (use_paper_rank and
                         len(scoped.output_fields) != visible_field_counts[candidate.route_id]):
                     raise PolicyViolationError("paper Rank visible field count changed")
+                if use_paper_v1 and tuple(sorted(
+                    field.name for field in scoped.output_fields
+                )) != visible_rank_fields[candidate.route_id]:
+                    raise PolicyViolationError("paper v1 Rank visible field names changed")
         except Exception:
             # Avoid leaking provider/private schema details in callback errors.
             raise PolicyViolationError(

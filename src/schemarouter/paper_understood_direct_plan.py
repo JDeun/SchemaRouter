@@ -131,6 +131,9 @@ class PaperUnderstanding(StrictModel):
     source_type: str | None = None
     named_tools: tuple[str, ...] = ()
     parameter_hints: dict[str, Any] = Field(default_factory=dict)
+    # Raw positive Understand labels used only by the opt-in v1 comparator.
+    # These labels cannot create concepts, routes, permissions or fields.
+    raw_rank_concepts: tuple[str, ...] | None = None
 
     @model_validator(mode="after")
     def validate_understanding(self) -> PaperUnderstanding:
@@ -152,6 +155,10 @@ class PaperUnderstanding(StrictModel):
             or len(self.named_tools) > 5
             or any(not _bounded_name(tool) for tool in self.named_tools)
             or len(set(self.named_tools)) != len(self.named_tools)
+            or self.raw_rank_concepts is not None and (
+                len(self.raw_rank_concepts) > 8
+                or any(not _bounded_name(label) for label in self.raw_rank_concepts)
+            )
             or len(self.parameter_hints) > 8
             or any(
                 not _bounded_name(key)
@@ -402,6 +409,7 @@ def _compile_paper_understood_direct_plan(
         _paper_rank_domains=intent.domains,
         _paper_group_members=candidate_groups,
         _paper_target_tools=intent.target_tool_keys,
+        _paper_raw_rank_concepts=approved_hints.raw_rank_concepts,
     )
     ranked = first.status == "ranked_unverified" and first.deterministic_paper_ranked
     if first.status != "complete" and not ranked:
@@ -477,6 +485,7 @@ def _compile_paper_understood_direct_plan(
             _paper_rank_domains=intent.domains,
             _paper_group_members=candidate_groups,
             _paper_target_tools=intent.target_tool_keys,
+            _paper_raw_rank_concepts=approved_hints.raw_rank_concepts,
         )
         if first != second or materialize(second.candidates) != initial_calls:
             raise PolicyViolationError("paper understood source proof changed")

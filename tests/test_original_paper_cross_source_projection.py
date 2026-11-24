@@ -334,6 +334,7 @@ def test_named_source_overrides_group_domain_and_owner_target_only():
 
 def test_owner_targets_keep_eligible_sources_without_bypassing_domain_group_or_acl():
     session, intents, policy = _candidate_replay()
+    policy = policy.model_copy(update={"direct_score_mode": "paper_v1", "focus_direct": True})
     plan = _discover(
         session, intents, policy, groups=("electronic", "elastic"),
         targets=("materials_project", "oqmd", "no_group_0", "wrong_domain",

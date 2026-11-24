@@ -185,6 +185,7 @@ def _compile_query_needs(
                            PaperTypedToolPlan],
     abstain: Callable[[], PaperTypedToolPlan], resolve_tool: Callable[[str], str | None],
     router: SchemaRouter, principal: PrincipalContext, verify: Callable[[], None],
+    retain_raw_rank_concepts: bool = False,
 ) -> PaperTypedToolPlan:
     if raw.intent_id is not None and raw.intent_id not in intent_ids:
         raise ModelAnalysisError("model selected an unoffered paper intent")
@@ -208,6 +209,9 @@ def _compile_query_needs(
         plan = compile_hint(PaperUnderstanding(
             intent_id=raw.intent_id, concept_ids=known, source_type=raw.source_type,
             named_tools=tuple(dict.fromkeys(named_tools)),
+            raw_rank_concepts=(
+                tuple(need.concept for need in raw.needs) if retain_raw_rank_concepts else None
+            ),
             unresolved_concepts=tuple(dict.fromkeys(
                 need.concept for need, (cid, _) in zip(raw.needs, resolved, strict=True)
                 if cid is None
@@ -348,6 +352,11 @@ async def compile_model_query(
         raise ValueError("explicit model callback required")
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
+    if (
+        not independent and rank_policy is not None
+        and rank_policy.direct_score_mode == "paper_v1"
+    ):
+        raise ValueError("paper v1 Rank requires schema-independent Understand labels")
     if (
         type(allow_unnamed_graph_discovery) is not bool
         or allow_unnamed_graph_discovery and rank_policy is None
@@ -668,6 +677,9 @@ async def compile_model_query(
             raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
             compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
             router=router, principal=principal, verify=verify,
+            retain_raw_rank_concepts=(
+                rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
+            ),
         )
         return finalize(plan, raw.parameter_hints)
 

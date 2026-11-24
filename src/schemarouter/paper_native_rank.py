@@ -9,9 +9,9 @@ from __future__ import annotations
 import heapq
 import re
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
-from pydantic import Field, StrictInt, model_validator
+from pydantic import Field, StrictBool, StrictInt, model_validator
 
 from .field_group_retrieval import _alias_key
 from .models import StrictModel
@@ -34,9 +34,16 @@ class PaperNativeRankPolicy(StrictModel):
     """
 
     snapshot_id: str
+    # Opt-in comparator parity with the paper's frozen experimental router.
+    # The existing focus_direct option controls cardinality independently.
+    direct_score_mode: Literal["typed", "paper_v1"] = "typed"
     route_domains: dict[str, tuple[str, ...]] = Field(default_factory=dict)
     route_priorities: dict[str, StrictInt] = Field(default_factory=dict)
     web_route_ids: tuple[str, ...] = ()
+    # The original experimental router focuses on one unnamed source. Keep
+    # the existing Top-K5 mode as the default for compatibility. This option
+    # affects direct discovery only, never named overrides or dependency paths.
+    focus_direct: StrictBool = False
 
     @model_validator(mode="after")
     def validate_owner_policy(self) -> PaperNativeRankPolicy:
@@ -102,9 +109,24 @@ def _concept_match_strength(
                 break
         exact += best == 2
         partial += best == 1
-    # Strict original-paper precedence: even two substring concept matches
-    # cannot cancel out a single owner-declared exact concept match.
+    # Strengthened typed comparator: exact matches dominate any partial count.
+    # The historical paper comparator instead adds 2*exact + partial.
     return exact, partial
+
+
+def _paper_v1_concept_score(
+    visible_names: tuple[str, ...], raw_concepts: tuple[str, ...],
+) -> int:
+    """Frozen paper harness score: raw field names, no alias normalization."""
+    names = {name.lower() for name in visible_names}
+    score = 0
+    for concept in raw_concepts:
+        label = concept.strip().lower()
+        if label in names:
+            score += 2
+        elif any(label in name or name in label for name in names):
+            score += 1
+    return score
 
 
 def rank_authorized_paper_direct(
@@ -114,8 +136,10 @@ def rank_authorized_paper_direct(
     visible_field_count: Mapping[str, int],
     policy: PaperNativeRankPolicy,
     k: int = 5,
+    raw_concepts: tuple[str, ...] | None = None,
+    visible_field_names: Mapping[str, tuple[str, ...]] | None = None,
 ) -> tuple[int, ...]:
-    """Choose exact original candidate offsets in O(N log K) and O(K) memory.
+    """Rank already authorized direct receipts; retain bounded K5 output.
 
     Never call this on an authorization-neutral posting list: `candidates`
     must already be checked against the original current principal, field
@@ -131,11 +155,44 @@ def rank_authorized_paper_direct(
                for value in visible_field_count.values())
     ):
         raise ValueError("paper Rank requires exact authorized visible routes")
+    paper_v1 = policy.direct_score_mode == "paper_v1"
+    if paper_v1 and (
+        raw_concepts is None
+        or type(raw_concepts) is not tuple
+        or len(raw_concepts) > 8
+        or any(
+            type(label) is not str or not 1 <= len(label) <= 160
+            or label != label.strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in label)
+            for label in raw_concepts
+        )
+        or visible_field_names is None
+        or set(visible_field_names) != set(route_ids)
+        or any(
+            type(names) is not tuple
+            or len(names) != len(set(names))
+            or len(names) != visible_field_count[route]
+            or any(type(name) is not str or not name for name in names)
+            for route, names in visible_field_names.items()
+        )
+        or any(not set(candidate.required_output_fields) <= set(
+            visible_field_names[candidate.route_id],
+        ) for candidate in candidates)
+    ):
+        raise ValueError("paper v1 Rank requires bounded raw concepts and exact visible fields")
     web = set(policy.web_route_ids)
 
     def rank_key(position: int) -> tuple[int, int, bool, int, int, str]:
         candidate = candidates[position]
         route_id = candidate.route_id
+        if paper_v1:
+            assert raw_concepts is not None and visible_field_names is not None
+            # Raw labels may affect ordering ONLY after native typed/ACL proof.
+            return (
+                -_paper_v1_concept_score(visible_field_names[route_id], raw_concepts),
+                0, route_id in web, -policy.route_priorities.get(route_id, 1),
+                visible_field_count[route_id], route_id,
+            )
         exact, partial = _concept_match_strength(
             candidate.required_output_fields, concept_aliases,
         )
@@ -148,7 +205,8 @@ def rank_authorized_paper_direct(
             route_id,
         )
 
-    return tuple(heapq.nsmallest(k, range(len(candidates)), key=rank_key))
+    limit = 1 if policy.focus_direct else k
+    return tuple(heapq.nsmallest(limit, range(len(candidates)), key=rank_key))
 
 
 _MAX_RANKABLE_GRAPH_PATHS = 5_000
