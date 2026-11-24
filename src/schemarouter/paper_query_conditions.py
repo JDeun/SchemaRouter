@@ -20,6 +20,7 @@ from .paper_query_needs import PaperQueryNeed
 from .paper_typed_tool_plan import (
     PaperPlanFieldMeta,
     PaperTypedToolPlan,
+    _bounded_direct_scalar_fit,
     _check_current_call_scopes,
 )
 from .validation import canonical_unit_value_schema, validate_json_schema_value
@@ -177,6 +178,8 @@ def _input_proof(
     plan: PaperTypedToolPlan,
     matches: list[tuple[int, ParameterSpec, bool]],
     proposed: Any,
+    *,
+    allow_scalar_union: bool = False,
 ) -> tuple[bool, bool, str]:
     if len(matches) != 1:
         return False, False, "ambiguous_source_input" if matches else "unproven_source_relation"
@@ -187,6 +190,10 @@ def _input_proof(
         return present, False, "matching_host_input" if present else "conflicting_host_input"
     if not exposed:
         return False, False, "unproven_scoped_input_fit"
+    if allow_scalar_union:
+        if _bounded_direct_scalar_fit(parameter.json_schema, proposed):
+            return True, True, "pending_host_input"
+        return False, False, "invalid_proposed_input"
     try:
         if _scalar_contract(parameter.json_schema):
             validate_json_schema_value(
@@ -488,7 +495,9 @@ def _apply_query_input_conditions(
         proposals: dict[int, dict[str, str | int | float | bool]] = {}
         for key, proposed in values.items():
             matches = matches_by_key[key]
-            present, waits, proof = _input_proof(plan, matches, proposed)
+            present, waits, proof = _input_proof(
+                plan, matches, proposed, allow_scalar_union=resolve_proposals,
+            )
             if resolve_proposals and len(matches) == 1 and (
                 matches[0][1].location in {"header", "body_root"}
                 or not matches[0][2]

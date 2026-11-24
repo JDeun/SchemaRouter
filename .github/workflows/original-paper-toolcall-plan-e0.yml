@@ -27,6 +27,7 @@ on:
       - "tests/test_original_paper_arxiv_input_output.py"
       - "tests/fixtures/original_paper_arxiv_input_output.json"
       - "tests/test_original_paper_full_replay.py"
+      - "tests/test_paper_direct_union_parameters.py"
       - "tests/fixtures/original_paper_full_replay.json"
       - "tests/test_original_paper_mp_projection_replay.py"
       - "tests/fixtures/original_paper_mp_projection.json"
@@ -104,8 +105,8 @@ jobs:
           python -m pytest -q tests/test_paper_native_rank.py -k original_direct_focus
       - name: Verify original literature input and output concept separation
         run: |
-          ruff check src/schemarouter/paper_query_needs.py tests/test_original_paper_arxiv_input_output.py
-          python -m pytest -q tests/test_original_paper_arxiv_input_output.py tests/test_paper_query_needs.py tests/test_query_input_conditions.py
+          ruff check src/schemarouter/paper_query_needs.py src/schemarouter/paper_query_conditions.py src/schemarouter/paper_typed_tool_plan.py tests/test_original_paper_arxiv_input_output.py tests/test_paper_direct_union_parameters.py
+          python -m pytest -q tests/test_original_paper_arxiv_input_output.py tests/test_paper_query_needs.py tests/test_query_input_conditions.py tests/test_paper_direct_union_parameters.py
       - name: Replay all 110 original archived queries on the full frozen catalog
         run: |
           ruff check tests/test_original_paper_full_replay.py tests/test_original_paper_mp_projection_replay.py

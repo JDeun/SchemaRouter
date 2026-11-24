@@ -426,6 +426,11 @@ async def _replay(session, intents, rank, case, *, role_aware=False):
         "selected": current, "historical": expected, "proposals": proposals,
         "missing_required": missing,
         "uncovered": [item.semantic_id for item in plan.coverage.uncovered],
+        # Persist exact input proof classifications for failure attribution;
+        # values remain in the bounded detached proposal/Understanding data.
+        "uncovered_requirements": [
+            item.model_dump(mode="json") for item in plan.coverage.uncovered
+        ],
         "raw_needs": raw["needs"], "raw_needs_truncated": raw["needs_truncated"],
     }
 
@@ -484,3 +489,15 @@ async def test_full_original_inventory_conditional_library_replay():
     # Fail engineering errors, not scientifically informative mismatches.
     assert not errors, errors
     assert len(rows) == 110 and len(role_aware) == 10
+    # No expected historical labels enter the planner. Verify the specific
+    # union-input seam on the full cohort after execution, not a tuned route
+    # selection or overall task-quality target.
+    for row in rows:
+        raw_case = next(case for case in CASES if case["query_id"] == row["query_id"])
+        _, _, hints = _literal_hints(raw_case)
+        if set(row["selected"]) == {"materials_project"} and "formula" in hints:
+            assert row["proposals"]["materials_project"].get("formula") == hints["formula"]
+            assert "formula" not in row["uncovered"]
+        if set(row["selected"]) == {"pubchem"} and "identifier" in hints:
+            assert row["proposals"]["pubchem"].get("identifier") == hints["identifier"]
+            assert "identifier" not in row["uncovered"]

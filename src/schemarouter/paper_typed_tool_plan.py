@@ -14,7 +14,7 @@ from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
-from .field_group_retrieval import _scalar_contract
+from .field_group_retrieval import _response_contract, _scalar_contract
 from .host_field_contract import _policy_contents_digest
 from .models import EndpointSpec, PlanCoverage, ToolCall, ToolSpec
 from .native_graph_index import (
@@ -298,6 +298,60 @@ def _paper_public_parameters(
     return tuple(projected)
 
 
+def _bounded_direct_scalar_fit(schema: dict[str, Any], value: Any) -> bool:
+    """Validate one bounded scalar against an explicit native scalar/union.
+
+    Only direct parameter planning uses this helper. It neither grants host
+    approval nor changes G5's closed single-type producer/root contract.
+    Require an actual scalar branch AND validation of the entire union; do
+    not unwrap an array/object branch, coerce values or discard assertions.
+    """
+    kinds = {
+        str: ("string",), bool: ("boolean",),
+        int: ("integer", "number"), float: ("number",),
+    }
+    accepted = kinds.get(type(value), ())
+    if (
+        not accepted
+        or type(value) is float and not math.isfinite(value)
+        or type(value) is int and not -(2**63) <= value < 2**63
+        or type(value) is str and len(value.encode("utf-8")) > 4096
+    ):
+        return False
+    if _scalar_contract(schema):
+        branches = (schema,)
+    elif not _response_contract(schema):
+        return False
+    elif set(schema) in ({"anyOf"}, {"oneOf"}):
+        options = schema.get("anyOf", schema.get("oneOf"))
+        if (
+            type(options) is not list or not 2 <= len(options) <= 8
+            or not all(_response_contract(option) for option in options)
+        ):
+            return False
+        branches = tuple(options)
+    elif set(schema) == {"type"} and type(schema["type"]) is list:
+        options = schema["type"]
+        if not 2 <= len(options) <= 7 or len(options) != len(set(options)):
+            return False
+        branches = tuple({"type": kind} for kind in options)
+    else:
+        # Unknown, unbounded, annotated wrapper and nested-union shapes do
+        # not gain input authority merely because a validator accepts a value.
+        return False
+    for branch in branches:
+        if not _scalar_contract(branch) or branch["type"] not in accepted:
+            continue
+        try:
+            validate_json_schema_value(value, branch, context="direct parameter scalar branch")
+            validate_json_schema_value(value, schema, context="direct parameter native contract")
+        except Exception:
+            # Do not expose private enum contents or validation diagnostics.
+            continue
+        return True
+    return False
+
+
 def _approved_direct_input_names(
     endpoint: EndpointSpec,
     visible: EndpointSpec,
@@ -335,8 +389,8 @@ def _approved_direct_input_names(
         parameter = parameters[name]
         if (
             parameter.location in {"header", "body_root"}
-            or not _scalar_contract(parameter.json_schema)
             or scoped[name].json_schema != parameter.json_schema
+            or not _bounded_direct_scalar_fit(parameter.json_schema, host_values[name])
         ):
             return None
     return tuple(host_values)
@@ -454,21 +508,23 @@ def _compile_one_route(
             or set(host_values) != set(names)
         ):
             raise PolicyViolationError("unapproved original source arguments")
-        by_name = {param.name: param for param in endpoint.parameters}
-        for name, value in host_values.items():
-            expected = by_name[name].json_schema["type"]
-            if (
-                type(value) not in (str, int, float, bool)
-                or expected not in ("string", "integer", "number", "boolean")
-                or type(value) is bool and expected != "boolean"
-                or type(value) is str and expected != "string"
-                or type(value) is int and expected not in ("integer", "number")
-                or type(value) is float and expected != "number"
-                or type(value) is float and not math.isfinite(value)
-                or type(value) is int and not -(2**63) <= value < 2**63
-                or type(value) is str and len(value.encode("utf-8")) > 4096
-            ):
-                raise PolicyViolationError("invalid bounded host input scalar")
+        if not allow_direct_host_inputs:
+            # Preserve the original G5/legacy host scalar type contract.
+            by_name = {param.name: param for param in endpoint.parameters}
+            for name, value in host_values.items():
+                expected = by_name[name].json_schema["type"]
+                if (
+                    type(value) not in (str, int, float, bool)
+                    or expected not in ("string", "integer", "number", "boolean")
+                    or type(value) is bool and expected != "boolean"
+                    or type(value) is str and expected != "string"
+                    or type(value) is int and expected not in ("integer", "number")
+                    or type(value) is float and expected != "number"
+                    or type(value) is float and not math.isfinite(value)
+                    or type(value) is int and not -(2**63) <= value < 2**63
+                    or type(value) is str and len(value.encode("utf-8")) > 4096
+                ):
+                    raise PolicyViolationError("invalid bounded host input scalar")
         validate_json_schema_value(
             host_values, endpoint.input_schema,
             context="original paper host-approved source input",
