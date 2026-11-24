@@ -7,6 +7,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_text
 from .concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
@@ -72,6 +73,7 @@ def _compile_understood_concept_plan(
             or tuple(obj.model_dump_json() if obj is not None else None
                      for obj in owner_objects) != owner_witness
             or (host_source_arguments or {}) != host_inputs
+            or canonical_json_text(host_source_arguments or {}) != canonical_json_text(host_inputs)
         ):
             raise PolicyViolationError("paper concept owner or source authority changed")
 

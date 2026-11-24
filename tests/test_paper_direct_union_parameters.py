@@ -1,4 +1,4 @@
-"""Direct scalar-valued native unions, not complex input or G5 authorization."""
+"""Bounded native direct parameters; never G5 authorization."""
 from __future__ import annotations
 
 import pytest
@@ -20,7 +20,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
-from schemarouter.paper_typed_tool_plan import _bounded_direct_scalar_fit
+from schemarouter.paper_typed_tool_plan import _bounded_direct_parameter_fit
 
 ACTOR = PrincipalContext(subject="direct-union-review")
 SID = "material.band_gap"
@@ -32,7 +32,9 @@ IDENTIFIER = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
 
 @pytest.mark.parametrize("schema,value,expected", [
     (FORMULA, "LiFePO4", True),
-    (FORMULA, ["LiFePO4"], False),
+    (FORMULA, ["LiFePO4"], True),
+    (FORMULA, [2244], False),
+    (FORMULA, ["LiFePO4"] * 33, False),
     (FORMULA, 42, False),
     (IDENTIFIER, "aspirin", True),
     (IDENTIFIER, 2244, True),
@@ -50,13 +52,30 @@ IDENTIFIER = {"anyOf": [{"type": "string"}, {"type": "integer"}]}
     ({"anyOf": [{"type": "string"}, {}]}, "x", False),
     ({"anyOf": [{"type": "string"}, {"$ref": "https://example.invalid/schema"}]}, "x", False),
     ({"type": "object"}, {"formula": "LiFePO4"}, False),
+    ({"type": "array"}, ["LiFePO4"], False),
+    ({"type": "array", "items": {"type": "number"},
+      "minItems": 2, "maxItems": 2}, [1.0, 2.0], True),
+    ({"type": "array", "items": {"type": "number"},
+      "minItems": 2, "maxItems": 2}, [1.0], False),
+    ({"type": "array", "items": {"type": "integer"}}, [True], False),
+    ({"type": "array", "items": {"type": "integer"}}, [1.0], False),
+    ({"type": "object", "properties": {"formula": {"type": "string"}},
+      "required": ["formula"], "additionalProperties": False}, {"formula": "GaN"}, True),
+    ({"type": "object", "properties": {"formula": {"type": "string"}},
+      "required": ["formula"], "additionalProperties": False}, {"formula": 1}, False),
+    ({"type": "object", "properties": {"formula": {"type": "string"}},
+      "required": ["formula"], "additionalProperties": False}, {}, False),
+    ({"type": "object", "properties": {"formula": {"type": "string"}},
+      "additionalProperties": True}, {"formula": "GaN"}, False),
+    ({"type": "object", "properties": {"formula": {"type": "string"}},
+      "additionalProperties": False}, {"unknown": "GaN"}, False),
     ({"type": "number"}, float("nan"), False),
     ({}, "anything", False),
 ])
-def test_direct_union_requires_actual_scalar_branch_and_full_native_validation(
+def test_direct_input_requires_actual_typed_branch_and_full_native_validation(
     schema, value, expected,
 ):
-    assert _bounded_direct_scalar_fit(schema, value) is expected
+    assert _bounded_direct_parameter_fit(schema, value) is expected
 
 
 def _fixture(schema, *, approval=False, restricted=False, required=False):
@@ -117,7 +136,13 @@ async def _query(schema, *, value="LiFePO4", host=None, approval=False, restrict
     return plan
 
 
-@pytest.mark.parametrize("schema,value", [(FORMULA, "LiFePO4"), (IDENTIFIER, 2244)])
+@pytest.mark.parametrize("schema,value", [
+    (FORMULA, "LiFePO4"), (IDENTIFIER, 2244), (FORMULA, ["LiFePO4", "GaN"]),
+    ({"type": "array", "items": {"type": "number"},
+      "minItems": 2, "maxItems": 2}, [1.0, 2.0]),
+    ({"type": "object", "properties": {"formula": {"type": "string"}},
+      "required": ["formula"], "additionalProperties": False}, {"formula": "GaN"}),
+])
 @pytest.mark.asyncio
 async def test_actual_direct_plan_proposes_scalar_union_without_binding(schema, value):
     plan = await _query(schema, value=value)
@@ -128,13 +153,18 @@ async def test_actual_direct_plan_proposes_scalar_union_without_binding(schema, 
 
 
 @pytest.mark.asyncio
-async def test_original_direct_approval_accepts_scalar_union_but_not_complex_host_value():
+async def test_original_direct_approval_accepts_typed_union_values():
     plan = await _query(FORMULA, approval=True, required=True, host={"formula": "LiFePO4"})
     assert plan.status == "ready" and plan.coverage.complete
     assert plan.calls[0].call.arguments == {"formula": "LiFePO4"}
     assert not plan.calls[0].parameter_proposals
+    plan = await _query(
+        FORMULA, value=["LiFePO4"], approval=True, required=True, host={"formula": ["LiFePO4"]},
+    )
+    assert plan.status == "ready" and plan.coverage.complete
+    assert plan.calls[0].call.arguments == {"formula": ["LiFePO4"]}
     with pytest.raises(PolicyViolationError):
-        await _query(FORMULA, approval=True, required=True, host={"formula": ["LiFePO4"]})
+        await _query(FORMULA, approval=True, required=True, host={"formula": [True]})
 
 
 @pytest.mark.asyncio

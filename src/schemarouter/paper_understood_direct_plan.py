@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import Field, model_validator
 
 from .authorization import PrincipalContext
-from .canonical_json import canonical_json_sha256
+from .canonical_json import canonical_json_sha256, canonical_json_text
 from .concept_retrieval import (
     _ID_PATTERN,
     NativeConceptCatalog,
@@ -412,8 +412,10 @@ def _compile_paper_understood_direct_plan(
             or intent_registry.model_dump_json() != original_intents
             or understanding.model_dump_json() != original_hints
             or current_rank_policy != original_rank_policy
-            or host_source_arguments is not None
-            and host_source_arguments != host_inputs
+            or host_source_arguments is not None and (
+                host_source_arguments != host_inputs
+                or canonical_json_text(host_source_arguments) != canonical_json_text(host_inputs)
+            )
         ):
             raise PolicyViolationError("paper understood owner or authority changed")
 

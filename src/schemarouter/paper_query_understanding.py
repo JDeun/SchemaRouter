@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from pydantic import BaseModel
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_text
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import (
     MAX_QUERY_BYTES,
@@ -62,6 +63,7 @@ def _decode_bounded_response(raw: dict[str, Any] | str, limit: int) -> PaperUnde
 
 def _decode_model_response(
     raw: dict[str, Any] | str, limit: int, response_type: type[_Response],
+    *, direct_parameters: bool = False,
 ) -> _Response:
     """Reject duplicate keys, nonfinite numbers, excess bytes and type coercion."""
 
@@ -95,7 +97,10 @@ def _decode_model_response(
         )
         if len(encoded.encode("utf-8")) > limit:
             raise ModelAnalysisError("paper model output exceeds byte budget")
-        return response_type.model_validate_json(encoded, strict=True)
+        return response_type.model_validate_json(
+            encoded, strict=True,
+            context={"paper_direct_parameters": direct_parameters},
+        )
     except ModelAnalysisError:
         raise
     except (ValueError, TypeError, OverflowError, RecursionError):
@@ -105,6 +110,7 @@ def _decode_model_response(
 async def _understand_query(
     model: PaperFieldModel, payload: dict[str, Any], *, response_type: type[_Response],
     max_input_bytes: int, max_output_bytes: int, verify: Callable[[], None],
+    direct_parameters: bool = False,
 ) -> _Response:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":"), allow_nan=False)
@@ -119,7 +125,9 @@ async def _understand_query(
         verify()
         raise ModelAnalysisError("paper model understanding failed") from None
     verify()
-    return _decode_model_response(response, max_output_bytes, response_type)
+    return _decode_model_response(
+        response, max_output_bytes, response_type, direct_parameters=direct_parameters,
+    )
 
 
 def _may_be_excluded(meta: PaperPlanFieldMeta, requirement: CapabilityFieldContract) -> bool:
@@ -389,6 +397,7 @@ async def compile_model_query(
         )
         before = (catalog.model_dump_json(), intent_registry.model_dump_json(),
                   principal.model_dump_json(), deepcopy(host_source_arguments),
+                  canonical_json_text(host_source_arguments),
                   rank_policy.model_dump_json() if rank_policy else None)
     except (ValueError, TypeError, AttributeError, OverflowError):
         raise PolicyViolationError("paper query owner declarations invalid") from None
@@ -461,6 +470,7 @@ async def compile_model_query(
             current_owner = (
                 catalog.model_dump_json(), intent_registry.model_dump_json(),
                 principal.model_dump_json(), host_source_arguments,
+                canonical_json_text(host_source_arguments),
                 rank_policy.model_dump_json() if rank_policy else None,
             )
             owner_changed = current_owner != before
@@ -636,7 +646,13 @@ async def compile_model_query(
         )
 
     if independent:
+        direct_parameters = rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
         response_schema = PaperQueryUnderstanding.model_json_schema()
+        if direct_parameters:
+            response_schema["properties"]["parameter_hints"]["description"] = (
+                "Explicit bounded JSON scalar, list or object literals; "
+                "never invent provider-specific shapes or host arguments."
+            )
         # Require explicit model channels without changing legacy DTO decode defaults.
         response_schema["required"] = list(response_schema["properties"])
         need_schema = response_schema["$defs"]["PaperQueryNeed"]
@@ -677,17 +693,19 @@ async def compile_model_query(
                 "Put every negated concept or goal only in excluded_concepts, "
                 "not in needs or qualifiers.",
                 "Copy named_tools only from source names explicitly stated in the question.",
-                "Keep explicit scalar values in parameter_hints with explicit parameter labels; "
-                "otherwise use short English semantic role names, not generic substitutes. "
-                "Retain these values even when intent_id is null; "
-                "they are not permissions or tool calls.",
+                (
+                    "Keep explicit scalar and structured JSON input values in parameter_hints; "
+                    "preserve literal list members and object keys without guessing wire shapes. "
+                    if direct_parameters else "Keep explicit scalar values in parameter_hints. "
+                ) + "Use explicit parameter labels or short semantic role names, not substitutes. "
+                "Retain values even when intent_id is null; they are not permissions or calls.",
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }
         raw = await _understand_query(
             model, payload, response_type=PaperQueryUnderstanding,
             max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
-            verify=verify,
+            verify=verify, direct_parameters=direct_parameters,
         )
 
         def resolve_tool(name: str) -> str | None:

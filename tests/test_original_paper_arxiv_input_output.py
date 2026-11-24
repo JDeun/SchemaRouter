@@ -308,7 +308,7 @@ async def test_optional_direct_binding_requires_separate_owner_approval():
     {"sortBy": "submittedDate"},
     {"search_query": "graphene", "sortBy": "not-a-native-enum"},
     {"search_query": "graphene", "unknown_parameter": "value"},
-    {"search_query": "graphene", "id_list": ["1234"]},
+    {"search_query": "graphene", "id_list": [1234]},
     {"search_query": True, "sortBy": "submittedDate"},
 ])
 async def test_direct_input_approval_never_weakens_native_schema(host):

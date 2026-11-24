@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Any
 
@@ -20,7 +21,8 @@ from .paper_query_needs import PaperQueryNeed
 from .paper_typed_tool_plan import (
     PaperPlanFieldMeta,
     PaperTypedToolPlan,
-    _bounded_direct_scalar_fit,
+    _bounded_direct_parameter_fit,
+    _bounded_parameter_value,
     _check_current_call_scopes,
 )
 from .validation import canonical_unit_value_schema, validate_json_schema_value
@@ -29,8 +31,14 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 
-def _same_json_scalar(left: Any, right: Any) -> bool:
-    """Exact JSON equality without bool/number conflation or float coercion."""
+def _same_json_value(left: Any, right: Any) -> bool:
+    """Compare bounded JSON without bool/number conflation at any depth."""
+    if type(left) in (list, dict) or type(right) in (list, dict):
+        return (
+            type(left) is type(right) and _bounded_parameter_value(left)
+            and _bounded_parameter_value(right)
+            and canonical_json_text(left) == canonical_json_text(right)
+        )
     if type(left) not in (str, int, float, bool) or type(right) not in (str, int, float, bool):
         return False
     if type(left) is float and not math.isfinite(left):
@@ -170,7 +178,7 @@ def _conflicting_input_targets(
     return {
         target
         for target, values in assignments.items()
-        if any(not _same_json_scalar(value, values[0][1]) for _, value in values)
+        if any(not _same_json_value(value, values[0][1]) for _, value in values)
     }
 
 
@@ -179,19 +187,23 @@ def _input_proof(
     matches: list[tuple[int, ParameterSpec, bool]],
     proposed: Any,
     *,
-    allow_scalar_union: bool = False,
+    allow_direct_parameters: bool = False,
 ) -> tuple[bool, bool, str]:
     if len(matches) != 1:
         return False, False, "ambiguous_source_input" if matches else "unproven_source_relation"
     position, parameter, exposed = matches[0]
     call = plan.calls[position].call
     if parameter.name in call.arguments:
-        present = _same_json_scalar(proposed, call.arguments[parameter.name])
+        if allow_direct_parameters and (
+            not exposed or not _bounded_direct_parameter_fit(parameter.json_schema, proposed)
+        ):
+            return False, False, "unproven_scoped_input_fit"
+        present = _same_json_value(proposed, call.arguments[parameter.name])
         return present, False, "matching_host_input" if present else "conflicting_host_input"
     if not exposed:
         return False, False, "unproven_scoped_input_fit"
-    if allow_scalar_union:
-        if _bounded_direct_scalar_fit(parameter.json_schema, proposed):
+    if allow_direct_parameters:
+        if _bounded_direct_parameter_fit(parameter.json_schema, proposed):
             return True, True, "pending_host_input"
         return False, False, "invalid_proposed_input"
     try:
@@ -546,7 +558,7 @@ def _apply_query_input_conditions(
 
         def prove(matches, value) -> tuple[bool, bool, str]:
             present, waits, proof = _input_proof(
-                plan, matches, value, allow_scalar_union=resolve_proposals,
+                plan, matches, value, allow_direct_parameters=resolve_proposals,
             )
             if resolve_proposals and len(matches) == 1 and (
                 matches[0][1].location in {"header", "body_root"} or not matches[0][2]
@@ -576,7 +588,7 @@ def _apply_query_input_conditions(
                 blocked.update(shared_targets[key])
 
         pending = False
-        proposals: dict[int, dict[str, str | int | float | bool]] = {}
+        proposals: dict[int, dict[str, Any]] = {}
 
         def record(key, matches, proposed, result, *, shared_input=False) -> None:
             nonlocal pending
@@ -586,8 +598,8 @@ def _apply_query_input_conditions(
             pending |= waits
             if resolve_proposals and present and waits and len(matches) == 1:
                 position, parameter, _ = matches[0]
-                if type(proposed) in (str, int, float, bool):
-                    proposals.setdefault(position, {})[parameter.name] = proposed
+                # Detached diagnostic values; host approval is still separate.
+                proposals.setdefault(position, {})[parameter.name] = deepcopy(proposed)
             requirement = _input_requirement(plan, key, matches, proof)
             if shared_input:
                 requirement.qualifiers.append("shared_input=true")

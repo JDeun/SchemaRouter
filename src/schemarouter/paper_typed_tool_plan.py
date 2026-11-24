@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_bytes
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
@@ -80,7 +82,7 @@ class PaperPlanCall:
     fields_meta: tuple[PaperPlanFieldMeta, ...]
     parameters_meta: tuple[PaperPlanParameterMeta, ...] = ()
     # Validated model proposals, NOT ToolCall.arguments or permission.
-    parameter_proposals: tuple[tuple[str, str | int | float | bool], ...] = field(
+    parameter_proposals: tuple[tuple[str, Any], ...] = field(
         default=(), repr=False,
     )
 
@@ -298,58 +300,131 @@ def _paper_public_parameters(
     return tuple(projected)
 
 
-def _bounded_direct_scalar_fit(schema: dict[str, Any], value: Any) -> bool:
-    """Validate one bounded scalar against an explicit native scalar/union.
+def _bounded_parameter_value(value: Any, *, string_limit: int = 4096) -> bool:
+    """Small strict JSON values, never a transport or execution permission."""
+    nodes = 0
 
-    Only direct parameter planning uses this helper. It neither grants host
-    approval nor changes G5's closed single-type producer/root contract.
-    Require an actual scalar branch AND validation of the entire union; do
-    not unwrap an array/object branch, coerce values or discard assertions.
-    """
-    kinds = {
-        str: ("string",), bool: ("boolean",),
-        int: ("integer", "number"), float: ("number",),
-    }
-    accepted = kinds.get(type(value), ())
-    if (
-        not accepted
-        or type(value) is float and not math.isfinite(value)
-        or type(value) is int and not -(2**63) <= value < 2**63
-        or type(value) is str and len(value.encode("utf-8")) > 4096
-    ):
+    def walk(item: Any, depth: int) -> bool:
+        nonlocal nodes
+        nodes += 1
+        if nodes > 128 or depth > 4:
+            return False
+        if type(item) is str:
+            return len(item.encode("utf-8")) <= string_limit
+        if type(item) is bool:
+            return True
+        if type(item) is int:
+            return -(2**63) <= item < 2**63
+        if type(item) is float:
+            return math.isfinite(item)
+        if type(item) is list:
+            return len(item) <= 32 and all(walk(child, depth + 1) for child in item)
+        if type(item) is dict:
+            return len(item) <= 32 and all(
+                type(key) is str and 1 <= len(key) <= 160
+                and not any(ord(char) < 32 or ord(char) == 127 for char in key)
+                and walk(child, depth + 1) for key, child in item.items()
+            )
+        # No arbitrary Python objects, coercion, null or recursive structures.
+        return False
+
+    try:
+        return walk(value, 0) and len(canonical_json_bytes(value)) <= 16_384
+    except (ValueError, TypeError, OverflowError, RecursionError):
+        return False
+
+
+def _direct_input_shape(schema: dict[str, Any], depth: int = 0) -> bool:
+    """Prove explicit scalar/array/closed-object alternatives, not open JSON."""
+    if depth > 4 or type(schema) is not dict:
         return False
     if _scalar_contract(schema):
-        branches = (schema,)
-    elif not _response_contract(schema):
-        return False
-    elif set(schema) in ({"anyOf"}, {"oneOf"}):
+        return True
+    if set(schema) in ({"anyOf"}, {"oneOf"}):
         options = schema.get("anyOf", schema.get("oneOf"))
-        if (
-            type(options) is not list or not 2 <= len(options) <= 8
-            or not all(_response_contract(option) for option in options)
+        return (
+            type(options) is list and 2 <= len(options) <= 8
+            and all(_direct_input_shape(option, depth + 1) for option in options)
+        )
+    kind = schema.get("type")
+    if type(kind) is list:
+        return (
+            set(schema) == {"type"} and 2 <= len(kind) <= 4
+            and all(type(part) is str and part in {"string", "integer", "number", "boolean"}
+                    for part in kind)
+            and len(kind) == len(set(kind))
+        )
+    if kind == "array":
+        return (
+            schema.keys() <= {"type", "items", "minItems", "maxItems", "uniqueItems"}
+            and _direct_input_shape(schema.get("items"), depth + 1)
+        )
+    if kind == "object":
+        properties = schema.get("properties")
+        required = schema.get("required", [])
+        return (
+            schema.keys() <= {
+                "type", "properties", "required", "additionalProperties",
+                "minProperties", "maxProperties",
+            }
+            and schema.get("additionalProperties") is False
+            and type(properties) is dict and len(properties) <= 32
+            and type(required) is list and all(type(key) is str for key in required)
+            and len(set(required)) == len(required) and set(required) <= properties.keys()
+            and all(_direct_input_shape(child, depth + 1) for child in properties.values())
+        )
+    return False
+
+
+def _bounded_direct_parameter_fit(schema: dict[str, Any], value: Any) -> bool:
+    """Validate a literal direct input against the entire source-native contract.
+
+    Every alternative must declare its shape. Require an actual compatible
+    branch, exact primitive types, homogeneous arrays or closed objects, and
+    full validation (including union exclusivity). No G5 root/edge expansion.
+    """
+    if (
+        not _bounded_parameter_value(value)
+        or not _direct_input_shape(schema)
+        or not _response_contract(schema)
+    ):
+        return False
+
+    def fits(node: dict[str, Any], item: Any) -> bool:
+        if "anyOf" in node or "oneOf" in node:
+            options = node.get("anyOf", node.get("oneOf"))
+            matches = sum(fits(option, item) for option in options)
+            return matches == 1 if "oneOf" in node else matches > 0
+        kinds = {
+            str: ("string",), bool: ("boolean",),
+            int: ("integer", "number"), float: ("number",),
+            list: ("array",), dict: ("object",),
+        }
+        kind = node["type"]
+        declared = kind if type(kind) is list else [kind]
+        if not set(kinds.get(type(item), ())) & set(declared):
+            return False
+        if kind == "array" and not all(fits(node["items"], child) for child in item):
+            return False
+        if kind == "object" and (
+            not item.keys() <= node["properties"].keys()
+            or any(not fits(node["properties"][key], child) for key, child in item.items())
         ):
             return False
-        branches = tuple(options)
-    elif set(schema) == {"type"} and type(schema["type"]) is list:
-        options = schema["type"]
-        if not 2 <= len(options) <= 7 or len(options) != len(set(options)):
-            return False
-        branches = tuple({"type": kind} for kind in options)
-    else:
-        # Unknown, unbounded, annotated wrapper and nested-union shapes do
-        # not gain input authority merely because a validator accepts a value.
-        return False
-    for branch in branches:
-        if not _scalar_contract(branch) or branch["type"] not in accepted:
-            continue
         try:
-            validate_json_schema_value(value, branch, context="direct parameter scalar branch")
-            validate_json_schema_value(value, schema, context="direct parameter native contract")
+            validate_json_schema_value(item, node, context="direct parameter native branch")
         except Exception:
-            # Do not expose private enum contents or validation diagnostics.
-            continue
+            return False
         return True
-    return False
+
+    try:
+        if not fits(schema, value):
+            return False
+        validate_json_schema_value(value, schema, context="direct parameter native contract")
+        return True
+    except Exception:
+        # Never expose private schema contents or validation diagnostics.
+        return False
 
 
 def _approved_direct_input_names(
@@ -358,9 +433,9 @@ def _approved_direct_input_names(
     host_values: dict[str, Any],
     required_names: set[str],
 ) -> tuple[str, ...] | None:
-    """Closed direct-only envelope with optional, explicitly supplied scalars.
+    """Closed direct-only envelope with explicit bounded native host values.
 
-    Unused optional array/object parameters may remain in the source schema.
+    Unused optional undeclared shapes may remain in the source schema.
     No inference, partial required arguments, credential/header/body-root input,
     open envelope, dependency binding or conversion is authorized here.
     """
@@ -390,7 +465,7 @@ def _approved_direct_input_names(
         if (
             parameter.location in {"header", "body_root"}
             or scoped[name].json_schema != parameter.json_schema
-            or not _bounded_direct_scalar_fit(parameter.json_schema, host_values[name])
+            or not _bounded_direct_parameter_fit(parameter.json_schema, host_values[name])
         ):
             return None
     return tuple(host_values)
@@ -529,7 +604,7 @@ def _compile_one_route(
             host_values, endpoint.input_schema,
             context="original paper host-approved source input",
         )
-        arguments = dict(host_values)
+        arguments = deepcopy(host_values)
 
     return PaperPlanCall(
         route_id=route.route_id,

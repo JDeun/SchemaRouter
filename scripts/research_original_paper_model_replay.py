@@ -338,7 +338,8 @@ async def main():
                 context = retrieval.simulate_retrieval(qid, plan)
                 measured.stage = "reader"
                 text, usage, _ = measured.with_meta(
-                    answer._SYSTEM, f"[검색 결과]\n{context or '(없음)'}\n\n[질의]\n{query['query']}",
+                    answer._SYSTEM,
+                    f"[검색 결과]\n{context or '(없음)'}\n\n[질의]\n{query['query']}",
                 )
                 wall = time.monotonic() - started
                 measured.stage = "judge"
