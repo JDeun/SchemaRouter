@@ -154,7 +154,9 @@ async def test_conflicting_approved_host_union_value_remains_uncovered():
     assert not plan.coverage.complete
     assert plan.calls[0].call.arguments == {"formula": "GaN"}
     assert not plan.calls[0].parameter_proposals
-    assert any("proof=conflicting_host_input" in item.qualifiers for item in plan.coverage.uncovered)
+    assert any(
+        "proof=conflicting_host_input" in item.qualifiers for item in plan.coverage.uncovered
+    )
 
 
 def test_union_approval_never_registers_a_g5_root():
