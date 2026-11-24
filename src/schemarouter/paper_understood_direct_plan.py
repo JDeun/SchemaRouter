@@ -93,6 +93,12 @@ class PaperIntentRegistry(StrictModel):
     # are not model suggestions, permissions or executable field contracts.
     projection_snapshot_id: str | None = None
     route_field_groups: dict[str, dict[str, tuple[str, ...]]] = Field(default_factory=dict)
+    # Explicit owner semantics for scalar enum values, never model authority.
+    route_parameter_value_aliases: dict[str, dict[str, dict[str, str]]] = Field(
+        default_factory=dict,
+    )
+    # Direct planning only: independent of the G5 approved host-root contract.
+    approved_direct_parameter_routes: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def validate_registry(self) -> PaperIntentRegistry:
@@ -100,7 +106,15 @@ class PaperIntentRegistry(StrictModel):
             not 1 <= len(self.intents) <= 16
             or len({intent.intent_id for intent in self.intents}) != len(self.intents)
             or len(self.route_field_groups) > 64
-            or bool(self.route_field_groups) != (self.projection_snapshot_id is not None)
+            or len(self.route_parameter_value_aliases) > 64
+            or len(self.approved_direct_parameter_routes) > 64
+            or len(set(self.approved_direct_parameter_routes))
+            != len(self.approved_direct_parameter_routes)
+            or any(not _bounded_name(route) for route in self.approved_direct_parameter_routes)
+            or bool(
+                self.route_field_groups or self.route_parameter_value_aliases
+                or self.approved_direct_parameter_routes
+            ) != (self.projection_snapshot_id is not None)
             or self.projection_snapshot_id is not None and (
                 len(self.projection_snapshot_id) != 64
                 or any(char not in "0123456789abcdef" for char in self.projection_snapshot_id)
@@ -119,7 +133,25 @@ class PaperIntentRegistry(StrictModel):
                     or any(not _bounded_name(name) for name in names)
                 ):
                     raise ValueError("invalid owner-reviewed route field groups")
+        for route, parameters in self.route_parameter_value_aliases.items():
+            if not _bounded_name(route) or not 1 <= len(parameters) <= 16:
+                raise ValueError("invalid owner-reviewed parameter value aliases")
+            for name, aliases in parameters.items():
+                if (
+                    not _bounded_name(name)
+                    or not 1 <= len(aliases) <= 16
+                    or any(not _bounded_name(raw) or not _bounded_name(native)
+                           for raw, native in aliases.items())
+                ):
+                    raise ValueError("invalid owner-reviewed parameter value aliases")
         return self
+
+    def annotated_routes(self) -> set[str]:
+        """Route identities of owner declarations, not a retrieval or ACL grant."""
+        return (
+            set(self.route_field_groups) | set(self.route_parameter_value_aliases)
+            | set(self.approved_direct_parameter_routes)
+        )
 
 
 class PaperUnderstanding(StrictModel):
@@ -319,11 +351,15 @@ def _compile_paper_understood_direct_plan(
         understanding, catalog, intent_registry,
     )
     projection_groups = deepcopy(intent_registry.route_field_groups)
-    if projection_groups and (
+    annotated = intent_registry.annotated_routes()
+    approved_direct_parameter_routes = frozenset(
+        intent_registry.approved_direct_parameter_routes,
+    )
+    if annotated and (
         intent_registry.projection_snapshot_id != index.field_index.snapshot_id
-        or not projection_groups.keys() <= index.field_index.route_locations.keys()
+        or not annotated <= index.field_index.route_locations.keys()
     ):
-        raise PolicyViolationError("paper recall group source snapshot mismatch")
+        raise PolicyViolationError("paper intent source snapshot mismatch")
     if _compose_concepts and (len(concepts) > 1 or approved_hints.unresolved_concepts):
         from .paper_understood_concept_plan import _compile_understood_concept_plan
 
@@ -469,6 +505,7 @@ def _compile_paper_understood_direct_plan(
             _compile_one_route(
                 router, principal, index, route, i, positions, originals,
                 edges, permitted, host_inputs.get(route.route_id),
+                allow_direct_host_inputs=route.route_id in approved_direct_parameter_routes,
             ) for i, route in enumerate(routes)
         ]
         if edges:

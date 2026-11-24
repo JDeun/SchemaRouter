@@ -408,14 +408,43 @@ def _prove_query_need_conditions(
         raise PolicyViolationError("query need source eligibility changed") from None
 
 
+def _resolve_direct_parameter_value(
+    plan: PaperTypedToolPlan,
+    matches: list[tuple[int, ParameterSpec, bool]],
+    proposed: Any,
+    value_aliases: dict[str, dict[str, dict[str, str]]],
+) -> Any:
+    """Only an exact owner mapping on a current, unredacted native enum."""
+    if len(matches) != 1 or type(proposed) is not str:
+        return proposed
+    position, parameter, exposed = matches[0]
+    if not exposed or parameter.location in {"header", "body_root"}:
+        return proposed
+    aliases = value_aliases.get(plan.calls[position].route_id, {}).get(parameter.name, {})
+    if proposed not in aliases:
+        return proposed
+    native = aliases[proposed]
+    values = parameter.json_schema.get("enum")
+    if (
+        type(values) is not list
+        or not all(type(value) is str for value in values)
+        or native not in values
+        or proposed in values and proposed != native
+    ):
+        raise PolicyViolationError("invalid owner-reviewed direct parameter value")
+    return native
+
+
 def _apply_query_input_conditions(
     router: SchemaRouter,
     plan: PaperTypedToolPlan,
     *,
     principal: PrincipalContext,
     parameter_hints: dict[str, Any],
+    resolve_proposals: bool = False,
+    value_aliases: dict[str, dict[str, dict[str, str]]] | None = None,
 ) -> PaperTypedToolPlan:
-    """Global hints retain their unique-target rule and never supply arguments."""
+    """Project uniquely proved query inputs into non-executing parameter proposals."""
     if not parameter_hints:
         return plan
     if plan.coverage is None or plan.executable_authority:
@@ -430,8 +459,15 @@ def _apply_query_input_conditions(
             list(plan.coverage.uncovered),
         )
         matches_by_key = {key: _input_matches(key, scopes) for key in parameter_hints}
+        alias_contents = canonical_json_text(value_aliases or {})
+        values = {
+            key: _resolve_direct_parameter_value(plan, matches_by_key[key], proposed,
+                                                 value_aliases or {})
+            if resolve_proposals else proposed
+            for key, proposed in parameter_hints.items()
+        }
         assignments: dict[tuple[int, str], list[tuple[int, Any]]] = {}
-        for key, proposed in parameter_hints.items():
+        for key, proposed in values.items():
             matches = matches_by_key[key]
             if len(matches) == 1:
                 position, parameter, _ = matches[0]
@@ -449,16 +485,30 @@ def _apply_query_input_conditions(
             )
         )
         pending = False
-        for key, proposed in parameter_hints.items():
+        proposals: dict[int, dict[str, str | int | float | bool]] = {}
+        for key, proposed in values.items():
             matches = matches_by_key[key]
             present, waits, proof = _input_proof(plan, matches, proposed)
+            if resolve_proposals and len(matches) == 1 and (
+                matches[0][1].location in {"header", "body_root"}
+                or not matches[0][2]
+            ):
+                present, waits, proof = False, False, "unproven_scoped_input_fit"
             if len(matches) == 1 and (matches[0][0], matches[0][1].name) in conflicts:
                 present, waits, proof = False, False, "conflicting_query_input"
             pending |= waits
+            if resolve_proposals and present and waits and len(matches) == 1:
+                position, parameter, _ = matches[0]
+                if type(proposed) in (str, int, float, bool):
+                    proposals.setdefault(position, {})[parameter.name] = proposed
             requirement = _input_requirement(plan, key, matches, proof)
             required.append(requirement)
             (covered if present else uncovered).append(requirement)
-        if collect() != scopes or canonical_json_text(parameter_hints) != hint_contents:
+        if (
+            collect() != scopes
+            or canonical_json_text(parameter_hints) != hint_contents
+            or canonical_json_text(value_aliases or {}) != alias_contents
+        ):
             raise PolicyViolationError("query input source eligibility changed")
         verify()
     except Exception:
@@ -470,6 +520,10 @@ def _apply_query_input_conditions(
     return replace(
         plan,
         status=status,
+        calls=tuple(
+            replace(call, parameter_proposals=tuple(sorted(proposals.get(pos, {}).items())))
+            for pos, call in enumerate(plan.calls)
+        ) if resolve_proposals else plan.calls,
         coverage=PlanCoverage(
             required=required, covered=covered, uncovered=uncovered, complete=complete
         ),

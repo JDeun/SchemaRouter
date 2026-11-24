@@ -14,6 +14,7 @@ from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
+from .field_group_retrieval import _scalar_contract
 from .host_field_contract import _policy_contents_digest
 from .models import EndpointSpec, PlanCoverage, ToolCall, ToolSpec
 from .native_graph_index import (
@@ -78,6 +79,10 @@ class PaperPlanCall:
     license: str | None
     fields_meta: tuple[PaperPlanFieldMeta, ...]
     parameters_meta: tuple[PaperPlanParameterMeta, ...] = ()
+    # Validated model proposals, NOT ToolCall.arguments or permission.
+    parameter_proposals: tuple[tuple[str, str | int | float | bool], ...] = field(
+        default=(), repr=False,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -293,6 +298,50 @@ def _paper_public_parameters(
     return tuple(projected)
 
 
+def _approved_direct_input_names(
+    endpoint: EndpointSpec,
+    visible: EndpointSpec,
+    host_values: dict[str, Any],
+    required_names: set[str],
+) -> tuple[str, ...] | None:
+    """Closed direct-only envelope with optional, explicitly supplied scalars.
+
+    Unused optional array/object parameters may remain in the source schema.
+    No inference, partial required arguments, credential/header/body-root input,
+    open envelope, dependency binding or conversion is authorized here.
+    """
+    parameters = {param.name: param for param in endpoint.parameters}
+    scoped = {param.name: param for param in visible.parameters}
+    schema = endpoint.input_schema
+    if (
+        endpoint.auth_requirements
+        or not 1 <= len(parameters) <= 32
+        or not 1 <= len(host_values) <= 4
+        or len(parameters) != len(endpoint.parameters)
+        or set(schema) != {"type", "properties", "required", "additionalProperties"}
+        or schema.get("type") != "object"
+        or schema.get("additionalProperties") is not False
+        or schema.get("properties") != {
+            name: param.json_schema for name, param in parameters.items()
+        }
+        or type(schema.get("required")) is not list
+        or len(schema["required"]) != len(required_names)
+        or set(schema["required"]) != required_names
+        or not required_names <= host_values.keys() <= parameters.keys()
+        or not host_values.keys() <= scoped.keys()
+    ):
+        return None
+    for name in host_values:
+        parameter = parameters[name]
+        if (
+            parameter.location in {"header", "body_root"}
+            or not _scalar_contract(parameter.json_schema)
+            or scoped[name].json_schema != parameter.json_schema
+        ):
+            return None
+    return tuple(host_values)
+
+
 def _compile_one_route(
     router: SchemaRouter,
     principal: PrincipalContext,
@@ -304,6 +353,8 @@ def _compile_one_route(
     edges: list[PaperPlanBinding],
     permitted: Callable[[ToolSpec, EndpointSpec], bool],
     host_values: dict[str, Any] | None,
+    *,
+    allow_direct_host_inputs: bool = False,
 ) -> PaperPlanCall:
     location = index.field_index.route_locations.get(route.route_id)
     if location is None:
@@ -385,15 +436,20 @@ def _compile_one_route(
     else:
         bindings = {}
 
-    # Host input values may be supplied ONLY for a previously explicit
-    # original G5 host root. No query inference, partial values, default
-    # filling or dependency-consumer prebinding occurs here.
+    # Only the original G5 root approval or a separate, snapshot-pinned
+    # direct planning declaration may admit explicitly HOST supplied values.
+    # Model proposals never flow into arguments.
     arguments: dict[str, Any] = {}
     if host_values is not None:
-        names = _host_source_input_names(endpoint)
+        if allow_direct_host_inputs:
+            names = _approved_direct_input_names(
+                endpoint, visible, host_values, required_names,
+            )
+        else:
+            names = _host_source_input_names(endpoint)
         if (
             route.input_bindings
-            or route.route_id not in index.approved_host_roots
+            or not allow_direct_host_inputs and route.route_id not in index.approved_host_roots
             or names is None
             or set(host_values) != set(names)
         ):

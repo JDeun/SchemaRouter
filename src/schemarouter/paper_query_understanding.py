@@ -413,6 +413,13 @@ async def compile_model_query(
             # never serialize provider/owner policy internals into errors.
             raise PolicyViolationError("paper query rank source preflight failed") from None
 
+    annotated = intents.annotated_routes()
+    if annotated and (
+        intents.projection_snapshot_id != session.snapshot_id
+        or not annotated <= session._index.field_index.route_locations.keys()
+    ):
+        raise PolicyViolationError("paper query intent source preflight failed")
+
     approved_concepts = {c.concept_id: c for c in reviewed.concepts}
     approved_intents = {i.intent_id: i for i in intents.intents}
     if (
@@ -480,8 +487,14 @@ async def compile_model_query(
     def finalize(
         plan: PaperTypedToolPlan, parameter_hints: dict[str, Any],
     ) -> PaperTypedToolPlan:
+        resolve = (
+            independent and not plan.bindings and rank_policy is not None
+            and rank_policy.direct_score_mode == "paper_v1"
+        )
         plan = _apply_query_input_conditions(
             router, plan, principal=principal, parameter_hints=parameter_hints,
+            resolve_proposals=resolve,
+            value_aliases=intents.route_parameter_value_aliases if resolve else None,
         )
         # The condition helper also calls host callbacks. Recheck the caller's
         # complete catalog/intent/Rank/host-input witness after both protocols.
@@ -600,6 +613,9 @@ async def compile_model_query(
             router, principal=principal, index=session._index, k=k,
             host_source_arguments=host_source_arguments,
             prove_groups=prove_groups, verify_current=verify, coverage=coverage,
+            approved_direct_parameter_routes=frozenset(
+                intents.approved_direct_parameter_routes,
+            ),
         )
 
     if independent:
