@@ -32,7 +32,9 @@ from schemarouter.paper_native_rank import rank_authorized_paper_direct
 
 SNAPSHOT = "a" * 64
 ACTOR = PrincipalContext(subject="original-rank-regression")
-CONCEPT = "case.status"
+# Keep the mandatory SID independent of the hidden case_status label.
+# Scoped metadata must not echo a denied field name.
+CONCEPT = "crm.value"
 INTENTS = PaperIntentRegistry(intents=(
     PaperIntentDeclaration(intent_id="case.lookup", required_concept_ids=(CONCEPT,)),
 ))
@@ -105,15 +107,28 @@ def test_historical_comparator_replay_covers_all_nontrivial_frozen_label_pattern
     assert FIXTURE["original_query_count"] == 110
     assert len(FIXTURE["apis"]) == 19
     assert sum(len(case["query_ids"]) for case in FIXTURE["cases"]) == 91
+    supported_rows = 0
+    overflow_ids = []
     for case in FIXTURE["cases"]:
         apis = [FIXTURE["apis"][name] for name in case["eligible_tools"]]
         names = {f"{api['name']}.search": tuple(api["fields"]) for api in apis}
-        actual = _rank(
-            names, tuple(case["concepts"]),
+        raw = tuple(case["concepts"])
+        options = dict(
             priorities={f"{api['name']}.search": api["priority"] for api in apis},
             web=tuple(f"{api['name']}.search" for api in apis if api["domain"] == "web"),
         )
+        if len(raw) > 8:
+            # Preserve historical evidence of an unsupported wire-budget case.
+            # Never silently truncate to manufacture parity.
+            with pytest.raises(ValueError, match="bounded raw concepts"):
+                _rank(names, raw, **options)
+            overflow_ids.extend(case["query_ids"])
+            continue
+        actual = _rank(names, raw, **options)
         assert actual == (f"{case['reference_winner']}.search",), case["query_ids"]
+        supported_rows += len(case["query_ids"])
+    assert supported_rows == 90
+    assert overflow_ids == ["g051"]
 
 
 def _session():
@@ -169,6 +184,25 @@ def test_original_rank_uses_visible_nonprojected_names_only_after_typed_and_acl_
         rank_policy=policy.model_copy(update={"direct_score_mode": "typed"}),
     )
     assert [call.route_id for call in typed.calls] == ["hidden.search"]
+    assert typed.calls[0].call.fields == ["value"]
+
+
+@pytest.mark.asyncio
+async def test_historical_query_overflow_is_explicitly_incomplete():
+    session, policy = _session()
+    plan = await session.acompile_query(
+        "show case status and many additional requirements", principal=ACTOR,
+        intent_registry=INTENTS, rank_policy=policy,
+        model_visible_intent_ids=("case.lookup",),
+        model=lambda _: {
+            "intent_id": "case.lookup",
+            "needs": [{"concept": "case_status"}],
+            "needs_truncated": True,
+        },
+    )
+    assert plan.status == "budget_unsatisfied"
+    assert not plan.calls and not plan.executable_authority
+    assert plan.coverage is not None and not plan.coverage.complete
 
 
 def test_original_rank_structured_hints_require_explicit_raw_labels():
