@@ -169,7 +169,14 @@ def _compile_paper_understood_graph_plan(
         verify_host_inputs()
     elif host_inputs and direct.status == "ready":
         raise ValueError("paper graph host arguments do not match direct proof")
-    discover_unnamed = allow_unnamed_graph_discovery and not approved.named_tools
+    # The original paper's direct intent filter is not a qualified G5
+    # dependency search. Do not widen it via an unnamed graph fallback, or
+    # collapse an explicit owner target list into a single dependency DAG.
+    # Existing named graph and unfiltered unnamed graph paths are unchanged.
+    discover_unnamed = (
+        allow_unnamed_graph_discovery and not approved.named_tools
+        and not approved_intent.recall_group_ids and not approved_intent.target_tool_keys
+    )
     if (
         direct.status not in {"no_proven_hit", "requires_arguments"}
         or not approved.named_tools and not discover_unnamed
