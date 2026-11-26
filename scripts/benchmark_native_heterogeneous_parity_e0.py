@@ -238,7 +238,7 @@ def audit_heterogeneous(
                     cpu_start = time.process_time_ns()
                     result = retrieve_authorized_concept_graph(
                         router, query, principal=ACTOR, catalog=CATALOG,
-                        index=index, experimental_indexed_direct=True,
+                        index=index,
                     )
                     cpu.append((time.process_time_ns() - cpu_start) / 1_000_000)
                     walls.append((time.perf_counter_ns() - wall_start) / 1_000_000)

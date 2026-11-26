@@ -34,7 +34,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.errors import PolicyViolationError
 from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
 from scripts.research_authorized_agent_tool_surface import (
@@ -57,6 +56,7 @@ from scripts.research_codegraph_surgical_agent_e1 import (
     SurgicalHostContext,
     run_surgical_model_episode,
 )
+from scripts.research_legacy_concept_graph import retrieve_authorized_concept_graph
 from scripts.research_real_qwen_bound_two_step_e0 import _parse_strict_model_json
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 

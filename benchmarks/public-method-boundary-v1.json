@@ -727,22 +727,22 @@
         {
           "name": "compile",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 559
+          "source_line": 558
         },
         {
           "name": "compile_understood",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 581
+          "source_line": 579
         },
         {
           "name": "aexecute_direct",
           "kind": "registered-tool-execution",
-          "source_line": 609
+          "source_line": 607
         },
         {
           "name": "acompile_query",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 749
+          "source_line": 747
         }
       ]
     }

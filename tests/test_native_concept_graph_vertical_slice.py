@@ -22,6 +22,9 @@ from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_gra
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_concept_graph import (
+    retrieve_authorized_concept_graph as legacy_concept_graph,
+)
 
 ACTOR = PrincipalContext(subject="analyst", roles=("reader",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -266,9 +269,9 @@ def test_supported_prelookup_owner_contract_change_still_requires_source_match(
     router = _joined_router()
     catalog = _catalog()
     catalog.concepts[0].required_fields[0].json_schema["type"] = declared_type
-    result = retrieve_authorized_concept_graph(
+    select = retrieve_authorized_concept_graph if indexed_direct else legacy_concept_graph
+    result = select(
         router, "case status", principal=ACTOR, catalog=catalog, index=_index(router),
-        experimental_indexed_direct=indexed_direct,
     )
     assert result.status == "no_proven_hit"
     assert result.route_sets == () and result.route_ids == ()
@@ -290,10 +293,10 @@ def test_supported_inflight_owner_contract_change_is_refused(
         return result
 
     monkeypatch.setattr(NativeSchemaGraphIndex, "lookup", mutate)
+    select = retrieve_authorized_concept_graph if indexed_direct else legacy_concept_graph
     with pytest.raises(PolicyViolationError, match="concept catalog changed during lookup"):
-        retrieve_authorized_concept_graph(
+        select(
             router, "case status", principal=ACTOR, catalog=catalog, index=index,
-            experimental_indexed_direct=indexed_direct,
         )
 
 
@@ -323,12 +326,11 @@ def test_optin_indexed_concept_direct_matches_current_one_step_and_join(query):
         (_joined_router(extra_consumers=5), _catalog()),
     ):
         index = _index(router)
-        baseline = retrieve_authorized_concept_graph(
+        baseline = legacy_concept_graph(
             router, query, principal=ACTOR, catalog=catalog, index=index,
         )
         indexed = retrieve_authorized_concept_graph(
             router, query, principal=ACTOR, catalog=catalog, index=index,
-            experimental_indexed_direct=True,
         )
         assert indexed == baseline
         assert not indexed.executable_authority
@@ -347,7 +349,7 @@ def test_optin_indexed_direct_filters_unbound_inputs_before_k():
     ))
     result = retrieve_authorized_concept_graph(
         router, "case status", principal=ACTOR, catalog=_catalog(),
-        index=_index(router), experimental_indexed_direct=True,
+        index=_index(router),
     )
     assert result.status == "complete"
     assert result.route_ids == ("direct_status.read",)
@@ -357,7 +359,7 @@ def test_optin_indexed_direct_hides_scoped_output_before_disclosure():
     router = _direct_router()
     indexed = retrieve_authorized_concept_graph(
         router, "case status", principal=VIEWER, catalog=_catalog(two_fields=True),
-        index=_index(router), experimental_indexed_direct=True,
+        index=_index(router),
     )
     assert indexed.status == "no_proven_hit"
     assert indexed.route_ids == ()
@@ -377,7 +379,7 @@ def test_optin_indexed_direct_with_six_real_alternatives_abstains_without_top5()
         ))
     result = retrieve_authorized_concept_graph(
         router, "case status", principal=ACTOR, catalog=_catalog(),
-        index=_index(router), experimental_indexed_direct=True,
+        index=_index(router),
     )
     assert result.status == "over_k_unranked"
     assert result.route_ids == result.route_sets == ()
@@ -401,7 +403,7 @@ def test_optin_indexed_direct_rechecks_revoked_health_before_publication(monkeyp
     with pytest.raises(PolicyViolationError):
         retrieve_authorized_concept_graph(
             router, "case status", principal=ACTOR, catalog=_catalog(two_fields=True),
-            index=index, experimental_indexed_direct=True,
+            index=index,
         )
 
 
@@ -409,7 +411,23 @@ def test_optin_indexed_direct_rechecks_revoked_health_before_publication(monkeyp
 def test_optin_indexed_mode_requires_actual_boolean(mode):
     router = _direct_router()
     with pytest.raises(ValueError, match="indexed concept direct mode"):
-        retrieve_authorized_concept_graph(
+        legacy_concept_graph(
             router, "case status", principal=ACTOR, catalog=_catalog(),
             index=_index(router), experimental_indexed_direct=mode,
+        )
+
+
+def test_product_concept_graph_has_no_lexical_mode(monkeypatch):
+    router = _direct_router()
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("product graph called a lexical planner")
+
+    monkeypatch.setattr(router.planner, "retrieve_with_scoped_schema", forbidden)
+    result = _select(router, catalog=_catalog(two_fields=True))
+    assert result.route_ids == ("complete.read",)
+    with pytest.raises(TypeError):
+        retrieve_authorized_concept_graph(
+            router, "case status", principal=ACTOR, catalog=_catalog(),
+            index=_index(router), experimental_indexed_direct=False,
         )

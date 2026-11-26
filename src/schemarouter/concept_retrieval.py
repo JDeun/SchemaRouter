@@ -7,23 +7,17 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 from pydantic import model_validator
 
 from ._schema_identity import _locale_lexical_text
-from .authorization import PrincipalContext
 from .capability_contracts import CapabilityFieldContract
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _response_contract,
-    retrieve_authorized_field_group,
 )
-from .models import CapabilityRetrieval, StrictModel
+from .models import StrictModel
 from .validation import json_schemas_compatible
-
-if TYPE_CHECKING:
-    from .runtime import SchemaRouter
 
 MAX_CONCEPTS = 32
 MAX_ALIASES = 128
@@ -249,19 +243,4 @@ def resolve_native_concepts(
     return ResolvedNativeConcepts(
         concept_ids=tuple(sorted(matched)),
         field_group=group,
-    )
-
-
-def retrieve_authorized_concepts(
-    router: SchemaRouter,
-    query: str,
-    *,
-    principal: PrincipalContext,
-    catalog: NativeConceptCatalog,
-    k: int = 5,
-) -> CapabilityRetrieval:
-    """Compose existing opt-in principal-scoped pre-K FieldGroup retrieval."""
-    resolved = resolve_native_concepts(query, catalog=catalog)
-    return retrieve_authorized_field_group(
-        router, query, principal=principal, group=resolved.field_group, k=k,
     )

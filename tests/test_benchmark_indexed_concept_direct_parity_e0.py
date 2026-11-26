@@ -16,6 +16,9 @@ from scripts.benchmark_indexed_concept_direct_parity_e0 import (
     configure_scope,
     original_source_direct_oracle,
 )
+from scripts.research_legacy_concept_graph import (
+    retrieve_authorized_concept_graph as legacy_concept_graph,
+)
 
 
 def test_indexed_concept_direct_same_registered_source_contract_at_500():
@@ -33,9 +36,9 @@ def test_indexed_concept_direct_same_registered_source_contract_at_500():
         for query in ALIASES:
             indexed = retrieve_authorized_concept_graph(
                 router, query, principal=ACTOR, catalog=CATALOG,
-                index=index, experimental_indexed_direct=True,
+                index=index,
             )
-            original = retrieve_authorized_concept_graph(
+            original = legacy_concept_graph(
                 router, query, principal=ACTOR, catalog=CATALOG,
                 index=index,
             )

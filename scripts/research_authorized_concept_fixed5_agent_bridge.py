@@ -13,11 +13,9 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 
 from schemarouter import PolicyViolationError
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.concept_retrieval import (
     NativeConceptCatalog,
     resolve_native_concepts,
-    retrieve_authorized_concepts,
 )
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import (
@@ -31,6 +29,8 @@ from schemarouter.paper_understood_direct_plan import (
 )
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints
+from scripts.research_legacy_concept_graph import retrieve_authorized_concept_graph
+from scripts.research_legacy_field_group import retrieve_authorized_concepts
 
 STRICT_K = 5
 

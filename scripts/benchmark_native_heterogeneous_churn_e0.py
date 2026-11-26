@@ -70,13 +70,13 @@ def _checked_query(
     cpu_start = time.process_time_ns()
     actual = retrieve_authorized_concept_graph(
         router, query, principal=principal, catalog=CATALOG,
-        index=index, experimental_indexed_direct=True,
+        index=index,
     )
     cpu_samples.append((time.process_time_ns() - cpu_start) / 1_000_000)
     wall_samples.append((time.perf_counter_ns() - wall_start) / 1_000_000)
     rebuilt_result = retrieve_authorized_concept_graph(
         router, query, principal=principal, catalog=CATALOG,
-        index=rebuilt, experimental_indexed_direct=True,
+        index=rebuilt,
     )
     if (
         actual.route_ids != original
@@ -230,7 +230,6 @@ def audit_heterogeneous_churn(
                 retrieve_authorized_concept_graph(
                     router, CASES[0].aliases[0], principal=ACTOR,
                     catalog=CATALOG, index=index,
-                    experimental_indexed_direct=True,
                 )
             except PolicyViolationError:
                 stale_rejections += 1

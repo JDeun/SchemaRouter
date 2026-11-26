@@ -35,7 +35,7 @@ def test_all_four_native_source_types_resolve_exact_original_routes(registered_r
         for query in case.aliases:
             result = retrieve_authorized_concept_graph(
                 router, query, principal=ACTOR, catalog=CATALOG,
-                index=index, experimental_indexed_direct=True,
+                index=index,
             )
             assert result.status == "complete"
             assert result.route_ids == (case.route_id,)
@@ -62,7 +62,7 @@ def test_same_semantic_and_type_from_wrong_native_source_is_excluded(registered_
         for query in case.aliases:
             result = retrieve_authorized_concept_graph(
                 router, query, principal=ACTOR, catalog=CATALOG,
-                index=index, experimental_indexed_direct=True,
+                index=index,
             )
             assert result.status == "complete"
             assert result.route_ids == (case.route_id,)
@@ -83,7 +83,7 @@ def test_policy_scope_health_excludes_correct_typed_source(scenario, concept_id)
     case = next(c for c in CASES if c.concept_id == concept_id)
     result = retrieve_authorized_concept_graph(
         router, case.aliases[0], principal=ACTOR, catalog=CATALOG,
-        index=index, experimental_indexed_direct=True,
+        index=index,
     )
     assert result.status == "no_proven_hit"
     assert result.route_ids == ()
@@ -102,13 +102,13 @@ def test_registered_schema_change_rejects_stale_snapshot_then_rebuilds():
     with pytest.raises(PolicyViolationError):
         retrieve_authorized_concept_graph(
             router, case.aliases[0], principal=ACTOR, catalog=CATALOG,
-            index=index, experimental_indexed_direct=True,
+            index=index,
         )
     fresh = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
     assert original_heterogeneous_oracle(router, case.concept_id, ACTOR) == ()
     current = retrieve_authorized_concept_graph(
         router, case.aliases[0], principal=ACTOR, catalog=CATALOG,
-        index=fresh, experimental_indexed_direct=True,
+        index=fresh,
     )
     assert current.route_ids == ()
     assert current.status == "no_proven_hit"

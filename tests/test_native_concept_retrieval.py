@@ -18,8 +18,8 @@ from schemarouter.concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     resolve_native_concepts,
-    retrieve_authorized_concepts,
 )
+from scripts.research_legacy_field_group import retrieve_authorized_concepts
 
 ANALYST = PrincipalContext(subject="analyst", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))

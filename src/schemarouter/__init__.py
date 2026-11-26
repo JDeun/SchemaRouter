@@ -240,7 +240,6 @@ from .concept_retrieval import (
     NativeDeclaredConcept,
     ResolvedNativeConcepts,
     resolve_native_concepts,
-    retrieve_authorized_concepts,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -310,10 +309,7 @@ from .explorer import (
     render_schema_explorer,
     write_schema_explorer,
 )
-from .field_group_retrieval import (
-    NativeDeclaredFieldGroup,
-    retrieve_authorized_field_group,
-)
+from .field_group_retrieval import NativeDeclaredFieldGroup
 from .field_routing_session import (
     SchemaFieldReviewField,
     SchemaFieldReviewPage,
@@ -659,9 +655,7 @@ __all__ = [
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
     "resolve_native_concepts",
-    "retrieve_authorized_concepts",
     "NativeDeclaredFieldGroup",
-    "retrieve_authorized_field_group",
     "AuthorizedContractSelection",
     "HostFieldContract",
     "RequiredEnumValue",

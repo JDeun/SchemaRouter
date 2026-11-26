@@ -21,7 +21,6 @@ from schemarouter import (
     ToolSpec,
     UnitNormalizationSpec,
     observe_and_execute_paper_plan,
-    retrieve_authorized_field_group,
 )
 from schemarouter.errors import SchemaValidationError
 from schemarouter.field_group_retrieval import _scalar_contract
@@ -31,6 +30,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
 )
+from scripts.research_legacy_field_group import retrieve_authorized_field_group
 
 ALIASES = ("record value", "레코드 값", "レコードの値")
 READER = PrincipalContext(subject="reader", roles=("reader",))

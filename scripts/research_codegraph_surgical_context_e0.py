@@ -25,7 +25,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
@@ -37,6 +36,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     _catalog_content_digest,
 )
+from scripts.research_legacy_concept_graph import retrieve_authorized_concept_graph
 
 
 def _json_bytes(value: dict[str, Any]) -> bytes:

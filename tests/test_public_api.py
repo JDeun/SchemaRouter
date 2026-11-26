@@ -55,12 +55,10 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SelectiveCapabilityRetrieval",
         "DeclaredOperationFitPolicy",
         "NativeDeclaredFieldGroup",
-        "retrieve_authorized_field_group",
         "NativeConceptCatalog",
         "NativeDeclaredConcept",
         "ResolvedNativeConcepts",
         "resolve_native_concepts",
-        "retrieve_authorized_concepts",
         "NativeConceptGraphSelection",
         "NativeConceptRouteSet",
         "retrieve_authorized_concept_graph",
@@ -539,3 +537,14 @@ def test_retired_catalog_model_analyzer_is_not_installed() -> None:
         assert not hasattr(schemarouter, symbol), symbol
     assert callable(schemarouter.KeywordAnalyzer)
     assert callable(schemarouter.PaperQueryUnderstanding)
+
+
+def test_retired_lexical_fieldgroup_helpers_are_not_installed() -> None:
+    from schemarouter import concept_retrieval, field_group_retrieval
+
+    assert not hasattr(schemarouter, "retrieve_authorized_field_group")
+    assert not hasattr(schemarouter, "retrieve_authorized_concepts")
+    assert not hasattr(field_group_retrieval, "retrieve_authorized_field_group")
+    assert not hasattr(concept_retrieval, "retrieve_authorized_concepts")
+    assert callable(schemarouter.NativeSchemaPostingIndex.lookup)
+    assert callable(schemarouter.NativeSchemaPostingIndex.lookup_concepts)

@@ -15,10 +15,7 @@ from .concept_retrieval import (
     resolve_native_concepts,
 )
 from .errors import PolicyViolationError
-from .field_group_retrieval import (
-    _root_envelope_empty,
-    retrieve_authorized_field_group,
-)
+from .field_group_retrieval import _root_envelope_empty
 from .host_field_contract import _policy_contents_digest
 from .native_graph_index import NativeSchemaGraphIndex
 
@@ -62,7 +59,6 @@ def retrieve_authorized_concept_graph(
     catalog: NativeConceptCatalog,
     index: NativeSchemaGraphIndex,
     k: int = 5,
-    experimental_indexed_direct: bool = False,
 ) -> NativeConceptGraphSelection:
     """Compose current, owner-declared FieldGroup and canonical typed G5.
 
@@ -72,8 +68,6 @@ def retrieve_authorized_concept_graph(
     """
     if type(k) is not int or k != 5:
         raise ValueError("concept graph selection requires strict K5")
-    if type(experimental_indexed_direct) is not bool:
-        raise ValueError("indexed concept direct mode must be boolean")
     if not isinstance(index, NativeSchemaGraphIndex):
         raise ValueError("current native graph index required")
     # These validations precede *any* query against the source catalog.
@@ -100,23 +94,14 @@ def retrieve_authorized_concept_graph(
     resolved = resolve_native_concepts(query, catalog=catalog)
     required = tuple(field.semantic_id for field in resolved.field_group.required_fields)
 
-    # Product-index prototype: opt in to the SAME source-pinned semantic
-    # posting index instead of rebuilding an authorized full planner catalog.
-    # Default keeps the existing published direct-selection semantics.
-    if experimental_indexed_direct:
-        direct = index.field_index.lookup(
-            router, query, principal=principal, group=resolved.field_group,
-            k=k, input_free_only=True,
-        )
-        direct_count = direct.qualified_count
-        if direct.index_snapshot_id != index.field_index.snapshot_id:
-            raise PolicyViolationError("indexed direct snapshot changed")
-    else:
-        direct = retrieve_authorized_field_group(
-            router, query, principal=principal, group=resolved.field_group, k=k,
-            input_free_only=True,
-        )
-        direct_count = direct.total_ranked
+    # The canonical source-pinned posting index is the only direct lookup.
+    direct = index.field_index.lookup(
+        router, query, principal=principal, group=resolved.field_group,
+        k=k, input_free_only=True,
+    )
+    direct_count = direct.qualified_count
+    if direct.index_snapshot_id != index.field_index.snapshot_id:
+        raise PolicyViolationError("indexed direct snapshot changed")
     if direct.registry_version != witness[1] or direct.requested_k != k:
         raise PolicyViolationError("concept direct source revision mismatch")
     # Lookup both existing verified paths under one principal and one source
@@ -148,18 +133,13 @@ def retrieve_authorized_concept_graph(
     # while changing its live health set during graph evaluation. In that
     # case the earlier direct FieldGroup menu must not be disclosed unchanged.
     if direct_roots:
-        if experimental_indexed_direct:
-            renewed = index.field_index.lookup(
-                router, query, principal=principal,
-                group=resolved.field_group, k=k, input_free_only=True,
-            )
-            renewed_count = renewed.qualified_count
-        else:
-            renewed = retrieve_authorized_field_group(
-                router, query, principal=principal, group=resolved.field_group,
-                k=k, input_free_only=True,
-            )
-            renewed_count = renewed.total_ranked
+        renewed = index.field_index.lookup(
+            router, query, principal=principal,
+            group=resolved.field_group, k=k, input_free_only=True,
+        )
+        renewed_count = renewed.qualified_count
+        if renewed.index_snapshot_id != index.field_index.snapshot_id:
+            raise PolicyViolationError("indexed direct snapshot changed")
         eligible_now = []
         for candidate in renewed.candidates:
             location = index.field_index.route_locations.get(candidate.route_id)

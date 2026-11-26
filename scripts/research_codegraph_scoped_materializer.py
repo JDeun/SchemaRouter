@@ -14,10 +14,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, NoReturn
 
 from schemarouter import NativeConceptCatalog, PrincipalContext, SchemaRouter
-from schemarouter.concept_graph_retrieval import (
-    NativeConceptGraphSelection,
-    retrieve_authorized_concept_graph,
-)
+from schemarouter.concept_graph_retrieval import NativeConceptGraphSelection
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from scripts.research_authorized_agent_tool_surface import (
@@ -26,6 +23,7 @@ from scripts.research_authorized_agent_tool_surface import (
     _principal_claims_canonical,
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_concept_graph import retrieve_authorized_concept_graph
 
 _EPISODE_HMAC_KEY = secrets.token_bytes(32)
 STRICT_G5_K = 5

@@ -351,8 +351,8 @@ def select_authorized_field_contract(
         ) from None
     if (
         router.authorization_policy is not policy
-        or router._source_availability_predicate() is not availability
         or router.registry is not registry
+        or router._source_availability_predicate() is not availability
     ):
         raise PolicyViolationError(
             "retrieval scope changed during authorized retrieval"

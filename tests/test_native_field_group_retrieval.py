@@ -1,4 +1,4 @@
-"""Native opt-in FieldGroup Top-K tests: actual planner, no agent execution."""
+"""Historical lexical FieldGroup regressions and canonical posting-index boundary."""
 from __future__ import annotations
 
 import json
@@ -16,10 +16,11 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    retrieve_authorized_field_group,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.errors import PolicyViolationError
+from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_field_group import retrieve_authorized_field_group
 
 ANALYST = PrincipalContext(subject="analyst", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -277,3 +278,32 @@ def test_fieldgroup_pre_k_keeps_five_complete_routes_after_many_partial_matches(
                for candidate in result.candidates)
     assert all(not candidate.route_id.startswith("noise_")
                for candidate in result.candidates)
+
+
+@pytest.mark.parametrize("query", GROUP.aliases)
+def test_canonical_fieldgroup_lookup_never_enters_lexical_planner(monkeypatch, query):
+    router = _router()
+    index = NativeSchemaPostingIndex.build(router.registry)
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("canonical field search entered the lexical planner")
+
+    monkeypatch.setattr(router.planner, "retrieve_with_scoped_schema", forbidden)
+    monkeypatch.setattr(router.planner, "_analyze_sync", forbidden)
+    result = index.lookup(router, query, principal=ANALYST, group=GROUP)
+    assert result.status == "complete" and result.qualified_count == 1
+    assert [c.route_id for c in result.candidates] == ["complete.read"]
+    denied = index.lookup(router, query, principal=VIEWER, group=GROUP)
+    assert denied.status == "no_proven_hit" and denied.candidates == ()
+
+
+def test_canonical_fieldgroup_overflow_abstains_without_lexical_top_k():
+    router = _router()
+    complete = router.registry.get("complete")
+    for n in range(6):
+        clone = complete.model_copy(update={"name": f"complete_extra_{n}"}, deep=True)
+        router.add_tool(clone)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup(router, GROUP.aliases[0], principal=ANALYST, group=GROUP)
+    assert result.qualified_count == 7
+    assert result.status == "over_k_unranked" and result.candidates == ()

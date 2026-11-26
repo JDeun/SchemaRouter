@@ -1,0 +1,214 @@
+"""Historical lexical/direct concept-graph comparison, outside the installed SDK."""
+from __future__ import annotations
+
+from typing import Literal
+
+from schemarouter.authorization import PrincipalContext
+from schemarouter.concept_graph_retrieval import NativeConceptGraphSelection, NativeConceptRouteSet
+from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
+from schemarouter.errors import PolicyViolationError
+from schemarouter.field_group_retrieval import _root_envelope_empty
+from schemarouter.host_field_contract import _policy_contents_digest
+from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.runtime import SchemaRouter
+from scripts.research_legacy_field_group import retrieve_authorized_field_group
+
+
+def retrieve_authorized_concept_graph(
+    router: SchemaRouter,
+    query: str,
+    *,
+    principal: PrincipalContext,
+    catalog: NativeConceptCatalog,
+    index: NativeSchemaGraphIndex,
+    k: int = 5,
+    experimental_indexed_direct: bool = False,
+) -> NativeConceptGraphSelection:
+    """Compose current, owner-declared FieldGroup and canonical typed G5.
+
+    A complete one-endpoint alternative takes precedence over one-hop paths.
+    The public limit is the number of DISTINCT source-native route IDs in
+    the whole menu, not the count of join paths. Ambiguous overflow abstains.
+    """
+    if type(k) is not int or k != 5:
+        raise ValueError("concept graph selection requires strict K5")
+    if type(experimental_indexed_direct) is not bool:
+        raise ValueError("indexed concept direct mode must be boolean")
+    if not isinstance(index, NativeSchemaGraphIndex):
+        raise ValueError("current native graph index required")
+    # These validations precede *any* query against the source catalog.
+    witness = router._retrieval_authority_witness()
+    index.field_index._assert_source(router)
+    if index.field_index.registry_version != witness[1]:
+        raise PolicyViolationError("concept graph index revision mismatch")
+    policy = router.authorization_policy
+    if policy is None:
+        raise PolicyViolationError("concept graph requires explicit authorization")
+    policy_content = _policy_contents_digest(policy)
+    if not isinstance(principal, PrincipalContext):
+        raise PolicyViolationError("concept graph requires trusted principal claims")
+    try:
+        principal_claims = principal.model_dump_json()
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("cannot attest concept graph principal") from exc
+    if not isinstance(catalog, NativeConceptCatalog):
+        raise ValueError("owner-reviewed concept catalog required")
+    try:
+        frozen_catalog = catalog.model_dump_json()
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise ValueError("concept catalog changed during validation") from exc
+    resolved = resolve_native_concepts(query, catalog=catalog)
+    required = tuple(field.semantic_id for field in resolved.field_group.required_fields)
+
+    # Product-index prototype: opt in to the SAME source-pinned semantic
+    # posting index instead of rebuilding an authorized full planner catalog.
+    # Default keeps the existing published direct-selection semantics.
+    if experimental_indexed_direct:
+        direct = index.field_index.lookup(
+            router, query, principal=principal, group=resolved.field_group,
+            k=k, input_free_only=True,
+        )
+        direct_count = direct.qualified_count
+        if direct.index_snapshot_id != index.field_index.snapshot_id:
+            raise PolicyViolationError("indexed direct snapshot changed")
+    else:
+        direct = retrieve_authorized_field_group(
+            router, query, principal=principal, group=resolved.field_group, k=k,
+            input_free_only=True,
+        )
+        direct_count = direct.total_ranked
+    if direct.registry_version != witness[1] or direct.requested_k != k:
+        raise PolicyViolationError("concept direct source revision mismatch")
+    # Lookup both existing verified paths under one principal and one source
+    # witness. Never traverse internal unscoped graph postings ourselves.
+    graph = index.lookup(
+        router, query, principal=principal, group=resolved.field_group, k=k,
+    )
+    if graph.registry_version != witness[1] or graph.requested_k != k:
+        raise PolicyViolationError("concept graph source revision mismatch")
+
+    selected: tuple[NativeConceptRouteSet, ...] = ()
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
+    ] = "no_proven_hit"
+    # A field-complete endpoint with required arguments is NOT a direct
+    # single-call answer. FieldGroup proves outputs, not input provenance.
+    # Such a consumer must instead arrive through canonical typed G5 joins.
+    direct_roots = []
+    for candidate in direct.candidates:
+        location = index.field_index.route_locations.get(candidate.route_id)
+        if location is None:
+            raise PolicyViolationError("concept direct route missing from source")
+        tool_key, endpoint_name = location
+        endpoint = router.registry.get(tool_key).endpoint(endpoint_name)
+        if _root_envelope_empty(endpoint):
+            direct_roots.append(candidate)
+
+    # A host-owned availability predicate may keep the SAME callable identity
+    # while changing its live health set during graph evaluation. In that
+    # case the earlier direct FieldGroup menu must not be disclosed unchanged.
+    if direct_roots:
+        if experimental_indexed_direct:
+            renewed = index.field_index.lookup(
+                router, query, principal=principal,
+                group=resolved.field_group, k=k, input_free_only=True,
+            )
+            renewed_count = renewed.qualified_count
+        else:
+            renewed = retrieve_authorized_field_group(
+                router, query, principal=principal, group=resolved.field_group,
+                k=k, input_free_only=True,
+            )
+            renewed_count = renewed.total_ranked
+        eligible_now = []
+        for candidate in renewed.candidates:
+            location = index.field_index.route_locations.get(candidate.route_id)
+            if location is None:
+                raise PolicyViolationError("concept direct source changed")
+            tool_key, endpoint_name = location
+            if _root_envelope_empty(router.registry.get(tool_key).endpoint(endpoint_name)):
+                eligible_now.append(candidate)
+        original_receipts = tuple(sorted(
+            (candidate.route_id, candidate.tool_fingerprint,
+             candidate.endpoint_fingerprint) for candidate in direct_roots
+        ))
+        refreshed_receipts = tuple(sorted(
+            (candidate.route_id, candidate.tool_fingerprint,
+             candidate.endpoint_fingerprint) for candidate in eligible_now
+        ))
+        if (
+            renewed.registry_version != direct.registry_version
+            or renewed_count != direct_count
+            or refreshed_receipts != original_receipts
+        ):
+            raise PolicyViolationError("concept direct eligibility changed during lookup")
+
+    if direct_count > k:
+        status = "over_k_unranked"
+    elif direct_roots:
+        selected = tuple(NativeConceptRouteSet(
+            route_ids=(candidate.route_id,),
+            route_fingerprints=((candidate.route_id,
+                                 candidate.tool_fingerprint,
+                                 candidate.endpoint_fingerprint),),
+            required_semantic_ids=required,
+        ) for candidate in direct_roots)
+        status = "complete"
+    elif graph.status == "over_k_unranked":
+        status = "over_k_unranked"
+    elif graph.status == "complete":
+        selected = tuple(NativeConceptRouteSet(
+            route_ids=(c.producer_route_id, c.consumer_route_id),
+            route_fingerprints=(
+                (c.producer_route_id, c.producer_tool_fingerprint,
+                 c.producer_endpoint_fingerprint),
+                (c.consumer_route_id, c.consumer_tool_fingerprint,
+                 c.consumer_endpoint_fingerprint),
+            ),
+            required_semantic_ids=required,
+            parameter_bindings=c.parameter_bindings,
+        ) for c in graph.candidates)
+        status = "complete" if selected else "no_proven_hit"
+
+    # A route repeated by six paths consumes only one model menu slot; six
+    # consumer alternatives, however, cannot be silently truncated at K5.
+    routes = tuple(dict.fromkeys(
+        route_id for route_set in selected for route_id in route_set.route_ids
+    ))
+    if len(routes) > k:
+        selected = ()
+        routes = ()
+        status = "over_k_unranked"
+
+    # The original graph/index snapshot and each exposed route fingerprint
+    # must match the actual registered source, even after both lookups.
+    for route_set in selected:
+        for route_id, tool_fp, endpoint_fp in route_set.route_fingerprints:
+            if index.field_index.route_fingerprints.get(route_id) != (
+                tool_fp, endpoint_fp,
+            ):
+                raise PolicyViolationError("concept graph native fingerprint drift")
+    index.field_index._assert_source(router)
+    router._check_retrieval_authority_witness(witness)
+    current_policy = router.authorization_policy
+    if current_policy is None or _policy_contents_digest(current_policy) != policy_content:
+        raise PolicyViolationError("concept graph authorization changed")
+    try:
+        if principal.model_dump_json() != principal_claims:
+            raise PolicyViolationError("concept graph principal claims changed")
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("cannot attest concept graph principal") from exc
+    try:
+        if catalog.model_dump_json() != frozen_catalog:
+            raise PolicyViolationError("concept catalog changed during lookup")
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("concept catalog changed during lookup") from exc
+
+    return NativeConceptGraphSelection(
+        status=status,
+        snapshot_id=index.field_index.snapshot_id,
+        registry_version=witness[1],
+        requested_k=k,
+        route_sets=selected,
+        route_ids=routes,
+    )

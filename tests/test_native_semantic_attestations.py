@@ -13,7 +13,6 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    retrieve_authorized_field_group,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.adapters.optimade import _tool_from_discovery
@@ -22,6 +21,7 @@ from schemarouter.semantic_attestations import (
     HostSemanticMapping,
     apply_host_semantic_attestation,
 )
+from scripts.research_legacy_field_group import retrieve_authorized_field_group
 
 ANALYST = PrincipalContext(subject="host-analyst", roles=("analyst",))
 

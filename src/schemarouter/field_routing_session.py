@@ -553,7 +553,6 @@ class SchemaFieldRoutingSession:
         return retrieve_paper_field_coverage(
             self._router, query, principal=principal,
             catalog=catalog, index=self._index, k=k,
-            experimental_indexed_direct=True,
         )
 
     def compile(
@@ -575,7 +574,6 @@ class SchemaFieldRoutingSession:
             catalog=catalog, index=self._index,
             alternative_index=alternative_index,
             host_source_arguments=host_source_arguments, k=k,
-            experimental_indexed_direct=True,
         )
 
     def compile_understood(

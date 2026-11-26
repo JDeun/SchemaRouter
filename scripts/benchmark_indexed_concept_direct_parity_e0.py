@@ -33,6 +33,9 @@ from schemarouter.field_group_retrieval import _complete_fields, _root_envelope_
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
+from scripts.research_legacy_concept_graph import (
+    retrieve_authorized_concept_graph as legacy_concept_graph,
+)
 
 EVIDENCE_TIER = "E0_SYNTHETIC_INDEXED_CONCEPT_PARITY_NOT_E2"
 ALIASES = ("case status", "문의 상태", "問い合わせ状態")
@@ -172,9 +175,10 @@ def benchmark(*, registered_routes: int, iterations: int = 10) -> dict[str, Any]
         statuses: set[str] = set()
         for query in ALIASES:
             def lookup(*, indexed: bool, pinned_query: str = query):
-                return retrieve_authorized_concept_graph(
+                select = retrieve_authorized_concept_graph if indexed else legacy_concept_graph
+                return select(
                     router, pinned_query, principal=ACTOR, catalog=CATALOG,
-                    index=index, experimental_indexed_direct=indexed,
+                    index=index,
                 )
 
             # One untimed preflight for each arm; only the original source
