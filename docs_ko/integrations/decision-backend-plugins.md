@@ -1,5 +1,7 @@
 # Decision backend plugin
 
+**연구 아카이브(개발 브랜치):** 이 의사결정 어댑터 또는 플러그인 로더는 더 이상 SchemaRouter 배포 API에 포함되지 않습니다. 아래 계약과 예제는 소스 체크아웃의 `scripts/research_legacy_decision_adapters/`에서 과거 비교 실험용으로 보존합니다. 기존 선택적 설치 옵션은 호환성 검증을 위해 잠시 유지하지만 삭제된 제품 연동을 복원하지 않습니다. 원 논문 중심 라우터 경로로 사용하지 마세요.
+
 SchemaRouter는 model-specific integration을 core에 추가하지 않고 installed Python package에서 third-party bounded decision backend를 load할 수 있습니다. `SystemOneDecisionBackend` 같은 stable built-in transport가 이미 커버하지 않는 decision-model family용입니다.
 
 ## Entry-point contract
@@ -16,7 +18,7 @@ Entry point는 backend class, factory callable, 또는 `decide(request)`를 가�
 ## Discovery는 metadata-only
 
 ```python
-from schemarouter import discover_decision_backend_plugins
+from scripts.research_legacy_decision_adapters.decision_plugins import discover_decision_backend_plugins
 for plugin in discover_decision_backend_plugins():
     print(plugin.name, plugin.distribution, plugin.version)
 ```
@@ -26,7 +28,7 @@ Discovery는 plugin code를 import/execute하지 않습니다.
 ## Explicit loading
 
 ```python
-from schemarouter import load_decision_backend_plugin
+from scripts.research_legacy_decision_adapters.decision_plugins import load_decision_backend_plugin
 backend = load_decision_backend_plugin(
     "anyjev",
     config={"model": "example/model", "device": "cuda"},
@@ -39,7 +41,7 @@ backend = load_decision_backend_plugin(
 
 ```bash
 python -m pip install -e examples/decision_backend_plugin_demo
-python examples/decision_backend_plugin_quickstart.py
+python -m examples.decision_backend_plugin_quickstart
 ```
 
 Demo package:

@@ -1,5 +1,7 @@
 # System One 호환 의사결정 공급자
 
+**연구 아카이브(개발 브랜치):** 이 의사결정 어댑터 또는 플러그인 로더는 더 이상 SchemaRouter 배포 API에 포함되지 않습니다. 아래 계약과 예제는 소스 체크아웃의 `scripts/research_legacy_decision_adapters/`에서 과거 비교 실험용으로 보존합니다. 기존 선택적 설치 옵션은 호환성 검증을 위해 잠시 유지하지만 삭제된 제품 연동을 복원하지 않습니다. 원 논문 중심 라우터 경로로 사용하지 마세요.
+
 SchemaRouter는 타입이 지정된 System One 의사결정 계약과 호환되는 모든 공급자를 **하나의 제한된 범위의 백엔드**로 사용할 수 있습니다.
 
 이 통합은 모델 중립적입니다. 호스팅 Jev, 자체 호스팅 의사결정 모델, 향후의 호환 런타임이 동일한 System One 클라이언트 계약을 제공한다면 SchemaRouter 어댑터를 공유할 수 있습니다.
@@ -19,7 +21,7 @@ pip install "schemarouter[jev]"
 ## 호환 공급자 연결
 
 ```python
-from schemarouter.integrations import SystemOneDecisionBackend
+from scripts.research_legacy_decision_adapters import SystemOneDecisionBackend
 
 backend = SystemOneDecisionBackend(
     base_url="http://127.0.0.1:8000/v1",

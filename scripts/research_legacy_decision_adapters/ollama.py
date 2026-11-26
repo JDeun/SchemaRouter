@@ -10,8 +10,8 @@ from urllib.parse import urlparse
 import httpx
 from pydantic import ValidationError
 
-from ..decisions import DecisionRequest, DecisionResult, validate_decision
-from ..errors import PlanningError
+from schemarouter.decisions import DecisionRequest, DecisionResult, validate_decision
+from schemarouter.errors import PlanningError
 
 
 class OllamaDecisionBackend:

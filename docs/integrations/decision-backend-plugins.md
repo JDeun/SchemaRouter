@@ -1,5 +1,7 @@
 # Decision backend plugins
 
+**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The existing optional installation extras are temporarily retained for compatibility qualification; they do not restore the removed product integration. Do not use this path as the paper-first router.
+
 SchemaRouter can load third-party bounded decision backends from installed Python packages without
 adding a model-specific integration to SchemaRouter core.
 
@@ -26,7 +28,7 @@ A class or factory can receive explicit keyword configuration when loaded.
 ## Discovery is metadata-only
 
 ```python
-from schemarouter import discover_decision_backend_plugins
+from scripts.research_legacy_decision_adapters.decision_plugins import discover_decision_backend_plugins
 
 for plugin in discover_decision_backend_plugins():
     print(plugin.name, plugin.distribution, plugin.version)
@@ -37,7 +39,7 @@ Discovery does **not** import or execute plugin code.
 ## Explicit loading
 
 ```python
-from schemarouter import load_decision_backend_plugin
+from scripts.research_legacy_decision_adapters.decision_plugins import load_decision_backend_plugin
 
 backend = load_decision_backend_plugin(
     "anyjev",
@@ -60,7 +62,7 @@ The repository includes a deterministic package that declares a real decision-ba
 
 ```bash
 python -m pip install -e examples/decision_backend_plugin_demo
-python examples/decision_backend_plugin_quickstart.py
+python -m examples.decision_backend_plugin_quickstart
 ```
 
 Its package metadata contains:

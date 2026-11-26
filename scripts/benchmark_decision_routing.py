@@ -35,15 +35,17 @@ from schemarouter import (  # noqa: E402
     PlanRequest,
     SchemaPlanner,
     ToolSpec,
-    discover_decision_backend_plugins,
-    load_decision_backend_plugin,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
-from schemarouter.integrations import (  # noqa: E402
+from scripts.research_legacy_decision_adapters import (  # noqa: E402
     JevDecisionBackend,
     LayaDecisionBackend,
     OllamaDecisionBackend,
     SystemOneDecisionBackend,
+)
+from scripts.research_legacy_decision_adapters.decision_plugins import (  # noqa: E402
+    discover_decision_backend_plugins,
+    load_decision_backend_plugin,
 )
 from scripts.research_legacy_decision_policy import (  # noqa: E402
     DecisionPolicy,

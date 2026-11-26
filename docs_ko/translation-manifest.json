@@ -9,7 +9,7 @@
     },
     {
       "path": "architecture.md",
-      "source_blob": "e13e284e91f02d9b63eac07146a65afefc032248"
+      "source_blob": "d2fce0ced51fd9c23449be52376edccbe38ef930"
     },
     {
       "path": "assets/brand/README.md",
@@ -33,7 +33,7 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "source_blob": "3a4111bca52b7360b2843c64184fbeeb33924d53"
+      "source_blob": "f18b1e3817de99343dcc9ed5f5b25636dc1c5305"
     },
     {
       "path": "concepts/design-principles.md",
@@ -297,15 +297,15 @@
     },
     {
       "path": "integrations/decision-backend-plugins.md",
-      "source_blob": "a5e49217d01e79aa64e5ac5ca5e751677423f249"
+      "source_blob": "0ec39978fe635a1fb771642628d706568fbd5f24"
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "source_blob": "510c73a7adce77a7971118e1076425c06e377d63"
+      "source_blob": "969403e3c798d0075bb7653f3b669a93a05da600"
     },
     {
       "path": "integrations/jev.md",
-      "source_blob": "1873e92ac968255906f949795c643c302899279c"
+      "source_blob": "373b04b0c5d76f51270dfe9a1d23d8bd6870d99c"
     },
     {
       "path": "integrations/langchain.md",
@@ -317,7 +317,7 @@
     },
     {
       "path": "integrations/laya.md",
-      "source_blob": "3db631b4c4be74244d86b7d39608913656ebf77a"
+      "source_blob": "9a3a0e1749d08f575468c048f72ccec133b76053"
     },
     {
       "path": "integrations/llamaindex.md",
@@ -329,11 +329,11 @@
     },
     {
       "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
+      "source_blob": "85e872e779ed95290f43855df7443425c7871cb0"
     },
     {
       "path": "integrations/ollama.md",
-      "source_blob": "40ae03501eed41a5b98615ba0a4c7ad9775d9dff"
+      "source_blob": "ae13de78417c0836f76223950e0ec69d41cabc4c"
     },
     {
       "path": "integrations/opentelemetry.md",
@@ -341,7 +341,7 @@
     },
     {
       "path": "integrations/system-one.md",
-      "source_blob": "5649f792ce15ac469feb5fdba8416c1baa8f45f9"
+      "source_blob": "d93c648d23d653453baf825c2c6a551a22fbdb95"
     },
     {
       "path": "license.md",
@@ -413,7 +413,7 @@
     },
     {
       "path": "reference/api.md",
-      "source_blob": "a05d15126f09278918302daf478ec68d0adc5958"
+      "source_blob": "3c480380d91898a5054f3a4dc834d14f44827415"
     },
     {
       "path": "reference/models.md",

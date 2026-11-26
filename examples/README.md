@@ -25,7 +25,7 @@ materials-science examples used elsewhere in the project.
 | Schema drift comparison | `python examples/schema_drift_demo.py` | core | offline deterministic |
 | Inspection + HTML dashboard | `python examples/inspection_dashboard.py` | core | offline deterministic |
 | Third-party SourceAdapter plugin | `python examples/adapter_plugin_quickstart.py` | install local demo package | offline deterministic |
-| Third-party decision backend plugin | `python examples/decision_backend_plugin_quickstart.py` | install local demo package | offline deterministic |
+| Historical decision backend plugin comparison | `python -m examples.decision_backend_plugin_quickstart` | source checkout + local demo package | offline deterministic research |
 | LangChain bridge | `python examples/langchain_quickstart.py` | `langchain` | offline deterministic |
 | LangGraph node | `python examples/langgraph_quickstart.py` | `langgraph` | offline deterministic |
 | LlamaIndex bridge | `python examples/llamaindex_quickstart.py` | `llamaindex` | offline deterministic |
@@ -124,13 +124,13 @@ import the plugin module; import occurs only when the application explicitly loa
 
 See the [adapter plugin guide](../docs/guides/adapter-plugins.md).
 
-## Third-party decision backend plugin
+## Historical third-party decision backend plugin (research only)
 
 Install and run the separate package:
 
 ```bash
 python -m pip install -e examples/decision_backend_plugin_demo
-python examples/decision_backend_plugin_quickstart.py
+python -m examples.decision_backend_plugin_quickstart
 ```
 
 The example selects only from IDs supplied in the current `DecisionRequest` and abstains when no

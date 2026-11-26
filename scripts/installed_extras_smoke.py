@@ -10,14 +10,22 @@ from mcp.client.streamable_http import streamable_http_client
 from opentelemetry.sdk.trace import TracerProvider
 
 from schemarouter import DefaultMCPClientFactory
-from schemarouter.integrations import JevDecisionBackend, OpenTelemetryRunExporter
+import schemarouter.integrations as integrations
+from schemarouter.integrations import OpenTelemetryRunExporter
 
 
 def run_smoke() -> dict[str, object]:
     tracer = TracerProvider().get_tracer("schemarouter-installed-extras-smoke")
     exporter = OpenTelemetryRunExporter(tracer)
     mcp_factory = DefaultMCPClientFactory()
-    jev = JevDecisionBackend(client=object())
+    installed_version = version("schemarouter")
+    historical_jev = installed_version == "0.17.0"
+    if historical_jev:
+        # The still-published v0.17 wheel owns this historical integration.
+        backend = getattr(integrations, "JevDecisionBackend")
+        assert backend(client=object()).client is not None
+    else:
+        assert not hasattr(integrations, "JevDecisionBackend")
 
     assert callable(streamable_http_client)
     assert Client is not None
@@ -25,7 +33,6 @@ def run_smoke() -> dict[str, object]:
     assert typesafe_sdk is not None
     assert exporter.tracer is tracer
     assert mcp_factory is not None
-    assert jev.client is not None
 
     return {
         "status": "success",
@@ -36,7 +43,7 @@ def run_smoke() -> dict[str, object]:
         },
         "integrations": [
             "mcp",
-            "jev",
+            *(["jev"] if historical_jev else []),
             "opentelemetry",
         ],
     }

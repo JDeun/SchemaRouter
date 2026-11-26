@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from typesafe_sdk import Choice
 
-from ..decisions import (
+from schemarouter.decisions import (
     DecisionRequest,
     DecisionResult,
     DecisionSelection,
     validate_decision,
 )
-from ..errors import PlanningError
+from schemarouter.errors import PlanningError
 
 
 class SystemOneDecisionBackend:

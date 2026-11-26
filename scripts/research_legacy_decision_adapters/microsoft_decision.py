@@ -14,13 +14,13 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from ..decisions import (
+from schemarouter.decisions import (
     DecisionRequest,
     DecisionResult,
     DecisionSelection,
     validate_decision,
 )
-from ..errors import PlanningError
+from schemarouter.errors import PlanningError
 
 API_SUFFIX = "/providers/microsoft/v1/systemone"
 NO_FIT_ID = "none_of_above"

@@ -1,4 +1,4 @@
-"""Run the separately packaged decision-backend entry-point example.
+"""Run the historical research-only decision-backend entry-point example.
 
 Install the example package first:
 
@@ -9,6 +9,8 @@ from schemarouter import (
     DecisionOption,
     DecisionRequest,
     choose_sync,
+)
+from scripts.research_legacy_decision_adapters.decision_plugins import (
     discover_decision_backend_plugins,
     load_decision_backend_plugin,
 )

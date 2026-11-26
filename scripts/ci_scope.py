@@ -78,11 +78,12 @@ _SCOPE_PATTERNS: dict[str, tuple[str, ...]] = {
         "examples/llamaindex_quickstart.py",
     ),
     "jev": (
-        "src/schemarouter/integrations/jev.py",
+        "scripts/research_legacy_decision_adapters/jev.py",
+        "scripts/research_legacy_decision_adapters/system_one.py",
         "tests/test_jev_integration.py",
     ),
     "laya": (
-        "src/schemarouter/integrations/laya.py",
+        "scripts/research_legacy_decision_adapters/laya.py",
         "tests/test_laya_integration.py",
     ),
     "otel": (

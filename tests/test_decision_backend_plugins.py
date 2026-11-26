@@ -11,7 +11,9 @@ from schemarouter import (
     DecisionSelection,
     PlanningError,
     choose_sync,
-    decision_plugins,
+)
+from scripts.research_legacy_decision_adapters import decision_plugins
+from scripts.research_legacy_decision_adapters.decision_plugins import (
     discover_decision_backend_plugins,
     load_decision_backend_plugin,
 )
@@ -198,3 +200,26 @@ def test_example_decision_backend_package_declares_real_entry_point() -> None:
         in pyproject
     )
 
+
+def test_installed_product_does_not_expose_decision_provider_adapters() -> None:
+    import importlib.util
+
+    import schemarouter
+    import schemarouter.integrations as integrations
+
+    for symbol in (
+        "DECISION_BACKEND_ENTRY_POINT_GROUP", "DecisionBackendPluginInfo",
+        "discover_decision_backend_plugins", "load_decision_backend_plugin",
+    ):
+        assert not hasattr(schemarouter, symbol)
+    for symbol in (
+        "JevDecisionBackend", "LayaDecisionBackend", "OllamaDecisionBackend",
+        "SystemOneDecisionBackend", "MicrosoftDecisionOneFoundryBackend",
+    ):
+        assert not hasattr(integrations, symbol)
+    for module in (
+        "schemarouter.decision_plugins", "schemarouter.integrations.jev",
+        "schemarouter.integrations.laya", "schemarouter.integrations.ollama",
+        "schemarouter.integrations.system_one", "schemarouter.integrations.microsoft_decision",
+    ):
+        assert importlib.util.find_spec(module) is None

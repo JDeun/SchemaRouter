@@ -1,5 +1,7 @@
 # Laya
 
+**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The existing optional installation extras are temporarily retained for compatibility qualification; they do not restore the removed product integration. Do not use this path as the paper-first router.
+
 SchemaRouter can use [Laya](https://github.com/NandhaKishorM/laya) as an optional local
 `DecisionBackend`.
 
@@ -34,7 +36,7 @@ By default, SchemaRouter lets Laya choose its English or multilingual checkpoint
 state:
 
 ```python
-from schemarouter.integrations import LayaDecisionBackend
+from scripts.research_legacy_decision_adapters import LayaDecisionBackend
 
 backend = LayaDecisionBackend(
     min_confidence=0.65,

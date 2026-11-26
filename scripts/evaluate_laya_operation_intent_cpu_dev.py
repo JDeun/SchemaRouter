@@ -26,12 +26,12 @@ from schemarouter import (  # noqa: E402
     DecisionRequest,
     choose_sync,
 )
-from schemarouter.integrations import LayaDecisionBackend  # noqa: E402
 from scripts.evaluate_operation_intent_cpu_dev import (  # noqa: E402
     DESCRIPTIONS,
     load_corpus,
     p95,
 )
+from scripts.research_legacy_decision_adapters import LayaDecisionBackend  # noqa: E402
 
 SOURCE_SHA256 = "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7"
 LAYA_VERSION = "0.4.7"

@@ -1,5 +1,7 @@
 # Decision backends
 
+**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. Existing installation extras are temporarily retained for compatibility qualification.
+
 **Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
 Historically, the comparison planner could use a bounded decision model to refine choices already
@@ -439,7 +441,7 @@ pip install -e ".[jev]"
 The normal packaged extra name will be `schemarouter[jev]` in the next release.
 
 ```python
-from schemarouter.integrations import JevDecisionBackend
+from scripts.research_legacy_decision_adapters import JevDecisionBackend
 
 backend = JevDecisionBackend(
     min_confidence=0.65,
@@ -467,7 +469,7 @@ pip install -e ".[laya]"
 The packaged extra is `schemarouter[laya]`.
 
 ```python
-from schemarouter.integrations import LayaDecisionBackend
+from scripts.research_legacy_decision_adapters import LayaDecisionBackend
 
 backend = LayaDecisionBackend(
     min_confidence=0.65,
@@ -492,7 +494,7 @@ SchemaRouter also includes an `OllamaDecisionBackend` that uses Ollama structure
 native HTTP API. No Ollama Python SDK is required.
 
 ```python
-from schemarouter.integrations import OllamaDecisionBackend
+from scripts.research_legacy_decision_adapters import OllamaDecisionBackend
 
 backend = OllamaDecisionBackend(
     "your-installed-model",

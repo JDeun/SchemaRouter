@@ -10,7 +10,7 @@ from schemarouter import (
     choose_async,
     choose_sync,
 )
-from schemarouter.integrations.ollama import OllamaDecisionBackend
+from scripts.research_legacy_decision_adapters import OllamaDecisionBackend
 
 
 def request(*, max_selections: int = 1) -> DecisionRequest:

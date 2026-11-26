@@ -13,7 +13,7 @@ from schemarouter import (
     PlanningError,
     choose_sync,
 )
-from schemarouter.integrations import MicrosoftDecisionOneFoundryBackend
+from scripts.research_legacy_decision_adapters import MicrosoftDecisionOneFoundryBackend
 
 ENDPOINT = "https://example.services.ai.azure.com"
 DEPLOYMENT = "my-microsoft-decision-1-deployment"

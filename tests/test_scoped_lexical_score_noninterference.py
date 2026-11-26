@@ -16,6 +16,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.models import QueryIntent
+from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 CANARY = "private_score_canary_t3397"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -153,7 +154,8 @@ def test_optional_recall_decision_request_uses_scoped_not_raw_description():
         ),
     )
     assert len(catalog) == 1
-    decision = router.planner._semantic_recall_request(request, catalog)
+    legacy_planner = LegacyDecisionPlanner(router.registry)
+    decision = legacy_planner._semantic_recall_request(request, catalog)
     assert len(decision.options) == 1
     assert CANARY not in decision.options[0].description
     assert catalog[0].tool.fingerprint == router.registry.get("records").fingerprint

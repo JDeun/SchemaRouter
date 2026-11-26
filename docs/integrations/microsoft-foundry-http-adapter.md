@@ -1,5 +1,7 @@
 # Microsoft-Decision-1 Foundry HTTP adapter (opt-in, #1324)
 
+**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The existing optional installation extras are temporarily retained for compatibility qualification; they do not restore the removed product integration. Do not use this path as the paper-first router.
+
 **Status:** structural/mock-transport engineering only. This code has **not**
 been exercised against a live Azure Foundry deployment and has **no measured**
 quality, speed, no-fit accuracy or cost. Do not set it as a default backend.
@@ -19,7 +21,7 @@ and a JSON `answers` response. This differs from the existing
 import os
 
 from schemarouter import DecisionOption, DecisionRequest, choose_sync
-from schemarouter.integrations import MicrosoftDecisionOneFoundryBackend
+from scripts.research_legacy_decision_adapters import MicrosoftDecisionOneFoundryBackend
 
 backend = MicrosoftDecisionOneFoundryBackend(
     resource_endpoint=os.environ["AZURE_ENDPOINT"],  # HTTPS Azure origin

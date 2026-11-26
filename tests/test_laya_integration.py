@@ -12,7 +12,7 @@ from schemarouter import (
     choose_async,
     choose_sync,
 )
-from schemarouter.integrations import LayaDecisionBackend
+from scripts.research_legacy_decision_adapters import LayaDecisionBackend
 
 
 class FakeAgent:

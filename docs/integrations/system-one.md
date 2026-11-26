@@ -1,5 +1,7 @@
 # System One compatible decision providers
 
+**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The existing optional installation extras are temporarily retained for compatibility qualification; they do not restore the removed product integration. Do not use this path as the paper-first router.
+
 SchemaRouter can use any provider that is compatible with the typed System One decision
 contract through a single bounded backend.
 
@@ -22,7 +24,7 @@ pip install "schemarouter[jev]"
 ## Connect a compatible provider
 
 ```python
-from schemarouter.integrations import SystemOneDecisionBackend
+from scripts.research_legacy_decision_adapters import SystemOneDecisionBackend
 
 backend = SystemOneDecisionBackend(
     base_url="http://127.0.0.1:8000/v1",

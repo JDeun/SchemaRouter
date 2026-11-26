@@ -1,5 +1,7 @@
 # Laya
 
+**연구 아카이브(개발 브랜치):** 이 의사결정 어댑터 또는 플러그인 로더는 더 이상 SchemaRouter 배포 API에 포함되지 않습니다. 아래 계약과 예제는 소스 체크아웃의 `scripts/research_legacy_decision_adapters/`에서 과거 비교 실험용으로 보존합니다. 기존 선택적 설치 옵션은 호환성 검증을 위해 잠시 유지하지만 삭제된 제품 연동을 복원하지 않습니다. 원 논문 중심 라우터 경로로 사용하지 마세요.
+
 SchemaRouter는 [Laya](https://github.com/NandhaKishorM/laya)를 optional local `DecisionBackend`로 사용할 수 있습니다.
 
 Laya는 general text-generation model이 아니라 non-autoregressive decision model입니다. SchemaRouter 내부의 agent runtime이 아니며 adapter는 finite `choice` primitive만 사용합니다. Backend는 SchemaRouter가 이미 authorize한 opaque option ID 중 하나를 선택할 수 있지만 tool, endpoint, field, parameter, credential, execution permission, multi-step tool loop를 만들 수 없습니다.
@@ -27,7 +29,7 @@ Extra는 Laya runtime/local model dependency를 설치합니다. Model weight는
 기본적으로 request state에서 English/multilingual checkpoint를 Laya가 선택합니다.
 
 ```python
-from schemarouter.integrations import LayaDecisionBackend
+from scripts.research_legacy_decision_adapters import LayaDecisionBackend
 backend = LayaDecisionBackend(min_confidence=0.65)
 ```
 

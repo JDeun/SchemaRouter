@@ -252,12 +252,6 @@ from .contract_validation import (
     validate_capability_outputs,
 )
 from .dashboard import render_dashboard, write_dashboard
-from .decision_plugins import (
-    DECISION_BACKEND_ENTRY_POINT_GROUP,
-    DecisionBackendPluginInfo,
-    discover_decision_backend_plugins,
-    load_decision_backend_plugin,
-)
 from .decisions import (
     CallableDecisionBackend,
     DecisionBackend,
@@ -757,10 +751,6 @@ __all__ = [
     "ExplorerUnitNormalization",
     "ExplorerWatchStatus",
     "ContractAmendmentError",
-    "DECISION_BACKEND_ENTRY_POINT_GROUP",
-    "DecisionBackendPluginInfo",
-    "discover_decision_backend_plugins",
-    "load_decision_backend_plugin",
     "CallableDecisionBackend",
     "CapabilityCandidate",
     "CapabilityCompatibility",
