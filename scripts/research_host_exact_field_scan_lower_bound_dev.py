@@ -4,7 +4,7 @@ This module is NOT a public selector, authorization API, execution gate, or
 candidate retrieval replacement. It compares exact declared metadata matching
 against the real, much richer full authorized retrieval receipt on the same
 source-authored development fixtures. All fast-path outcomes MUST equal the
-full public selector on the registered cases or the experiment fails closed.
+historical lexical selector on the registered cases or the experiment fails closed.
 """
 from __future__ import annotations
 
@@ -26,10 +26,9 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     SIZES,
     build_fixture,
 )
-from schemarouter import (
+from schemarouter import PlanRequest, SchemaRouter
+from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
-    PlanRequest,
-    SchemaRouter,
     select_authorized_field_contract,
 )
 
@@ -39,7 +38,8 @@ SOURCE_PATHS = (
     "scripts/research_host_exact_field_scan_lower_bound_dev.py",
     "benchmarks/current_adapter_scaled_authorized_dev_v1.py",
     "benchmarks/current_adapter_field_scope_dev_v1.py",
-    "src/schemarouter/host_field_contract.py",
+    "scripts/research_legacy_host_field_contract.py",
+    "src/schemarouter/_authorization_witness.py",
     "src/schemarouter/runtime.py",
     "src/schemarouter/planner.py",
     "src/schemarouter/authorization.py",

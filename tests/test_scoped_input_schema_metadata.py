@@ -15,15 +15,17 @@ from schemarouter import (
     DataScopeRule,
     EndpointSpec,
     FieldSpec,
-    HostFieldContract,
     ParameterSpec,
     PrincipalContext,
-    RequiredEnumValue,
     SchemaRouter,
     ToolSpec,
-    select_authorized_field_contract,
 )
 from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_host_field_contract import (
+    HostFieldContract,
+    RequiredEnumValue,
+    select_authorized_field_contract,
+)
 
 HIDDEN = "private_value"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))

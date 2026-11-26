@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
-from .operation_fit import OperationKind
+from schemarouter.operation_fit import OperationKind
 
 IntentReason = Literal[
     "explicit_single_operation",

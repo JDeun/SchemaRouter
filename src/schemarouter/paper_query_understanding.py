@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
 
+from ._authorization_witness import _policy_contents_digest
 from ._schema_identity import _normalize
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_text
@@ -29,7 +30,6 @@ from .concept_retrieval import (
 )
 from .errors import ModelAnalysisError, PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
-from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_conditions import _apply_query_input_conditions, _prove_query_need_conditions

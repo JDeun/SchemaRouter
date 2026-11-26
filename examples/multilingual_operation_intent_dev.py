@@ -1,11 +1,11 @@
 """Conservative multilingual operation-intent *diagnostics*, not execution.
 
-Run: python examples/multilingual_operation_intent_dev.py
+Run from the repository checkout: python -m examples.multilingual_operation_intent_dev
 
 Never automatically construct DeclaredOperationFitPolicy from this untrusted
 text classifier. The host must independently verify intent and authorization.
 """
-from schemarouter import infer_operation_intent
+from scripts.research_legacy_operation_intent import infer_operation_intent
 
 
 def main() -> None:

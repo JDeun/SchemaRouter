@@ -24,7 +24,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from schemarouter import infer_operation_intent  # noqa: E402
+from scripts.research_legacy_operation_intent import infer_operation_intent  # noqa: E402
 from scripts.research_operation_fit_conveyor import (  # noqa: E402
     CORPUS_SHA,
     KINDS,

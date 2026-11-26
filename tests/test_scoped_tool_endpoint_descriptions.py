@@ -13,14 +13,16 @@ from schemarouter import (
     DataScopeRule,
     EndpointSpec,
     FieldSpec,
-    HostFieldContract,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    select_authorized_field_contract,
 )
 from schemarouter.evidence import available_evidence
 from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_host_field_contract import (
+    HostFieldContract,
+    select_authorized_field_contract,
+)
 
 CANARY = "private_route_canary_q9421"
 VIEWER = PrincipalContext(subject="scoped-viewer", roles=("viewer",))

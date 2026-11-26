@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_text
 from .concept_retrieval import (
@@ -15,7 +16,6 @@ from .concept_retrieval import (
     _merged_concept_fields,
 )
 from .errors import PolicyViolationError
-from .host_field_contract import _policy_contents_digest
 from .models import PlanCoverage, SemanticFieldRequirement
 from .native_graph_index import NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute

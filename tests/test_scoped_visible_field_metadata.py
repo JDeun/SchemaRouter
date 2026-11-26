@@ -15,15 +15,17 @@ from schemarouter import (
     DataScopeRule,
     EndpointSpec,
     FieldSpec,
-    HostFieldContract,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
-    select_authorized_field_contract,
 )
 from schemarouter.evidence import available_evidence
 from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_host_field_contract import (
+    HostFieldContract,
+    select_authorized_field_contract,
+)
 
 PRIVATE = "secret_field_reference_xyz"
 VIEWER = PrincipalContext(subject="authorized-viewer", roles=("viewer",))

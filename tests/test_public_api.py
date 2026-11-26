@@ -96,12 +96,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "IndexedNativeFieldCandidate",
         "IndexedNativeFieldResult",
         "NativeSchemaPostingIndex",
-        "AuthorizedContractSelection",
-        "HostFieldContract",
-        "RequiredEnumValue",
-        "select_authorized_field_contract",
-        "OperationIntentHypothesis",
-        "infer_operation_intent",
         "validate_declared_operation_fit",
         "apply_retrieval_abstention",
         "validate_selective_execution",
@@ -548,3 +542,19 @@ def test_retired_lexical_fieldgroup_helpers_are_not_installed() -> None:
     assert not hasattr(concept_retrieval, "retrieve_authorized_concepts")
     assert callable(schemarouter.NativeSchemaPostingIndex.lookup)
     assert callable(schemarouter.NativeSchemaPostingIndex.lookup_concepts)
+
+
+def test_retired_lexical_host_diagnostics_are_not_installed() -> None:
+    from importlib.util import find_spec
+
+    assert find_spec("schemarouter.host_field_contract") is None
+    assert find_spec("schemarouter.operation_intent") is None
+    for name in (
+        "AuthorizedContractSelection",
+        "HostFieldContract",
+        "RequiredEnumValue",
+        "select_authorized_field_contract",
+        "OperationIntentHypothesis",
+        "infer_operation_intent",
+    ):
+        assert not hasattr(schemarouter, name), name

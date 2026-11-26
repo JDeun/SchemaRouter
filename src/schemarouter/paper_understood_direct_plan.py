@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, model_validator
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_sha256, canonical_json_text
 from .concept_retrieval import (
@@ -25,7 +26,6 @@ from .concept_retrieval import (
 )
 from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
-from .host_field_contract import _policy_contents_digest
 from .models import StrictModel
 from .native_graph_index import NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute

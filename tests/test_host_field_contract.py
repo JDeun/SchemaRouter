@@ -16,7 +16,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.host_field_contract import (
+from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     RequiredEnumValue,
     select_authorized_field_contract,
@@ -924,7 +924,7 @@ def test_same_object_authorization_drift_during_full_catalog_scan_is_rejected():
 def test_same_object_index_mutation_during_contract_match_cannot_return_selected(
     monkeypatch,
 ):
-    import schemarouter.host_field_contract as module
+    import scripts.research_legacy_host_field_contract as module
 
     router = _router()
     policy = router.authorization_policy

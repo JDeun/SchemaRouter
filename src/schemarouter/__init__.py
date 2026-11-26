@@ -318,12 +318,6 @@ from .field_routing_session import (
 )
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
-from .host_field_contract import (
-    AuthorizedContractSelection,
-    HostFieldContract,
-    RequiredEnumValue,
-    select_authorized_field_contract,
-)
 from .ingestion import (
     SourceAdapterProbeDiagnostic,
     SourceProbeFailureCategory,
@@ -405,7 +399,6 @@ from .operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
 )
-from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .paper_consumer_execution import (
     PaperExecutedToolSequence,
     PaperUnderstoodExecutedGraph,
@@ -656,10 +649,6 @@ __all__ = [
     "ResolvedNativeConcepts",
     "resolve_native_concepts",
     "NativeDeclaredFieldGroup",
-    "AuthorizedContractSelection",
-    "HostFieldContract",
-    "RequiredEnumValue",
-    "select_authorized_field_contract",
     "CapabilityOperationalMetadata",
     "HostCapabilityConstraints",
     "OperationalConstraintReason",
@@ -754,8 +743,6 @@ __all__ = [
     "DiscoveryProfile",
     "E5CachedEmbedder",
     "DeclaredOperationFitPolicy",
-    "OperationIntentHypothesis",
-    "infer_operation_intent",
     "validate_declared_operation_fit",
     "DefaultMCPClientFactory",
     "EffectKind",

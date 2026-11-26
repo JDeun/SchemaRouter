@@ -6,6 +6,7 @@ on:
       - ".github/workflows/operation-intent-cpu-dev.yml"
       - "benchmarks/operation-intent-trilingual-dev-20261015.json"
       - "scripts/evaluate_operation_intent_cpu_dev.py"
+      - "scripts/research_legacy_operation_intent.py"
       - "tests/test_operation_intent_cpu_dev.py"
   workflow_dispatch:
 

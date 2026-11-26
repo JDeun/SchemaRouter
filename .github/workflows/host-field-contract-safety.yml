@@ -3,7 +3,8 @@ name: Host Field Contract Safety CPU
 on:
   pull_request:
     paths:
-      - "src/schemarouter/host_field_contract.py"
+      - "src/schemarouter/_authorization_witness.py"
+      - "scripts/research_legacy_host_field_contract.py"
       - "src/schemarouter/__init__.py"
       - "tests/test_host_field_contract.py"
       - "docs/host-verified-field-contract.md"

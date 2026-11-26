@@ -9,13 +9,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .capability_contracts import CapabilityFieldContract
 from .concept_graph_retrieval import retrieve_authorized_concept_graph
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError
 from .field_group_retrieval import _complete_fields
-from .host_field_contract import _policy_contents_digest
 from .native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
 
 if TYPE_CHECKING:

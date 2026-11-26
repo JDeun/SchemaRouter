@@ -1,4 +1,4 @@
-"""Scale experiment checks source-locked, actual public scoped API behavior."""
+"""Scale experiment checks the source-locked historical lexical selector."""
 from __future__ import annotations
 
 import math
@@ -7,15 +7,15 @@ import pytest
 
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import build_fixture
-from schemarouter import (
-    HostFieldContract,
-    select_authorized_field_contract,
-)
 from scripts.research_host_field_contract_scaled_cpu_dev import (
     SCENARIOS,
     SIZES,
     _nearest_rank,
     assess,
+)
+from scripts.research_legacy_host_field_contract import (
+    HostFieldContract,
+    select_authorized_field_contract,
 )
 
 

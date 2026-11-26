@@ -13,7 +13,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.host_field_contract import (
+from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     RequiredEnumValue,
     select_authorized_field_contract,

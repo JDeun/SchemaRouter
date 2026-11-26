@@ -25,10 +25,7 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter import (  # noqa: E402
-    E5CachedEmbedder,
-    infer_operation_intent,
-)
+from schemarouter import E5CachedEmbedder  # noqa: E402
 from schemarouter.operation_fit import OperationKind  # noqa: E402
 from scripts.research_legacy_decisions import (  # noqa: E402
     DecisionOption,
@@ -36,6 +33,7 @@ from scripts.research_legacy_decisions import (  # noqa: E402
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_operation_intent import infer_operation_intent  # noqa: E402
 
 MODEL_IDS = {
     "minilm": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",

@@ -1,4 +1,4 @@
-"""Current-product 100/250/500 authorized host contract CPU performance DEV.
+"""Historical lexical 100/250/500 authorized host contract CPU performance DEV.
 
 Synthetic OpenAPI/MCP/database/vector/graph catalogs reused from an already
 published fixed fixture. No execution, model, live provider, inferred intent,
@@ -24,15 +24,16 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     SIZES,
     build_fixture,
 )
-from schemarouter import (
+from schemarouter import PlanRequest
+from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
-    PlanRequest,
     select_authorized_field_contract,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATHS = (
-    "src/schemarouter/host_field_contract.py",
+    "scripts/research_legacy_host_field_contract.py",
+    "src/schemarouter/_authorization_witness.py",
     "src/schemarouter/runtime.py",
     "src/schemarouter/planner.py",
     "benchmarks/current_adapter_scaled_authorized_dev_v1.py",

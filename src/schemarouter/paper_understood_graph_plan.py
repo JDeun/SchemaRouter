@@ -10,10 +10,10 @@ from copy import deepcopy
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
-from .host_field_contract import _policy_contents_digest
 from .native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
 from .paper_field_retrieval import PaperFieldRoute
 from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed

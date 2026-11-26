@@ -9,13 +9,13 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Any
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_text
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import NativeDeclaredConcept
 from .errors import PolicyViolationError
 from .field_group_retrieval import _compatible_field, _scalar_contract
-from .host_field_contract import _policy_contents_digest
 from .models import FieldSpec, ParameterSpec, PlanCoverage, SemanticFieldRequirement
 from .paper_query_needs import PaperQueryNeed
 from .paper_typed_tool_plan import (

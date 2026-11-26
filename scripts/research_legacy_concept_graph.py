@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from typing import Literal
 
+from schemarouter._authorization_witness import _policy_contents_digest
 from schemarouter.authorization import PrincipalContext
 from schemarouter.concept_graph_retrieval import NativeConceptGraphSelection, NativeConceptRouteSet
 from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import _root_envelope_empty
-from schemarouter.host_field_contract import _policy_contents_digest
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.runtime import SchemaRouter
 from scripts.research_legacy_field_group import retrieve_authorized_field_group

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import infer_operation_intent
+from scripts.research_legacy_operation_intent import infer_operation_intent
 
 
 @pytest.mark.parametrize(

@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .concept_retrieval import (
     NativeConceptCatalog,
@@ -16,7 +17,6 @@ from .concept_retrieval import (
 )
 from .errors import PolicyViolationError
 from .field_group_retrieval import _root_envelope_empty
-from .host_field_contract import _policy_contents_digest
 from .native_graph_index import NativeSchemaGraphIndex
 
 if TYPE_CHECKING:

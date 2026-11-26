@@ -11,13 +11,13 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
+from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_bytes
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
 from .field_group_retrieval import _response_contract, _scalar_contract
-from .host_field_contract import _policy_contents_digest
 from .models import EndpointSpec, PlanCoverage, ToolCall, ToolSpec
 from .native_graph_index import (
     NativeSchemaGraphIndex,
