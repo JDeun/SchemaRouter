@@ -12,6 +12,7 @@ import httpx
 from pydantic import TypeAdapter
 
 from ._loop_affinity import SyncLoopRunner
+from ._schema_identity import _tokens
 from ._source_availability import _SourceAvailability
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import (
@@ -96,7 +97,7 @@ from .native_schema_lifecycle import (
     NativeSchemaWatchSnapshot,
 )
 from .network_policy import NetworkPolicy
-from .planner import QueryAnalyzer, SchemaPlanner, _tokens
+from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .provider_profiles import (

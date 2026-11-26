@@ -8,7 +8,7 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
-from ._schema_identity import _locale_lexical_text, _normalize
+from ._schema_identity import _normalize, _tokens
 from ._source_availability import _SnapshotFingerprints, _SourceAvailability
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import ModelAnalysisError, PlanningError
@@ -55,14 +55,6 @@ from .validation import (
     json_schema_types,
     json_schemas_compatible,
 )
-
-# Match normalized Korean syllables and Japanese kana/kanji as lexical
-# spans so explicitly declared multilingual aliases can be retrieved.
-# Canonical Unicode equivalence is not a translation of tool metadata.
-_TOKEN_RE = re.compile(
-    r"[A-Za-z0-9_]+|[가-힣]+|[ぁ-ゖ]+|[ァ-ヺー]+|[一-鿿々〆]+"
-)
-
 
 def _semantic_trigrams(value: str) -> frozenset[str]:
     """Return unique 3-grams used to shortlist semantic-containment candidates."""
@@ -139,43 +131,6 @@ def _matched_field_qualifiers(query: str, field: FieldSpec) -> tuple[str, ...]:
         if token_value_match or non_ascii_value_match or keyed_match:
             matches.append(f"{key}={value}")
     return tuple(matches)
-
-_KOREAN_PARTICLE_SUFFIXES = (
-    "에서",
-    "에게",
-    "으로",
-    "까지",
-    "부터",
-    "처럼",
-    "보다",
-    "을",
-    "를",
-    "이",
-    "가",
-    "은",
-    "는",
-    "의",
-    "에",
-    "로",
-    "와",
-    "과",
-)
-
-
-def _tokens(text: str) -> set[str]:
-    tokens = {
-        token.lower() for token in _TOKEN_RE.findall(_locale_lexical_text(text))
-    }
-    expanded = set(tokens)
-    for token in tokens:
-        if not token or not all("가" <= char <= "힣" for char in token):
-            continue
-        for suffix in _KOREAN_PARTICLE_SUFFIXES:
-            if token.endswith(suffix) and len(token) > len(suffix) + 1:
-                expanded.add(token[: -len(suffix)])
-                break
-    return expanded
-
 
 _STRUCTURAL_TOOL_IDENTIFIER_BONUS = 4.5
 _STRUCTURAL_OPERATION_FAMILY_BONUS = 1.5

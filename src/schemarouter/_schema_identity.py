@@ -37,3 +37,47 @@ def _locale_lexical_text(text: str) -> str:
 
 def _normalize(text: str) -> str:
     return "".join(ch.lower() for ch in _locale_lexical_text(text) if ch.isalnum())
+
+
+# Match normalized Korean syllables and Japanese kana/kanji as lexical
+# spans so explicitly declared multilingual aliases can be retrieved.
+# Canonical Unicode equivalence is not a translation of tool metadata.
+_TOKEN_RE = re.compile(
+    r"[A-Za-z0-9_]+|[가-힣]+|[ぁ-ゖ]+|[ァ-ヺー]+|[一-鿿々〆]+"
+)
+
+_KOREAN_PARTICLE_SUFFIXES = (
+    "에서",
+    "에게",
+    "으로",
+    "까지",
+    "부터",
+    "처럼",
+    "보다",
+    "을",
+    "를",
+    "이",
+    "가",
+    "은",
+    "는",
+    "의",
+    "에",
+    "로",
+    "와",
+    "과",
+)
+
+
+def _tokens(text: str) -> set[str]:
+    tokens = {
+        token.lower() for token in _TOKEN_RE.findall(_locale_lexical_text(text))
+    }
+    expanded = set(tokens)
+    for token in tokens:
+        if not token or not all("가" <= char <= "힣" for char in token):
+            continue
+        for suffix in _KOREAN_PARTICLE_SUFFIXES:
+            if token.endswith(suffix) and len(token) > len(suffix) + 1:
+                expanded.add(token[: -len(suffix)])
+                break
+    return expanded
