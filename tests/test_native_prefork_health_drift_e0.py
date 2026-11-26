@@ -58,7 +58,7 @@ def test_dense_prefork_midscan_health_failure_is_sanitized_and_fail_closed(
             raise RuntimeError(PRIVATE_CALLBACK_DETAIL)
         return volatile_calls == 1
 
-    router.planner.availability_predicate = live_health
+    router._source_availability.predicate = live_health
     with pytest.raises(
         PolicyViolationError, match="G5 fork eligibility changed during lookup",
     ) as rejected:
@@ -90,7 +90,7 @@ def test_dense_prefork_stable_current_health_matches_strict_k5(
             seen += 1
         return True
 
-    router.planner.availability_predicate = live_health
+    router._source_availability.predicate = live_health
     for alias in ALIASES:
         result = index.lookup_shared_root_forks(
             router, alias, group=GROUP, principal=ACTOR,

@@ -13,9 +13,9 @@ from schemarouter import (
     FieldSpec,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _tool(*, semantic_id: str | None) -> ToolSpec:
@@ -99,13 +99,13 @@ def test_declaration_rejects_ambiguous_or_unsafe_semantic_ids(bad):
 
 def test_absent_semantic_id_does_not_change_native_route_retrieval():
     principal = PrincipalContext(subject="research", roles=("viewer",))
-    base = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    base = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="materials.read", roles_any=("viewer",),
         ),),
     ))
-    annotated = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    annotated = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="materials.read", roles_any=("viewer",),
@@ -132,7 +132,7 @@ def test_absent_semantic_id_does_not_change_native_route_retrieval():
 
 
 def test_a_semantic_annotation_is_not_an_execution_authority(monkeypatch):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
     ))
     router.add_tool(_tool(semantic_id="resource.material_id"))

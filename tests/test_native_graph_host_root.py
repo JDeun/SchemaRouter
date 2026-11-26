@@ -44,7 +44,7 @@ def _setup(
     input_schema: dict[str, Any] | None = None,
     source_params: list[ParameterSpec] | None = None,
 ) -> tuple[SchemaRouter, list[tuple[str, dict[str, Any]]]]:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),
@@ -127,7 +127,7 @@ def _index(router: SchemaRouter, *, allow: bool) -> NativeSchemaGraphIndex:
 
 def test_scalar_only_explicit_host_root_can_be_direct_without_becoming_join_producer():
     """A wiki outline is not an identifier usable to bind another MCP tool."""
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     router.registry.register(ToolSpec(
         name="wiki", source_type="mcp", license="reviewed-unverified",
         endpoints=[EndpointSpec(

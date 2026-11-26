@@ -24,6 +24,7 @@ from schemarouter import (
 from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
+from scripts.research_legacy_router import legacy_router
 
 ANALYST = PrincipalContext(subject="researcher", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -70,8 +71,8 @@ def _tool(name, fields, *, source="crm", license_id="reviewed", safe=True):
     )
 
 
-def _router(*, many_partial=0, many_complete=0):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+def _router(*, many_partial=0, many_complete=0, router_factory=SchemaRouter):
+    router = router_factory(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(
@@ -195,9 +196,13 @@ def test_native_review_reverse_index_5000_matches_independent_forward_posting_or
 
 
 @pytest.mark.parametrize("query", ALIASES)
-def test_native_postings_resolve_complete_fields_before_k_with_live_policy(query):
-    router = _router(many_partial=120)
-    old = router.retrieve_authorized(query, principal=ANALYST, k=5)
+@pytest.mark.parametrize("router_factory", (SchemaRouter, legacy_router), ids=("native", "legacy"))
+def test_native_postings_resolve_complete_fields_before_k_with_live_policy(query, router_factory):
+    router = _router(many_partial=120, router_factory=router_factory)
+    if router_factory is legacy_router:
+        old = router.retrieve_authorized(query, principal=ANALYST, k=5)
+    else:
+        assert router.planner is None
     index = NativeSchemaPostingIndex.build(router.registry)
     assert index.indexed_route_count == 127
     assert "complete.read" in index.postings["crm.priority"]
@@ -211,7 +216,8 @@ def test_native_postings_resolve_complete_fields_before_k_with_live_policy(query
     assert result.candidates[0].required_output_fields == ("priority", "status")
     assert result.candidates[0].tool_fingerprint
     assert result.candidates[0].endpoint_fingerprint
-    assert router.retrieve_authorized(query, principal=ANALYST, k=5) == old
+    if router_factory is legacy_router:
+        assert router.retrieve_authorized(query, principal=ANALYST, k=5) == old
 
 
 @pytest.mark.parametrize("query", (
@@ -429,7 +435,7 @@ def test_index_rechecks_current_policy_and_availability_at_query_time():
         router, ALIASES[0], principal=ANALYST, group=GROUP,
     ).qualified_count == 1
 
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, endpoint: tool.key != "complete"
     )
     unavailable = index.lookup(
@@ -438,7 +444,7 @@ def test_index_rechecks_current_policy_and_availability_at_query_time():
     assert unavailable.status == "no_proven_hit"
     assert unavailable.candidates == ()
 
-    router.planner.availability_predicate = None
+    router._source_availability.predicate = None
     router.authorization_policy = AuthorizationPolicy(default_effect="deny")
     denied = index.lookup(
         router, ALIASES[0], principal=ANALYST, group=GROUP,
@@ -456,10 +462,10 @@ def test_replacing_availability_predicate_mid_field_lookup_fails_closed():
         nonlocal consulted
         if not consulted:
             consulted = True
-            router.planner.availability_predicate = lambda _tool, _ep: False
+            router._source_availability.predicate = lambda _tool, _ep: False
         return True
 
-    router.planner.availability_predicate = replace_during_check
+    router._source_availability.predicate = replace_during_check
     with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
     assert consulted
@@ -783,21 +789,21 @@ def test_default_native_postings_same_callable_health_revocation_fails_closed(
             disabled.add("complete")
         return tool.key not in disabled
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError,
         match="indexed candidate eligibility changed during lookup",
     ):
         index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
     assert saw_later
-    assert router.planner.availability_predicate is health
+    assert router._source_availability.predicate is health
     assert router.registry.version == index.registry_version
 
 
 def test_default_native_postings_stable_health_keeps_complete_field_group():
     router = _router(many_complete=1)
     index = NativeSchemaPostingIndex.build(router.registry)
-    router.planner.availability_predicate = lambda _tool, _ep: True
+    router._source_availability.predicate = lambda _tool, _ep: True
     result = index.lookup(
         router, ALIASES[0], principal=ANALYST, group=GROUP,
     )
@@ -828,7 +834,7 @@ def test_native_postings_first_availability_failure_redacts_private_error(
             raise RuntimeError(private_marker)
         return BadAvailability()
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError,
         match="indexed availability check failed during lookup",
@@ -873,7 +879,7 @@ def _normalized_material_group(*, unit="J", dimension="energy"):
 def test_indexed_normalized_numeric_field_respects_canonical_units_and_scope():
     """Owner-declared normalization creates a posting, never an inferred factor."""
     group = _normalized_material_group()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="materials.read",
@@ -910,7 +916,7 @@ def test_indexed_normalized_numeric_field_respects_canonical_units_and_scope():
 
 def test_normalized_numeric_posting_journal_delta_matches_full_rebuild():
     """Canonicalized semantic postings are removed and added by trusted deltas."""
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="materials.read",
@@ -1038,7 +1044,7 @@ def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
     def available(tool, endpoint):
         return current.get(f"{tool.key}.{endpoint.name}", True)
 
-    router.planner.availability_predicate = available
+    router._source_availability.predicate = available
 
     def withdraw(_q, _offered, _k):
         current["full_0.read"] = False
@@ -1050,7 +1056,7 @@ def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
             _research_ranker=withdraw,
         )
 
-    router.planner.availability_predicate = None
+    router._source_availability.predicate = None
     live = PrincipalContext(subject="researcher", roles=("analyst",))
 
     def swap_identity(_q, _offered, _k):

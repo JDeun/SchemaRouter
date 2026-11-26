@@ -73,7 +73,7 @@ def test_current_policy_changes_during_original_fork_query_fail_closed(
             )
         return True
 
-    router.planner.availability_predicate = live_health
+    router._source_availability.predicate = live_health
     with pytest.raises(PolicyViolationError):
         graph.lookup_shared_root_forks(
             router, ALIASES[0], group=GROUP, principal=ACTOR,
@@ -82,7 +82,7 @@ def test_current_policy_changes_during_original_fork_query_fail_closed(
 
     # The SAME pinned original source index must not cache revoked policy.
     router.authorization_policy = original_policy
-    router.planner.availability_predicate = lambda _tool, _endpoint: True
+    router._source_availability.predicate = lambda _tool, _endpoint: True
     for alias in ALIASES:
         restored = graph.lookup_shared_root_forks(
             router, alias, group=GROUP, principal=ACTOR,

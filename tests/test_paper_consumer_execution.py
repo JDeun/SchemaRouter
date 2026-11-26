@@ -130,7 +130,7 @@ async def test_source_revokes_leaf_before_consumers_no_leaf_executes():
     from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
 
     def revoke_after_root(router):
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             lambda tool, endpoint: tool.key != "fork_owner"
         )
 

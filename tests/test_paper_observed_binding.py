@@ -36,7 +36,7 @@ def _fixture(*, observed_customer_id="customer-017", source_parameter=False,
              allow_consumers=False, on_consumer=None, consumer_payloads=None,
              consumer_result_paths=None):
     seen: list[tuple[str, dict]] = []
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
@@ -243,7 +243,7 @@ async def test_invalid_observed_original_id_aborts_without_leaves():
 @pytest.mark.asyncio
 async def test_source_revokes_consumer_visibility_before_observation_binding():
     def revoke_owner(router):
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             lambda tool, endpoint: tool.key != "fork_owner"
         )
 
