@@ -5,14 +5,15 @@
   "reviewed": [
     {
       "path": "architecture.md",
-      "en_blob": "e13e284e91f02d9b63eac07146a65afefc032248",
-      "ko_blob": "30b794315e985d1984f8899cf6055cd3d3f05bf0",
+      "en_blob": "d2fce0ced51fd9c23449be52376edccbe38ef930",
+      "ko_blob": "885ed7ac472161987dc83c971965663fce709c40",
       "reviewed_contracts": [
         "Decision backend never owns ToolCall or credentials; Jev sees no DecisionOption.metadata",
         "Provenance/license/unit/source-type evidence must pass local prechecks before a provider can preserve/veto",
         "Execution hooks observe detached state but cannot transform calls/results or make retriable after-hook failures",
         "RunEvent trace data preserves redacted defaults; include_payloads=True requires host-managed sensitive data protection",
-        "2026-10-12: reviewed and repinned corrected Korean source; no new independent human sentence-level certification implied."
+        "2026-10-12: reviewed and repinned corrected Korean source; no new independent human sentence-level certification implied.",
+        "2026-11-26: paired AI-assisted review of the module inventory delta only; retired decision providers/plugin loader removed from the installed module list in both languages; preserved historical bounded-provider, hook and trace-privacy contract text. No independent human sentence-level certification implied."
       ]
     },
     {
