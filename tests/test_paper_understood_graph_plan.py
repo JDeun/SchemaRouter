@@ -77,7 +77,7 @@ def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
     rules = (AuthorizationRule(
         effect="deny", operation="middle.read", roles_any=("reader",),
     ),) if deny_middle else ()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=rules + (AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
@@ -158,7 +158,7 @@ def test_named_graph_rejects_host_argument_mutation_during_direct_probe():
         host_inputs["direct.read"]["case_id"] = "changed-after-source-probe"
         return True
 
-    router.planner.availability_predicate = mutate_host_input
+    router._source_availability.predicate = mutate_host_input
     with pytest.raises(PolicyViolationError, match="host|changed"):
         _compile(router, named_tools=("direct",), index=index,
                  host_source_arguments=host_inputs)
@@ -311,7 +311,7 @@ def test_source_availability_change_during_compilation_aborts(monkeypatch):
 
     def revoke(*args, **kwargs):
         result = original(*args, **kwargs)
-        router.planner.availability_predicate = lambda tool, endpoint: (
+        router._source_availability.predicate = lambda tool, endpoint: (
             tool.key != "middle"
         )
         return result
@@ -365,7 +365,7 @@ def test_owner_rank_policy_mutation_during_g5_lookup_fails_closed():
             rank_policy.route_priorities["target_1.read"] = 99
         return True
 
-    router.planner.availability_predicate = mutate_only_when_dependency_is_probed
+    router._source_availability.predicate = mutate_only_when_dependency_is_probed
     with pytest.raises(PolicyViolationError, match="rank|owner|changed"):
         _compile(
             router, named_tools=("target_0", "target_1"), index=index,
@@ -575,7 +575,7 @@ def test_unnamed_graph_direct_fallback_does_not_survive_live_health_revocation()
             return health["target"]
         return True
 
-    router.planner.availability_predicate = availability
+    router._source_availability.predicate = availability
     with pytest.raises(PolicyViolationError, match="changed|eligibility|source") as err:
         _compile(
             router, index=index, named_tools=(), rank_policy=policy,
@@ -630,7 +630,7 @@ def test_host_unnamed_g5_public_planner_selects_exact_k5_from_large_catalog(n_ta
 
 def _mixed_depth_router():
     """Source-native graph: target_short has one hop, target_long two."""
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
@@ -828,7 +828,7 @@ def test_cross_depth_mutable_availability_revocation_fails_before_returning_plan
             return state["short_available"]
         return True
 
-    router.planner.availability_predicate = check_availability
+    router._source_availability.predicate = check_availability
     # The second-depth lookup revokes a previously qualified 1-hop root.
     # Only re-proving the *full* original cohort prevents a stale Top-K
     # proof from being published even when the winner is in depth two.

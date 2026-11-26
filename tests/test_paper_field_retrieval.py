@@ -30,6 +30,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
 
 def _index(router):
@@ -84,7 +85,7 @@ def test_paper_union_of_two_split_fields_requires_original_typed_shared_root(
 
 
 def test_default_route_ranking_remains_byte_identical_before_and_after_optin():
-    router = build_fixture(500, mixed_scope=False)
+    router = build_fixture(500, mixed_scope=False, router_factory=legacy_synthetic_router)
     before = router.retrieve_authorized(ALIASES[0], principal=ACTOR, k=5)
     retrieve_paper_field_coverage(
         router, ALIASES[0], principal=ACTOR, catalog=_catalog(),
@@ -96,7 +97,7 @@ def test_default_route_ranking_remains_byte_identical_before_and_after_optin():
 
 def test_missing_source_consumer_abstains_without_partial_field_menu():
     router = build_fixture(500, mixed_scope=True)
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, ep: tool.key != "fork_owner"
     )
     result = retrieve_paper_field_coverage(
@@ -164,7 +165,7 @@ def test_shared_root_revoked_during_final_projection_cannot_be_published(monkeyp
             root_is_healthy = False
         return scoped
 
-    router.planner.availability_predicate = live_health
+    router._source_availability.predicate = live_health
     monkeypatch.setattr(
         NativeSchemaGraphIndex, "lookup_shared_root_forks", observe_fork_proof,
     )
@@ -215,7 +216,7 @@ def test_first_publication_projection_redacts_private_source_callback_error(
 
 
 def test_one_route_covers_complete_field_group_before_k5():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

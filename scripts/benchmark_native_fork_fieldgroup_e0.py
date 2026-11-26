@@ -81,12 +81,14 @@ def _decoy_leaf(
     )
 
 
-def build_fixture(registered_routes: int, *, mixed_scope: bool = False) -> SchemaRouter:
+def build_fixture(
+    registered_routes: int, *, mixed_scope: bool = False, router_factory=_synthetic_router,
+) -> SchemaRouter:
     if type(registered_routes) is not int or registered_routes not in (500, 5000):
         raise ValueError("only preregistered 500/5000 synthetic catalogs")
     if type(mixed_scope) is not bool:
         raise ValueError("mixed-scope source fixture requires a boolean")
-    router = _synthetic_router(
+    router = router_factory(
         registered_routes - 5 - (MIXED_DECOY_COUNT if mixed_scope else 0)
     )
     router.add_tool(ToolSpec(

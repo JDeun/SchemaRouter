@@ -43,7 +43,7 @@ def _catalog():
 
 
 def _single_source():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
@@ -119,7 +119,7 @@ def test_fork_compiles_deferred_typed_calls_and_original_identifier_edges(monkey
 
 def test_missing_leaf_abstains_without_partial_typed_calls():
     router = build_fixture(500)
-    router.planner.availability_predicate = lambda t, e: t.key != "fork_owner"
+    router._source_availability.predicate = lambda t, e: t.key != "fork_owner"
     plan = compile_paper_typed_tool_plan(
         router, ALIASES[0], principal=ACTOR, catalog=_catalog(), index=_index(router),
     )
@@ -187,7 +187,7 @@ def test_mid_compile_revocation_suppresses_stale_typed_call(monkeypatch):
         nonlocal call_count
         call_count += 1
         if call_count == 2:
-            router.planner.availability_predicate = (
+            router._source_availability.predicate = (
                 lambda tool, ep: tool.key != "fork_owner"
             )
         return original(*args, **kwargs)

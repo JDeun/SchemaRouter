@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import pytest
+from test_native_source_pass_cache import _lookup, _router
 
 from schemarouter import PolicyViolationError
 from schemarouter._source_availability import _SourceAvailability
-from test_native_source_pass_cache import _lookup, _router
-
 from scripts.research_legacy_router import legacy_router
 
 

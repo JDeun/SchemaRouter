@@ -95,7 +95,7 @@ def _tool(name, *, complete=True, safe=True, license_id="owner-reviewed",
 
 
 def _router():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(
@@ -303,7 +303,7 @@ def test_understood_source_change_aborts_without_partial_toolcall(monkeypatch):
 
     def revoke_after_compile(*args, **kwargs):
         result = original(*args, **kwargs)
-        router.planner.availability_predicate = lambda tool, ep: (
+        router._source_availability.predicate = lambda tool, ep: (
             tool.key != "full_5"
         )
         return result
