@@ -68,6 +68,7 @@ def _build_paper_direct_plan(
         coverage=receipt.coverage.model_copy(deep=True) if receipt.coverage else None,
     )
 
+
 def _build_paper_query_plan(
     registry: ToolRegistry, query: str, receipt: PaperTypedToolPlan, *, max_calls: int,
 ) -> ExecutionPlan:
@@ -88,6 +89,7 @@ def _build_paper_query_plan(
         planning_status=status,
         warnings=[f"Algorithm 1 planning status: {status}"],
     )
+
 
 @dataclass(frozen=True, slots=True, repr=False, eq=False)
 class _PreparedPaperPlanning:

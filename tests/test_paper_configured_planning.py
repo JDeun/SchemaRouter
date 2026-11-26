@@ -597,3 +597,35 @@ def test_paper_name_identity_is_independent_of_lexical_planner(monkeypatch):
     assert paper_normalize("고객") == "고객"
     assert paper_normalize("ｶﾞ") == "ガ"
     assert _locale_lexical_text("① ㎏") == "① ㎏"
+
+
+@pytest.mark.parametrize("method", [
+    "plan_authorized", "aplan_authorized",
+    "plan_executable_authorized", "aplan_executable_authorized",
+])
+async def test_inflight_legacy_plan_cannot_publish_after_configuration(method, monkeypatch):
+    ctx = _configured(count=1, configure=False)
+    # All four public entrypoints select the legacy authorized planner in this fixture.
+    planner_method = (
+        "aplan_with_additional_availability"
+        if method.startswith("a") else "plan_with_additional_availability"
+    )
+    original = getattr(ctx.router.planner, planner_method)
+
+    def finish(plan):
+        _configure(ctx)
+        return plan
+
+    if method.startswith("a"):
+        async def configure_before_return(*args, **kwargs):
+            return finish(await original(*args, **kwargs))
+    else:
+        def configure_before_return(*args, **kwargs):
+            return finish(original(*args, **kwargs))
+
+    monkeypatch.setattr(ctx.router.planner, planner_method, configure_before_return)
+    with pytest.raises(PolicyViolationError, match="lexical planning is unavailable"):
+        result = getattr(ctx.router, method)(ctx.request.query, principal=ctx.principal)
+        if asyncio.iscoroutine(result):
+            await result
+    assert ctx.model.payloads == [] and ctx.seen == []

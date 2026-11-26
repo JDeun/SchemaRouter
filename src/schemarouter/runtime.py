@@ -3842,22 +3842,24 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         return configured
 
-    def plan(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
-        """Schema-aware planning under any active trusted principal context."""
-
-        principal = _current_principal_context()
-        configured = self._paper_configuration_for(request)
-        if configured is not None:
-            plan = self._run_sync_call(
-                lambda: configured.aplan(
-                    request, principal=principal, executable_only=False,
-                ),
+    def _require_legacy_planning_mode(self) -> None:
+        if self._paper_planning is not None:
+            raise PolicyViolationError(
+                "configured paper routing uses Algorithm 1; lexical planning is unavailable",
             )
-            self._validate_plan_authorization(plan, principal, phase="plan")
-            return plan
-        request = cast(PlanRequest | str, request)
-        predicate = self._authorization_predicate(principal)
+
+    def _legacy_plan(
+        self, request: PlanRequest | str, principal: PrincipalContext | None,
+        *, executable_only: bool,
+    ) -> ExecutionPlan:
+        """Temporary compatibility dispatch; never publish after paper configuration."""
+        self._require_legacy_planning_mode()
+        predicate = self._combined_availability_predicate(
+            principal, self._binding_ready if executable_only else None,
+        )
         if predicate is None:
+            if executable_only:
+                raise RuntimeError("executable planning requires an availability predicate")
             plan = self.planner.plan(request)
         elif (
             self.authorization_policy is not None
@@ -3879,22 +3881,24 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         else:
             plan = self.planner.plan_with_additional_availability(request, predicate)
-        if self.authorization_policy is not None:
+        self._require_legacy_planning_mode()
+        if self.authorization_policy is not None and not executable_only:
             self._validate_plan_authorization(plan, principal, phase="plan")
+        self._require_legacy_planning_mode()
         return plan
 
-    async def aplan(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
-        """Async schema-aware planning under any active trusted principal context."""
-
-        principal = _current_principal_context()
-        configured = self._paper_configuration_for(request)
-        if configured is not None:
-            plan = await configured.aplan(request, principal=principal, executable_only=False)
-            self._validate_plan_authorization(plan, principal, phase="plan")
-            return plan
-        request = cast(PlanRequest | str, request)
-        predicate = self._authorization_predicate(principal)
+    async def _alegacy_plan(
+        self, request: PlanRequest | str, principal: PrincipalContext | None,
+        *, executable_only: bool,
+    ) -> ExecutionPlan:
+        """Temporary compatibility dispatch; never publish after paper configuration."""
+        self._require_legacy_planning_mode()
+        predicate = self._combined_availability_predicate(
+            principal, self._binding_ready if executable_only else None,
+        )
         if predicate is None:
+            if executable_only:
+                raise RuntimeError("executable planning requires an availability predicate")
             plan = await self.planner.aplan(request)
         elif (
             self.authorization_policy is not None
@@ -3919,9 +3923,41 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 request,
                 predicate,
             )
-        if self.authorization_policy is not None:
+        self._require_legacy_planning_mode()
+        if self.authorization_policy is not None and not executable_only:
             self._validate_plan_authorization(plan, principal, phase="plan")
+        self._require_legacy_planning_mode()
         return plan
+
+    def plan(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
+        """Schema-aware planning under any active trusted principal context."""
+
+        principal = _current_principal_context()
+        configured = self._paper_configuration_for(request)
+        if configured is not None:
+            plan = self._run_sync_call(
+                lambda: configured.aplan(
+                    request, principal=principal, executable_only=False,
+                ),
+            )
+            self._validate_plan_authorization(plan, principal, phase="plan")
+            return plan
+        return self._legacy_plan(
+            cast(PlanRequest | str, request), principal, executable_only=False,
+        )
+
+    async def aplan(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
+        """Async schema-aware planning under any active trusted principal context."""
+
+        principal = _current_principal_context()
+        configured = self._paper_configuration_for(request)
+        if configured is not None:
+            plan = await configured.aplan(request, principal=principal, executable_only=False)
+            self._validate_plan_authorization(plan, principal, phase="plan")
+            return plan
+        return await self._alegacy_plan(
+            cast(PlanRequest | str, request), principal, executable_only=False,
+        )
 
     def plan_authorized(
         self,
@@ -4369,34 +4405,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
             self._validate_plan_authorization(plan, principal, phase="plan")
             return plan
-        request = cast(PlanRequest | str, request)
-        predicate = self._combined_availability_predicate(
-            principal,
-            self._binding_ready,
+        return self._legacy_plan(
+            cast(PlanRequest | str, request), principal, executable_only=True,
         )
-        if predicate is None:
-            raise RuntimeError("executable planning requires an availability predicate")
-        if (
-            self.authorization_policy is not None
-            and self.authorization_policy.data_rules
-            and principal is not None
-        ):
-            plan = self.planner.plan_with_scoped_schema(
-                request,
-                predicate,
-                lambda tool, endpoint: self._data_scope_endpoint_view(
-                    principal,
-                    tool,
-                    endpoint,
-                ),
-                analysis_registry=self._scoped_analysis_registry(
-                    principal,
-                    predicate,
-                ),
-            )
-        else:
-            plan = self.planner.plan_with_additional_availability(request, predicate)
-        return plan
 
     async def aplan_executable(
         self, request: PlanRequest | PaperPlanRequest | str,
@@ -4409,37 +4420,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             plan = await configured.aplan(request, principal=principal, executable_only=True)
             self._validate_plan_authorization(plan, principal, phase="plan")
             return plan
-        request = cast(PlanRequest | str, request)
-        predicate = self._combined_availability_predicate(
-            principal,
-            self._binding_ready,
+        return await self._alegacy_plan(
+            cast(PlanRequest | str, request), principal, executable_only=True,
         )
-        if predicate is None:
-            raise RuntimeError("executable planning requires an availability predicate")
-        if (
-            self.authorization_policy is not None
-            and self.authorization_policy.data_rules
-            and principal is not None
-        ):
-            plan = await self.planner.aplan_with_scoped_schema(
-                request,
-                predicate,
-                lambda tool, endpoint: self._data_scope_endpoint_view(
-                    principal,
-                    tool,
-                    endpoint,
-                ),
-                analysis_registry=self._scoped_analysis_registry(
-                    principal,
-                    predicate,
-                ),
-            )
-        else:
-            plan = await self.planner.aplan_with_additional_availability(
-                request,
-                predicate,
-            )
-        return plan
 
     def plan_executable_authorized(
         self,

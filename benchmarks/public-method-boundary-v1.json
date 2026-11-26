@@ -410,107 +410,107 @@
         {
           "name": "plan",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3845
+          "source_line": 3932
         },
         {
           "name": "aplan",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3886
+          "source_line": 3949
         },
         {
           "name": "plan_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3926
+          "source_line": 3962
         },
         {
           "name": "aplan_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3937
+          "source_line": 3973
         },
         {
           "name": "retrieve_routes",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4020
+          "source_line": 4062
         },
         {
           "name": "aretrieve_routes",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4056
+          "source_line": 4100
         },
         {
           "name": "retrieve_routes_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4092
+          "source_line": 4138
         },
         {
           "name": "aretrieve_routes_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4104
+          "source_line": 4150
         },
         {
           "name": "retrieve",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4142
+          "source_line": 4188
         },
         {
           "name": "aretrieve",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4184
+          "source_line": 4232
         },
         {
           "name": "prepare_field_routing",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4226
+          "source_line": 4276
         },
         {
           "name": "configure_field_routing",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 4246
+          "source_line": 4296
         },
         {
           "name": "retrieve_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4272
+          "source_line": 4322
         },
         {
           "name": "aretrieve_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4286
+          "source_line": 4336
         },
         {
           "name": "retrieve_state_aware",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4300
+          "source_line": 4350
         },
         {
           "name": "aretrieve_state_aware",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4319
+          "source_line": 4369
         },
         {
           "name": "plan_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4345
+          "source_line": 4395
         },
         {
           "name": "aplan_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4387
+          "source_line": 4412
         },
         {
           "name": "plan_executable_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4430
+          "source_line": 4427
         },
         {
           "name": "aplan_executable_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4441
+          "source_line": 4438
         },
         {
           "name": "retrieve_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4452
+          "source_line": 4449
         },
         {
           "name": "aretrieve_executable",
@@ -520,72 +520,72 @@
         {
           "name": "retrieve_executable_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4540
+          "source_line": 4543
         },
         {
           "name": "aretrieve_executable_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4552
+          "source_line": 4555
         },
         {
           "name": "execute",
           "kind": "registered-tool-execution",
-          "source_line": 4590
+          "source_line": 4593
         },
         {
           "name": "ainvoke",
           "kind": "registered-tool-execution",
-          "source_line": 4599
+          "source_line": 4602
         },
         {
           "name": "invoke",
           "kind": "registered-tool-execution",
-          "source_line": 4610
+          "source_line": 4613
         },
         {
           "name": "abatch",
           "kind": "registered-tool-execution",
-          "source_line": 4618
+          "source_line": 4621
         },
         {
           "name": "batch",
           "kind": "registered-tool-execution",
-          "source_line": 4679
+          "source_line": 4682
         },
         {
           "name": "abatch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 4694
+          "source_line": 4697
         },
         {
           "name": "batch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 4748
+          "source_line": 4751
         },
         {
           "name": "astream",
           "kind": "registered-tool-execution",
-          "source_line": 4763
+          "source_line": 4766
         },
         {
           "name": "stream",
           "kind": "registered-tool-execution",
-          "source_line": 4810
+          "source_line": 4813
         },
         {
           "name": "astream_events",
           "kind": "registered-tool-execution",
-          "source_line": 4818
+          "source_line": 4821
         },
         {
           "name": "run",
           "kind": "registered-tool-execution",
-          "source_line": 5990
+          "source_line": 5993
         },
         {
           "name": "arun",
           "kind": "registered-tool-execution",
-          "source_line": 5998
+          "source_line": 6001
         }
       ]
     },
@@ -596,87 +596,87 @@
         {
           "name": "retrieve_routes",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6014
+          "source_line": 6017
         },
         {
           "name": "aretrieve_routes",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6023
+          "source_line": 6026
         },
         {
           "name": "retrieve",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6032
+          "source_line": 6035
         },
         {
           "name": "aretrieve",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6041
+          "source_line": 6044
         },
         {
           "name": "retrieve_state_aware",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6050
+          "source_line": 6053
         },
         {
           "name": "aretrieve_state_aware",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6068
+          "source_line": 6071
         },
         {
           "name": "retrieve_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6086
+          "source_line": 6089
         },
         {
           "name": "aretrieve_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 6095
+          "source_line": 6098
         },
         {
           "name": "invoke",
           "kind": "registered-tool-execution",
-          "source_line": 6104
+          "source_line": 6107
         },
         {
           "name": "ainvoke",
           "kind": "registered-tool-execution",
-          "source_line": 6107
+          "source_line": 6110
         },
         {
           "name": "batch",
           "kind": "registered-tool-execution",
-          "source_line": 6110
+          "source_line": 6113
         },
         {
           "name": "abatch",
           "kind": "registered-tool-execution",
-          "source_line": 6122
+          "source_line": 6125
         },
         {
           "name": "batch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 6134
+          "source_line": 6137
         },
         {
           "name": "abatch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 6146
+          "source_line": 6149
         },
         {
           "name": "stream",
           "kind": "registered-tool-execution",
-          "source_line": 6158
+          "source_line": 6161
         },
         {
           "name": "astream",
           "kind": "registered-tool-execution",
-          "source_line": 6161
+          "source_line": 6164
         },
         {
           "name": "astream_events",
           "kind": "registered-tool-execution",
-          "source_line": 6164
+          "source_line": 6167
         }
       ]
     },
