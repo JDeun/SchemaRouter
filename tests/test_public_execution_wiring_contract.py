@@ -104,7 +104,13 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
             assert "monkeypatch" not in body
             assert method + "(" in body
             if row["id"] == "paper.direct.native.read":
-                assert "_fixture(" in body
+                # Positive evidence must use the same real native registration
+                # path as the denial evidence, never the lexical fixture.
+                assert "_native_router(" in body
+                assert "_fixture(" not in body
+                assert "legacy=True" not in body
+                assert "router.prepare_field_routing(" in body
+                assert "assert seen ==" in body
             assert "assert " in body
 
 
