@@ -374,6 +374,11 @@ async def compile_model_query(
         raise ValueError(
             "unnamed graph discovery requires host approval and owner Rank"
         )
+    if (
+        allow_unnamed_graph_discovery and rank_policy is not None
+        and rank_policy.direct_score_mode == "paper_v1"
+    ):
+        raise ValueError("paper v1 does not permit graph dependency discovery")
     if type(k) is not int or k != 5 or type(max_hops) is not int or max_hops not in (1, 2):
         raise ValueError("paper query requires K5 and one or two graph hops")
     if (

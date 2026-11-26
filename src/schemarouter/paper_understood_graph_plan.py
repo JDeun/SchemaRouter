@@ -109,6 +109,21 @@ def _compile_paper_understood_graph_plan(
         )
     ):
         raise ValueError("invalid explicit paper host root inputs")
+    # Algorithm 1 selects independent tools and projects their response fields.
+    # Missing inputs are not authority to discover producer/consumer chains.
+    # Keep the legacy typed G5 extension separate from the paper-v1 path.
+    if (
+        isinstance(rank_policy, PaperNativeRankPolicy)
+        and rank_policy.direct_score_mode == "paper_v1"
+    ):
+        if allow_unnamed_graph_discovery:
+            raise ValueError("paper v1 does not permit graph dependency discovery")
+        return _compile_paper_understood_direct_plan(
+            router, understanding, principal=principal, catalog=catalog,
+            intent_registry=intent_registry, index=index, k=k,
+            host_source_arguments=host_source_arguments, rank_policy=rank_policy,
+            _compose_concepts=_compose_concepts,
+        )
     host_inputs = {
         route: dict(values) for route, values in (host_source_arguments or {}).items()
     }

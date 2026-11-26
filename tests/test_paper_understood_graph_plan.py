@@ -1029,3 +1029,42 @@ def test_prepared_session_unnamed_g5_uses_owner_reviewed_intent_domains():
         "root.read", "middle.read", "target_1.read",
     )
     assert plan.ranked_unverified and not plan.executable_authority
+
+
+@pytest.mark.parametrize("hops", [1, 2])
+def test_paper_v1_named_tool_never_falls_back_to_g5(hops, monkeypatch):
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router(hops=hops)
+    index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id, direct_score_mode="paper_v1",
+        focus_direct=True,
+    )
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("paper v1 invoked G5 dependency lookup")
+
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup", forbidden)
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup_two_hop", forbidden)
+    plan = _compile(router, index=index, rank_policy=policy, hints={"case_id": "untrusted"})
+    assert plan.status == "requires_arguments"
+    assert tuple(call.route_id for call in plan.calls) == ("target_0.read",)
+    assert plan.calls[0].call.fields == ["status"]
+    assert plan.calls[0].call.arguments == {}
+    assert plan.calls[0].call.missing_required_arguments == ["case_id"]
+    assert plan.bindings == ()
+    assert not plan.executable_authority
+
+
+def test_paper_v1_refuses_explicit_g5_discovery():
+    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+
+    router = _router()
+    index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    policy = PaperNativeRankPolicy(
+        snapshot_id=index.field_index.snapshot_id, direct_score_mode="paper_v1",
+    )
+    with pytest.raises(ValueError, match="paper v1 does not permit graph"):
+        _compile(router, index=index, rank_policy=policy, named_tools=(),
+                 allow_unnamed_graph_discovery=True)
