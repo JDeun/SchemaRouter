@@ -1,3 +1,5 @@
+"""Archived adaptive ranking/exposure baseline; not an installed routing engine."""
+
 from __future__ import annotations
 
 import math
@@ -5,8 +7,8 @@ from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from .canonical_json import canonical_json_sha256, canonical_json_text
-from .document_loading import DocumentLimits, load_bounded_json
+from schemarouter.canonical_json import canonical_json_sha256, canonical_json_text
+from schemarouter.document_loading import DocumentLimits, load_bounded_json
 
 _ADAPTIVE_CHECKPOINT_VERSION = 1
 _ADAPTIVE_CHECKPOINT_MAX_BYTES = 1024 * 1024
@@ -364,7 +366,7 @@ def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weig
     The input retrieval is assumed to have already passed normal visibility,
     authorization and availability filtering. A zero weight is an exact no-op.
     """
-    from .models import CapabilityRetrieval
+    from schemarouter.models import CapabilityRetrieval
 
     if weight < 0:
         raise ValueError("weight must be >= 0")
@@ -408,7 +410,7 @@ def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weig
 
 def filter_unexposed_schemas(retrieval, exposure: SessionSchemaExposure):
     """Return only schemas not already exposed in the current context epoch."""
-    from .models import CapabilityRetrieval
+    from schemarouter.models import CapabilityRetrieval
 
     candidates = [
         candidate

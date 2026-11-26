@@ -4,6 +4,7 @@ from threading import Lock
 
 import pytest
 
+import schemarouter
 import schemarouter.runtime as runtime_module
 from schemarouter import (
     EndpointSpec,
@@ -23,13 +24,17 @@ from schemarouter import (
     RunConfig,
     SchemaDriftError,
     SchemaRouter,
-    SessionSchemaExposure,
-    SuccessfulCapabilityHistory,
     ToolCall,
     ToolSpec,
     TransientInvocationError,
 )
 from schemarouter.runtime import _run_sync
+from scripts.research_legacy_adaptive_context import (
+    SessionSchemaExposure,
+    SuccessfulCapabilityHistory,
+    apply_success_prior,
+    filter_unexposed_schemas,
+)
 
 
 def make_router(*, read_only: bool | None = True) -> SchemaRouter:
@@ -1307,37 +1312,44 @@ async def test_event_plan_payload_reflects_execution_ready_route() -> None:
 
 
 
-def test_retrieve_adaptive_suppresses_already_exposed_schema() -> None:
+def test_legacy_exposure_is_external_to_product_retrieval() -> None:
     router = make_router()
     exposure = SessionSchemaExposure()
     exposure.mark_exposed("weather", "current")
 
-    result = router.retrieve_adaptive(request(), exposure=exposure, k=5)
+    baseline = router.retrieve(request(), k=5)
+    assert [candidate.route_id for candidate in baseline.candidates] == ["weather.current"]
+    result = filter_unexposed_schemas(baseline, exposure)
     assert result.candidates == []
+    assert router.retrieve(request(), k=5).candidates == baseline.candidates
 
     exposure.compacted()
-    restored = router.retrieve_adaptive(request(), exposure=exposure, k=5)
-    assert [candidate.route_id for candidate in restored.candidates] == [
-        "weather.current"
-    ]
+    restored = filter_unexposed_schemas(router.retrieve(request(), k=5), exposure)
+    assert [candidate.route_id for candidate in restored.candidates] == ["weather.current"]
 
 
 @pytest.mark.asyncio
-async def test_aretrieve_adaptive_accepts_success_history_without_changing_default() -> None:
+async def test_legacy_history_is_external_to_product_retrieval() -> None:
     router = make_router()
     history = SuccessfulCapabilityHistory()
     history.record_success("weather", "current")
 
     baseline = await router.aretrieve(request(), k=5)
-    adaptive = await router.aretrieve_adaptive(
-        request(),
-        history=history,
-        history_weight=1.0,
-        k=5,
-    )
+    adaptive = apply_success_prior(baseline, history, weight=1.0)
     assert [candidate.route_id for candidate in adaptive.candidates] == [
         candidate.route_id for candidate in baseline.candidates
     ]
+    assert (await router.aretrieve(request(), k=5)).candidates == baseline.candidates
+
+
+def test_product_no_longer_exports_adaptive_routing() -> None:
+    assert not hasattr(SchemaRouter, "retrieve_adaptive")
+    assert not hasattr(SchemaRouter, "aretrieve_adaptive")
+    for name in (
+        "SchemaExposureDecision", "SessionSchemaExposure", "SuccessfulCapabilityHistory",
+        "apply_success_prior", "filter_unexposed_schemas",
+    ):
+        assert not hasattr(schemarouter, name)
 
 
 

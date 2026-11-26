@@ -4,13 +4,13 @@ import json
 
 import pytest
 
-from schemarouter.adaptive_context import (
+from schemarouter.models import CapabilityCandidate, CapabilityRetrieval
+from scripts.research_legacy_adaptive_context import (
     SessionSchemaExposure,
     SuccessfulCapabilityHistory,
     apply_success_prior,
     filter_unexposed_schemas,
 )
-from schemarouter.models import CapabilityCandidate, CapabilityRetrieval
 
 
 def test_success_history_records_only_explicit_successes_and_round_trips() -> None:

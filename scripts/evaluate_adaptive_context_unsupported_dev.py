@@ -16,15 +16,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter.adaptive_context import (  # noqa: E402
-    SuccessfulCapabilityHistory,
-    apply_success_prior,
-)
 from scripts.external_validation_gearlynx import (  # noqa: E402
     CASES,
     build_router,
     load_catalog,
     schemarouter_search,
+)
+from scripts.research_legacy_adaptive_context import (  # noqa: E402
+    SuccessfulCapabilityHistory,
+    apply_success_prior,
 )
 
 PRIOR_WEIGHT = 0.5

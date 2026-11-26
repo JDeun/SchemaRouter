@@ -7,10 +7,6 @@ from decimal import Decimal
 
 import pytest
 
-from schemarouter.adaptive_context import (
-    SessionSchemaExposure,
-    SuccessfulCapabilityHistory,
-)
 from schemarouter.canonical_json import (
     canonical_json_bytes,
     canonical_json_sha256,
@@ -31,6 +27,10 @@ from schemarouter.provider_profiles import (
 from schemarouter.source_identity import (
     StructuredSourceIdentity,
     structured_source_identity_digest,
+)
+from scripts.research_legacy_adaptive_context import (
+    SessionSchemaExposure,
+    SuccessfulCapabilityHistory,
 )
 
 _GOLDEN_PAYLOAD = {
