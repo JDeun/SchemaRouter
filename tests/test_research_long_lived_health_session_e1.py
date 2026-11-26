@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 
 import httpx
 import pytest
@@ -294,9 +295,27 @@ async def test_single_router_48_episode_health_flap_soak_without_external_gets()
                 assert result["model_selected_routes"] is False
                 assert result["independent_e2_qualified"] is False
                 assert result["real_provider_success_qualified"] is False
-                encoded = json.dumps(result, sort_keys=True)
+                # Exact aggregate schema prevents new payload/coordinate keys.
+                assert set(result) == {
+                    "status", "successful_native_calls",
+                    "initial_model_visible_routes", "dependent_model_visible_routes",
+                    "elapsed_ms", "real_provider_success_qualified",
+                    "independent_e2_qualified", "model_selected_routes",
+                    "health_monitor_running",
+                }
+                assert type(result["elapsed_ms"]) in (int, float)
+                assert math.isfinite(result["elapsed_ms"]) and result["elapsed_ms"] >= 0
+                for key in ("initial_model_visible_routes", "dependent_model_visible_routes"):
+                    assert type(result[key]) is int and 0 <= result[key] <= 1
+                # Timing is a measured aggregate, not a source observation.
+                # Its decimal representation can coincidentally contain 37.56.
+                encoded = json.dumps(
+                    {key: value for key, value in result.items() if key != "elapsed_ms"},
+                    sort_keys=True,
+                )
                 assert "PRIVATE_" not in encoded
                 assert "37.56" not in encoded
+                assert "126.98" not in encoded
                 assert "Seoul" not in encoded
         assert session.router.health_monitor.running is False
     assert seen == {"success": 24, "temporary_unavailable": 24}

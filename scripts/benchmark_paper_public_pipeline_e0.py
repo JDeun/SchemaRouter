@@ -492,9 +492,12 @@ async def _measure_load(
                 outstanding += 1
                 peak_outstanding = max(peak_outstanding, outstanding)
                 try:
+                    # All clients submit before either pathway enters service.
+                    # A fast worker must not complete before the other clients
+                    # have submitted their first requests. Count the event-loop
+                    # turn as queue time for both paths, not service time.
+                    await asyncio.sleep(0)
                     if asynchronous:
-                        # Submit to the next event-loop turn; CPU queueing stays in wall time.
-                        await asyncio.sleep(0)
                         started = perf_counter_ns()
                         plan = await session.acompile_query(
                             "Who handles this case?", principal=ACTOR,
@@ -545,7 +548,7 @@ async def _measure_load(
         "concurrency": concurrency, "max_outstanding_requests_observed": peak_outstanding,
         "scheduling": "closed-loop clients; one outstanding request per client; no burst backlog",
         "dispatch": "single event loop" if asynchronous else "bounded thread pool",
-        "queue_boundary": "client submission to API entry (event-loop turn or worker entry)",
+        "queue_boundary": "client submission to API entry (event-loop turn and, for sync, worker entry)",
         "service_boundary": "public compile plus exact-route oracle and receipt serialization",
         "samples": samples, "wall_ms": _percentiles([s["wall_ms"] for s in samples]),
         "threshold_exceedances": [{

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 from copy import deepcopy
 from dataclasses import replace
@@ -654,7 +655,7 @@ async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(me
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
     with pytest.raises(PolicyViolationError, match="lexical (planning|retrieval) is unavailable"):
         api = getattr(ctx.router, method)
-        if asyncio.iscoroutinefunction(api):
+        if inspect.iscoroutinefunction(api):
             await api(ctx.request.query)
         else:
             # Sync invoke has a separate event-loop guard. Exercise its real
