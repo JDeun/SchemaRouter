@@ -77,26 +77,26 @@
     {
       "path": "integrations/decision-backend-plugins.md",
       "section": 8,
-      "en_blob": "a5e49217d01e79aa64e5ac5ca5e751677423f249",
-      "ko_blob": "fdc5743f6537d2829e803686adadccfa1cbbf146",
+      "en_blob": "0ec39978fe635a1fb771642628d706568fbd5f24",
+      "ko_blob": "bf9814b5007a8a1c4e6960ae9a2824723bfc23ba",
       "decision": "meaning-preserved",
-      "evidence": "Korean says installed plugin does not imply production recommendation"
+      "evidence": "Korean says installed plugin does not imply production recommendation 2026-11-26 AI-assisted review: Paired section review: an installed plugin alone does not recommend a production router, the frozen workload and error/authority metrics remain required, and registered local schema retains execution authority. The new archive notice excludes the loader from the installed API in both languages."
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
       "section": 5,
-      "en_blob": "510c73a7adce77a7971118e1076425c06e377d63",
-      "ko_blob": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2",
+      "en_blob": "969403e3c798d0075bb7653f3b669a93a05da600",
+      "ko_blob": "15f07b2c538bfb2e5ec5ccc6e5649c300f51d278",
       "decision": "meaning-preserved",
-      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one."
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one. 2026-11-26 AI-assisted review: Paired review of Jev and Laya sections: credentialed comparison is not a CI requirement; the rejected full-catalog choice and winner-only noul evidence is not generalized to other checkpoints/runtimes/primitives. The new archive notice marks these adapters source-only in both languages."
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
       "section": 6,
-      "en_blob": "510c73a7adce77a7971118e1076425c06e377d63",
-      "ko_blob": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2",
+      "en_blob": "969403e3c798d0075bb7653f3b669a93a05da600",
+      "ko_blob": "15f07b2c538bfb2e5ec5ccc6e5649c300f51d278",
       "decision": "meaning-preserved",
-      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one."
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one. 2026-11-26 AI-assisted review: Paired review of Jev and Laya sections: credentialed comparison is not a CI requirement; the rejected full-catalog choice and winner-only noul evidence is not generalized to other checkpoints/runtimes/primitives. The new archive notice marks these adapters source-only in both languages."
     },
     {
       "path": "integrations/langgraph.md",
@@ -290,6 +290,25 @@
       6
     ],
     "section_text_changed_by_provider_insertion": false,
+    "independent_sentence_review_complete": false
+  },
+  "amendment_2026_11_26_decision_archive": {
+    "review_date": "2026-11-26",
+    "scope": "Repin only the three observed stale flagged sections after paired review of both source-checkout archive notices and the preserved section meanings; no findings waived.",
+    "reviewed_sections": [
+      {
+        "path": "integrations/decision-backend-plugins.md",
+        "section": 8
+      },
+      {
+        "path": "integrations/decision-model-ecosystem.md",
+        "section": 5
+      },
+      {
+        "path": "integrations/decision-model-ecosystem.md",
+        "section": 6
+      }
+    ],
     "independent_sentence_review_complete": false
   }
 }
