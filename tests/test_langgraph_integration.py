@@ -26,7 +26,7 @@ class GraphState(TypedDict, total=False):
 
 
 def make_router() -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(add)
     return router
 

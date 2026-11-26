@@ -45,6 +45,7 @@ async def test_mcp_http_registered_unavailable_recovery_stale_zero_handler_calls
         text=True,
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(

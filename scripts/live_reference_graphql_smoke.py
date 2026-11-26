@@ -149,7 +149,7 @@ async def run_smoke() -> dict[str, object]:
     router: SchemaRouter | None = None
 
     try:
-        router = SchemaRouter()
+        router = SchemaRouter(_legacy_routing=True)
         router.register_provider_profile(
             ProviderProfile(
                 provider_id="local-graphql-reference",

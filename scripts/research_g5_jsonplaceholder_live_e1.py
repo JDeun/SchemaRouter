@@ -143,7 +143,7 @@ def build_graph_router(
             effect="allow", operation="*.*", roles_any=("reader",),
         ),),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     source = ToolSpec(
         name="demo_posts",
         provider="jsonplaceholder",

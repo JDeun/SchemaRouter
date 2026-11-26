@@ -35,6 +35,7 @@ OUTSIDER = PrincipalContext(subject="synthetic-outsider", roles=("outsider",))
 
 def fixture_router() -> SchemaRouter:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
             rules=(
@@ -588,7 +589,7 @@ async def test_host_invocation_requires_actual_bound_trusted_invoker():
 
 @pytest.mark.asyncio
 async def test_host_invocation_denies_a_registered_mutation_before_real_io():
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="actions.update", roles_any=("viewer",),

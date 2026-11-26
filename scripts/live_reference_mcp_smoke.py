@@ -70,6 +70,7 @@ async def run_smoke() -> dict[str, object]:
         await _wait_for_port(port, process)
         source = f"http://127.0.0.1:{port}/mcp"
         router = SchemaRouter(
+            _legacy_routing=True,
             policy=ExecutionPolicy(allow_unclassified_remote=True)
         )
         router.register_provider_profile(

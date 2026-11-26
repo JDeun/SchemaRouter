@@ -822,7 +822,7 @@ def test_visible_field_review_fails_on_inflight_health_policy_change():
 
 
 def test_visible_field_review_detects_one_shot_mutable_availability_revocation():
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation="*.read",
                                  roles_any=("reader",)),),
@@ -1309,6 +1309,7 @@ def test_prepared_session_custom_registry_requires_verified_explicit_delta():
     fixture = build_fixture(500)
     registry = CustomInMemoryRegistry()
     router = SchemaRouter(
+        _legacy_routing=True,
         registry=registry, authorization_policy=fixture.authorization_policy,
     )
     for name in ("fork_origin", "fork_status", "fork_owner"):
@@ -1331,6 +1332,7 @@ def test_prepared_session_refresh_wires_exact_sqlite_journal():
     fixture = build_fixture(500)
     with SQLiteRegistry(":memory:") as sqlite:
         router = SchemaRouter(
+            _legacy_routing=True,
             registry=sqlite, authorization_policy=fixture.authorization_policy,
         )
         for name in ("fork_origin", "fork_status", "fork_owner"):

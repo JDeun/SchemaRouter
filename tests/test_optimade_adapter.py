@@ -314,7 +314,7 @@ async def test_optimade_index_metadatabase_is_not_silently_executable() -> None:
         return httpx.Response(404)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(SchemaSourceError, match="index meta-databases"):
             await router.add_url(
                 "https://index.example",
@@ -372,7 +372,7 @@ async def test_optimade_rejects_conflicting_entry_info_identity() -> None:
         raise AssertionError(f"unexpected request: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(SchemaSourceError, match="no usable entry schemas"):
             await router.add_url(
                 "https://materials.example",
@@ -590,7 +590,7 @@ async def test_optimade_untyped_list_unit_is_preserved_but_not_promoted() -> Non
         raise AssertionError(str(request.url))
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://materials.example/optimade/v1",
             kind="optimade",

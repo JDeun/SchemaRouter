@@ -40,7 +40,7 @@ class FakeDispatchRouter:
 
 
 def fixture():
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="paper",

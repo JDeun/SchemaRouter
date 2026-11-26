@@ -43,7 +43,7 @@ def _field(name: str, semantic: str, *, kind: str = "string") -> FieldSpec:
 
 
 def _router() -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(
             AuthorizationRule(effect="deny", operation="private.read",
                               roles_any=("analyst", "viewer")),
@@ -226,7 +226,7 @@ def test_actual_mcp_and_openapi_converters_share_native_fieldgroup_boundary():
                 field.semantic_id = "support." + field.name
     # An explicit locally reviewed read-only amendment is mandatory for MCP.
     mcp.endpoint("read_status").read_only = True
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(
             AuthorizationRule(effect="allow", operation="*.read_status",
                               roles_any=("analyst",)),

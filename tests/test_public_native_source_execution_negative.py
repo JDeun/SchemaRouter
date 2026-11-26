@@ -53,6 +53,7 @@ async def _registered(kind: str) -> tuple[
     else:
         raise ValueError(kind)
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(
                 effect="allow",

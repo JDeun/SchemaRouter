@@ -74,6 +74,7 @@ def build_source_router(corpus: dict[str, Any]) -> SchemaRouter:
             name=endpoint, description=desc, read_only=True,
         ))
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
             rules=(AuthorizationRule(

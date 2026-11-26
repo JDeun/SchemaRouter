@@ -529,7 +529,7 @@ def test_planner_can_select_field_unique_to_oneof_response_variant() -> None:
         },
     }
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(tool_from_openapi("pets", document))
 
     plan = router.plan(

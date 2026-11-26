@@ -525,6 +525,7 @@ async def test_schemarouter_exposes_execution_hooks() -> None:
         seen.append("after")
 
     router = SchemaRouter(
+        _legacy_routing=True,
         execution_hooks=ExecutionHooks(
             before_call=[before],
             after_call=[after],

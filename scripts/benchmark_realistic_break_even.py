@@ -206,7 +206,7 @@ def build_cases(size: int, ambiguity: Ambiguity) -> list[Case]:
 def build_router(tools: list[ToolSpec], *, candidate_index: bool) -> SchemaRouter:
     registry = InMemoryRegistry()
     registry.update_many(tools)
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     router.planner.candidate_index = candidate_index
     return router
 

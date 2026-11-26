@@ -16,9 +16,15 @@ materials-science examples used elsewhere in the project.
 
 ## Choose a scenario
 
+The current source checkout defaults to the paper-first routing contract. Start with
+`quickstart.py` or `schema_only_field_routing.py`. Older lexical planning/retrieval
+examples explicitly select the private research compatibility mode so that their
+historical comparisons remain reproducible; do not use that mode for new applications.
+
 | Scenario | Run | Extra | Evidence |
 | --- | --- | --- | --- |
-| Typed Python callable | `python examples/quickstart.py` | core | offline deterministic |
+| Configured Algorithm 1 | `python examples/quickstart.py` | core | offline deterministic |
+| Schema-only original-paper field discovery | `python examples/schema_only_field_routing.py` | core | offline deterministic |
 | Opaque SDK / client | `python examples/sdk_bound_demo.py` | core | offline deterministic |
 | Mixed-provider field coverage | `python examples/mixed_provider_demo.py` | core | offline deterministic |
 | Full catalog vs bounded Top-K | `python examples/context_reduction_demo.py` | core | offline deterministic |

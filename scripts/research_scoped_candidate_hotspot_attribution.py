@@ -169,6 +169,7 @@ def study(
     for size in sizes:
         current, original_policy = build_fixture(size)
         no_scope = SchemaRouter(
+            _legacy_routing=True,
             registry=current.registry,
             authorization_policy=AuthorizationPolicy(
                 rules=original_policy.rules,

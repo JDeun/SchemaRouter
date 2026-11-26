@@ -46,7 +46,7 @@ def _shape(name, number):
 @pytest.mark.parametrize("shape", ("scalar", "array", "nested", "nested_array"))
 async def test_public_nonfinite_inputs_are_rejected_before_native_dispatch(number, reason, shape):
     schema, value = _shape(shape, number)
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     invoked = []
 
     def invoke(endpoint, arguments):
@@ -75,7 +75,7 @@ async def test_public_nonfinite_inputs_are_rejected_before_native_dispatch(numbe
 @pytest.mark.parametrize("shape", ("scalar", "array", "nested", "nested_array"))
 async def test_public_nonfinite_outputs_are_rejected_without_echoing_payload(number, reason, shape):
     schema, value = _shape(shape, number)
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     invoked = []
 
     def invoke(endpoint, arguments):
@@ -99,7 +99,7 @@ async def test_public_nonfinite_outputs_are_rejected_without_echoing_payload(num
 @pytest.mark.parametrize("value", (9007199254740993, 10 ** 400 + 1, -(10 ** 400 + 1), .5, None))
 async def test_public_schema_bound_numbers_preserve_huge_int_precision_and_null(value):
     schema = {"type": ["number", "null"]}
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     invoked = []
 
     def invoke(endpoint, arguments):
@@ -122,7 +122,7 @@ async def test_public_schema_bound_numbers_preserve_huge_int_precision_and_null(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("value", NONFINITE)
 async def test_legacy_outputs_without_a_declared_schema_keep_existing_behavior(value):
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_bound_tool(ToolSpec(name="legacy", endpoints=[EndpointSpec(
         name="read", read_only=True,
     )]), lambda *_: value)
@@ -140,7 +140,7 @@ async def test_public_finite_decimal_inputs_and_outputs_preserve_native_values(v
         invoked.append(arguments["value"])
         return arguments["value"]
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_bound_tool(ToolSpec(name="decimal", endpoints=[EndpointSpec(
         name="read", read_only=True,
         parameters=[ParameterSpec(name="value", required=True, json_schema=schema)],
@@ -164,7 +164,7 @@ def test_empty_schema_preserves_legacy_runtime_value_policy(value):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("value", (Decimal("NaN"), Decimal("Infinity"), complex(1, 2)))
 async def test_legacy_native_outputs_without_schema_preserve_decimal_and_complex(value):
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_bound_tool(ToolSpec(name="legacy", endpoints=[EndpointSpec(
         name="read", read_only=True,
     )]), lambda *_: value)

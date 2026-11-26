@@ -21,6 +21,7 @@ from schemarouter import (
 
 def _router() -> SchemaRouter:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

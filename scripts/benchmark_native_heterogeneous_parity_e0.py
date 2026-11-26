@@ -104,7 +104,7 @@ def build_heterogeneous_fixture(registered_routes: int) -> SchemaRouter:
     """Exactly 500/5000 author-created mixed native-like source endpoints."""
     if type(registered_routes) is not int or registered_routes not in (500, 5000):
         raise ValueError("only preregistered 500/5000 source catalogs allowed")
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     for case in CASES:
         router.add_tool(_tool(
             case.tool_name, case.source_type, case.semantic_id,

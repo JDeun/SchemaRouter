@@ -72,7 +72,7 @@ async def test_remove_tool_purges_all_router_owned_runtime_state() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://api.example.test/openapi.json",
             kind="openapi",
@@ -103,7 +103,7 @@ async def test_remove_tool_purges_all_router_owned_runtime_state() -> None:
 
 
 def test_remove_tool_sync_wrapper() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = _local_tool()
     router.add_bound_tool(tool, _invoker)
 
@@ -140,7 +140,7 @@ async def test_remove_tool_fails_closed_for_registry_without_atomic_removal() ->
             return self.inner.endpoint(tool_key, endpoint_name)
 
     registry = NonMutableRegistry()
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     tool = _local_tool()
     registry.register(tool)
     registered = registry.get(tool.key)
@@ -183,7 +183,7 @@ async def test_remove_tool_rejects_concurrent_registry_change_without_cleanup() 
             )
 
     registry = ConcurrentMutationRegistry()
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     tool = _local_tool()
     router.add_bound_tool(tool, _invoker)
     router.register_health_probe(tool.key, "read", lambda: True)
@@ -198,7 +198,7 @@ async def test_remove_tool_rejects_concurrent_registry_change_without_cleanup() 
 
 @pytest.mark.asyncio
 async def test_remove_tool_waits_for_inflight_health_probe_before_deleting() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = _local_tool()
     router.add_bound_tool(tool, _invoker)
 
@@ -250,7 +250,7 @@ async def test_remove_tool_waits_for_inflight_schema_watch_before_deleting() -> 
             return await slow_handler(request)
 
     async with httpx.AsyncClient(transport=AsyncTransport()) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://api.example.test/openapi.json",
             kind="openapi",
@@ -276,7 +276,7 @@ async def test_remove_tool_waits_for_inflight_schema_watch_before_deleting() -> 
 
 @pytest.mark.asyncio
 async def test_remove_then_same_key_reregistration_has_no_orphan_state() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     old = _local_tool(description="old")
     router.add_bound_tool(old, _invoker)
     router.register_health_probe(old.key, "read", lambda: True)
@@ -299,7 +299,7 @@ async def test_sqlite_registry_removal_persists_across_restart(
 ) -> None:
     path = tmp_path / "registry.sqlite3"
     registry = SQLiteRegistry(path)
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     tool = _local_tool()
 
     router.add_tool(tool)
@@ -315,7 +315,7 @@ async def test_sqlite_registry_removal_persists_across_restart(
 
 @pytest.mark.asyncio
 async def test_remove_unknown_tool_is_actionable() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     with pytest.raises(RegistrationError, match="unknown tool"):
         await router.aremove_tool("missing")

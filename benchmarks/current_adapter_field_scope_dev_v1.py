@@ -187,7 +187,9 @@ def registry_and_policy() -> tuple[InMemoryRegistry, AuthorizationPolicy]:
 
 def router_and_policy() -> tuple[SchemaRouter, AuthorizationPolicy]:
     registry, policy = registry_and_policy()
-    return SchemaRouter(registry=registry, authorization_policy=policy), policy
+    return SchemaRouter(
+        _legacy_routing=True,
+        registry=registry, authorization_policy=policy), policy
 
 
 def principal(role: str) -> PrincipalContext:

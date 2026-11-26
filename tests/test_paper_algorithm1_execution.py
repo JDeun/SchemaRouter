@@ -35,9 +35,12 @@ from schemarouter.paper_understood_direct_plan import (
 QUERY = "Compare the requested measurement across the named sources"
 
 
-def _fixture(*, count=2, needs_input=True, missing_required=False, named=True, offload_sync=False):
+def _fixture(
+    *, count=2, needs_input=True, missing_required=False, named=True, offload_sync=False,
+    legacy=False,
+):
     principal = PrincipalContext(subject="analyst", roles=("reader",))
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=legacy, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
@@ -148,10 +151,12 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
 
     monkeypatch.setattr(module, "compile_paper_typed_tool_plan", forbidden)
     monkeypatch.setattr(module, "compile_paper_understood_graph_plan", forbidden)
-    assert not hasattr(session._router.planner, "_build_paper_direct_plan")
-    monkeypatch.setattr(session._router.planner, "_build_plan", forbidden)
-    monkeypatch.setattr(session._router.planner, "_analyze_sync", forbidden)
-    monkeypatch.setattr(session._router.planner, "_candidates", forbidden)
+    from schemarouter.planner import SchemaPlanner
+
+    assert session._router.planner is None
+    assert not hasattr(SchemaPlanner, "_build_paper_direct_plan")
+    for name in ("_build_plan", "_analyze_sync", "_candidates"):
+        monkeypatch.setattr(SchemaPlanner, name, forbidden)
     for name in ("lookup", "lookup_two_hop", "lookup_bounded_paths", "lookup_shared_root_forks"):
         monkeypatch.setattr(NativeSchemaGraphIndex, name, forbidden)
 
@@ -328,12 +333,12 @@ async def test_algorithm1_worker_rechecks_witness_after_submission(monkeypatch, 
         await router.aclose()
 
 
-@pytest.mark.parametrize("component", ["planner", "executor"])
+@pytest.mark.parametrize("component", ["planner", "executor", "source"])
 @pytest.mark.parametrize("timing", ["before_entry", "awaited_hook"])
 async def test_algorithm1_same_version_component_registry_swap_is_not_original_source(
     component, timing,
 ):
-    session, kwargs, seen, _callbacks = _fixture(count=1)
+    session, kwargs, seen, _callbacks = _fixture(count=1, legacy=component == "planner")
     router = session._router
     original = router.registry
     replacement = InMemoryRegistry()
@@ -344,12 +349,18 @@ async def test_algorithm1_same_version_component_registry_swap_is_not_original_s
         tool.fingerprint for tool in original.tools()
     )
 
+    def replace_source():
+        if component == "source":
+            router._source_registry = replacement
+        else:
+            getattr(router, component).registry = replacement
+
     if timing == "before_entry":
-        getattr(router, component).registry = replacement
+        replace_source()
     else:
         async def swap(_tool, _endpoint, _call):
             await asyncio.sleep(0)
-            getattr(router, component).registry = replacement
+            replace_source()
         router.executor.hooks = ExecutionHooks(before_call=(swap,))
 
     with pytest.raises(PolicyViolationError):

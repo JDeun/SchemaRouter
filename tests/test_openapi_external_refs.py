@@ -757,7 +757,7 @@ async def test_external_ref_opt_in_requires_real_boolean() -> None:
             lambda request: httpx.Response(500, request=request)
         )
     ) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(
             SchemaSourceError,
             match="openapi_external_refs must be a boolean",
@@ -787,7 +787,7 @@ async def test_external_ref_limits_require_positive_integers(
             lambda request: httpx.Response(500, request=request)
         )
     ) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(SchemaSourceError, match=message):
             await router.add_url(
                 "https://docs.example.com/openapi.json",

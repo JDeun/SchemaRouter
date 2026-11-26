@@ -71,7 +71,7 @@ def main() -> int:
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     keys = router.add_mongodb_record_store(
         database,
         database_name="mongodb_live",

@@ -215,7 +215,7 @@ def test_first_publication_projection_redacts_private_source_callback_error(
 
 
 def test_one_route_covers_complete_field_group_before_k5():
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

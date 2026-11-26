@@ -17,7 +17,7 @@ from schemarouter import (
 
 
 def make_retrieval_router() -> SchemaRouter:
-    router = SchemaRouter(registry=InMemoryRegistry())
+    router = SchemaRouter(_legacy_routing=True, registry=InMemoryRegistry())
     router.add_tool(
         ToolSpec(
             name="materials",
@@ -167,7 +167,7 @@ def test_retrieve_returns_typed_ranked_registered_candidates() -> None:
 
 
 def test_retrieve_preserves_explicit_complex_endpoint_schemas() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     input_schema = {
         "type": "object",
         "properties": {
@@ -232,7 +232,7 @@ def test_retrieve_preserves_explicit_complex_endpoint_schemas() -> None:
 
 
 def test_retrieve_tie_order_is_deterministic_and_registered_only() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     for name in ("b_tool", "a_tool"):
         router.add_tool(
             ToolSpec(
@@ -520,7 +520,7 @@ def test_configured_router_exposes_route_retrieval_surface() -> None:
 
 
 def test_semantic_namespace_token_does_not_count_as_field_evidence() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="material_service",

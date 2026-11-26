@@ -202,7 +202,7 @@ def evaluate(
         ),
         default_effect="deny",
     )
-    router = SchemaRouter(registry=registry, authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, registry=registry, authorization_policy=policy)
     principal = PrincipalContext(subject="synthetic-public-provider-dev", roles=("viewer",))
     by_source = {
         n: evidence[n].get("route_ids", [])

@@ -44,7 +44,9 @@ def test_four_original_publishers_in_one_catalog_preserve_methods(four_tools: tu
         "model",
     }
 
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="deny"))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="deny"))
     for tool in four_tools:
         assert tool.source_type is None and tool.license is None
         assert all(not f.semantic_id for e in tool.endpoints for f in e.output_fields)

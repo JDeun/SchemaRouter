@@ -106,7 +106,7 @@ async def test_declarative_http_tool_executes_crossref_style_get() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         key = router.add_http_tool(
             _crossref_tool(),
             base_url="https://api.crossref.test/v1",
@@ -206,7 +206,7 @@ async def test_declarative_http_tool_keeps_brave_style_api_key_trusted() -> None
 
     token = "secret-brave-token"
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         key = router.add_http_tool(
             tool,
             base_url="https://api.search.brave.test",
@@ -293,7 +293,7 @@ async def test_declarative_http_tool_supports_tavily_style_json_body() -> None:
     )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         key = router.add_http_tool(
             tool,
             base_url="https://api.tavily.test",
@@ -313,7 +313,7 @@ async def test_declarative_http_tool_supports_tavily_style_json_body() -> None:
 
 
 def test_declarative_http_tool_requires_method_and_path() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = ToolSpec(
         name="invalid",
         endpoints=[EndpointSpec(name="missing_transport")],
@@ -348,7 +348,7 @@ async def test_declarative_http_denies_changed_principal_before_registered_get()
     admin = PrincipalContext(subject="owner", roles=("admin",))
     guest = PrincipalContext(subject="guest", roles=("guest",))
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client, authorization_policy=auth)
+        router = SchemaRouter(_legacy_routing=True, http_client=client, authorization_policy=auth)
         key = router.add_http_tool(
             _crossref_tool(), base_url="https://api.crossref.test/v1", provider="crossref"
         )

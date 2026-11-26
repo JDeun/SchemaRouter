@@ -113,7 +113,7 @@ def _tools(*, n_targets=1, incompatible=False):
 
 
 def _router(*, n_targets=1, hidden=False, denied=False, incompatible=False, noise=0):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(() if denied else (AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader", "viewer"),

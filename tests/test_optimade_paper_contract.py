@@ -80,7 +80,7 @@ def _catalog():
 
 
 def _router(tool, invoker):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation=ROOT, roles_any=("reader",)),),
     ))
@@ -262,7 +262,7 @@ async def test_standard_executor_applies_only_the_host_reviewed_unit_conversion(
 
 def test_unreviewed_provider_unit_is_not_a_semantic_hit():
     source = _source_tool()
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation=ROOT, roles_any=("reader",)),),
     ))

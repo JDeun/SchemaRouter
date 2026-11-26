@@ -32,7 +32,9 @@ def _router(monkeypatch, n: int, packed: bool = True, *, registry=None):
     endpoints = [root.model_copy(update={"name": "root"}, deep=True)] + [
         consumer.model_copy(update={"name": f"read_{i}"}, deep=True) for i in range(1, n)
     ]
-    router = SchemaRouter(registry=registry, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(
+        _legacy_routing=True,
+        registry=registry, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),
         ),),

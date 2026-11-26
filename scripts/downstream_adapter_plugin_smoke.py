@@ -62,7 +62,7 @@ async def main() -> None:
     # Entry-point metadata discovery must not execute installed plugin code.
     assert PLUGIN_MODULE not in sys.modules
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     loaded = router.load_adapter_plugins(allowlist={PLUGIN_ENTRY_POINT})
     assert loaded == ("demo_static",)
     assert PLUGIN_MODULE in sys.modules
@@ -88,6 +88,7 @@ async def main() -> None:
         )
 
     denied_router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(
             rules=(
                 PolicyRule(

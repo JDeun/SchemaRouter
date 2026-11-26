@@ -77,7 +77,7 @@ def _tool() -> ToolSpec:
 
 @pytest.mark.asyncio
 async def test_array_item_projection_preserves_record_alignment() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = _tool()
     key = router.add_tool(tool)
 
@@ -122,7 +122,7 @@ async def test_array_item_projection_preserves_record_alignment() -> None:
 
 @pytest.mark.asyncio
 async def test_array_item_projection_keeps_missing_child_in_same_record_slot() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = _tool()
     key = router.add_tool(tool)
 
@@ -164,7 +164,7 @@ async def test_array_item_projection_keeps_missing_child_in_same_record_slot() -
 
 @pytest.mark.asyncio
 async def test_parent_and_array_child_can_be_selected_together_without_collision() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = _tool()
     key = router.add_tool(tool)
 

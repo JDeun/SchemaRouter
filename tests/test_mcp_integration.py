@@ -68,6 +68,7 @@ async def test_real_streamable_http_mcp_discovery_and_execution() -> None:
     try:
         await _wait_for_port(port, process)
         router = SchemaRouter(
+            _legacy_routing=True,
             policy=ExecutionPolicy(allow_unclassified_remote=True)
         )
         tool = await router.add_url(
@@ -114,6 +115,7 @@ async def test_real_streamable_http_mcp_discovery_and_execution() -> None:
 async def test_real_stdio_mcp_discovery_and_execution() -> None:
     server = Path(__file__).parent / "fixtures" / "mcp_stdio_server.py"
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
 
@@ -163,7 +165,9 @@ async def test_real_http_mcp_rejects_invalid_arguments_before_execution() -> Non
     )
     try:
         await _wait_for_port(port, process)
-        router = SchemaRouter(policy=ExecutionPolicy(allow_unclassified_remote=True))
+        router = SchemaRouter(
+            _legacy_routing=True,
+            policy=ExecutionPolicy(allow_unclassified_remote=True))
         tool = await router.add_url(
             f"http://127.0.0.1:{port}/mcp",
             kind="mcp",
@@ -207,6 +211,7 @@ async def test_real_http_mcp_denies_revoked_principal_before_execution() -> None
     try:
         await _wait_for_port(port, process)
         router = SchemaRouter(
+            _legacy_routing=True,
             policy=ExecutionPolicy(allow_unclassified_remote=True),
             authorization_policy=AuthorizationPolicy(
                 rules=(
@@ -264,6 +269,7 @@ async def test_real_stdio_mcp_public_denial_inputs_and_stale_before_dispatch(
     admin = PrincipalContext(subject="owner", roles=("admin",))
     denied = PrincipalContext(subject="guest", roles=("guest",))
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(

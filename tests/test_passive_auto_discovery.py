@@ -55,7 +55,7 @@ async def test_default_auto_discovery_emits_only_passive_http_traffic() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
             await router.probe_url(
                 "https://example.test/",
@@ -86,7 +86,7 @@ async def test_explicit_graphql_kind_allows_active_post_probe() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError):
             await router.probe_url(
                 "https://example.test/graphql",
@@ -113,7 +113,7 @@ async def test_active_auto_discovery_requires_explicit_opt_in() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError):
             await router.probe_url(
                 "https://example.test/",
@@ -141,7 +141,7 @@ async def test_unprofiled_third_party_adapter_is_not_auto_probed() -> None:
             return None
 
     adapter = LegacyAdapter()
-    router = SchemaRouter(adapter_registry=AdapterRegistry([adapter]))
+    router = SchemaRouter(_legacy_routing=True, adapter_registry=AdapterRegistry([adapter]))
 
     with pytest.raises(UnsupportedSchemaSourceError) as auto_error:
         await router.probe_url("https://example.test/schema", kind="auto")

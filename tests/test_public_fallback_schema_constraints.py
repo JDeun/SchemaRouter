@@ -50,7 +50,9 @@ CASES = (
 def _router(
     required, candidate, primary_value, backup_value, mode, *, units=False, output_schema=None,
 ):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="allow"))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="allow"))
     invoked = []
     for name, schema, value in (
         ("primary", required, primary_value), ("backup", candidate, backup_value),

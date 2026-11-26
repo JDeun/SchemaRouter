@@ -308,7 +308,7 @@ def test_nested_field_can_receive_full_trusted_contract_enrichment() -> None:
     tool_payload["endpoints"] = [amended_endpoint]
     amended_tool = ToolSpec.model_validate(tool_payload)
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(tool)
     router.amend_capability(tool.key, amended_tool)
 

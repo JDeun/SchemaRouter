@@ -45,7 +45,7 @@ def event(
 
 
 def make_router(counter: dict[str, int] | None = None) -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="weather",
@@ -76,7 +76,7 @@ def make_router(counter: dict[str, int] | None = None) -> SchemaRouter:
 
 
 def make_secret_router(*, fail: bool = False) -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="secret_echo",

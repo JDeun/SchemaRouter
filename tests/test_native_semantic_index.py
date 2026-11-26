@@ -71,7 +71,7 @@ def _tool(name, fields, *, source="crm", license_id="reviewed", safe=True):
 
 
 def _router(*, many_partial=0, many_complete=0):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(
@@ -873,7 +873,7 @@ def _normalized_material_group(*, unit="J", dimension="energy"):
 def test_indexed_normalized_numeric_field_respects_canonical_units_and_scope():
     """Owner-declared normalization creates a posting, never an inferred factor."""
     group = _normalized_material_group()
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="materials.read",
@@ -910,7 +910,7 @@ def test_indexed_normalized_numeric_field_respects_canonical_units_and_scope():
 
 def test_normalized_numeric_posting_journal_delta_matches_full_rebuild():
     """Canonicalized semantic postings are removed and added by trusted deltas."""
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="materials.read",

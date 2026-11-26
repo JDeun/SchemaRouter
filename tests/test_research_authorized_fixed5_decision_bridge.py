@@ -38,7 +38,7 @@ VIEWER = PrincipalContext(subject="synthetic-viewer", roles=("viewer",))
 
 
 def fixture_router() -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(effect="deny", operation="archive.*",

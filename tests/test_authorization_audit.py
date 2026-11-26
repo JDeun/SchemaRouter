@@ -54,6 +54,7 @@ def plan(router: SchemaRouter) -> ExecutionPlan:
 async def test_authorization_audit_emits_allow_without_raw_principal_claims() -> None:
     events: list[AuthorizationAuditEvent] = []
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(
@@ -99,6 +100,7 @@ async def test_authorization_audit_emits_allow_without_raw_principal_claims() ->
 async def test_authorization_audit_emits_deny_without_persisting_principal() -> None:
     events: list[AuthorizationAuditEvent] = []
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(),
         authorization_audit_hook=events.append,
     )
@@ -120,6 +122,7 @@ async def test_authorization_audit_emits_deny_without_persisting_principal() -> 
 
 def test_authorization_audit_default_behavior_does_not_persist_identity() -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(
@@ -139,6 +142,7 @@ def test_authorization_audit_default_behavior_does_not_persist_identity() -> Non
 async def test_authorization_audit_stream_events_reuses_stream_run_id() -> None:
     events: list[AuthorizationAuditEvent] = []
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(
@@ -204,6 +208,7 @@ async def test_authorization_audit_stream_events_emits_terminal_error_on_denial(
         ],
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(
@@ -300,6 +305,7 @@ def _allow_policy() -> AuthorizationPolicy:
 def test_strict_authorization_audit_requires_a_configured_sink() -> None:
     with pytest.raises(ValueError, match="strict authorization audit delivery"):
         SchemaRouter(
+            _legacy_routing=True,
             authorization_policy=_allow_policy(),
             authorization_audit_delivery_mode="strict",
         )
@@ -315,6 +321,7 @@ async def test_best_effort_audit_failure_does_not_change_allow_decision() -> Non
         return {"id": "1"}
 
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=_allow_policy(),
         authorization_audit_hook=_failing_audit_sink,
     )
@@ -350,6 +357,7 @@ async def test_best_effort_audit_failure_does_not_change_allow_decision() -> Non
 @pytest.mark.asyncio
 async def test_best_effort_audit_failure_preserves_deny_error() -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(),
         authorization_audit_hook=_failing_audit_sink,
     )
@@ -377,6 +385,7 @@ async def test_strict_audit_failure_fails_closed_before_allowed_invocation() -> 
         return {"id": "1"}
 
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=_allow_policy(),
         authorization_audit_hook=_failing_audit_sink,
         authorization_audit_delivery_mode="strict",
@@ -405,6 +414,7 @@ async def test_strict_audit_failure_fails_closed_before_allowed_invocation() -> 
 @pytest.mark.asyncio
 async def test_strict_audit_failure_preserves_underlying_deny_decision() -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(),
         authorization_audit_hook=_failing_audit_sink,
         authorization_audit_delivery_mode="strict",
@@ -428,6 +438,7 @@ async def test_strict_audit_failure_preserves_underlying_deny_decision() -> None
 @pytest.mark.asyncio
 async def test_strict_audit_failure_preserves_missing_principal_decision() -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=_allow_policy(),
         authorization_audit_hook=_failing_audit_sink,
         authorization_audit_delivery_mode="strict",
@@ -446,6 +457,7 @@ async def test_strict_audit_failure_preserves_missing_principal_decision() -> No
 
 def test_best_effort_export_audit_failure_returns_authorization_result() -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(),
         authorization_audit_hook=_failing_audit_sink,
     )
@@ -470,6 +482,7 @@ async def test_strict_audit_failure_trace_preserves_authorization_effect(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=_allow_policy(),
         authorization_audit_hook=_failing_audit_sink,
         authorization_audit_delivery_mode="strict",

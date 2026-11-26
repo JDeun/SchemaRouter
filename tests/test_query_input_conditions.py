@@ -35,7 +35,9 @@ INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
 
 
 def source(*, parameters=(), restricted=False, identifier=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="allow",
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="allow",
         data_rules=(DataScopeRule(operation="weather.read", roles_any=("reader",),
             hidden_fields=("private",)),) if restricted else ()))
     fields = [FieldSpec(name="temperature", semantic_id="weather.temperature",
@@ -394,7 +396,7 @@ SHARED_ROUTES = ("north.read", "south.read")
 def _shared_fixture(*, approved=True, wrong_semantic=False, missing=False,
                     ambiguous=False, hidden=False, invalid_value=False,
                     owner_targets=False, header=False, alias_collision=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="allow",
         data_rules=(DataScopeRule(operation="south.read", hidden_fields=("private",)),)
         if hidden else (),

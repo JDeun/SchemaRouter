@@ -132,7 +132,7 @@ def test_amendment_cannot_overwrite_a_writer_that_lands_after_validation() -> No
             )
 
     registry = RacingRegistry()
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     original = _tool(description="original")
     router.add_tool(original)
     amended_endpoint = original.endpoints[0].model_copy(
@@ -148,7 +148,7 @@ def test_amendment_cannot_overwrite_a_writer_that_lands_after_validation() -> No
 def test_add_bound_tool_rolls_back_new_registration_when_bind_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = _tool(description="new")
 
     def fail_bind(*args, **kwargs) -> None:
@@ -169,7 +169,7 @@ def test_add_bound_tool_rolls_back_new_registration_when_bind_fails(
 def test_add_bound_tool_failed_replacement_restores_contract_and_binding(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     original = _tool(description="original")
     def original_invoker(endpoint, arguments):
         del endpoint, arguments
@@ -211,7 +211,7 @@ def test_add_bound_tool_failed_replacement_restores_contract_and_binding(
 def test_bound_publication_does_not_rollback_across_concurrent_writer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     original = _tool(description="original")
     router.add_bound_tool(
         original,

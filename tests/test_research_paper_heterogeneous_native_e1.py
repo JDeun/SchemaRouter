@@ -138,6 +138,7 @@ def _fixtures(*, fail_second: bool = False,
           "chemical_formula_descriptive": "O2Si"}),
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny", rules=(AuthorizationRule(

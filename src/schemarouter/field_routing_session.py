@@ -644,9 +644,10 @@ class SchemaFieldRoutingSession:
             raise PolicyViolationError("paper direct execution requires a trusted principal")
         catalog = self._require_catalog()
         router = self._router
-        planner, executor = router.planner, router.executor
-        if planner.registry is not router.registry or executor.registry is not router.registry:
-            raise PolicyViolationError("paper direct planner source mismatch")
+        authority, executor = router._source_availability, router.executor
+        router._source_availability_predicate()
+        if executor.registry is not router.registry:
+            raise PolicyViolationError("paper direct source mismatch")
         policy = router.authorization_policy
         if policy is None:
             raise PolicyViolationError("paper direct execution requires source policy")
@@ -674,8 +675,8 @@ class SchemaFieldRoutingSession:
                 owner_declarations() != original_owner
                 or pinned_principal.model_dump_json() != original_owner[0]
                 or _policy_contents_digest(policy) != policy_digest
-                or router.executor is not executor or router.planner is not planner
-                or planner.registry is not router.registry
+                or router.executor is not executor or router._source_availability is not authority
+                or router._paper_planning is not None
                 or executor.registry is not router.registry
             ):
                 raise PolicyViolationError("paper direct owner or source declarations changed")

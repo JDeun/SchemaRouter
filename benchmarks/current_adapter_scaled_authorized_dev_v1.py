@@ -261,4 +261,6 @@ def build_fixture(size: int) -> tuple[SchemaRouter, AuthorizationPolicy]:
             ),
         ),
     )
-    return SchemaRouter(registry=registry, authorization_policy=policy), policy
+    return SchemaRouter(
+        _legacy_routing=True,
+        registry=registry, authorization_policy=policy), policy

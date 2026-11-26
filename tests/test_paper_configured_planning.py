@@ -44,8 +44,10 @@ def _configure(ctx, *, session=None, model=None):
     )
 
 
-def _configured(*, count=2, needs_input=False, configure=True):
-    session, owner, seen, callbacks = _direct_source(count=count, needs_input=needs_input)
+def _configured(*, count=2, needs_input=False, configure=True, legacy=False):
+    session, owner, seen, callbacks = _direct_source(
+        count=count, needs_input=needs_input, legacy=legacy,
+    )
     names = [f"source_{position}" for position in range(count)]
     query = "measurement value in eV from " + " and ".join(names)
     response = {
@@ -76,10 +78,13 @@ def _configured(*, count=2, needs_input=False, configure=True):
 def _forbid_lexical(ctx, monkeypatch):
     def forbidden(*args, **kwargs):
         pytest.fail("configured product planning entered the retired lexical candidate path")
+    from schemarouter.planner import SchemaPlanner
+
+    assert ctx.router.planner is None
     for name in ("_build_paper_direct_plan", "_build_paper_query_plan"):
-        assert not hasattr(ctx.router.planner, name)
+        assert not hasattr(SchemaPlanner, name)
     for name in ("_analyze_sync", "_analyze_async", "_candidates", "_build_plan"):
-        monkeypatch.setattr(ctx.router.planner, name, forbidden)
+        monkeypatch.setattr(SchemaPlanner, name, forbidden)
 
 
 async def _run_surface(ctx, surface, request=None):
@@ -132,7 +137,8 @@ def test_configured_plan_and_aplan_share_algorithm1_without_lexical_analysis(mon
 
 def test_configured_input_schema_describes_active_paper_request_contract():
     ctx = _configured(configure=False)
-    assert ctx.router.input_schema == PlanRequest.model_json_schema()
+    assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
+    assert ctx.router.planner is None
     _configure(ctx)
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
     assert "host_source_arguments" in ctx.router.input_schema["properties"]
@@ -543,7 +549,7 @@ def test_configured_endpoint_export_refuses_before_disclosure_or_sdk_import(surf
 
 def test_inspection_reports_actual_prepared_understanding_without_model_details():
     ctx = _configured(count=1, configure=False)
-    assert ctx.router.inspect().planner.analyzer == "KeywordAnalyzer"
+    assert ctx.router.inspect().planner.analyzer == "PaperConfigurationRequired"
     _configure(ctx)
     planner = ctx.router.inspect().planner.model_dump()
     assert planner == {"analyzer": "PaperQueryUnderstanding"}
@@ -567,7 +573,7 @@ def test_exported_endpoint_contract_refuses_after_router_configuration():
 
 
 async def test_legacy_retrieval_started_before_configuration_cannot_publish(monkeypatch):
-    ctx = _configured(count=1, configure=False)
+    ctx = _configured(count=1, configure=False, legacy=True)
     original = ctx.router.planner.aretrieve_with_additional_availability
 
     async def configure_before_return(*args, **kwargs):
@@ -604,7 +610,7 @@ def test_paper_name_identity_is_independent_of_lexical_planner(monkeypatch):
     "plan_executable_authorized", "aplan_executable_authorized",
 ])
 async def test_inflight_legacy_plan_cannot_publish_after_configuration(method, monkeypatch):
-    ctx = _configured(count=1, configure=False)
+    ctx = _configured(count=1, configure=False, legacy=True)
     # All four public entrypoints select the legacy authorized planner in this fixture.
     planner_method = (
         "aplan_with_additional_availability"
@@ -629,3 +635,35 @@ async def test_inflight_legacy_plan_cannot_publish_after_configuration(method, m
         if asyncio.iscoroutine(result):
             await result
     assert ctx.model.payloads == [] and ctx.seen == []
+
+
+@pytest.mark.parametrize("method", [
+    "plan", "aplan", "plan_executable", "aplan_executable", "invoke", "ainvoke",
+    "retrieve", "aretrieve", "retrieve_routes", "aretrieve_routes",
+    "retrieve_executable", "aretrieve_executable",
+])
+async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(method, monkeypatch):
+    from schemarouter.planner import SchemaPlanner
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("the default router must not construct a lexical planner")
+
+    monkeypatch.setattr(SchemaPlanner, "__init__", forbidden)
+    ctx = _configured(configure=False)
+    assert ctx.router.planner is None
+    assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
+    with pytest.raises(PolicyViolationError, match="lexical (planning|retrieval) is unavailable"):
+        result = getattr(ctx.router, method)(ctx.request.query)
+        if asyncio.iscoroutine(result):
+            await result
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+
+def test_explicit_research_router_loses_legacy_path_on_configuration():
+    ctx = _configured(configure=False, legacy=True)
+    assert ctx.router.planner is not None
+    assert ctx.router.input_schema == PlanRequest.model_json_schema()
+    _configure(ctx)
+    assert ctx.router.planner is None and not ctx.router._legacy_routing
+    assert ctx.router._source_availability.snapshot is None
+    assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()

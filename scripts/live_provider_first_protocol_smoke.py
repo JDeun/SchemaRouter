@@ -78,7 +78,7 @@ _EXECUTORS = {
 
 
 async def run_smoke(provider: str) -> dict[str, Any]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     try:
         resolution = router.resolve_provider(provider)
         assert len(resolution.methods) == 1
@@ -143,7 +143,7 @@ async def main() -> None:
     parser.add_argument("--json-out", default=None)
     args = parser.parse_args()
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     resolution = router.resolve_provider(args.provider)
     await router.aclose()
     source = resolution.methods[0].url or "provider-profile"

@@ -81,7 +81,9 @@ def _router(*, declared_hidden: bool = True):
     fields = [FieldSpec(name="public_value", json_schema={"type": "string"})]
     if declared_hidden:
         fields.append(FieldSpec(name=HIDDEN, json_schema={"type": "string"}))
-    router = SchemaRouter(authorization_policy=policy, analyzer=InspectingAnalyzer())
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=policy, analyzer=InspectingAnalyzer())
     router.add_tool(ToolSpec(
         name="records",
         endpoints=[EndpointSpec(
@@ -173,7 +175,7 @@ def test_host_owned_enum_fit_remains_private_but_original_proof_selects():
             visible_fields=("public_value",),
         ),),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(ToolSpec(
         name="records",
         endpoints=[EndpointSpec(
@@ -225,7 +227,7 @@ def test_host_owned_enum_fit_remains_private_but_original_proof_selects():
 
 def test_host_enum_uses_private_source_without_overriding_scoped_policy():
     """Original enum proof cannot re-admit a principal-denied relationship."""
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="graph.read", roles_any=("viewer",),

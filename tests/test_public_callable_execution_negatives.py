@@ -48,7 +48,7 @@ def _fixture(mode: str, *, read_only: bool = True):
         ),
         default_effect="deny",
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     assert router.add_callable(lookup, read_only=read_only) == "lookup"
     request = PlanRequest(
         query="lookup record",

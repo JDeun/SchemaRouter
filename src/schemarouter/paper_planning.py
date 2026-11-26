@@ -21,8 +21,8 @@ from .paper_typed_tool_plan import PaperTypedToolPlan
 from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
 
 if TYPE_CHECKING:
+    from ._source_availability import _SourceAvailability
     from .executor import RegistryExecutor, _BindingSnapshot
-    from .planner import SchemaPlanner
     from .registry import ToolRegistry
     from .runtime import SchemaRouter
 
@@ -101,7 +101,7 @@ class _PreparedPaperPlanning:
     intent_ids: tuple[str, ...]
     input_bytes: int
     output_bytes: int
-    planner: SchemaPlanner
+    authority: _SourceAvailability
     executor: RegistryExecutor
     owner: tuple[str, str, str]
 
@@ -149,14 +149,13 @@ class _PreparedPaperPlanning:
         if router.authorization_policy is None:
             raise PolicyViolationError("paper planning requires explicit source authorization")
         session._index.field_index._assert_source(router)
-        if (
-            router.planner.registry is not router.registry
-            or router.executor.registry is not router.registry
-        ):
+        router._source_availability_predicate()
+        if router.executor.registry is not router.registry:
             raise PolicyViolationError("paper planning component source mismatch")
         return cls(
             router, session, model, intents, rank, model_visible_intent_ids,
-            max_model_input_bytes, max_model_output_bytes, router.planner, router.executor,
+            max_model_input_bytes, max_model_output_bytes,
+            router._source_availability, router.executor,
             (session.catalog_revision_id, _declaration_json(intents), _declaration_json(rank)),
         )
 
@@ -164,9 +163,10 @@ class _PreparedPaperPlanning:
         try:
             if (
                 self.router._paper_planning is not self
-                or self.router.planner is not self.planner
+                or self.router._source_availability is not self.authority
                 or self.router.executor is not self.executor
-                or self.planner.registry is not self.router.registry
+                or self.router.planner is not None
+                or self.router._legacy_routing
                 or self.executor.registry is not self.router.registry
                 or (
                     self.session.catalog_revision_id,
@@ -176,6 +176,7 @@ class _PreparedPaperPlanning:
                 raise PolicyViolationError(
                     "paper planning configuration or owner changed; reconfigure"
                 )
+            self.router._source_availability_predicate()
             self.session._index.field_index._assert_source(self.router)
         except Exception:
             raise PolicyViolationError(

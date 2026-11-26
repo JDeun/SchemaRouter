@@ -136,7 +136,7 @@ def validate_cases(cases: dict[str, Any], inventory: dict[str, Any]) -> None:
 
 def build_router(catalog: list[dict[str, Any]]) -> SchemaRouter:
     """Do not inject case labels or manually enriched field annotations."""
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     grouped: dict[str, list[dict[str, Any]]] = {}
     for item in catalog:
         grouped.setdefault(item["endpoint"], []).append(item)

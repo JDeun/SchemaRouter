@@ -252,7 +252,7 @@ def _echo(value: str) -> str:
 
 
 def test_live_router_inspection_reports_actual_binding_without_invoker_object() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(_echo)
 
     snapshot = inspect_router(router)
@@ -270,7 +270,7 @@ def test_live_router_inspection_reports_actual_binding_without_invoker_object() 
 
 
 def test_schema_router_inspect_convenience_matches_public_helper() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(_echo)
 
     assert router.inspect() == inspect_router(router)
@@ -402,7 +402,7 @@ def test_inspection_fail_closes_on_malformed_or_non_http_provenance_urls() -> No
 
 
 def test_live_inspection_reports_access_health_without_probe_callable() -> None:
-    router = SchemaRouter(unavailable_cooldown_seconds=60)
+    router = SchemaRouter(_legacy_routing=True, unavailable_cooldown_seconds=60)
     router.add_tool(
         ToolSpec(
             name="materials_api",
@@ -430,7 +430,7 @@ def test_live_inspection_reports_access_health_without_probe_callable() -> None:
 
 
 def test_live_inspection_distinguishes_unbound_and_stale_bindings() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     ready_key = router.add_callable(_echo)
 
     unbound_tool = ToolSpec(
@@ -454,7 +454,7 @@ def test_live_inspection_distinguishes_unbound_and_stale_bindings() -> None:
 
 def test_live_inspection_reports_orphaned_binding_after_registry_removal() -> None:
     registry = InMemoryRegistry()
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     key = router.add_callable(_echo)
 
     registry.unregister(key)
@@ -567,7 +567,7 @@ def test_dashboard_renders_typed_unit_contracts() -> None:
 
 
 def test_live_inspection_has_no_retired_model_ranking_configuration() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     snapshot = inspect_router(router)
     planner = snapshot.planner.model_dump()
     assert planner == {"analyzer": "KeywordAnalyzer"}
@@ -603,7 +603,7 @@ def test_inspection_exposes_trusted_operation_aliases() -> None:
 
 
 def test_live_inspection_reports_schema_watch_without_credentials() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="watched_api",

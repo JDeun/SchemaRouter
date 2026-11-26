@@ -117,7 +117,7 @@ def host_visible_lexical_choice(
     query: str, functions: list[dict[str, Any]],
 ) -> str | None:
     """Actual library lexical retrieval, not a stand-in scorer."""
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     lookup: dict[str, str] = {}
     for index, fn in enumerate(functions):
         tool_name = f"bfcl_func_{index:02d}"

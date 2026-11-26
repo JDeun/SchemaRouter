@@ -20,7 +20,7 @@ from scripts.research_legacy_state_backfill import (
 
 
 def _router() -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     for name in ("a_route", "b_route", "c_route", "d_route"):
         router.add_tool(
             ToolSpec(

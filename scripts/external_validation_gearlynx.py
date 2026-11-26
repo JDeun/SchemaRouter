@@ -86,7 +86,7 @@ def native_search(query: str, tools: list[dict[str, Any]], limit: int = 20) -> l
 
 
 def build_router(tools: list[dict[str, Any]]) -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     for tool in tools:
         params = [
             ParameterSpec(name=name, required=False, json_schema={"type": "string"})

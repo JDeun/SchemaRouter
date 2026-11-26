@@ -81,6 +81,7 @@ def build_router(mode: str) -> SchemaRouter:
         ),
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=policy,
         analyzer=(
             DeclaredConceptGraphAnalyzer(CONCEPTS, match_mode=mode)

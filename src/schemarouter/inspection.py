@@ -396,7 +396,8 @@ def inspect_router(
             analyzer=(
                 "PaperQueryUnderstanding"
                 if router._paper_planning is not None
-                else type(planner.analyzer).__name__
+                else type(planner.analyzer).__name__ if planner is not None
+                else "PaperConfigurationRequired"
             ),
         ),
         decision_traces=tuple(

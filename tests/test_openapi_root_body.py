@@ -147,7 +147,7 @@ async def test_cloud_model_analyzer_can_supply_generic_root_body() -> None:
             "evidence": {},
         }
 
-    router = SchemaRouter(analyzer=ModelQueryAnalyzer(model))
+    router = SchemaRouter(_legacy_routing=True, analyzer=ModelQueryAnalyzer(model))
     router.add_tool(
         tool_from_openapi(
             "root",

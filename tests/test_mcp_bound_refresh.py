@@ -66,7 +66,7 @@ class RefreshableBoundFactory:
 @pytest.mark.asyncio
 async def test_bound_mcp_watcher_refreshes_without_fabricating_source_url() -> None:
     factory = RefreshableBoundFactory()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = await router.add_mcp_client_factory(
         factory,
         name="bound-refresh",
@@ -99,7 +99,7 @@ async def test_bound_mcp_watcher_refreshes_without_fabricating_source_url() -> N
 @pytest.mark.asyncio
 async def test_bound_mcp_breaking_refresh_stays_pending_and_keeps_binding() -> None:
     factory = RefreshableBoundFactory()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = await router.add_mcp_client_factory(
         factory,
         name="bound-refresh",
@@ -129,7 +129,7 @@ async def test_bound_mcp_breaking_refresh_stays_pending_and_keeps_binding() -> N
 @pytest.mark.asyncio
 async def test_bound_mcp_pending_candidate_can_be_explicitly_accepted() -> None:
     factory = RefreshableBoundFactory()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = await router.add_mcp_client_factory(
         factory,
         name="bound-refresh",
@@ -164,7 +164,7 @@ async def test_bound_mcp_pending_candidate_can_be_explicitly_accepted() -> None:
 @pytest.mark.asyncio
 async def test_bound_mcp_refresh_fails_closed_without_current_transport_binding() -> None:
     factory = RefreshableBoundFactory()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = await router.add_mcp_client_factory(
         factory,
         name="bound-refresh",
@@ -182,7 +182,7 @@ async def test_bound_mcp_refresh_fails_closed_without_current_transport_binding(
 @pytest.mark.asyncio
 async def test_bound_mcp_refresh_preserves_registered_discovery_limits() -> None:
     factory = RefreshableBoundFactory()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = await router.add_mcp_client_factory(
         factory,
         name="bounded-refresh",

@@ -61,9 +61,22 @@ API, MCP, SDK, DB, framework tool이 섞여 있고 이름은 비슷하지만 실
 [Capability retrieval →](docs_ko/concepts/capability-catalog.md) ·
 [실행 경계 →](docs_ko/concepts/execution.md)
 
+## 개발 후보판: 원 논문 중심 라우팅
+
+미출시 0.18 후보판에서 `SchemaRouter()`는 Lexical Planner를 생성하지 않고
+소스 등록 및 검증을 수행합니다. 일반 질문 계획은 호스트가 검토한
+`NativeConceptCatalog`, `PaperIntentRegistry`, 소스 스냅샷에 고정된 paper Rank 및
+Understand 콜백을 `configure_field_routing(...)`으로 명시적으로 설정해야 합니다.
+`PaperPlanRequest`로 소스별 신뢰 입력을 전달하고 검증된 principal을 사용합니다.
+설정 전에는 질문 기반 계획을 거부하며, 암묵적인 어휘 검색이나 폴백은 없습니다.
+
+소스 체크아웃에서 [원 논문 중심 빠른 시작](examples/quickstart.py) 또는
+[스키마 전용 검색 예제](examples/schema_only_field_routing.py)를 실행할 수 있습니다.
+이는 결정론적 로컬 예제이며 실제 모델 성능의 증거는 아닙니다.
+
 ## 빠른 시작
 
-Provider-first onboarding은 사용자가 원하는 서비스 이름에서 시작하고, 내부 프로토콜은
+다음 provider-first 예제는 배포된 0.17.0 안정판을 대상으로 합니다. Provider-first onboarding은 사용자가 원하는 서비스 이름에서 시작하고, 내부 프로토콜은
 SchemaRouter가 등록 가능한 경로로 해석합니다.
 
 ```python
@@ -125,7 +138,8 @@ route ID, endpoint, 인자·출력 필드 계약을 권한에 맞춰 제한된 �
 `scripts/`의 권한별 목차→상세 스키마 E0 실험은 제품 기본 모델이나
 공개 `catalog_index` API에 포함되지 않습니다.
 
-Retrieval 자체는 side effect가 없습니다.
+다음은 배포된 0.17.0의 어휘 검색 예제입니다. 미출시 후보판에서는 설정된
+Algorithm 1 계획 또는 위 스키마 전용 필드 세션을 사용하며, 어휘 검색이 기본 경로가 아닙니다.
 
 ```python
 candidates = router.retrieve("current Young's modulus for MAT-7", k=5)

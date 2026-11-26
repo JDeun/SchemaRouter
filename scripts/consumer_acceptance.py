@@ -86,7 +86,7 @@ async def _expect(
 
 
 async def scenario_happy_path() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(current_weather)
 
     request = PlanRequest(
@@ -120,7 +120,7 @@ async def scenario_capability_retrieval() -> dict[str, object]:
         calls += 1
         return Weather(city=city, temperature=21.0)
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(retrieval_probe)
     request = PlanRequest(
         query="current weather city",
@@ -169,7 +169,7 @@ async def scenario_capability_retrieval() -> dict[str, object]:
 
 
 async def scenario_policy_and_approval() -> dict[str, object]:
-    denied_router = SchemaRouter()
+    denied_router = SchemaRouter(_legacy_routing=True)
     denied_key = denied_router.add_callable(update_profile)
     denied_request = PlanRequest(
         query="update profile value",
@@ -179,6 +179,7 @@ async def scenario_policy_and_approval() -> dict[str, object]:
     await _expect(PolicyViolationError, denied_router.ainvoke(denied_request))
 
     approval_required = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(
             allow_mutations=True,
             approval_mode="non_read_only",
@@ -200,6 +201,7 @@ async def scenario_policy_and_approval() -> dict[str, object]:
         return True
 
     approved_router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(
             allow_mutations=True,
             approval_mode="non_read_only",
@@ -231,6 +233,7 @@ async def scenario_scoped_policy_rule() -> dict[str, object]:
         return True
 
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(
             allow_mutations=True,
             rules=(
@@ -259,7 +262,7 @@ async def scenario_scoped_policy_rule() -> dict[str, object]:
 
 
 async def scenario_schema_drift() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(lookup_value)
     plan = await router.aplan(
         PlanRequest(
@@ -293,7 +296,7 @@ async def scenario_schema_drift() -> dict[str, object]:
 
 
 async def scenario_binding_drift() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(lookup_value)
 
     original = router.registry.get(key)
@@ -318,7 +321,7 @@ async def scenario_binding_drift() -> dict[str, object]:
 
 
 async def scenario_tool_execution_contract_drift() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     original = ToolSpec(
         name="remote_contract",
         remote=True,
@@ -353,7 +356,7 @@ async def scenario_tool_execution_contract_drift() -> dict[str, object]:
 
 
 async def scenario_output_validation() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(invalid_output)
     await _expect(
         SchemaValidationError,
@@ -379,7 +382,7 @@ async def scenario_retry_and_budget() -> dict[str, object]:
             raise TransientInvocationError("transient")
         return value
 
-    retry_router = SchemaRouter()
+    retry_router = SchemaRouter(_legacy_routing=True)
     retry_key = retry_router.add_callable(flaky)
     result = await retry_router.ainvoke(
         PlanRequest(
@@ -402,7 +405,7 @@ async def scenario_retry_and_budget() -> dict[str, object]:
         await asyncio.sleep(0.05)
         return value
 
-    budget_router = SchemaRouter()
+    budget_router = SchemaRouter(_legacy_routing=True)
     budget_key = budget_router.add_callable(slow)
     await _expect(
         ExecutionBudgetExceededError,
@@ -446,7 +449,7 @@ async def scenario_parallel_read_only() -> dict[str, object]:
         finally:
             active -= 1
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     first_key = router.add_callable(first)
     second_key = router.add_callable(second)
 
@@ -469,7 +472,7 @@ async def scenario_parallel_read_only() -> dict[str, object]:
 
 
 async def scenario_scientific_unit_contract() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     field = FieldSpec(
         name="elastic_modulus",
         semantic_id="elastic_modulus",
@@ -516,7 +519,7 @@ async def scenario_scientific_unit_contract() -> dict[str, object]:
 
 
 async def scenario_parameter_alias_routing() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     provider_a = ToolSpec(
         name="provider_a",
         provider="a",
@@ -585,7 +588,7 @@ async def scenario_parameter_alias_routing() -> dict[str, object]:
 
 
 async def scenario_scientific_field_qualifiers() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     endpoint = EndpointSpec(
         name="read",
         read_only=True,
@@ -628,7 +631,7 @@ async def scenario_scientific_field_qualifiers() -> dict[str, object]:
 
 
 async def scenario_execution_ready_planning() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     unbound = ToolSpec(
         name="preferred_unbound",
         provider="provider_a",
@@ -680,7 +683,7 @@ async def scenario_execution_ready_planning() -> dict[str, object]:
 
 
 async def scenario_binding_aware_fallback() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     primary = ToolSpec(
         name="primary_route",
         provider="provider",
@@ -756,7 +759,7 @@ async def scenario_binding_aware_fallback() -> dict[str, object]:
 
 
 async def scenario_inspection_redaction() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = ToolSpec(
         name="redaction_probe",
         remote=True,
@@ -791,7 +794,7 @@ async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
         dashboard_path = root / "dashboard.html"
 
         with SQLiteRegistry(registry_path) as registry:
-            router = SchemaRouter(registry=registry)
+            router = SchemaRouter(_legacy_routing=True, registry=registry)
             key = router.add_callable(current_weather)
 
             with SQLiteRunTraceStore(trace_path) as traces:

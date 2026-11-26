@@ -131,7 +131,7 @@ def _plan(
 
 
 def test_graph_introspection_compiles_bounded_traversal_capabilities() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = router.add_graph_store(
         FakeGraphBackend(),
         database_name="knowledge",
@@ -158,7 +158,7 @@ def test_graph_introspection_compiles_bounded_traversal_capabilities() -> None:
 @pytest.mark.asyncio
 async def test_graph_traversal_is_bounded_and_projected() -> None:
     backend = FakeGraphBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_graph_store(
         backend,
         database_name="knowledge",
@@ -192,7 +192,7 @@ async def test_graph_traversal_is_bounded_and_projected() -> None:
 @pytest.mark.asyncio
 async def test_graph_unknown_relationship_is_rejected_before_backend_call() -> None:
     backend = FakeGraphBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_graph_store(
         backend,
         database_name="knowledge",
@@ -231,7 +231,7 @@ async def test_graphs_compose_with_principal_authorization() -> None:
             ),
         )
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     await router.aadd_graph_store(
         FakeGraphBackend(),
         database_name="knowledge",
@@ -290,7 +290,7 @@ async def test_graph_trusted_filters_fail_closed_before_unscoped_backend_io() ->
         ),
     )
     backend = FakeGraphBackend()
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     await router.aadd_graph_store(
         backend,
         database_name="knowledge",
@@ -375,7 +375,7 @@ async def test_graph_scoped_backend_composes_filters_relationships_and_hops() ->
         ),
     )
     backend = ScopedFakeGraphBackend()
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     await router.aadd_graph_store(
         backend,
         database_name="knowledge",
@@ -406,7 +406,7 @@ async def test_graph_scoped_backend_composes_filters_relationships_and_hops() ->
 
 
 def test_graph_registration_can_limit_graphs_before_exposure() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = router.add_graph_store(
         FakeGraphBackend(),
         database_name="knowledge",
@@ -450,7 +450,7 @@ async def test_remote_sync_graph_backend_does_not_block_event_loop() -> None:
             )
 
     backend = BlockingBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_graph_store(
         backend,
         database_name="knowledge",
@@ -487,7 +487,7 @@ async def test_remote_sync_graph_backend_does_not_block_event_loop() -> None:
 
 @pytest.mark.asyncio
 async def test_native_graph_schema_refresh_reintrospects_current_contract() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_graph_store(
         FakeGraphBackend(),
         database_name="knowledge",
@@ -518,7 +518,7 @@ def test_graph_discovery_catalog_limit_stops_unbounded_iterable() -> None:
 
             return generate()
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     with pytest.raises(RegistrationError, match="max_discovery_sources=3"):
         router.add_graph_store(
             LargeCatalogBackend(),
@@ -545,7 +545,7 @@ def test_graph_discovery_rejects_oversized_descriptor_before_registration() -> N
                 ),
             )
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     with pytest.raises(RegistrationError, match="node types"):
         router.add_graph_store(
             WideGraphBackend(),
@@ -558,7 +558,7 @@ def test_graph_discovery_rejects_oversized_descriptor_before_registration() -> N
 
 
 def test_graph_generated_contract_budget_is_failure_atomic() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     with pytest.raises(RegistrationError, match="generated schema bytes"):
         router.add_graph_store(

@@ -39,7 +39,7 @@ def test_tool_from_callable_derives_input_and_output_schemas() -> None:
 
 
 def test_add_callable_uses_decorator_metadata_and_executes() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(current_weather)
 
     assert key == "current_weather"
@@ -64,7 +64,7 @@ async def test_add_callable_supports_async_functions() -> None:
     async def lookup(user_id: int) -> dict[str, str]:
         return {"user_id": str(user_id)}
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(lookup, read_only=True)
 
     result = await router.ainvoke(
@@ -78,7 +78,7 @@ async def test_add_callable_supports_async_functions() -> None:
 
 
 def test_callable_argument_types_are_runtime_validated() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(current_weather)
 
     with pytest.raises(SchemaValidationError, match="arguments for current_weather.call"):
@@ -117,7 +117,7 @@ async def test_async_registered_callable_rejects_invalid_arguments() -> None:
     async def lookup(user_id: int) -> dict[str, str]:
         return {"user_id": str(user_id)}
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(lookup, read_only=True)
     with pytest.raises(SchemaValidationError):
         await router.ainvoke(

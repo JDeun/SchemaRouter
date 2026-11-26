@@ -30,7 +30,7 @@ def _tracer():
 
 
 def _router(*, fail: bool = False) -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="weather",

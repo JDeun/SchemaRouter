@@ -77,7 +77,7 @@ def _router(
             ),) if hidden else ()
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(ToolSpec(
         name="contacts", source_type="crm", license="owner-reviewed",
         endpoints=[EndpointSpec(
@@ -339,7 +339,7 @@ def test_actual_openapi_producer_and_mcp_two_required_inputs_are_bound() -> None
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

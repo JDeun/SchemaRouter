@@ -24,6 +24,7 @@ VIEWER = PrincipalContext(subject="verified-host-viewer", roles=("viewer",))
 
 def _router(parameters: list[tuple[str, dict]]) -> SchemaRouter:
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

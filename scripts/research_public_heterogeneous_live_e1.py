@@ -289,7 +289,9 @@ async def run_live_anonymous_source_matrix() -> dict[str, Any]:
     Source identities and complete fixed task arguments are caller-independent.
     A task failure raises; no fixture fallback can emit a false live success.
     """
-    router = SchemaRouter(policy=ExecutionPolicy(allow_unclassified_remote=True))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        policy=ExecutionPolicy(allow_unclassified_remote=True))
     started = perf_counter()
     try:
         crossref_registration = await router.add_provider(

@@ -45,7 +45,7 @@ def build_bound_two_step_source(
     seen: list[tuple[str, dict[str, Any]]],
 ) -> SchemaRouter:
     """Register read-only tools and independently bind each host provider."""
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(

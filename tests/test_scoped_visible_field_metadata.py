@@ -74,6 +74,7 @@ def _router():
         ),),
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=policy,
         analyzer=InspectingAnalyzer(),
     )
@@ -222,6 +223,7 @@ def _semantic_unit_router(*, tainted: bool, channel: str):
             raise AssertionError("unknown fixture channel")
 
     router = SchemaRouter(
+        _legacy_routing=True,
         analyzer=Inspect(),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

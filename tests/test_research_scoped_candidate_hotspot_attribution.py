@@ -33,6 +33,7 @@ def test_actual_scoped_hotspot_counter_separates_projection_and_scorer() -> None
 def test_route_policy_control_is_not_field_scope_bypass_in_product() -> None:
     router, policy = build_fixture(100)
     route_control = SchemaRouter(
+        _legacy_routing=True,
         registry=router.registry,
         authorization_policy=AuthorizationPolicy(
             rules=policy.rules,

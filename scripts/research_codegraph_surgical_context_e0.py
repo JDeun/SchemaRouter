@@ -200,7 +200,7 @@ def _synthetic_control(
     """
     aliases = ("case status", "문의 상태", "問い合わせ状態")
     text = " ".join(aliases)
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

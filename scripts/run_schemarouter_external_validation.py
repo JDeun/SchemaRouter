@@ -69,7 +69,7 @@ def _output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
 
 
 def build_router(catalog: dict[str, Any]) -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     for raw_tool in catalog["tools"]:
         input_schema = raw_tool["input_schema"]
         fields = _field_specs(raw_tool.get("output_fields", []))

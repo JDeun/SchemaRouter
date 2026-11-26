@@ -16,7 +16,7 @@ from schemarouter.adapters import OpenAPIRemoteInvoker
 
 @pytest.mark.asyncio
 async def test_elastic_modulus_query_uses_only_healthy_minimal_access_path() -> None:
-    router = SchemaRouter(unavailable_cooldown_seconds=60)
+    router = SchemaRouter(_legacy_routing=True, unavailable_cooldown_seconds=60)
 
     optimade = ToolSpec(
         name="provider_b_optimade",

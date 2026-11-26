@@ -48,6 +48,7 @@ def test_relevant_active_cooldown_still_invokes_fingerprint() -> None:
 def test_unmodified_route_policy_control_reports_same_real_api() -> None:
     router, policy = build_fixture(100)
     control = SchemaRouter(
+        _legacy_routing=True,
         registry=router.registry,
         authorization_policy=AuthorizationPolicy(
             rules=policy.rules, default_effect=policy.default_effect,

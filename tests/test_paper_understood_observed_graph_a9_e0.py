@@ -43,7 +43,7 @@ def _fixture(
     middle_value: object = "case-42", target_value: object = "open", on_step=None,
 ):
     seen: list[tuple[str, dict]] = []
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
@@ -630,7 +630,7 @@ def _mixed_depth_bound_execution_fixture(*, on_step=None):
     from test_paper_understood_graph_plan import _node
 
     seen: list[str] = []
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),

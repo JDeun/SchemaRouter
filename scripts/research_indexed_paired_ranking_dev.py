@@ -65,7 +65,7 @@ FIELD = CapabilityFieldContract(
 
 def build_direct_source() -> tuple[SchemaRouter, NativeSchemaPostingIndex]:
     """Construct disclosed native source contract, without scorer case labels."""
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="service_*.read", roles_any=("reader",),

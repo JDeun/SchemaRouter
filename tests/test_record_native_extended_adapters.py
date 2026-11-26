@@ -63,7 +63,7 @@ class FakeCosmosDatabase:
 @pytest.mark.asyncio
 async def test_cosmos_native_adapter_discovers_and_parameterizes_queries() -> None:
     database = FakeCosmosDatabase()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_cosmos_record_store(
         database,
         database_name="cosmos",
@@ -124,7 +124,7 @@ class FakeCouchbaseCluster:
 @pytest.mark.asyncio
 async def test_couchbase_native_adapter_discovers_keyspaces_and_uses_named_parameters() -> None:
     cluster = FakeCouchbaseCluster()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_couchbase_record_store(
         cluster,
         database_name="cb",
@@ -182,7 +182,7 @@ class FakeClickHouseClient:
 @pytest.mark.asyncio
 async def test_clickhouse_native_adapter_introspects_and_binds_parameters() -> None:
     client = FakeClickHouseClient()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_clickhouse_record_store(
         client,
         database_name="click",
@@ -284,7 +284,7 @@ class FakeInfluxQueryApi:
 @pytest.mark.asyncio
 async def test_influxdb_native_adapter_discovers_schema_and_compiles_flux() -> None:
     query_api = FakeInfluxQueryApi()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_influxdb_record_store(
         query_api,
         bucket="metrics",

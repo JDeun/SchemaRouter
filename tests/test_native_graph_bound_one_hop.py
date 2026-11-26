@@ -57,6 +57,7 @@ def _fixture(
         ),) if deny_consumer else ()
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(rules=rules),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

@@ -35,7 +35,9 @@ CONDITIONS = (
 
 
 def _source(conditions, *, neutral=False, separate=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="allow"))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="allow"))
     concepts, fields = [], []
     for name, attributes in zip(("first", "second"), conditions, strict=True):
         source = name if separate else "common"

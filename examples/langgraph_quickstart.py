@@ -21,7 +21,7 @@ class State(TypedDict, total=False):
 
 
 def main() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(add)
 
     builder = StateGraph(State)

@@ -221,6 +221,7 @@ def profile(
             default_effect=original.default_effect,
         )
         route_only_router = SchemaRouter(
+            _legacy_routing=True,
             registry=scoped_router.registry,
             authorization_policy=route_only_policy,
         )

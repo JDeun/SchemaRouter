@@ -41,7 +41,7 @@ GROUP = NativeDeclaredFieldGroup(
 
 
 def _synthetic_router(noise_routes: int) -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),

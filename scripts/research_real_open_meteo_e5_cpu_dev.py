@@ -57,6 +57,7 @@ def catalog(
     registry = InMemoryRegistry()
     registry.update_many(tools)
     router = SchemaRouter(
+        _legacy_routing=True,
         registry=registry,
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(

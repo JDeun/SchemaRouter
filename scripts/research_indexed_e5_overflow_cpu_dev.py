@@ -44,7 +44,7 @@ ACTOR = PrincipalContext(subject="indexed-direct-synthetic-dev", roles=("reader"
 
 
 def _source() -> tuple[SchemaRouter, NativeSchemaPostingIndex, NativeDeclaredFieldGroup]:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),

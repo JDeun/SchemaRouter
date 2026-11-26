@@ -50,6 +50,7 @@ def _router():
         ),),
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=policy,
         analyzer=InspectingAnalyzer(),
     )

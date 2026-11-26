@@ -59,7 +59,7 @@ def _index(router: SchemaRouter) -> NativeSchemaGraphIndex:
 
 
 def _direct_router() -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=_policy(hidden=True))
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy(hidden=True))
     for name, fields in (
         ("status_only", ("status",)),
         ("priority_only", ("priority",)),
@@ -76,7 +76,7 @@ def _direct_router() -> SchemaRouter:
 
 
 def _joined_router(*, incomplete: bool = False, extra_consumers: int = 0) -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=_policy())
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy())
     producer_fields = (("contact_id", "crm.contact_id"), ("region_id", "crm.region_id"))
     if incomplete:
         producer_fields = producer_fields[:1]
@@ -367,7 +367,7 @@ def test_optin_indexed_direct_hides_scoped_output_before_disclosure():
 
 
 def test_optin_indexed_direct_with_six_real_alternatives_abstains_without_top5():
-    router = SchemaRouter(authorization_policy=_policy())
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy())
     for n in range(6):
         router.add_tool(ToolSpec(
             name=f"complete_{n}", source_type="crm", license="owner-reviewed",

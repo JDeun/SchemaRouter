@@ -36,7 +36,7 @@ def _fixture(*, observed_customer_id="customer-017", source_parameter=False,
              allow_consumers=False, on_consumer=None, consumer_payloads=None,
              consumer_result_paths=None):
     seen: list[tuple[str, dict]] = []
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

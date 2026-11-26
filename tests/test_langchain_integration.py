@@ -73,7 +73,7 @@ def make_authorized_database_router() -> tuple[SchemaRouter, sqlite3.Connection]
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_sqlite_database(connection, database_name="company")
     return router, connection
 
@@ -91,7 +91,7 @@ def mutate_value(value: int) -> int:
 
 
 def make_router() -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(add)
     return router
 
@@ -131,7 +131,7 @@ def test_langchain_tool_collection_exports_registered_endpoints() -> None:
 
 
 def test_langchain_tool_cannot_bypass_execution_policy() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_callable(mutate_value)
     tool = to_langchain_tool(router, "mutate_value", "call")
 
@@ -159,7 +159,7 @@ def test_langchain_tool_can_be_imported_back_into_schemarouter() -> None:
     assert endpoint.read_only is True
     assert imported.provider == "fixture-search"
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     key = router.add_langchain_tool(
         foreign,
         read_only=True,

@@ -43,7 +43,7 @@ def compact_json_size(value: object) -> int:
 
 
 def main() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     distractors = [
         "finance",
         "calendar",

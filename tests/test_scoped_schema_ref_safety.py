@@ -75,6 +75,7 @@ def test_data_scoped_output_never_exposes_nested_hidden_schema_metadata(
             return KeywordAnalyzer().analyze(request, registry)
 
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=policy,
         analyzer=InspectingAnalyzer(),
     )
@@ -119,7 +120,7 @@ def test_masked_scope_with_all_visible_declarations_still_strips_unknown_refs() 
             visible_fields=("public_value",),
         ),),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(ToolSpec(
         name="materials",
         endpoints=[EndpointSpec(

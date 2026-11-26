@@ -143,7 +143,7 @@ def test_vector_collection_rejects_reserved_metadata_names() -> None:
 
 def test_vector_store_introspection_compiles_collection_contracts() -> None:
     backend = FakeVectorBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     keys = router.add_vector_store(
         backend,
@@ -179,7 +179,7 @@ def test_vector_store_introspection_compiles_collection_contracts() -> None:
 @pytest.mark.asyncio
 async def test_vector_store_search_embeds_projects_and_bounds_results() -> None:
     backend = FakeVectorBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2, 0.3],
@@ -216,7 +216,7 @@ async def test_vector_store_search_embeds_projects_and_bounds_results() -> None:
 
 @pytest.mark.asyncio
 async def test_vector_dimension_mismatch_fails_closed() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_vector_store(
         FakeVectorBackend(),
         lambda query: [0.1, 0.2],
@@ -257,7 +257,7 @@ async def test_vector_collections_compose_with_principal_authorization() -> None
             ),
         )
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     await router.aadd_vector_store(
         FakeVectorBackend(),
         lambda query: [0.1, 0.2, 0.3],
@@ -319,7 +319,7 @@ async def test_vector_store_supports_async_discovery_embedding_and_search() -> N
         return (0.1, 0.2, 0.3)
 
     backend = AsyncBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_vector_store(
         backend,
         embed,
@@ -344,7 +344,7 @@ async def test_vector_store_supports_async_discovery_embedding_and_search() -> N
 @pytest.mark.asyncio
 async def test_vector_store_requires_explicit_output_projection() -> None:
     backend = FakeVectorBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2, 0.3],
@@ -391,7 +391,7 @@ def test_vector_public_metadata_is_namespaced_in_model_visible_contract() -> Non
                 ),
             )
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_vector_store(
         MetadataBackend(),
         lambda query: [0.1, 0.2, 0.3],
@@ -404,7 +404,7 @@ def test_vector_public_metadata_is_namespaced_in_model_visible_contract() -> Non
 
 
 def test_vector_store_can_limit_collections_before_registration() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = router.add_vector_store(
         FakeVectorBackend(),
         lambda query: [0.1, 0.2, 0.3],
@@ -443,7 +443,7 @@ async def test_remote_sync_vector_backend_does_not_block_event_loop() -> None:
             )
 
     backend = BlockingBackend()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2, 0.3],
@@ -481,7 +481,7 @@ async def test_remote_sync_vector_backend_does_not_block_event_loop() -> None:
 
 @pytest.mark.asyncio
 async def test_native_vector_schema_refresh_reintrospects_current_contract() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     await router.aadd_vector_store(
         FakeVectorBackend(),
         lambda query: [0.1, 0.2, 0.3],
@@ -516,7 +516,7 @@ def test_vector_discovery_catalog_limit_stops_unbounded_iterable() -> None:
 
             return generate()
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     with pytest.raises(RegistrationError, match="max_discovery_sources=3"):
         router.add_vector_store(
             LargeCatalogBackend(),
@@ -547,7 +547,7 @@ def test_vector_discovery_rejects_oversized_metadata_before_registration() -> No
                 ),
             )
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     with pytest.raises(RegistrationError, match="metadata fields"):
         router.add_vector_store(
             WideCollectionBackend(),
@@ -570,7 +570,7 @@ def test_vector_explicit_selection_skips_unrelated_malformed_descriptor() -> Non
 
             return generate()
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = router.add_vector_store(
         MixedCatalogBackend(),
         lambda query: [0.1, 0.2, 0.3],
@@ -583,7 +583,7 @@ def test_vector_explicit_selection_skips_unrelated_malformed_descriptor() -> Non
 
 
 def test_vector_generated_contract_budget_is_failure_atomic() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     with pytest.raises(RegistrationError, match="generated schema bytes"):
         router.add_vector_store(

@@ -116,7 +116,7 @@ class FakeMongoDatabase:
 @pytest.mark.asyncio
 async def test_mongodb_native_adapter_discovers_and_executes_bounded_find() -> None:
     database = FakeMongoDatabase()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_mongodb_record_store(
         database,
         database_name="mongo",
@@ -209,7 +209,7 @@ async def test_elastic_and_opensearch_native_mapping_and_query(
     vendor: str,
 ) -> None:
     client = FakeElasticClient()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     register = getattr(router, method)
     keys = await register(
         client,
@@ -354,7 +354,7 @@ class FakeDynamoClient:
 @pytest.mark.asyncio
 async def test_dynamodb_native_adapter_builds_only_parameterized_scan_expressions() -> None:
     client = FakeDynamoClient()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     keys = await router.aadd_dynamodb_record_store(
         client,
         database_name="ddb",
@@ -407,7 +407,7 @@ async def test_native_record_backend_receives_hidden_principal_filter() -> None:
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     await router.aadd_mongodb_record_store(
         database,
         database_name="mongo",
@@ -455,7 +455,7 @@ async def test_mongodb_schema_discovery_merges_bounded_heterogeneous_samples() -
     database = FakeMongoDatabase()
     collection = FakeHeterogeneousMongoCollection()
     database.collections["documents"] = collection
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     await router.aadd_mongodb_record_store(
         database,
@@ -504,7 +504,7 @@ class FakeHeterogeneousDynamoClient(FakeDynamoClient):
 @pytest.mark.asyncio
 async def test_dynamodb_schema_discovery_merges_samples_and_only_trusts_metadata_types() -> None:
     client = FakeHeterogeneousDynamoClient()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     await router.aadd_dynamodb_record_store(
         client,
@@ -574,6 +574,7 @@ async def test_mongodb_public_execute_denies_guest_before_native_query() -> None
     """Reject a different principal on an already registered MongoDB plan."""
     database = FakeMongoDatabase()
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

@@ -186,6 +186,7 @@ def benchmark(*, registered_routes: int = 502, pairs: int = 4) -> dict[str, Any]
             # Our next per-pair changed-key receipt starts AFTER that version.
             registry.update_many(seed.registry.tools())
             router = SchemaRouter(
+                _legacy_routing=True,
                 registry=registry,
                 authorization_policy=seed.authorization_policy,
             )

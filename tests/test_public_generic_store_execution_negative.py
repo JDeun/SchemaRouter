@@ -39,7 +39,7 @@ async def _registered(kind: str):
         key, operation = "nosql.documents", "query"
     else:
         raise ValueError("Unknown source fixture")
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         rules=(AuthorizationRule(
             effect="allow", operation=f"{key}.{operation}",
             roles_any=("reader",),

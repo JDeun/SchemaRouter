@@ -56,7 +56,7 @@ def _fixture(schema, value):
         source_type="records", license="host-reviewed",
     ),))
     seen = []
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader", "viewer"),

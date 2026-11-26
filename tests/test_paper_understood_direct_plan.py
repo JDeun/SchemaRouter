@@ -95,7 +95,7 @@ def _tool(name, *, complete=True, safe=True, license_id="owner-reviewed",
 
 
 def _router():
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(

@@ -59,7 +59,7 @@ def _field(sid: str, name: str | None = None, *, kind: str = "string") -> FieldS
 
 
 def _router(*, extra_noise: int = 0) -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("analyst", "viewer"),

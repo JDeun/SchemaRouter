@@ -35,7 +35,7 @@ PRINCIPAL = PrincipalContext(subject="safe-reader", roles=("reader",))
 
 
 def scoped(query="Read marine data"):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(effect="deny", operation="archive.*",

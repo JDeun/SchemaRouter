@@ -83,7 +83,7 @@ def main() -> int:
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     keys = router.add_clickhouse_record_store(
         client,
         database_name="clickhouse_live",

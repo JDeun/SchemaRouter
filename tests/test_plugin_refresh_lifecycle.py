@@ -167,6 +167,7 @@ async def test_plugin_refresh_and_watch_use_declared_refresh_profile() -> None:
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         router = SchemaRouter(
+            _legacy_routing=True,
             http_client=client,
             adapter_registry=registry,
         )
@@ -215,7 +216,7 @@ async def test_plugin_refresh_and_watch_use_declared_refresh_profile() -> None:
 async def test_plugin_without_refresh_declaration_is_blocked() -> None:
     adapter = NonRefreshableFixtureAdapter()
     registry = AdapterRegistry([adapter])
-    router = SchemaRouter(adapter_registry=registry)
+    router = SchemaRouter(_legacy_routing=True, adapter_registry=registry)
 
     tool = await router.add_url(
         "https://fixture.example.test/static",
@@ -241,7 +242,7 @@ async def test_plugin_without_refresh_declaration_is_blocked() -> None:
 async def test_legacy_plugin_without_refresh_profile_remains_ingestible_only() -> None:
     adapter = LegacyFixtureAdapter()
     registry = AdapterRegistry([adapter])
-    router = SchemaRouter(adapter_registry=registry)
+    router = SchemaRouter(_legacy_routing=True, adapter_registry=registry)
 
     tool = await router.add_url(
         "https://fixture.example.test/legacy",

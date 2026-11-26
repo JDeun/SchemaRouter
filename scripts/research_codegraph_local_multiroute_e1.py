@@ -171,7 +171,7 @@ def build_local_multiroute_source(
         raise ValueError("four-route comparison requires the joined task")
     if language not in LANGUAGE_ALIASES or condition not in CONDITIONS:
         raise ValueError("unregistered local source cohort")
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

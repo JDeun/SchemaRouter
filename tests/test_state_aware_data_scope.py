@@ -53,7 +53,7 @@ def _scoped_router() -> tuple[SchemaRouter, sqlite3.Connection, PrincipalContext
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_sqlite_database(connection, database_name="company")
     principal = PrincipalContext(subject="alice", roles=("employee",))
     return router, connection, principal
@@ -157,7 +157,7 @@ def test_state_backfill_cannot_revive_fully_hidden_endpoint() -> None:
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_sqlite_database(connection, database_name="company")
     principal = PrincipalContext(subject="alice", roles=("employee",))
     state = TypedExecutionState(

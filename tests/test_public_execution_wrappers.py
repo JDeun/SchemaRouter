@@ -26,6 +26,7 @@ def _registered_router():
         return {"user_id": str(user_id)}
 
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

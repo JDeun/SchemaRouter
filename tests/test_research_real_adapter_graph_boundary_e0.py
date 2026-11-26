@@ -104,7 +104,7 @@ def _router(
         AuthorizationRule(effect="allow", operation="cases.read_case",
                           roles_any=("analyst", "viewer")),
     )
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=rules,
         data_rules=(
             (DataScopeRule(

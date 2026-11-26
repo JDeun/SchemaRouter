@@ -89,7 +89,7 @@ def _router(
             hidden_fields=("record_id",),
         ),) if hidden_at is not None else ()
     )
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=rules, data_rules=data_rules,
     ))
     router.add_tool(_tool("root", output="billing.id_0"))

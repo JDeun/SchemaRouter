@@ -44,6 +44,7 @@ def _read_tool(name: str) -> ToolSpec:
 
 def _router() -> SchemaRouter:
     router = SchemaRouter(
+        _legacy_routing=True,
         registry=InMemoryRegistry(),
         authorization_policy=AuthorizationPolicy(
             rules=(

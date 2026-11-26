@@ -195,6 +195,7 @@ def evaluate(
     for size in sizes:
         scoped, policy = build_fixture(size)
         router_no_scope = SchemaRouter(
+            _legacy_routing=True,
             registry=scoped.registry,
             authorization_policy=AuthorizationPolicy(
                 rules=policy.rules, default_effect=policy.default_effect,

@@ -107,7 +107,7 @@ def test_graph_selector_passes_two_routes_to_existing_agent() -> None:
 def test_graph_view_redacts_nested_hidden_metadata() -> None:
     # Real registered source metadata contains the hidden nested label, not
     # merely a string asserted absent from an unrelated generated schema.
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation="*.*", roles_any=("viewer",)),),
         data_rules=(DataScopeRule(

@@ -133,7 +133,7 @@ async def test_authorization_visible_subset_cannot_leak_from_projecting_adapter(
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.registry.register(tool)
     router.executor.bind(tool.key, _LeakyProjectingInvoker())
     principal = PrincipalContext(subject="alice", roles=("reader",))

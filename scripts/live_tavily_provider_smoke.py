@@ -15,7 +15,7 @@ BASE_URL = "https://api.tavily.com"
 
 
 async def run_smoke() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     resolution = router.resolve_provider(PROVIDER_ID, methods={"rest"})
     assert resolution.provider_id == PROVIDER_ID
     assert resolution.methods[0].status == "available"

@@ -164,7 +164,7 @@ def evaluate(
 
     tool_map = {tool["name"]: tool for tool in snapshot["tools"]}
     allowed = set(tool_map)
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(tool_from_mcp(
         "servicenow-platform-mcp", {"tools": snapshot["tools"]},
         namespace="external-validation-servicenow-platform-mcp",

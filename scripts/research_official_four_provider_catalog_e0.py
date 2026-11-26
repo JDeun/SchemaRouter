@@ -210,7 +210,9 @@ def audit_original_four_provider_native_churn_e0() -> dict[str, Any]:
     manifest = _source_route_manifest(openai_source, github_source, tools)
     github_routes = {(github.key, e.name) for e in github.endpoints}
     openai_routes = {(openai.key, e.name) for e in openai.endpoints}
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="deny"))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="deny"))
     for tool in tools:
         router.add_tool(tool)
     if len(tuple(router.registry.tools())) != 4:

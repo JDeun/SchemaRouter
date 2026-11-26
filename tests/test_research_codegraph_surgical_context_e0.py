@@ -31,7 +31,7 @@ QUERY = "case status"
 
 
 def _source(*, missing_input: bool = False, extra_consumers: int = 0):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

@@ -307,7 +307,7 @@ async def evaluate() -> dict[str, Any]:
                 discovered = list(discovered_result.tools)
                 assert len(discovered) >= 10
 
-                router = SchemaRouter()
+                router = SchemaRouter(_legacy_routing=True)
                 conversion = _register_retrieval_mirror(router, discovered)
                 selector = SchemaRouterCatalogSelector(router)
 

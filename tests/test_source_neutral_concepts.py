@@ -81,7 +81,9 @@ def test_unspecified_and_explicit_source_are_not_disjoint_alias_authority():
 
 
 def _providers(*, count=3, host=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(
         AuthorizationRule(effect="allow", operation="*.read", roles_any=("reader",)),
     )))
     health = {chr(97 + i): True for i in range(count)}

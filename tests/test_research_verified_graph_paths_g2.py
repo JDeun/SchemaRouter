@@ -46,7 +46,7 @@ def _router(
     wrong_middle_output: bool = False, root_identifier: bool = True,
     property_strength: bool = True, omit_license: bool = False,
 ) -> SchemaRouter:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(
@@ -327,7 +327,7 @@ def test_protocol_neutral_business_record_graph_uses_same_native_contracts(query
     the typed graph rule. Real OpenAPI/MCP/OPTIMADE adapter transfer is
     separately gated in #1545, not claimed by this fixture.
     """
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("analyst",),

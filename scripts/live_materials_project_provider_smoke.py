@@ -16,7 +16,7 @@ EXPECTED_OPTIMADE_URL = "https://optimade.materialsproject.org/v1"
 
 
 async def run_smoke() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     resolution = router.resolve_provider(PROVIDER_ID)
     methods = {method.method_id: method for method in resolution.methods}

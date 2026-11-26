@@ -30,6 +30,7 @@ from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import (
 def _seed(registry: SQLiteRegistry) -> SchemaRouter:
     registry.update_many(_synthetic_router(12).registry.tools())
     return SchemaRouter(
+        _legacy_routing=True,
         registry=registry,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

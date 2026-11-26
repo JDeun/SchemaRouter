@@ -31,7 +31,9 @@ from schemarouter import (
 
 
 def _router(structural: bool = False) -> SchemaRouter:
-    router = SchemaRouter(registry=InMemoryRegistry(), structural_retrieval=structural)
+    router = SchemaRouter(
+        _legacy_routing=True,
+        registry=InMemoryRegistry(), structural_retrieval=structural)
     # "aa_" sorts before "zz_" so the alphabetical fallback puts the destructive
     # route first; the names make the ordering visible rather than incidental.
     router.add_tool(

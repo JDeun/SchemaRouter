@@ -13,7 +13,7 @@ from schemarouter import EndpointSpec, FieldSpec, ParameterSpec, SchemaRouter, T
 
 def _offline_registered_source_router() -> tuple[SchemaRouter, list[str]]:
     """Original-shaped routes: real registry/planner, never fake ranking outputs."""
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     called: list[str] = []
 
     def no_network(endpoint: str, arguments: dict) -> dict:

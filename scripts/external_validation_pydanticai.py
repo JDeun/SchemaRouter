@@ -399,7 +399,7 @@ def evaluate(catalog_size: int = len(CATALOG)) -> dict[str, Any]:
     _assert_installed_wheel()
 
     tools = _tool_definitions(catalog_size)
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     _register_retrieval_mirror(router, tools)
     strategy = SchemaRouterToolSearchStrategy(router, max_results=3)
 

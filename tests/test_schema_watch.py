@@ -66,7 +66,7 @@ async def test_schema_watcher_applies_compatible_drift() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -100,7 +100,7 @@ async def test_remote_schema_refresh_does_not_commit_when_health_transition_prep
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -142,7 +142,7 @@ async def test_remote_schema_refresh_rejects_concurrent_writer_before_commit(
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -188,7 +188,7 @@ async def test_remote_schema_refresh_serializes_concurrent_probe_registration(
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -248,7 +248,7 @@ async def test_schema_watcher_quarantines_breaking_drift() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -278,7 +278,7 @@ async def test_schema_watcher_respects_report_only_policy() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -543,7 +543,7 @@ async def test_runtime_apply_guard_prevents_schema_commit() -> None:
         yield
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",

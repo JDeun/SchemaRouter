@@ -46,7 +46,7 @@ def _trace():
 
 
 def test_router_inspection_accepts_explicit_decision_traces_only() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     trace = _trace()
 
     without = router.inspect()
@@ -90,7 +90,7 @@ def test_decision_trace_inspection_summary_is_privacy_safe() -> None:
 
 
 def test_dashboard_renders_compact_decision_trace_without_hidden_inventory() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     trace = _trace()
     inspection = router.inspect(decision_traces=[trace])
 

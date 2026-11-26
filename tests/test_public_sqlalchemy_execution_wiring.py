@@ -62,7 +62,7 @@ async def test_sqlalchemy_registered_public_execute_denies_before_driver_and_blo
             ),
             default_effect="deny",
         )
-        router = SchemaRouter(authorization_policy=auth)
+        router = SchemaRouter(_legacy_routing=True, authorization_policy=auth)
         keys = router.add_sqlalchemy_database(
             engine, database_name="warehouse", remote=False
         )
@@ -130,7 +130,7 @@ async def test_sqlalchemy_denied_principal_never_reaches_driver() -> None:
             ),
             default_effect="deny",
         )
-        router = SchemaRouter(authorization_policy=auth)
+        router = SchemaRouter(_legacy_routing=True, authorization_policy=auth)
         (key,) = router.add_sqlalchemy_database(
             engine, database_name="warehouse", remote=False
         )
@@ -171,7 +171,7 @@ async def test_sqlalchemy_public_execute_denies_unavailable_and_stale_before_dri
             ),),
             default_effect="deny",
         )
-        router = SchemaRouter(authorization_policy=policy)
+        router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
         (key,) = router.add_sqlalchemy_database(
             engine, database_name="warehouse", remote=False,
         )

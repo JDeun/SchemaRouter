@@ -14,7 +14,7 @@ BASE_URL = "https://api.crossref.org/v1"
 
 
 async def run_smoke() -> dict[str, object]:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     resolution = router.resolve_provider(PROVIDER_ID)
     assert resolution.provider_id == PROVIDER_ID
     assert len(resolution.methods) == 1

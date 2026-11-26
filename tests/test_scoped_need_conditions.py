@@ -34,7 +34,9 @@ INTENTS = PaperIntentRegistry(
 
 
 def source(*, required=True, parameters=None, qualifiers=None, collision=False, second=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="allow"))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        authorization_policy=AuthorizationPolicy(default_effect="allow"))
     owners = []
     roots = set()
     for name in ("facility", "remote") if second else ("facility",):

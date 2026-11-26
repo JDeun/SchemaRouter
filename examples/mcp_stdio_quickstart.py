@@ -12,6 +12,7 @@ from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
 async def main() -> None:
     server = Path(__file__).with_name("mcp_stdio_server.py")
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True),
     )
     try:

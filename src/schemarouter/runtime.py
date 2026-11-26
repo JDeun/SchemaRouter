@@ -506,8 +506,16 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         network_policy: NetworkPolicy | None = None,
         structural_retrieval: bool = False,
         unavailable_cooldown_seconds: float = 30.0,
+        _legacy_routing: bool = False,
     ) -> None:
+        # Only explicit source-checkout research callers may retain the old planner.
+        if type(_legacy_routing) is not bool:
+            raise ValueError("legacy research mode must be boolean")
+        if not _legacy_routing and (analyzer is not None or structural_retrieval):
+            raise ValueError("legacy analyzers are not a product routing configuration")
+        self._legacy_routing = _legacy_routing
         self.registry = registry if registry is not None else InMemoryRegistry()
+        self._source_registry = self.registry
         self.authorization_audit_hook = authorization_audit_hook
         self._authorization_audit_delivery = AuthorizationAuditDeliveryMonitor(
             mode=authorization_audit_delivery_mode,
@@ -531,12 +539,12 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         self._source_availability = _SourceAvailability(self._is_snapshot_access_available)
-        self.planner = SchemaPlanner(
-            self.registry,
-            analyzer=analyzer,
-            structural_retrieval=structural_retrieval,
-        )
-        self.planner._source_availability = self._source_availability
+        self.planner: SchemaPlanner | None = None
+        if _legacy_routing:
+            self.planner = SchemaPlanner(
+                self.registry, analyzer=analyzer, structural_retrieval=structural_retrieval,
+            )
+            self.planner._source_availability = self._source_availability
         self._paper_planning: _PreparedPaperPlanning | None = None
         self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
@@ -569,10 +577,16 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         authority = self._source_availability
         # During compatibility migration a replaced planner must not silently
         # introduce another registry or availability authority.
+        planner = self.planner
         if (
-            self.planner.registry is not self.registry
-            or self.planner._source_availability is not authority
-            or self.planner.availability_predicate is not authority.predicate
+            self._source_registry is not self.registry
+            or self.executor.registry is not self.registry
+            or (planner is not None and (
+                not self._legacy_routing or planner.registry is not self.registry
+                or planner._source_availability is not authority
+                or planner.availability_predicate is not authority.predicate
+            ))
+            or (self._legacy_routing and planner is None)
         ):
             raise PolicyViolationError("retrieval authority changed: source availability mismatch")
         return authority.predicate
@@ -1269,7 +1283,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        request_type = PaperPlanRequest if self._paper_planning is not None else PlanRequest
+        request_type = (
+            PlanRequest if self._legacy_routing and self._paper_planning is None
+            else PaperPlanRequest
+        )
         return request_type.model_json_schema()
 
     @property
@@ -3857,33 +3874,40 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             raise ValueError(
                 "configured paper planning requires str or PaperPlanRequest, not PlanRequest",
             )
+        if configured is None and not self._legacy_routing:
+            raise PolicyViolationError(
+                "configure_field_routing is required; lexical planning is unavailable",
+            )
         return configured
 
-    def _require_legacy_planning_mode(self) -> None:
-        if self._paper_planning is not None:
+    def _require_legacy_planning_mode(self) -> SchemaPlanner:
+        planner = self.planner
+        if self._paper_planning is not None or not self._legacy_routing or planner is None:
             raise PolicyViolationError(
-                "configured paper routing uses Algorithm 1; lexical planning is unavailable",
+                "paper routing uses Algorithm 1; lexical planning is unavailable",
             )
+        self._source_availability_predicate()
+        return planner
 
     def _legacy_plan(
         self, request: PlanRequest | str, principal: PrincipalContext | None,
         *, executable_only: bool,
     ) -> ExecutionPlan:
         """Temporary compatibility dispatch; never publish after paper configuration."""
-        self._require_legacy_planning_mode()
+        planner = self._require_legacy_planning_mode()
         predicate = self._combined_availability_predicate(
             principal, self._binding_ready if executable_only else None,
         )
         if predicate is None:
             if executable_only:
                 raise RuntimeError("executable planning requires an availability predicate")
-            plan = self.planner.plan(request)
+            plan = planner.plan(request)
         elif (
             self.authorization_policy is not None
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            plan = self.planner.plan_with_scoped_schema(
+            plan = planner.plan_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -3897,7 +3921,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            plan = self.planner.plan_with_additional_availability(request, predicate)
+            plan = planner.plan_with_additional_availability(request, predicate)
         self._require_legacy_planning_mode()
         if self.authorization_policy is not None and not executable_only:
             self._validate_plan_authorization(plan, principal, phase="plan")
@@ -3909,20 +3933,20 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         *, executable_only: bool,
     ) -> ExecutionPlan:
         """Temporary compatibility dispatch; never publish after paper configuration."""
-        self._require_legacy_planning_mode()
+        planner = self._require_legacy_planning_mode()
         predicate = self._combined_availability_predicate(
             principal, self._binding_ready if executable_only else None,
         )
         if predicate is None:
             if executable_only:
                 raise RuntimeError("executable planning requires an availability predicate")
-            plan = await self.planner.aplan(request)
+            plan = await planner.aplan(request)
         elif (
             self.authorization_policy is not None
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            plan = await self.planner.aplan_with_scoped_schema(
+            plan = await planner.aplan_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -3936,7 +3960,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            plan = await self.planner.aplan_with_additional_availability(
+            plan = await planner.aplan_with_additional_availability(
                 request,
                 predicate,
             )
@@ -4070,11 +4094,14 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             deep=True, update={"candidates": projected},
         )
 
-    def _require_legacy_retrieval_mode(self) -> None:
-        if self._paper_planning is not None:
+    def _require_legacy_retrieval_mode(self) -> SchemaPlanner:
+        planner = self.planner
+        if self._paper_planning is not None or not self._legacy_routing or planner is None:
             raise PolicyViolationError(
-                "configured paper routing uses plan/aplan; lexical retrieval is unavailable",
+                "paper routing uses plan/aplan; lexical retrieval is unavailable",
             )
+        self._source_availability_predicate()
+        return planner
 
     def retrieve_routes(
         self,
@@ -4083,18 +4110,18 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
         """Return lightweight Top-K route references under active authorization."""
-        self._require_legacy_retrieval_mode()
+        planner = self._require_legacy_retrieval_mode()
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
         if predicate is None:
-            result = self.planner.retrieve_routes(request, k=k)
+            result = planner.retrieve_routes(request, k=k)
         elif (
             self.authorization_policy is not None
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            result = self.planner.retrieve_routes_with_scoped_schema(
+            result = planner.retrieve_routes_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -4106,7 +4133,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            result = self.planner.retrieve_routes_with_additional_availability(
+            result = planner.retrieve_routes_with_additional_availability(
                 request, predicate, k=k,
             )
         result = self._project_route_retrieval_data_scope(result, principal)
@@ -4121,18 +4148,18 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
-        self._require_legacy_retrieval_mode()
+        planner = self._require_legacy_retrieval_mode()
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
         if predicate is None:
-            result = await self.planner.aretrieve_routes(request, k=k)
+            result = await planner.aretrieve_routes(request, k=k)
         elif (
             self.authorization_policy is not None
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            result = await self.planner.aretrieve_routes_with_scoped_schema(
+            result = await planner.aretrieve_routes_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -4144,7 +4171,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            result = await self.planner.aretrieve_routes_with_additional_availability(
+            result = await planner.aretrieve_routes_with_additional_availability(
                 request, predicate, k=k,
             )
         result = self._project_route_retrieval_data_scope(result, principal)
@@ -4209,19 +4236,19 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Return Top-K typed capabilities under any active principal context."""
-        self._require_legacy_retrieval_mode()
+        planner = self._require_legacy_retrieval_mode()
 
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
         if predicate is None:
-            retrieval = self.planner.retrieve(request, k=k)
+            retrieval = planner.retrieve(request, k=k)
         elif (
             self.authorization_policy is not None
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            retrieval = self.planner.retrieve_with_scoped_schema(
+            retrieval = planner.retrieve_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -4236,7 +4263,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            retrieval = self.planner.retrieve_with_additional_availability(
+            retrieval = planner.retrieve_with_additional_availability(
                 request,
                 predicate,
                 k=k,
@@ -4253,19 +4280,19 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
-        self._require_legacy_retrieval_mode()
+        planner = self._require_legacy_retrieval_mode()
 
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
         if predicate is None:
-            retrieval = await self.planner.aretrieve(request, k=k)
+            retrieval = await planner.aretrieve(request, k=k)
         elif (
             self.authorization_policy is not None
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            retrieval = await self.planner.aretrieve_with_scoped_schema(
+            retrieval = await planner.aretrieve_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -4280,7 +4307,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            retrieval = await self.planner.aretrieve_with_additional_availability(
+            retrieval = await planner.aretrieve_with_additional_availability(
                 request,
                 predicate,
                 k=k,
@@ -4302,7 +4329,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         catalog exists. `session.inspect_visible_fields()` can then support
         owner review; `session.revise_catalog(catalog=...)` enables routing
         without rebuilding the index. No provider is called, no answer is
-        generated, and planner retrieval defaults are left unchanged.
+        generated, and standard planning requires explicit configuration.
         """
         from .field_routing_session import SchemaFieldRoutingSession
 
@@ -4335,6 +4362,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             max_model_input_bytes=max_model_input_bytes,
             max_model_output_bytes=max_model_output_bytes,
         )
+        # One-way cutover on this router. In-flight research requests must
+        # refuse publication, and prepared planning never retains a lexical index.
+        self._legacy_routing = False
+        self.planner = None
+        self._source_availability.snapshot = None
 
     def retrieve_authorized(
         self,
@@ -4470,7 +4502,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Return Top-K authorized capabilities with a ready local binding."""
-        self._require_legacy_retrieval_mode()
+        planner = self._require_legacy_retrieval_mode()
 
         principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
@@ -4484,7 +4516,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            retrieval = self.planner.retrieve_with_scoped_schema(
+            retrieval = planner.retrieve_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -4500,7 +4532,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            retrieval = self.planner.retrieve_with_additional_availability(
+            retrieval = planner.retrieve_with_additional_availability(
                 request,
                 predicate,
                 k=k,
@@ -4517,7 +4549,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
-        self._require_legacy_retrieval_mode()
+        planner = self._require_legacy_retrieval_mode()
 
         principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
@@ -4531,7 +4563,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             and self.authorization_policy.data_rules
             and principal is not None
         ):
-            retrieval = await self.planner.aretrieve_with_scoped_schema(
+            retrieval = await planner.aretrieve_with_scoped_schema(
                 request,
                 predicate,
                 lambda tool, endpoint: self._data_scope_endpoint_view(
@@ -4547,7 +4579,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 ),
             )
         else:
-            retrieval = await self.planner.aretrieve_with_additional_availability(
+            retrieval = await planner.aretrieve_with_additional_availability(
                 request,
                 predicate,
                 k=k,

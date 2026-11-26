@@ -31,7 +31,7 @@ SECRET = "PRIVATE_HIDDEN_SCHEMA_MARKER"
 
 
 def source(*, units=False, restricted=False, identifier_input=False, output_identifier=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="weather.read", roles_any=("reader",),
         ),),

@@ -18,7 +18,7 @@ from schemarouter import (
 
 
 def build_router() -> SchemaRouter:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="paper",

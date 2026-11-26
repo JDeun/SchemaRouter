@@ -37,6 +37,7 @@ def _router(*, auth_canary: bool = False):
             return KeywordAnalyzer().analyze(request, registry)
 
     router = SchemaRouter(
+        _legacy_routing=True,
         analyzer=AuditingAnalyzer(),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

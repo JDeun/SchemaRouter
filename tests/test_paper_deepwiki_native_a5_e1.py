@@ -105,6 +105,7 @@ class SourceShapedMCP:
 
 def _router() -> SchemaRouter:
     return SchemaRouter(
+        _legacy_routing=True,
         network_policy=NetworkPolicy.trusted_internal(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(

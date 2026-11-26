@@ -66,7 +66,7 @@ def _source():
     # Register an equivalent two-step original source with a distinct field
     # name to assert the real provider result survives projection unchanged.
     aliases = ("case status", "문의 상태", "問い合わせ状態")
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

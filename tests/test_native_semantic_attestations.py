@@ -124,7 +124,7 @@ def test_mcp_untrusted_readonly_hint_is_never_promoted_into_authority():
     assert ep.output_fields[0].semantic_id == "crm.status"
     assert ep.metadata["annotations"]["readOnlyHint"] is True
 
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="cases.read_case", roles_any=("analyst",),
@@ -288,7 +288,7 @@ def test_approved_existing_openapi_fields_feed_real_authorized_fieldgroup_topk()
             ("output_field", "status", "crm.status"),
         ),
     )
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="contacts.lookup",
@@ -408,7 +408,7 @@ def test_real_openapi_to_mcp_attested_native_semantics_reuse_g3_typed_graph():
             ("output_field", "status", "crm.status"),
         ),
     )
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("analyst",),

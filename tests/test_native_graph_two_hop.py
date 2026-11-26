@@ -96,7 +96,7 @@ def _router(
             hidden_fields=("case_id",),
         ),) if hidden_intermediate else (),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(_node(
         "root", output_name="contact_id",
         output_semantic="crm.contact_id", output_type=root_output_type,
@@ -218,7 +218,7 @@ def test_two_hop_explicit_sixth_target_filters_before_k_without_granting_authori
 
 
 def test_one_hop_explicit_sixth_target_filters_before_k():
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),

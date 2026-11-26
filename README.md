@@ -64,9 +64,22 @@ names overlap but whose schemas and execution constraints differ.
 [Capability retrieval →](docs/concepts/capability-catalog.md) ·
 [Execution boundary →](docs/concepts/execution.md)
 
+## Development candidate: paper-first routing
+
+In the unreleased 0.18 candidate, `SchemaRouter()` registers and validates sources
+without constructing a lexical planner. Standard query planning requires a host-reviewed
+`NativeConceptCatalog`, `PaperIntentRegistry`, source-pinned paper Rank and an explicit
+Understand callback installed with `configure_field_routing(...)`. Use `PaperPlanRequest`
+for source-local host inputs and a trusted principal. Before configuration, query-driven
+planning fails closed. There is no implicit lexical retrieval or fallback.
+
+Run the offline [paper-first quickstart](examples/quickstart.py) from a source checkout,
+or the [schema-only discovery example](examples/schema_only_field_routing.py).
+These use deterministic local fixtures, not real-model performance evidence.
+
 ## Quickstart
 
-Provider-first onboarding lets an application start from the service it wants rather than knowing
+The following provider-first example targets the published 0.17.0 release. Provider-first onboarding lets an application start from the service it wants rather than knowing
 every underlying protocol first.
 
 ```python
@@ -129,7 +142,9 @@ validation and execution boundaries, **not** an autonomous agent loop.
 The research-only scoped index-to-schema experiment lives under `scripts/`;
 it is not a new product-default model or a production `catalog_index` API.
 
-Retrieval is side-effect free:
+The published 0.17.0 lexical retrieval example below is side-effect free. For the
+unreleased candidate, use the configured Algorithm 1 plan or the prepared schema-only
+field session described above; the lexical query entrypoints are not the default.
 
 ```python
 candidates = router.retrieve("current Young's modulus for MAT-7", k=5)

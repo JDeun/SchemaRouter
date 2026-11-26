@@ -70,7 +70,7 @@ def run(
     tool_map = {tool["name"]: tool for tool in tools}
 
     build_start = time.perf_counter()
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         tool_from_mcp(
             "servicenow-platform-mcp",

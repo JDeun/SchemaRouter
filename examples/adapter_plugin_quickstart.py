@@ -26,7 +26,7 @@ async def main() -> None:
     # Metadata-only discovery must not import third-party code.
     assert PLUGIN_MODULE not in sys.modules
 
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     loaded_kinds = router.load_adapter_plugins(allowlist={PLUGIN_ENTRY_POINT})
     assert loaded_kinds == ("demo_static",)
     assert PLUGIN_MODULE in sys.modules

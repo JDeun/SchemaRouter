@@ -233,7 +233,7 @@ def run(
     )
     tools = snapshot["tools"]
     tool_map = {tool["name"]: tool for tool in tools}
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     started = time.perf_counter_ns()
     router.add_tool(tool_from_mcp(
         "servicenow-platform-mcp", {"tools": tools},

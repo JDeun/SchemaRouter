@@ -384,9 +384,9 @@ def build_live_router(
                 roles_any=("reader",),
             ),
         ))
-        router = SchemaRouter(authorization_policy=policy)
+        router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     else:
-        router = SchemaRouter()
+        router = SchemaRouter(_legacy_routing=True)
     geo_invoker = OpenMeteoBoundInvoker(
         client, source="geocode", transport_retry_budget=transport_retry_budget,
     )

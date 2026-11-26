@@ -26,7 +26,7 @@ async def run_quickstart(
 ) -> ToolResult:
     """Resolve a provider, register its adapter path, and execute one live capability."""
 
-    router = SchemaRouter(http_client=http_client)
+    router = SchemaRouter(_legacy_routing=True, http_client=http_client)
     provider_id = DEFAULT_PROVIDER
 
     if source != DEFAULT_SOURCE:

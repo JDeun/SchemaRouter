@@ -44,6 +44,7 @@ def _registered() -> tuple[SchemaRouter, list[int], PlanRequest, RunConfig, RunC
         return {"user_id": str(user_id)}
 
     router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(
                 effect="allow", operation="lookup.call", roles_any=("reader",),

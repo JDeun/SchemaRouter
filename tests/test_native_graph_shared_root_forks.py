@@ -112,7 +112,7 @@ def _router(
             hidden_fields=("owner",),
         ),) if hidden_right else (),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(_root(
         required=required_root_key,
         source_type=root_source_type, license=root_license,
@@ -522,7 +522,7 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
             )
         leaves.append(leaf)
 
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

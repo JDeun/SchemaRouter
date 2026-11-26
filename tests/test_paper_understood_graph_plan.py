@@ -77,7 +77,7 @@ def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
     rules = (AuthorizationRule(
         effect="deny", operation="middle.read", roles_any=("reader",),
     ),) if deny_middle else ()
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=rules + (AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
@@ -630,7 +630,7 @@ def test_host_unnamed_g5_public_planner_selects_exact_k5_from_large_catalog(n_ta
 
 def _mixed_depth_router():
     """Source-native graph: target_short has one hop, target_long two."""
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),

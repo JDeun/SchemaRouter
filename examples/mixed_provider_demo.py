@@ -92,7 +92,7 @@ def papers_tool() -> ToolSpec:
 
 
 async def main() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     material = materials_tool()
     paper = papers_tool()
     router.add_bound_tool(

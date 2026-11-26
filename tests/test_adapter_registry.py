@@ -62,7 +62,7 @@ def test_adapter_registry_orders_by_priority_and_rejects_collisions() -> None:
 @pytest.mark.asyncio
 async def test_router_can_register_and_explicitly_use_custom_adapter() -> None:
     adapter = DummyAdapter("custom", 10)
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.register_adapter(adapter)
 
     tool = await router.add_url(
@@ -79,7 +79,7 @@ async def test_auto_discovery_uses_adapter_priority() -> None:
     low = DummyAdapter("low", 10)
     high = DummyAdapter("high", 50)
     registry = AdapterRegistry([low, high])
-    router = SchemaRouter(adapter_registry=registry)
+    router = SchemaRouter(_legacy_routing=True, adapter_registry=registry)
 
     tool = await router.add_url("https://example.com/capability")
 

@@ -47,7 +47,7 @@ def small_router(*, hidden: bool = False) -> SchemaRouter:
             hidden_fields=("secret",),
         ),) if hidden else (),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(ToolSpec(
         name="locked", description="Internal lookup",
         endpoints=[EndpointSpec(

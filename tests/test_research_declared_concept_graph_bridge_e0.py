@@ -36,6 +36,7 @@ ALIASES = (
 
 def _router(*, graph: bool) -> SchemaRouter:
     router = SchemaRouter(
+        _legacy_routing=True,
         analyzer=DeclaredConceptGraphAnalyzer(ALIASES) if graph else None,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

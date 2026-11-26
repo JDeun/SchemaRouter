@@ -14,7 +14,7 @@ def query_sha(text: str) -> str:
 
 
 def fixture():
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(ToolSpec(
         name="paper", description="Synthetic paper catalog",
         endpoints=[

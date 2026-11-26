@@ -179,7 +179,7 @@ def default_lexical_one(row: dict[str, Any]) -> tuple[str, float]:
             name=f"bfcl_{idx}", description=option_text(function),
             endpoints=[EndpointSpec(name="call", read_only=True)],
         ))
-    router = SchemaRouter(registry=registry)
+    router = SchemaRouter(_legacy_routing=True, registry=registry)
     result = router.retrieve(row["query"], k=1)
     if len(result.candidates) != 1:
         raise ValueError("real lexical retrieval omitted source candidate")

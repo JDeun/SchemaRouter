@@ -18,7 +18,7 @@ from schemarouter import (
 
 
 def _router(*, cooldown: float = 30.0) -> SchemaRouter:
-    router = SchemaRouter(unavailable_cooldown_seconds=cooldown)
+    router = SchemaRouter(_legacy_routing=True, unavailable_cooldown_seconds=cooldown)
     router.add_tool(
         ToolSpec(
             name="provider_api",
@@ -31,7 +31,7 @@ def _router(*, cooldown: float = 30.0) -> SchemaRouter:
 
 
 def test_health_probe_registration_requires_explicit_read_only() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.add_tool(
         ToolSpec(
             name="writer",
@@ -234,7 +234,7 @@ async def test_all_unavailable_paths_reenter_planning_after_cooldown(
 
     clock = FakeTime()
     monkeypatch.setattr(executor_module, "time", clock)
-    router = SchemaRouter(unavailable_cooldown_seconds=0.01)
+    router = SchemaRouter(_legacy_routing=True, unavailable_cooldown_seconds=0.01)
     for name, provider, access_mode in (
         ("provider_a_rest", "provider_a", "openapi"),
         ("provider_b_optimade", "provider_b", "optimade"),
@@ -283,7 +283,7 @@ async def test_all_unavailable_paths_reenter_planning_after_cooldown(
 
 @pytest.mark.asyncio
 async def test_background_probe_reintroduces_route_into_planner_before_cooldown_expiry() -> None:
-    router = SchemaRouter(unavailable_cooldown_seconds=60)
+    router = SchemaRouter(_legacy_routing=True, unavailable_cooldown_seconds=60)
     router.add_tool(
         ToolSpec(
             name="provider_a_rest",

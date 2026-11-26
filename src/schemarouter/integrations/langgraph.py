@@ -144,7 +144,7 @@ def to_langgraph_node(
             query_key=query_key,
             arguments_key=arguments_key,
             request_factory=request_factory,
-            paper_configured=router._paper_planning is not None,
+            paper_configured=router._paper_planning is not None or not router._legacy_routing,
         )
         results = router.invoke(request, config=run_config)
         return _node_update(
@@ -162,7 +162,7 @@ def to_langgraph_node(
             query_key=query_key,
             arguments_key=arguments_key,
             request_factory=request_factory,
-            paper_configured=router._paper_planning is not None,
+            paper_configured=router._paper_planning is not None or not router._legacy_routing,
         )
         results = await router.ainvoke(request, config=run_config)
         return _node_update(

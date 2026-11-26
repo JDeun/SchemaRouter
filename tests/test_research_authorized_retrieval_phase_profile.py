@@ -36,6 +36,7 @@ def test_scoped_current_router_phases_and_no_scope_control() -> None:
     from schemarouter import AuthorizationPolicy, SchemaRouter
 
     no_scope = SchemaRouter(
+        _legacy_routing=True,
         registry=router.registry,
         authorization_policy=AuthorizationPolicy(
             rules=policy.rules, default_effect=policy.default_effect,

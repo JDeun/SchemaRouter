@@ -35,7 +35,7 @@ class MarketInvoker:
 
 
 async def main() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     tool = ToolSpec(
         name="market_lookup",
         provider="example-finance",

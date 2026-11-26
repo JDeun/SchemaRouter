@@ -126,7 +126,7 @@ def _approved(tools):
 
 def _router(*, targets=1, hidden=False, denied=False):
     tools = _native_tools(targets=targets)
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=() if denied else (AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("analyst", "viewer"),

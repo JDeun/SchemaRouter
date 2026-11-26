@@ -74,7 +74,7 @@ def main() -> int:
             ),
         ),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     keys = router.add_chroma_vector_store(
         client,
         lambda query: [1.0, 0.0, 0.0],

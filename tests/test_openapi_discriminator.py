@@ -173,7 +173,7 @@ async def test_model_analyzer_can_supply_discriminated_cloud_model_body() -> Non
             "evidence": {},
         }
 
-    router = SchemaRouter(analyzer=ModelQueryAnalyzer(cloud_model))
+    router = SchemaRouter(_legacy_routing=True, analyzer=ModelQueryAnalyzer(cloud_model))
     router.add_tool(tool_from_openapi("pets", discriminated_document()))
 
     plan = await router.aplan(PlanRequest(query="create a retriever named Mong"))

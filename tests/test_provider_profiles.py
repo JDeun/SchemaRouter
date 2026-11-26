@@ -22,7 +22,7 @@ from schemarouter.errors import RegistrationError
 
 
 def test_unknown_provider_discovery_is_non_authoritative_and_ambiguous() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     proposal = router.discover_provider("google")
 
@@ -39,7 +39,7 @@ def test_unknown_provider_discovery_is_non_authoritative_and_ambiguous() -> None
 
 
 def test_external_provider_discovery_requires_digest_approval() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     profile = ProviderProfile(
         provider_id="internal-catalog-service",
         display_name="Internal Catalog Service",
@@ -88,14 +88,14 @@ def test_external_provider_discovery_requires_digest_approval() -> None:
 
 
 def test_unknown_provider_discovery_without_backend_stays_unknown() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     proposal = router.discover_provider("provider-that-does-not-exist")
 
     assert proposal.status == "unknown"
     assert proposal.candidates == ()
 
 def test_builtin_profiles_resolve_provider_first() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     materials = router.resolve_provider("mp")
     assert materials.provider_id == "materials-project"
@@ -140,7 +140,7 @@ def test_builtin_profiles_resolve_provider_first() -> None:
 async def test_add_materials_project_registers_usable_methods_and_reports_skips(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     calls: list[tuple[str, dict[str, object]]] = []
 
     async def fake_add_url(url: str, **kwargs: object) -> SimpleNamespace:
@@ -193,7 +193,7 @@ async def test_provider_first_forwards_every_url_adapter_kind(
     kind: str,
     provider_id: str,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     source = f"https://example.test/{kind}"
     router.register_provider_profile(
         ProviderProfile(
@@ -240,7 +240,7 @@ async def test_provider_first_forwards_every_url_adapter_kind(
 async def test_provider_registration_never_echoes_credentials(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     seen_headers: dict[str, str] = {}
 
     async def fake_add_url(url: str, **kwargs: object) -> SimpleNamespace:
@@ -288,7 +288,7 @@ async def test_crossref_provider_first_registration_and_execution() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         registration = await router.add_provider("crossref")
 
         assert registration.provider_id == "crossref"
@@ -315,7 +315,7 @@ async def test_crossref_provider_first_registration_and_execution() -> None:
 
 @pytest.mark.asyncio
 async def test_tavily_provider_reports_auth_then_executes_with_trusted_header() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     missing = await router.add_provider("tavily", methods={"rest"})
     assert missing.registered_tool_keys == ()
     assert missing.status == "failed"
@@ -344,7 +344,7 @@ async def test_tavily_provider_reports_auth_then_executes_with_trusted_header() 
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(http_client=client)
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
         registration = await router.add_provider(
             "tavily",
             methods={"rest"},
@@ -411,7 +411,7 @@ def test_provider_registry_rejects_alias_collision() -> None:
 
 
 def test_provider_resolution_rejects_unknown_method() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     with pytest.raises(KeyError, match="unknown access method"):
         router.resolve_provider("materials-project", methods={"not-a-method"})
@@ -484,7 +484,7 @@ def test_provider_plugin_loading_requires_explicit_allowlist(
         [_FakeProviderEntryPoint("demo", loaded)]
     )
     monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
 
     with pytest.raises(ValueError, match="non-empty explicit allowlist"):
         router.load_provider_profile_plugins(allowlist=[])
@@ -724,7 +724,7 @@ def _atomic_invoker(label: str):
 async def test_provider_require_all_publishes_prepared_methods_as_one_batch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.register_provider_profile(_atomic_provider_profile())
 
     async def fake_inspect(url: str, **kwargs: object) -> SimpleNamespace:
@@ -753,7 +753,7 @@ async def test_provider_require_all_preparation_failure_leaves_no_partial_topolo
     monkeypatch: pytest.MonkeyPatch,
     failing_method: str,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.register_provider_profile(_atomic_provider_profile())
 
     async def fake_inspect(url: str, **kwargs: object) -> SimpleNamespace:
@@ -783,7 +783,7 @@ async def test_provider_require_all_preparation_failure_leaves_no_partial_topolo
 async def test_provider_require_all_binding_failure_restores_replace_topology(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.register_provider_profile(_atomic_provider_profile())
 
     old_alpha = _atomic_tool("atomic-alpha", "old")
@@ -842,7 +842,7 @@ async def test_provider_require_all_binding_failure_restores_replace_topology(
 async def test_provider_require_all_rejects_concurrent_registry_mutation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     router.register_provider_profile(_atomic_provider_profile())
     calls = 0
 
@@ -870,6 +870,6 @@ async def test_provider_require_all_rejects_concurrent_registry_mutation(
 
 @pytest.mark.asyncio
 async def test_provider_require_all_rejects_non_boolean_mode() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     with pytest.raises(TypeError, match="require_all"):
         await router.add_provider("crossref", require_all=1)  # type: ignore[arg-type]

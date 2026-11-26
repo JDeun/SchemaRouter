@@ -64,6 +64,7 @@ def _router(
         roles_any=("viewer",),
     ))
     return_router = SchemaRouter(
+        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=tuple(rules), default_effect="deny",
             data_rules=(
@@ -202,7 +203,7 @@ def test_hidden_output_fields_do_not_reappear_in_selector() -> None:
 
 
 def test_missing_rbac_policy_rejected_not_silently_unscoped() -> None:
-    router = SchemaRouter()
+    router = SchemaRouter(_legacy_routing=True)
     with pytest.raises(PolicyViolationError, match="explicit authorization"):
         select_authorized_field_contract(
             router, "marine", principal=VIEWER,

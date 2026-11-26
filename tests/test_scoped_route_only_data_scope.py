@@ -40,7 +40,7 @@ def _router(*, tainted: bool = True, scoped: bool = True):
             visible_fields=("public_value",),
         ),) if scoped else (),
     )
-    router = SchemaRouter(authorization_policy=policy, analyzer=Analyzer())
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy, analyzer=Analyzer())
     router.add_tool(ToolSpec(
         name="records", description=raw,
         provider=raw or "public_provider",
@@ -137,6 +137,7 @@ def test_competing_topk_routes_ignore_denied_metadata(
         raw = f"hidden_{CANARY}" if tainted else ""
         allowed = ("records.read", "reference.read")
         router = SchemaRouter(
+            _legacy_routing=True,
             analyzer=KeywordAnalyzer(),
             structural_retrieval=structural_retrieval,
             authorization_policy=AuthorizationPolicy(

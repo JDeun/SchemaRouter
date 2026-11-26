@@ -231,6 +231,7 @@ class BoundRecordingFactory:
 async def test_transport_neutral_mcp_factory_needs_no_fake_url() -> None:
     factory = BoundRecordingFactory()
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
 
@@ -262,6 +263,7 @@ async def test_mcp_factory_bind_failure_rolls_back_registration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
     factory = BoundRecordingFactory()
@@ -287,6 +289,7 @@ async def test_mcp_stdio_bind_failure_rolls_back_registration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
     tool = ToolSpec(
@@ -437,6 +440,7 @@ async def test_mcp_discovery_rejects_repeated_cursor_without_registration() -> N
         }
     )
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
 

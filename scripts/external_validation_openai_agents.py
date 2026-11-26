@@ -256,7 +256,7 @@ async def evaluate() -> dict[str, Any]:
         assert len(discovered) >= 10
         discovered_by_name = {tool.name: tool for tool in discovered}
 
-        router = SchemaRouter()
+        router = SchemaRouter(_legacy_routing=True)
         _register_mcp_retrieval_mirror(router, discovered)
         dynamic_filter = SchemaRouterDynamicMCPFilter(router)
 

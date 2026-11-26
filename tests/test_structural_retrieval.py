@@ -221,6 +221,7 @@ async def test_structural_sync_async_retrieval_parity() -> None:
 def test_schema_router_exposes_opt_in_structural_retrieval() -> None:
     registry = _ranking_registry()
     router = SchemaRouter(
+        _legacy_routing=True,
         registry=registry,
         structural_retrieval=True,
     )

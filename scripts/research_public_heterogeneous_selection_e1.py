@@ -336,7 +336,9 @@ def evaluate_selection(
 
 async def run_live_selection_e1() -> dict[str, Any]:
     """Discover original remote schemas; no selected endpoint is executed."""
-    router = SchemaRouter(policy=ExecutionPolicy(allow_unclassified_remote=True))
+    router = SchemaRouter(
+        _legacy_routing=True,
+        policy=ExecutionPolicy(allow_unclassified_remote=True))
     try:
         registration = await router.add_provider(
             "crossref",

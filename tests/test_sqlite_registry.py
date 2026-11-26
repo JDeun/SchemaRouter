@@ -400,7 +400,7 @@ def test_schema_router_can_plan_and_execute_with_reopened_sqlite_registry(tmp_pa
         registry.register(tool("weather"))
 
     with SQLiteRegistry(path) as reopened:
-        router = SchemaRouter(registry=reopened)
+        router = SchemaRouter(_legacy_routing=True, registry=reopened)
         router.executor.bind(
             "weather",
             lambda endpoint, arguments: {"value": f"result:{arguments['id']}"},
