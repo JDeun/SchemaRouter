@@ -55,9 +55,7 @@ execution binding is currently ready. Async counterparts are `aretrieve` and
 `aretrieve_executable`.
 
 When a host has explicit typed execution state, `retrieve_state_aware(...)` filters the fixed Top-K
-without changing the stable stateless facade. `reretrieve_state_aware(...)` is the separate
-corrective surface for collecting the best K state-eligible candidates from the same host-visible
-ranked surface.
+without changing the stable stateless facade or backfilling other candidates.
 
 The returned bundle carries the full effective input/output JSON Schemas together with registered
 parameters, output fields, semantic IDs, units, qualifiers, read/write/destructive classification,

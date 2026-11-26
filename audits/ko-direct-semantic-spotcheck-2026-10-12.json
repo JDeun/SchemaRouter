@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-11-02",
+  "review_date": "2026-11-26",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
   "reviewed_page_pairs": 158,
@@ -56,9 +56,9 @@
     },
     {
       "path": "concepts/capability-catalog.md",
-      "en_blob": "266139f38718c3212bdaec199c889a93649ee9fe",
-      "ko_blob": "e9ae0fafe90795bfa04b165650878032fc83f781",
-      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership."
+      "en_blob": "ec4cf62eba40f612abbdbb1dab84a434ffadd3b1",
+      "ko_blob": "75acfcc31a5179f125f017ac473ef62207f45312",
+      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     },
     {
       "path": "concepts/decision-backends.md",
@@ -87,9 +87,9 @@
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "57c60af68bdcbb8b261414bb9aa65e0133ddcf4f",
-      "ko_blob": "2e141bc69158b8c2e4000aa2bfbcdfccf0b02a03",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only."
+      "en_blob": "299044c8b307ee58b7a6dd72fea2273dac9e1a81",
+      "ko_blob": "864ff708e6b156d1cd2805632520ced9cabb0a61",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -435,9 +435,9 @@
     },
     {
       "path": "guides/state-aware-retrieval.md",
-      "en_blob": "cae7fc3cbed159c2af146bad7a187e99098fe35d",
-      "ko_blob": "71775c1cec83d6d000b6cd75de30589965e4a70a",
-      "notes": "Matched Top-K filtering versus backfill, visible-only surface, no workflow inference and bounded fingerprint history state."
+      "en_blob": "caae430f7614b32512454d8e1f51ec86fe5b12bc",
+      "ko_blob": "a1584b5f1b4332308e69568ae9ac692e55cbe7e4",
+      "notes": "Matched Top-K filtering versus backfill, visible-only surface, no workflow inference and bounded fingerprint history state. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     },
     {
       "path": "guides/universal-ingestion.md",
@@ -639,15 +639,15 @@
     },
     {
       "path": "reference/models.md",
-      "en_blob": "ad5c1662ed7b31d659ee181415ac1b6678446255",
-      "ko_blob": "8658447f652fd17557fb5d4eddd12558d66a9415",
-      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive."
+      "en_blob": "bbad50fae210791153afbebca9548d270421529f",
+      "ko_blob": "148179007dd994330682386fad89d5d1eab7ca03",
+      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     },
     {
       "path": "reference/planning.md",
-      "en_blob": "76dfdfc8e5f1f2e86d095717c9f2041545e48349",
-      "ko_blob": "c7b023a02ae80d7e2f978a3ec8d9bde6bba2b13e",
-      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers."
+      "en_blob": "ce443870f4c78a5859bbfd5fb43c77b09105e96a",
+      "ko_blob": "5573121d5cc3e124bbd7b63d3978e2713235f98d",
+      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     },
     {
       "path": "reference/runtime.md",
@@ -939,9 +939,9 @@
     },
     {
       "path": "stable-core.md",
-      "en_blob": "68d8c335f684c77255dd3cdbd3b95ca4aaf356e6",
-      "ko_blob": "2e3c95b363753f5ab2521ed39598df174caa102b",
-      "notes": "Matched durable execution boundary, additive state-aware retrieval and conditions for architecture changes without conflating 1.0 guarantee."
+      "en_blob": "2866a405649d23ef423eb5536cd5fa8e2d867d9a",
+      "ko_blob": "d9cd35b56e7dffe8ebda971faa4298f33d3b8d21",
+      "notes": "Matched durable execution boundary, additive state-aware retrieval and conditions for architecture changes without conflating 1.0 guarantee. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     },
     {
       "path": "superpowers/plans/2026-10-22-g5-native-vertical-slice.md",
@@ -963,9 +963,9 @@
     },
     {
       "path": "versioning.md",
-      "en_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497",
-      "ko_blob": "6dfa7670aa7e779a4357e4f2c10ed8c7e5e395a5",
-      "notes": "Compared release tag freshness, SQLite v0->v1 integrity rules, artifact 1.1 and snapshot 1.0 migrations, first-party trust and deprecation priorities."
+      "en_blob": "4c3f0a766760b31c27a30bcbb43c915ce390010d",
+      "ko_blob": "be4e8c6d24f97a1dce85b44d09e062b2411b640c",
+      "notes": "Compared release tag freshness, SQLite v0->v1 integrity rules, artifact 1.1 and snapshot 1.0 migrations, first-party trust and deprecation priorities. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
     }
   ],
   "separately_inspected_pending_pr": [
@@ -983,6 +983,7 @@
   "directly_examined_across_branches": 147,
   "review_amendments": [
     "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification.",
-    "2026-11-02: Added preserved original-paper Algorithm 1 bilingual parity audit pair (#1846); recorded current source blobs without independent human translation sign-off."
+    "2026-11-02: Added preserved original-paper Algorithm 1 bilingual parity audit pair (#1846); recorded current source blobs without independent human translation sign-off.",
+    "2026-11-26: Re-reviewed seven changed EN/KO page pairs after adaptive and state-conditioned backfill removal; synchronized exact source/target blobs and source translation manifest. Historical results and fixed Top-K typed-state eligibility preserved. AI-assisted source comparison only, not independent human review."
   ]
 }

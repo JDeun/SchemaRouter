@@ -15,6 +15,10 @@ from schemarouter.authorization import _principal_execution_context
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.execution_state import ObservedStateField, TypedExecutionState
 from schemarouter.models import CapabilityCandidate
+from scripts.research_legacy_state_backfill import (
+    legacy_areretrieve_state_aware,
+    legacy_reretrieve_state_aware,
+)
 
 
 def _scoped_router() -> tuple[SchemaRouter, sqlite3.Connection, PrincipalContext]:
@@ -86,7 +90,8 @@ async def test_state_aware_retrieval_matches_normal_data_scope_sync_and_async() 
                 execution_state=TypedExecutionState(),
                 k=5,
             )
-            sync_backfill = router.reretrieve_state_aware(
+            sync_backfill = legacy_reretrieve_state_aware(
+                router,
                 "employee name salary",
                 execution_state=TypedExecutionState(),
                 k=5,
@@ -96,7 +101,8 @@ async def test_state_aware_retrieval_matches_normal_data_scope_sync_and_async() 
                 execution_state=TypedExecutionState(),
                 k=5,
             )
-            async_backfill = await router.areretrieve_state_aware(
+            async_backfill = await legacy_areretrieve_state_aware(
+                router,
                 "employee name salary",
                 execution_state=TypedExecutionState(),
                 k=5,
@@ -181,7 +187,8 @@ def test_state_backfill_cannot_revive_fully_hidden_endpoint() -> None:
                 k=5,
                 state_requirements=requirements,
             )
-            backfilled = router.reretrieve_state_aware(
+            backfilled = legacy_reretrieve_state_aware(
+                router,
                 "salary payroll",
                 execution_state=state,
                 k=5,

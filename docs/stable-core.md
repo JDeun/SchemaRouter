@@ -30,11 +30,9 @@ contracts. They do not execute tools and do not grant permission to execute them
 `retrieve_executable` and `aretrieve_executable` additionally filter for current local
 binding readiness. They still do not execute or authorize a side effect.
 
-Explicit state-aware surfaces are additive rather than replacements for the stable stateless facade:
-`retrieve_state_aware` filters a fixed Top-K against host-supplied typed state, while
-`reretrieve_state_aware` backfills from the same host-visible ranked surface until K eligible
-candidates are found or the visible surface is exhausted. Neither method infers workflow state,
-widens visibility, or executes a capability.
+`retrieve_state_aware` filters a fixed Top-K against host-supplied typed state.
+The historical state-conditioned backfill is no longer a product API. Eligibility filtering
+never infers workflow state, widens visibility, or executes a capability.
 
 ### Candidate contracts preserve executable schema
 
@@ -82,8 +80,7 @@ Research may change internal ranking/index implementations while preserving thes
 - `SchemaRouter.aretrieve(..., k=5)`
 - `SchemaRouter.retrieve_executable(..., k=5)`
 - `SchemaRouter.aretrieve_executable(..., k=5)`
-- additive `retrieve_state_aware` / `aretrieve_state_aware` and
-  `reretrieve_state_aware` / `areretrieve_state_aware` typed-state surfaces;
+- additive `retrieve_state_aware` / `aretrieve_state_aware` typed-state eligibility surfaces;
 - equivalent `ConfiguredSchemaRouter` retrieval methods;
 - existing planning, invocation, batch, streaming, policy and inspection APIs.
 

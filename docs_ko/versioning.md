@@ -22,8 +22,8 @@ SchemaRouter는 릴리스한 Python 패키지에 대해 시맨틱 버저닝(Sema
 
 다음 항목 중 최상위 `schemarouter` 패키지 또는 명시적으로 문서화한 통합 모듈에서 export되고 문서화된 것은 공개 API로 취급합니다.
 
-- `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`, `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`, `StateConditionedCapabilityRetrieval`, `ExecutionPlan` 등의 타입 계약
-- `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`, `aretrieve_executable`, `retrieve_state_aware`, `reretrieve_state_aware` 및 실행 메서드를 포함하는 `SchemaRouter`의 공개 등록·검색·계획·실행 메서드
+- `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`, `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`, `ExecutionPlan` 등의 타입 계약
+- `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`, `aretrieve_executable`, `retrieve_state_aware` 및 실행 메서드를 포함하는 `SchemaRouter`의 공개 등록·검색·계획·실행 메서드
 - 문서화된 provider profile, capability snapshot·publication, 이식 가능한 아티팩트·마이그레이션, 기능 의사결정 추적 계약
 - `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, `ExecutionPolicy`
 - 문서화된 승인, MCP 전송 팩토리, 호환성 보고, 어댑터 플러그인 계약

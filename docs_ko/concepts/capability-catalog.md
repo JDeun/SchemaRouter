@@ -42,7 +42,7 @@ for item in candidates.candidates:
 
 현재 로컬 실행 바인딩이 준비된 경로로 후보를 제한하려면 `retrieve_executable(..., k=5)`를 사용합니다. 대응하는 비동기 인터페이스는 `aretrieve`와 `aretrieve_executable`입니다.
 
-호스트가 명시적인 타입 기반 실행 상태를 제공하는 경우 `retrieve_state_aware(...)`는 기존의 안정적인 무상태 인터페이스를 변경하지 않고 고정된 Top-K 결과를 필터링합니다. 별도의 `reretrieve_state_aware(...)`는 동일한 호스트 표시 순위 목록에서 상태 조건을 만족하는 최상위 K개를 다시 채우기 위한 교정 검색 인터페이스입니다.
+호스트가 명시적인 타입 기반 실행 상태를 제공하는 경우 `retrieve_state_aware(...)`는 기존의 안정적인 무상태 인터페이스를 변경하지 않고 고정된 Top-K 결과를 필터링하며, 다른 후보를 보충하지 않습니다.
 
 반환되는 후보 묶음에는 유효한 전체 입력·출력 JSON Schema, 등록된 파라미터, 출력 필드, 의미 식별자(semantic ID), 단위, 한정 조건(qualifier), 읽기·쓰기·파괴적 작업 분류, 공급자와 접근 경로의 식별 정보, 스키마 지문(fingerprint)이 포함됩니다.
 

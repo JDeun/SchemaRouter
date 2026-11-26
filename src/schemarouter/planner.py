@@ -50,8 +50,6 @@ from .planning_stages import (
 from .registry import ToolRegistry
 from .state_retrieval import (
     StateAwareCapabilityRetrieval,
-    StateConditionedCapabilityRetrieval,
-    backfill_ranked_candidates_by_state,
     filter_retrieval_by_state,
 )
 from .validation import (
@@ -1036,93 +1034,6 @@ class SchemaPlanner:
             request,
             intent,
             k=k,
-            catalog_snapshot=catalog_snapshot,
-        )
-    def _reretrieve_state_aware_from_intent(
-        self,
-        request: PlanRequest,
-        intent: QueryIntent,
-        *,
-        execution_state: TypedExecutionState,
-        k: int,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
-        catalog_snapshot: RegistrySnapshot | None = None,
-    ) -> StateConditionedCapabilityRetrieval:
-        catalog_snapshot = catalog_snapshot or self._catalog_snapshot()
-        ranked = self._semantic_recall_catalog(
-            request,
-            intent,
-            additional_availability_predicate=additional_availability_predicate,
-            catalog_snapshot=catalog_snapshot,
-        )
-        self._sort_candidates(ranked, catalog_snapshot=catalog_snapshot)
-        visible = [
-            self._retrieval_candidate(candidate, rank=index)
-            for index, candidate in enumerate(ranked, start=1)
-        ]
-        return backfill_ranked_candidates_by_state(
-            query=request.query,
-            registry_version=catalog_snapshot.version,
-            requested_k=k,
-            ranked_candidates=visible,
-            state=execution_state,
-            requirements_by_route=state_requirements,
-            preconditions_by_route=state_preconditions,
-        )
-
-
-    def reretrieve_state_aware(
-        self,
-        request: PlanRequest | str,
-        *,
-        execution_state: TypedExecutionState,
-        k: int = 5,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
-    ) -> StateConditionedCapabilityRetrieval:
-        """Return the best K state-eligible capabilities from the visible ranked surface."""
-
-        k = self._validate_retrieval_k(k)
-        request, intent, catalog_snapshot = self._analyze_sync(
-            request,
-            async_method="planner.areretrieve_state_aware(...)",
-        )
-        return self._reretrieve_state_aware_from_intent(
-            request,
-            intent,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            additional_availability_predicate=additional_availability_predicate,
-            catalog_snapshot=catalog_snapshot,
-        )
-
-    async def areretrieve_state_aware(
-        self,
-        request: PlanRequest | str,
-        *,
-        execution_state: TypedExecutionState,
-        k: int = 5,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
-    ) -> StateConditionedCapabilityRetrieval:
-        """Async counterpart to :meth:`reretrieve_state_aware`."""
-
-        k = self._validate_retrieval_k(k)
-        request, intent, catalog_snapshot = await self._analyze_async(request)
-        return self._reretrieve_state_aware_from_intent(
-            request,
-            intent,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            additional_availability_predicate=additional_availability_predicate,
             catalog_snapshot=catalog_snapshot,
         )
     def retrieve_state_aware(

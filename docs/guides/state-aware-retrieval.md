@@ -23,27 +23,12 @@ eligible = router.retrieve_state_aware(
 
 The asynchronous counterpart is `await router.aretrieve_state_aware(...)`. The lower-level `filter_retrieval_by_state(...)` helper remains available when a host already has a `CapabilityRetrieval` object.
 
-## Filtering versus state-conditioned backfill
+## Fixed Top-K eligibility
 
-`retrieve_state_aware(...)` deliberately keeps fixed-Top-K semantics: SchemaRouter ranks K candidates first and then removes candidates that are incompatible with the supplied state. This preserves the original public behavior.
-
-When the host wants the best K **eligible** candidates from the visible ranked surface, use the explicit corrective API:
-
-```python
-refreshed = router.reretrieve_state_aware(
-    "continue the material lookup",
-    execution_state=state,
-    k=5,
-    state_requirements=requirements,
-    state_preconditions=preconditions,
-)
-```
-
-The asynchronous counterpart is `await router.areretrieve_state_aware(...)`.
-
-This API evaluates the same visible/available capability surface used by normal retrieval, preserves original global ranks, and backfills past state-ineligible candidates until K eligible candidates are found or the visible surface is exhausted. `refreshed.excluded` contains the rejected visible candidates together with structured state-eligibility reasons.
-
-It never searches outside the host-visible registry surface and never uses hidden future-route labels, prior gold decisions, or authorization-invisible capabilities as an oracle.
+`retrieve_state_aware(...)` checks the original bounded candidates without backfilling.
+The former state-conditioned backfill APIs are removed from the installed package.
+Their historical comparison implementation is preserved in `scripts/research_legacy_state_backfill.py`.
+Any subsequent workflow decision belongs to the host, not the routing algorithm.
 
 `state_requirements` and `state_preconditions` are explicit host-supplied contract metadata. SchemaRouter does not infer workflow preconditions from route names, parameter names, descriptions, previous rank positions, or hidden future routes.
 

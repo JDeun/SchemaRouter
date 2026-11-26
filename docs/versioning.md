@@ -37,12 +37,10 @@ The following are treated as public when they are documented and exported from t
 `schemarouter` package or an explicitly documented integration module:
 
 - typed contracts such as `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`,
-  `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`,
-  `StateConditionedCapabilityRetrieval`, and `ExecutionPlan`;
+  `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`, and `ExecutionPlan`;
 - `SchemaRouter` public registration/retrieval/planning/execution methods, including
   `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`,
-  `aretrieve_executable`, `retrieve_state_aware`, `reretrieve_state_aware`, and the execution
-  verbs;
+  `aretrieve_executable`, `retrieve_state_aware`, and the execution verbs;
 - documented provider-profile, capability-snapshot/publication, portable artifact/migration, and
   capability decision-trace contracts;
 - `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, and `ExecutionPolicy`;

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+import schemarouter
+
 from schemarouter import (
     CapabilityFieldContract,
     EndpointSpec,
@@ -11,6 +13,10 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
     TypedExecutionState,
+)
+from scripts.research_legacy_state_backfill import (
+    legacy_areretrieve_state_aware,
+    legacy_reretrieve_state_aware,
 )
 
 
@@ -50,7 +56,8 @@ def test_reretrieval_backfills_beyond_initial_top_k() -> None:
         k=2,
         state_requirements=requirements,
     )
-    refreshed = router.reretrieve_state_aware(
+    refreshed = legacy_reretrieve_state_aware(
+        router,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=2,
@@ -82,7 +89,8 @@ def test_reretrieval_returns_all_available_when_eligible_surface_is_smaller_than
         "c_route.read": [missing],
     }
 
-    result = router.reretrieve_state_aware(
+    result = legacy_reretrieve_state_aware(
+        router,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=3,
@@ -99,7 +107,8 @@ def test_reretrieval_never_expands_planner_visibility_surface() -> None:
     router = _router()
     router.mark_access_unavailable("c_route", "read", cooldown_seconds=60)
 
-    result = router.reretrieve_state_aware(
+    result = legacy_reretrieve_state_aware(
+        router,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=4,
@@ -122,7 +131,8 @@ def test_reretrieval_satisfies_declared_state_without_inference() -> None:
         ]
     )
 
-    result = router.reretrieve_state_aware(
+    result = legacy_reretrieve_state_aware(
+        router,
         "unrelated query",
         execution_state=state,
         k=2,
@@ -155,13 +165,15 @@ async def test_async_reretrieval_matches_sync_ordering() -> None:
     async_router.planner.analyzer = _AsyncAnalyzer()
     requirements = {"a_route.read": [_missing_requirement()]}
 
-    expected = sync_router.reretrieve_state_aware(
+    expected = legacy_reretrieve_state_aware(
+        sync_router,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=2,
         state_requirements=requirements,
     )
-    actual = await async_router.areretrieve_state_aware(
+    actual = await legacy_areretrieve_state_aware(
+        async_router,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=2,
@@ -185,13 +197,15 @@ def test_configured_router_exposes_reretrieval_surface() -> None:
     configured = router.with_config({})
     requirements = {"a_route.read": [_missing_requirement()]}
 
-    direct = router.reretrieve_state_aware(
+    direct = legacy_reretrieve_state_aware(
+        router,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=2,
         state_requirements=requirements,
     )
-    configured_result = configured.reretrieve_state_aware(
+    configured_result = legacy_reretrieve_state_aware(
+        configured,
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=2,
@@ -202,7 +216,8 @@ def test_configured_router_exposes_reretrieval_surface() -> None:
 
 
 def test_state_conditioned_result_has_no_execution_authority() -> None:
-    result = _router().reretrieve_state_aware(
+    result = legacy_reretrieve_state_aware(
+        _router(),
         "unrelated query",
         execution_state=TypedExecutionState(),
         k=1,
@@ -220,3 +235,12 @@ def test_state_conditioned_result_has_no_execution_authority() -> None:
         "authorize",
     }
     assert forbidden.isdisjoint(dir(result))
+
+
+def test_backfill_is_not_part_of_the_installed_routing_api() -> None:
+    router = _router()
+    for owner in (router, router.planner, router.with_config({})):
+        assert not hasattr(owner, "reretrieve_state_aware")
+        assert not hasattr(owner, "areretrieve_state_aware")
+    assert not hasattr(schemarouter, "StateConditionedCapabilityRetrieval")
+    assert not hasattr(schemarouter, "backfill_ranked_candidates_by_state")

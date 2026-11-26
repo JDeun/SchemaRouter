@@ -265,10 +265,8 @@ eligible = router.retrieve_state_aware(
 )
 ```
 
-초기 Top-K를 filtering한 결과 candidate가 너무 적으면 corrective
-`reretrieve_state_aware(...)` surface가 동일한 visible ranked candidate surface에서
-backfill할 수 있습니다. 기존 rank를 보존하고 제외된 candidate에는 typed state reason을
-기록합니다.
+필터링은 기존 Top-K를 보충하지 않습니다. 이후 워크플로 결정은 호출자가 담당하며,
+상태 조건부 backfill은 과거 연구 비교 구현으로만 보존합니다.
 
 이 기능은 capability retrieval이지 workflow planning이 아닙니다. SchemaRouter는 state
 transition을 추론하거나 retry를 schedule하거나 transaction을 실행하거나 multi-step orchestration

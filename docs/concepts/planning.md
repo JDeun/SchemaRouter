@@ -269,9 +269,8 @@ eligible = router.retrieve_state_aware(
 )
 ```
 
-If filtering the initial Top-K leaves too few candidates, the corrective
-`reretrieve_state_aware(...)` surface can backfill from the same visible ranked candidate surface.
-It preserves original ranks and records excluded candidates with typed state reasons.
+Filtering never backfills the original Top-K. The caller owns any subsequent workflow decision;
+state-conditioned backfill survives only as a historical research comparison.
 
 This is capability retrieval, not workflow planning. SchemaRouter does not infer state transitions,
 schedule retries, execute transactions, or choose a multi-step orchestration path.

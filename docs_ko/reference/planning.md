@@ -92,6 +92,3 @@
 
 ::: schemarouter.StateAwareCapabilityRetrieval
 
-## StateConditionedCapabilityRetrieval
-
-::: schemarouter.StateConditionedCapabilityRetrieval

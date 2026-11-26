@@ -24,7 +24,7 @@ flowchart TD
 
 `retrieve_executable`과 `aretrieve_executable`은 현재 로컬 binding readiness까지 추가로 필터링합니다. 그래도 실행하거나 side effect를 승인하지는 않습니다.
 
-명시적 state-aware surface는 안정적인 stateless facade의 대체물이 아니라 추가 기능입니다. `retrieve_state_aware`는 고정 Top-K를 host가 제공한 typed state에 따라 필터링하고, `reretrieve_state_aware`는 K개의 eligible candidate를 찾거나 보이는 surface가 소진될 때까지 같은 host-visible ranked surface에서 보충합니다. 어느 메서드도 workflow state를 추론하거나 visibility를 넓히거나 capability를 실행하지 않습니다.
+`retrieve_state_aware`는 고정 Top-K를 호스트가 제공한 typed state에 따라 필터링합니다. 과거 상태 조건부 backfill은 더 이상 제품 API가 아닙니다. 상태 적격성 필터링은 workflow state를 추론하거나 visibility를 넓히거나 capability를 실행하지 않습니다.
 
 ### Candidate contract는 실행 가능한 schema를 보존합니다
 
@@ -69,7 +69,7 @@ Core package는 이러한 optional dependency 없이도 import하고 사용할 �
 - `SchemaRouter.aretrieve(..., k=5)`
 - `SchemaRouter.retrieve_executable(..., k=5)`
 - `SchemaRouter.aretrieve_executable(..., k=5)`
-- 추가형 `retrieve_state_aware` / `aretrieve_state_aware` 및 `reretrieve_state_aware` / `areretrieve_state_aware` typed-state surface
+- 추가형 `retrieve_state_aware` / `aretrieve_state_aware` typed-state 적격성 검사
 - 동등한 `ConfiguredSchemaRouter` retrieval method
 - 기존 planning, invocation, batch, streaming, policy, inspection API
 
