@@ -43,7 +43,6 @@ def _seed(reg: SQLiteRegistry, count: int = 16) -> SchemaRouter:
     reference = _synthetic_router(count)
     reg.update_many(reference.registry.tools())
     return SchemaRouter(
-        _legacy_routing=True,
         registry=reg,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

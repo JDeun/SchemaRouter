@@ -47,7 +47,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _synthetic_router() -> SchemaRouter:
     """100 multi-endpoint native ToolSpecs; 5000 exact source routes."""
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

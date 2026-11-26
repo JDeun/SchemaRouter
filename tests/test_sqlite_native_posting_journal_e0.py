@@ -43,7 +43,6 @@ def _tool(key: str, description: str = "") -> ToolSpec:
 
 def _router(registry: SQLiteRegistry) -> SchemaRouter:
     return SchemaRouter(
-        _legacy_routing=True,
         registry=registry,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
