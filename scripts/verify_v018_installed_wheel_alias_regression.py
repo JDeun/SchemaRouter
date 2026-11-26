@@ -105,8 +105,9 @@ def compare(base: dict, candidate: dict) -> None:
         raise ValueError("unrecognized candidate or baseline evidence")
     if base.get("installed_version") != "0.17.0":
         raise ValueError("baseline must be the actual installed v0.17.0 wheel")
-    # Prior to release, candidate is a wheel built from a pinned main SHA.
-    if candidate.get("installed_version") not in {"0.17.0", "0.18.0"}:
+    # An exact development wheel is valid engineering evidence, not a release.
+    # Keep the candidate identity allowlist explicit; never accept arbitrary versions.
+    if candidate.get("installed_version") not in {"0.17.0", "0.18.0.dev0", "0.18.0"}:
         raise ValueError("unexpected release-candidate package identity")
     for mode in ("indexed", "exhaustive"):
         source = base["results"][mode]

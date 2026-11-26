@@ -108,7 +108,7 @@ Security = "https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md"
 packages = ["src/schemarouter"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = ["error"]

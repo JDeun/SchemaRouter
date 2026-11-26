@@ -88,3 +88,17 @@ def test_no_scientific_or_unpinned_evidence_forgery():
     candidate["evidence_class"] = "independent_agent_confirmation"
     with pytest.raises(ValueError, match="evidence"):
         compare(base, candidate)
+
+
+def test_pinned_development_candidate_is_not_required_to_be_released():
+    base, candidate = fixture()
+    candidate["installed_version"] = "0.18.0.dev0"
+    compare(base, candidate)
+
+
+@pytest.mark.parametrize("version", ["0.18.0.dev1", "0.19.0", "unknown"])
+def test_unexpected_candidate_version_is_rejected(version):
+    base, candidate = fixture()
+    candidate["installed_version"] = version
+    with pytest.raises(ValueError, match="package identity"):
+        compare(base, candidate)
