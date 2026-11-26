@@ -8,11 +8,11 @@ from pydantic import BaseModel
 from schemarouter import (
     ExecutionPlan,
     PlanRequest,
-    SchemaRouter,
     ToolCall,
 )
 from schemarouter.errors import PlanValidationError, SchemaValidationError
 from schemarouter.integrations import tool_from_langchain, tool_from_llamaindex
+from scripts.research_legacy_router import legacy_router
 
 
 class SearchArgs(BaseModel):
@@ -145,7 +145,7 @@ def test_foreign_tool_descriptions_do_not_grant_execution_authority() -> None:
 
 @pytest.mark.asyncio
 async def test_router_executes_imported_langchain_tool_through_normal_pipeline() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_langchain_tool(
         FakeLangChainTool(),
         provider="tavily",
@@ -186,7 +186,7 @@ def test_llamaindex_import_uses_tool_metadata_and_typed_return_schema() -> None:
 
 @pytest.mark.asyncio
 async def test_router_executes_imported_llamaindex_tool_through_normal_pipeline() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_llamaindex_tool(
         FakeLlamaTool(),
         provider="arxiv",
@@ -259,7 +259,7 @@ async def test_web_search_required_optional_and_undeclared_unit_at_execution() -
             return await super().ainvoke(arguments)
 
     source = InstrumentedWebSearch()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool_key = router.add_langchain_tool(
         source, provider="tavily", read_only=True, remote=False,
     )

@@ -14,6 +14,7 @@ from scripts.research_authorized_retrieval_phase_profile import (
     profile,
     timed_retrieve,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def test_scoped_current_router_phases_and_no_scope_control() -> None:
@@ -35,8 +36,7 @@ def test_scoped_current_router_phases_and_no_scope_control() -> None:
 
     from schemarouter import AuthorizationPolicy, SchemaRouter
 
-    no_scope = SchemaRouter(
-        _legacy_routing=True,
+    no_scope = legacy_router(
         registry=router.registry,
         authorization_policy=AuthorizationPolicy(
             rules=policy.rules, default_effect=policy.default_effect,

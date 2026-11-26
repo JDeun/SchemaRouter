@@ -6,10 +6,10 @@ from schemarouter import (
     InMemoryRegistry,
     PlanRequest,
     SchemaPlanner,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.adapters.mcp import tool_from_mcp
+from scripts.research_legacy_router import legacy_router
 
 
 def _tool(output_schema: dict) -> ToolSpec:
@@ -180,7 +180,7 @@ def test_mcp_nested_field_supports_full_trusted_enrichment() -> None:
     tool_payload["endpoints"] = [amended_endpoint]
     amended_tool = ToolSpec.model_validate(tool_payload)
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(tool)
     router.amend_capability(tool.key, amended_tool)
 

@@ -63,7 +63,7 @@ async def test_probe_url_detects_openapi_without_registry_mutation() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         version = router.registry.version
 
         probe = await router.probe_url(source)
@@ -94,7 +94,7 @@ async def test_probe_url_reports_non_bindable_cross_origin_openapi() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         probe = await router.probe_url(
             "https://docs.example.test/openapi.json",
             kind="openapi",
@@ -118,7 +118,7 @@ async def test_probe_url_rejects_html_and_redacts_adapter_diagnostics() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
             await router.probe_url(source, kind="auto")
 
@@ -139,7 +139,7 @@ async def test_probe_url_rejects_html_under_explicit_openapi_kind() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(
             UnsupportedSchemaSourceError,
             match="supported openapi source",
@@ -152,7 +152,7 @@ async def test_probe_url_rejects_html_under_explicit_openapi_kind() -> None:
 
 @pytest.mark.asyncio
 async def test_probe_url_rejects_relative_url_before_adapter_io() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(SchemaSourceError, match="absolute http"):
         await router.probe_url("/relative/schema.json")
@@ -220,7 +220,7 @@ async def test_probe_success_reports_adapter_activity_and_considered_path() -> N
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         probe = await router.probe_url(
             "https://docs.example.test/openapi.json",
             kind="openapi",
@@ -246,7 +246,7 @@ async def test_probe_html_failure_carries_safe_not_recognized_report() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         version = router.registry.version
         with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
             await router.probe_url(source)
@@ -281,7 +281,7 @@ async def test_probe_http_status_failures_are_classified(
         return httpx.Response(status_code, request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SourceProbeDiagnosticError) as exc_info:
             await router.probe_url(
                 "https://docs.example.test/openapi.json",
@@ -306,7 +306,7 @@ async def test_probe_timeout_is_unreachable_and_preserves_root_cause() -> None:
         raise httpx.ReadTimeout("sensitive upstream timeout detail", request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SourceProbeDiagnosticError) as exc_info:
             await router.probe_url(
                 "https://docs.example.test/openapi.json",
@@ -338,7 +338,7 @@ async def test_probe_malformed_openapi_is_invalid_schema() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SourceProbeDiagnosticError) as exc_info:
             await router.probe_url(
                 "https://docs.example.test/openapi.json",
@@ -362,7 +362,7 @@ async def test_probe_unsupported_structured_json_is_not_silent() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SourceProbeDiagnosticError) as exc_info:
             await router.probe_url(
                 "https://docs.example.test/schema.json",
@@ -388,7 +388,7 @@ async def test_probe_graphql_introspection_disabled_is_unsupported_feature() -> 
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SourceProbeDiagnosticError) as exc_info:
             await router.probe_url(
                 "https://graphql.example.test/graphql",
@@ -416,7 +416,7 @@ async def test_probe_non_mcp_handshake_is_protocol_error(
         raise RuntimeError("remote handshake payload contains private-token")
 
     monkeypatch.setattr(ingestion_module, "inspect_mcp_url", fail_mcp)
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     version = router.registry.version
 
     with pytest.raises(SourceProbeDiagnosticError) as exc_info:
@@ -481,7 +481,7 @@ async def test_probe_url_wrong_explicit_kind_is_not_silently_accepted() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
             await router.probe_url(
                 "https://api.example.test/openapi.json",
@@ -505,7 +505,7 @@ async def test_auto_probe_reports_considered_and_skipped_adapter_activity() -> N
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
             await router.probe_url(
                 "https://docs.example.test/reference",

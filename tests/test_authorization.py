@@ -20,6 +20,7 @@ from schemarouter import (
     ToolSpec,
     TransientInvocationError,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _tool(name: str, description: str) -> ToolSpec:
@@ -182,7 +183,7 @@ def _policy() -> AuthorizationPolicy:
 
 
 def _router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy())
+    router = legacy_router(authorization_policy=_policy())
     for name, description in (
         ("employee_records", "employee directory and public staff records"),
         ("management_metrics", "department management operations metrics"),
@@ -382,7 +383,7 @@ async def test_direct_executor_call_cannot_bypass_router_authorization() -> None
 
 
 def test_no_authorization_policy_preserves_existing_no_principal_behavior() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("public", "public information")
     router.add_bound_tool(tool, lambda endpoint, arguments: {"value": "ok"})
 
@@ -398,8 +399,7 @@ async def test_retry_reauthorizes_capability_after_policy_revocation(policy_owne
         effect="allow",
         operation="retry_records.*",
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(rules=(allow_rule,))
     )
     tool = _tool("retry_records", "retry records")
@@ -441,8 +441,7 @@ async def test_retry_recomputes_data_scope_before_second_invocation(policy_owner
         effect="allow",
         operation="retry_records.*",
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             rules=(allow_rule,),
             data_rules=(
@@ -515,8 +514,7 @@ def test_scoped_retrieval_never_embeds_hidden_schema_property() -> None:
             hidden_fields=("private_value",),
         ),),
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=InspectingAnalyzer(),
         authorization_policy=policy,
     )
@@ -564,7 +562,7 @@ def test_scoped_retrieval_never_embeds_hidden_schema_property() -> None:
 
 
 def test_unrestricted_retrieval_retains_original_source_output_schema() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     original = {
         "type": "object", "properties": {
             "public_value": {"type": "number"},

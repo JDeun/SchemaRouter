@@ -102,7 +102,6 @@ async def run_smoke() -> dict[str, object]:
 
     try:
         router = SchemaRouter(
-            _legacy_routing=True,
             policy=ExecutionPolicy(allow_unclassified_remote=True)
         )
         router.register_provider_profile(

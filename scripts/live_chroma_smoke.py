@@ -15,11 +15,11 @@ from schemarouter import (
     ExecutionPlan,
     PrincipalContext,
     RunConfig,
-    SchemaRouter,
     ToolCall,
     TrustedFilterBinding,
 )
 from schemarouter.adapters.vector_store import VectorMetadataField
+from scripts.research_legacy_router import legacy_router
 
 
 def main() -> int:
@@ -74,7 +74,7 @@ def main() -> int:
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     keys = router.add_chroma_vector_store(
         client,
         lambda query: [1.0, 0.0, 0.0],

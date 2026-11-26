@@ -32,6 +32,7 @@ from mcp_agent.config import (
 )
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 SERVER_NAME = "catalog"
 SERVER_PATH = (
@@ -307,7 +308,7 @@ async def evaluate() -> dict[str, Any]:
                 discovered = list(discovered_result.tools)
                 assert len(discovered) >= 10
 
-                router = SchemaRouter(_legacy_routing=True)
+                router = legacy_router()
                 conversion = _register_retrieval_mirror(router, discovered)
                 selector = SchemaRouterCatalogSelector(router)
 

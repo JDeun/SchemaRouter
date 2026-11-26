@@ -84,7 +84,7 @@ async def test_html_proposal_keeps_only_grounded_schema_items() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         proposal = await router.inspect_url(
             "https://docs.example.com/users",
             model=model,
@@ -135,7 +135,7 @@ async def test_html_proposal_fails_closed_when_no_endpoint_is_grounded() -> None
         return httpx.Response(200, text=html, headers={"content-type": "text/html"})
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         proposal = await router.inspect_url(
             "https://docs.example.com/empty",
             model=model,
@@ -165,7 +165,7 @@ def test_proposal_approval_enforces_grounding_threshold() -> None:
         ),
         grounding_score=0.6,
     )
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(ProposalApprovalError, match="grounding score"):
         router.approve_proposal(
@@ -201,7 +201,7 @@ def test_proposal_approval_requires_mutation_opt_in() -> None:
         ),
         grounding_score=1.0,
     )
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(ProposalApprovalError, match="mutating endpoints"):
         router.approve_proposal(
@@ -229,7 +229,7 @@ def test_proposal_approval_rejects_credentials_in_base_url() -> None:
     )
 
     with pytest.raises(ProposalApprovalError, match="credentials"):
-        SchemaRouter(_legacy_routing=True).approve_proposal(
+        SchemaRouter().approve_proposal(
             proposal,
             base_url="https://user:secret@api.example.com",
         )
@@ -246,7 +246,7 @@ def test_failed_proposal_binding_does_not_pollute_registry() -> None:
         ),
         grounding_score=1.0,
     )
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(ProposalApprovalError, match="invalid proposal execution binding"):
         router.approve_proposal(
@@ -277,7 +277,7 @@ async def test_documentation_redirects_must_stay_on_origin() -> None:
         transport=httpx.MockTransport(handler),
         follow_redirects=True,
     ) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SchemaSourceError, match="cross-origin documentation redirects"):
             await router.inspect_url(
                 "https://docs.example.com/api",
@@ -292,7 +292,7 @@ async def test_documentation_url_rejects_embedded_credentials() -> None:
     async def model(payload: dict) -> dict:
         raise AssertionError("model must not run for credential-bearing URL")
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     with pytest.raises(SchemaSourceError, match="must not contain credentials"):
         await router.inspect_url(
             "https://user:secret@docs.example.com/api",
@@ -313,7 +313,7 @@ async def test_documentation_response_size_is_bounded() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SchemaSourceError, match="safety limit"):
             await router.inspect_url(
                 "https://docs.example.com/api",
@@ -363,7 +363,7 @@ async def test_documentation_query_secret_is_not_model_visible_or_persisted() ->
 
     source = "https://docs.example.com/users?token=top-secret#section"
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         proposal = await router.inspect_url(source, model=model)
 
     assert requested == [source]
@@ -386,7 +386,7 @@ async def test_documentation_fetch_error_redacts_query_secret() -> None:
 
     source = "https://docs.example.com/api?token=top-secret"
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         with pytest.raises(SchemaSourceError) as exc_info:
             await router.inspect_url(source, model=model)
 

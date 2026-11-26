@@ -14,7 +14,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.evidence import available_evidence
@@ -23,6 +22,7 @@ from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_router import legacy_router
 
 CANARY = "private_route_canary_q9421"
 VIEWER = PrincipalContext(subject="scoped-viewer", roles=("viewer",))
@@ -49,8 +49,7 @@ def _router():
             visible_fields=("public_value",),
         ),),
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=policy,
         analyzer=InspectingAnalyzer(),
     )

@@ -14,8 +14,8 @@ from schemarouter import (
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
-    SchemaRouter,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _registered_router():
@@ -25,8 +25,7 @@ def _registered_router():
         calls.append(user_id)
         return {"user_id": str(user_id)}
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

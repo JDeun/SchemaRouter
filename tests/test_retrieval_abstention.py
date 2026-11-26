@@ -15,10 +15,11 @@ from schemarouter import (
     ToolSpec,
     apply_retrieval_abstention,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def build_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         ToolSpec(
             name="paper",

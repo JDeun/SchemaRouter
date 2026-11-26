@@ -9,10 +9,10 @@ from schemarouter import (
     FieldSpec,
     PlanRequest,
     RegistrationError,
-    SchemaRouter,
     ToolCall,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _finance_tool() -> ToolSpec:
@@ -53,7 +53,7 @@ class SDKInvoker:
 
 @pytest.mark.asyncio
 async def test_add_bound_tool_runs_arbitrary_sdk_through_normal_contract() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _finance_tool()
 
     key = router.add_bound_tool(tool, SDKInvoker())
@@ -83,7 +83,7 @@ class CallAwareSDKInvoker:
 
 @pytest.mark.asyncio
 async def test_add_bound_tool_accepts_call_aware_invoker() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _finance_tool()
     invoker = CallAwareSDKInvoker()
 
@@ -103,7 +103,7 @@ async def test_add_bound_tool_accepts_call_aware_invoker() -> None:
 
 
 def test_add_bound_tool_replacement_rebinds_exact_new_fingerprint() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     original = _finance_tool()
     router.add_bound_tool(original, SDKInvoker())
 
@@ -123,7 +123,7 @@ def test_add_bound_tool_replacement_rebinds_exact_new_fingerprint() -> None:
 
 
 def test_add_bound_tool_rejects_duplicate_without_replace() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _finance_tool()
     router.add_bound_tool(tool, SDKInvoker())
 

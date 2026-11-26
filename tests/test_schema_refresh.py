@@ -69,7 +69,7 @@ async def test_schema_refresh_identical_is_noop() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -94,7 +94,7 @@ async def test_schema_refresh_applies_proven_compatible_description_change() -> 
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -121,7 +121,7 @@ async def test_compatible_refresh_restamps_existing_health_probe() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -154,7 +154,7 @@ async def test_schema_refresh_quarantines_breaking_required_parameter() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -179,7 +179,7 @@ async def test_schema_refresh_quarantines_security_semantic_change() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -204,7 +204,7 @@ async def test_schema_refresh_can_report_compatible_without_applying() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -228,7 +228,7 @@ async def test_schema_refresh_can_report_compatible_without_applying() -> None:
 def test_schema_refresh_sync_wrapper_is_available(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="remote",
         remote=True,
@@ -260,7 +260,7 @@ def test_schema_refresh_sync_wrapper_is_available(
 
 @pytest.mark.asyncio
 async def test_schema_refresh_rejects_unknown_tool() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(RegistrationError, match="unknown tool"):
         await router.arefresh_schema("missing")
@@ -268,7 +268,7 @@ async def test_schema_refresh_rejects_unknown_tool() -> None:
 
 @pytest.mark.asyncio
 async def test_schema_refresh_rejects_non_refreshable_local_tool() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="local",
         endpoints=[
@@ -287,7 +287,7 @@ async def test_schema_refresh_rejects_non_refreshable_local_tool() -> None:
 
 @pytest.mark.asyncio
 async def test_schema_refresh_rejects_missing_source_provenance() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="remote",
         remote=True,
@@ -316,7 +316,7 @@ async def test_schema_refresh_rejects_candidate_key_change(
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -394,7 +394,7 @@ async def test_schema_refresh_graphql_identical_is_noop() -> None:
         return httpx.Response(200, json=_graphql_introspection(), request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://graphql.example/graphql",
             kind="graphql",
@@ -441,7 +441,7 @@ async def test_schema_refresh_openrpc_preserves_approved_base_url() -> None:
         raise AssertionError("refresh must not execute the RPC method")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://rpc.example/openrpc.json",
             kind="openrpc",
@@ -457,7 +457,7 @@ async def test_schema_refresh_openrpc_preserves_approved_base_url() -> None:
 def test_loader_commit_rolls_back_new_bound_tool_before_validator_publication(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="loader_atomic",
         remote=True,
@@ -492,7 +492,7 @@ def test_loader_commit_rolls_back_new_bound_tool_before_validator_publication(
 def test_loader_commit_candidate_failed_rebind_restores_previous_executable_state(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     original = ToolSpec(
         name="loader_refresh",
         description="v1",

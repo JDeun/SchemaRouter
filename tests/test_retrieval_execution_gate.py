@@ -18,13 +18,13 @@ from schemarouter import (
     PolicyViolationError,
     PrincipalContext,
     RetrievalAbstentionPolicy,
-    SchemaRouter,
     ToolCall,
     ToolSpec,
     ainvoke_selective,
     execute_selective_plan,
     validate_selective_execution,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 class FakeDispatchRouter:
@@ -40,7 +40,7 @@ class FakeDispatchRouter:
 
 
 def fixture():
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         ToolSpec(
             name="paper",

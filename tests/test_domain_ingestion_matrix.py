@@ -48,7 +48,7 @@ def test_matrix_spans_non_materials_domains() -> None:
 
 def test_every_declared_mode_maps_to_a_real_public_ingestion_surface() -> None:
     matrix = _matrix()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     built_in_kinds = set(router.adapter_registry.kinds())
 
     for mode in matrix["universal_modes"]:

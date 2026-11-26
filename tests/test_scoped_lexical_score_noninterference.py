@@ -17,6 +17,7 @@ from schemarouter import (
 )
 from schemarouter.models import QueryIntent
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
+from scripts.research_legacy_router import legacy_router
 
 CANARY = "private_score_canary_t3397"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -33,7 +34,7 @@ def _router(*, description: str, scoped: bool) -> SchemaRouter:
             visible_fields=("public_value",),
         ),) if scoped else (),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     router.add_tool(ToolSpec(
         name="records",
         description=description,
@@ -96,7 +97,7 @@ def test_private_description_cannot_reorder_a_two_route_scoped_shortlist():
                 ),
             ),
         )
-        router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+        router = legacy_router(authorization_policy=policy)
         for name, description in (
             ("records", hidden_description),
             ("ledger", "public registry ledger"),
@@ -164,7 +165,7 @@ def test_optional_recall_decision_request_uses_scoped_not_raw_description():
 
 def test_scoped_canonical_tool_identifier_still_matches_spaced_query():
     """Do not break real plan+retry authority by losing safe tool-name tokens."""
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="retry_records.read",

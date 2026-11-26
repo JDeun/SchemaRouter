@@ -7,7 +7,8 @@ from benchmarks.current_adapter_field_scope_dev_v1 import principal
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     build_fixture,
 )
-from schemarouter import AuthorizationPolicy, SchemaRouter
+from schemarouter import AuthorizationPolicy
+from scripts.research_legacy_router import legacy_router
 from scripts.research_scoped_candidate_hotspot_attribution import (
     STAGES,
     percentile,
@@ -32,8 +33,7 @@ def test_actual_scoped_hotspot_counter_separates_projection_and_scorer() -> None
 
 def test_route_policy_control_is_not_field_scope_bypass_in_product() -> None:
     router, policy = build_fixture(100)
-    route_control = SchemaRouter(
-        _legacy_routing=True,
+    route_control = legacy_router(
         registry=router.registry,
         authorization_policy=AuthorizationPolicy(
             rules=policy.rules,

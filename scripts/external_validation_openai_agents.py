@@ -27,6 +27,7 @@ from agents.mcp import MCPServerStdio, ToolFilterContext
 from mcp.types import Tool as MCPTool
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 SERVER_PATH = (
     Path(__file__).resolve().parents[1]
@@ -256,7 +257,7 @@ async def evaluate() -> dict[str, Any]:
         assert len(discovered) >= 10
         discovered_by_name = {tool.name: tool for tool in discovered}
 
-        router = SchemaRouter(_legacy_routing=True)
+        router = legacy_router()
         _register_mcp_retrieval_mirror(router, discovered)
         dynamic_filter = SchemaRouterDynamicMCPFilter(router)
 

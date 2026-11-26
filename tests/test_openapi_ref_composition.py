@@ -12,6 +12,7 @@ from schemarouter import (
     ToolCall,
 )
 from schemarouter.adapters.openapi import normalize_same_document_refs, tool_from_openapi
+from scripts.research_legacy_router import legacy_router
 
 
 def test_allof_flattens_body_parameters_and_response_fields_for_planning() -> None:
@@ -529,7 +530,7 @@ def test_planner_can_select_field_unique_to_oneof_response_variant() -> None:
         },
     }
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(tool_from_openapi("pets", document))
 
     plan = router.plan(

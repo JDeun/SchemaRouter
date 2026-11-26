@@ -11,13 +11,13 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PlanRequest,
-    SchemaRouter,
     SchemaValidationError,
     ToolSpec,
     UnitNormalizationSpec,
     compare_capability_fields,
 )
 from schemarouter.validation import canonical_field_value_schema, canonical_unit_value_schema
+from scripts.research_legacy_router import legacy_router
 
 
 def _field(schema: dict, *, scale: float = .1, offset: float = 0) -> FieldSpec:
@@ -50,7 +50,7 @@ async def test_public_execution_round_trips_through_canonical_contract(
 ) -> None:
     field = _field(raw_schema)
     endpoint = EndpointSpec(name="read", read_only=True, output_fields=[field])
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_bound_tool(
         ToolSpec(name="lengths", endpoints=[endpoint]), lambda *_: {"length": raw},
     )
@@ -82,7 +82,7 @@ def test_canonical_bound_requirement_cannot_reuse_source_bounds() -> None:
 @pytest.mark.asyncio
 async def test_public_execution_still_validates_raw_values_before_conversion() -> None:
     field = _field({"type": "integer", "minimum": 5, "maximum": 10})
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_bound_tool(
         ToolSpec(name="lengths", endpoints=[
             EndpointSpec(name="read", read_only=True, output_fields=[field]),
@@ -170,7 +170,7 @@ def test_affine_rounding_does_not_reuse_raw_array_uniqueness() -> None:
 async def test_public_identity_normalization_preserves_large_integer_const(raw: int) -> None:
     schema = {"type": "integer", "const": raw}
     field = _field(schema, scale=1)
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_bound_tool(
         ToolSpec(name="lengths", endpoints=[
             EndpointSpec(name="read", read_only=True, output_fields=[field]),
@@ -190,7 +190,7 @@ async def test_public_identity_normalization_preserves_large_integer_const(raw: 
 @pytest.mark.parametrize("raw", (float("nan"), float("inf"), float("-inf")))
 async def test_public_identity_normalization_rejects_non_finite_provider_values(raw: float) -> None:
     field = _field({"type": "number"}, scale=1)
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_bound_tool(
         ToolSpec(name="lengths", endpoints=[
             EndpointSpec(name="read", read_only=True, output_fields=[field]),

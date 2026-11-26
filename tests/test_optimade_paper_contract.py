@@ -13,7 +13,6 @@ from schemarouter import (
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     PrincipalContext,
-    SchemaRouter,
     ToolCall,
     UnitNormalizationSpec,
     compile_paper_typed_tool_plan,
@@ -22,6 +21,7 @@ from schemarouter.adapters import OPTIMADERemoteInvoker, review_optimade_paper_t
 from schemarouter.adapters.optimade import _tool_from_discovery
 from schemarouter.errors import NonRetryableInvocationError, SchemaSourceError
 from schemarouter.native_graph_index import NativeSchemaPostingIndex
+from scripts.research_legacy_router import legacy_router
 
 BASE_URL = "https://materials.example/v1"
 LICENSE = "owner-reviewed-materials-db"
@@ -80,7 +80,7 @@ def _catalog():
 
 
 def _router(tool, invoker):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation=ROOT, roles_any=("reader",)),),
     ))
@@ -262,7 +262,7 @@ async def test_standard_executor_applies_only_the_host_reviewed_unit_conversion(
 
 def test_unreviewed_provider_unit_is_not_a_semantic_hit():
     source = _source_tool()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation=ROOT, roles_any=("reader",)),),
     ))

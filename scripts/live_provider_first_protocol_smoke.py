@@ -9,6 +9,7 @@ from typing import Any
 from compatibility_report import new_report, write_report
 
 from schemarouter import ExecutionPlan, PlanRequest, SchemaRouter, ToolCall
+from scripts.research_legacy_router import legacy_router
 
 
 async def _execute_apis_guru(
@@ -78,7 +79,7 @@ _EXECUTORS = {
 
 
 async def run_smoke(provider: str) -> dict[str, Any]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     try:
         resolution = router.resolve_provider(provider)
         assert len(resolution.methods) == 1
@@ -143,7 +144,7 @@ async def main() -> None:
     parser.add_argument("--json-out", default=None)
     args = parser.parse_args()
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     resolution = router.resolve_provider(args.provider)
     await router.aclose()
     source = resolution.methods[0].url or "provider-profile"

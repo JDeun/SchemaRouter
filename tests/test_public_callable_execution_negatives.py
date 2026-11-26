@@ -16,12 +16,12 @@ from schemarouter import (
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
-    SchemaRouter,
     ToolCall,
 )
 from schemarouter.errors import SchemaDriftError, SchemaRouterError
 from schemarouter.hooks import ExecutionHooks
 from schemarouter.models import PlanRequest
+from scripts.research_legacy_router import legacy_router
 
 
 def _fixture(mode: str, *, read_only: bool = True):
@@ -48,7 +48,7 @@ def _fixture(mode: str, *, read_only: bool = True):
         ),
         default_effect="deny",
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     assert router.add_callable(lookup, read_only=read_only) == "lookup"
     request = PlanRequest(
         query="lookup record",

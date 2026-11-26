@@ -19,6 +19,7 @@ from schemarouter import (
     ProviderProfile,
     SchemaRouter,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _free_port() -> int:
@@ -69,8 +70,7 @@ async def run_smoke() -> dict[str, object]:
     try:
         await _wait_for_port(port, process)
         source = f"http://127.0.0.1:{port}/mcp"
-        router = SchemaRouter(
-            _legacy_routing=True,
+        router = legacy_router(
             policy=ExecutionPolicy(allow_unclassified_remote=True)
         )
         router.register_provider_profile(

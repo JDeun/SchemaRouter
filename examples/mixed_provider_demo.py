@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 
-from schemarouter import EndpointSpec, FieldSpec, PlanRequest, SchemaRouter, ToolSpec
+from schemarouter import EndpointSpec, FieldSpec, PlanRequest, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 
 class StaticInvoker:
@@ -92,7 +93,7 @@ def papers_tool() -> ToolSpec:
 
 
 async def main() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     material = materials_tool()
     paper = papers_tool()
     router.add_bound_tool(

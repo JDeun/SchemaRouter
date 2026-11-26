@@ -19,6 +19,7 @@ from scripts.research_authorized_native_graph_edges_g1 import (
     DeclaredQueryInputLink,
     retrieve_authorized_dependency_hints_g1,
 )
+from scripts.research_legacy_router import legacy_router
 
 ANALYST = PrincipalContext(subject="research-analyst", roles=("analyst",))
 VIEWER = PrincipalContext(subject="research-viewer", roles=("viewer",))
@@ -40,7 +41,7 @@ def _make_router(
     consumer_enum: bool = False,
     target_location: str = "argument",
 ) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(

@@ -17,6 +17,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.amendment import validate_amendment
+from scripts.research_legacy_router import legacy_router
 
 
 def _tool() -> ToolSpec:
@@ -334,7 +335,7 @@ def _bound_router():
         """Return the current materials record."""
         return _RestampRecord(band_gap=1.1, note="internal")
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     return router, router.add_callable(materials)
 
 
@@ -407,7 +408,7 @@ def _declaring_router():
     """A router whose tool publishes no output declarations, like most MCP servers."""
     from schemarouter import EndpointSpec, ParameterSpec, SchemaRouter, ToolSpec
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_tool(
         ToolSpec(
             name="remote",
@@ -601,7 +602,7 @@ async def test_a_metadata_only_amendment_cannot_relax_a_required_output_field():
     """
     from schemarouter import SchemaRouter, SchemaValidationError, ToolCall
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_tool(_output_required_tool())
     router.executor.bind(key, lambda endpoint_name, arguments: {"note": "hi"})
 
@@ -710,7 +711,7 @@ def test_amending_one_endpoint_of_several_preserves_the_others():
     # frozen)".
     from schemarouter import FieldSpec, SchemaRouter
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_tool(
         ToolSpec(
             name="materials",

@@ -14,10 +14,11 @@ from schemarouter import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def make_retrieval_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, registry=InMemoryRegistry())
+    router = legacy_router(registry=InMemoryRegistry())
     router.add_tool(
         ToolSpec(
             name="materials",
@@ -167,7 +168,7 @@ def test_retrieve_returns_typed_ranked_registered_candidates() -> None:
 
 
 def test_retrieve_preserves_explicit_complex_endpoint_schemas() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     input_schema = {
         "type": "object",
         "properties": {
@@ -232,7 +233,7 @@ def test_retrieve_preserves_explicit_complex_endpoint_schemas() -> None:
 
 
 def test_retrieve_tie_order_is_deterministic_and_registered_only() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     for name in ("b_tool", "a_tool"):
         router.add_tool(
             ToolSpec(
@@ -520,7 +521,7 @@ def test_configured_router_exposes_route_retrieval_surface() -> None:
 
 
 def test_semantic_namespace_token_does_not_count_as_field_evidence() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         ToolSpec(
             name="material_service",

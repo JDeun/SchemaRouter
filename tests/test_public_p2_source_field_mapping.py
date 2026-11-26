@@ -20,18 +20,18 @@ from schemarouter import (
     ParameterSpec,
     PolicyViolationError,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
 )
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="p2-probe", roles=("reader",))
 SECRET = "PRIVATE_HIDDEN_SCHEMA_MARKER"
 
 
 def source(*, units=False, restricted=False, identifier_input=False, output_identifier=False):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="weather.read", roles_any=("reader",),
         ),),

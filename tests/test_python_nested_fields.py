@@ -8,10 +8,10 @@ from schemarouter import (
     InMemoryRegistry,
     PlanRequest,
     SchemaPlanner,
-    SchemaRouter,
     ToolSpec,
     tool_from_callable,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 class Metrics(BaseModel):
@@ -116,7 +116,7 @@ def test_python_nested_field_supports_trusted_enrichment() -> None:
     tool_payload["endpoints"] = [amended_endpoint]
     amended = ToolSpec.model_validate(tool_payload)
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(tool)
     router.amend_capability(tool.key, amended)
 

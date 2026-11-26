@@ -35,11 +35,11 @@ from scripts.research_legacy_adaptive_context import (
     apply_success_prior,
     filter_unexposed_schemas,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def make_router(*, read_only: bool | None = True) -> SchemaRouter:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(
             allow_mutations=True,
             allow_destructive=True,
@@ -372,8 +372,7 @@ async def test_event_stream_records_tool_success_before_post_invocation_hook_err
     def failing_after(tool, endpoint, hook_call, result) -> None:
         raise RuntimeError("audit sink unavailable")
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(
             allow_mutations=True,
             allow_destructive=True,
@@ -552,8 +551,7 @@ def test_batch_as_completed_has_sync_surface() -> None:
 
 
 def make_parallel_plan_router(*, second_read_only: bool | None = True):
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(
             allow_mutations=True,
             allow_unclassified_remote=True,
@@ -975,8 +973,7 @@ async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> Non
 
 @pytest.mark.asyncio
 async def test_tool_origin_drift_invalidates_planned_call_even_after_rebind() -> None:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
     remote_tool = ToolSpec(
@@ -1008,7 +1005,7 @@ async def test_tool_origin_drift_invalidates_planned_call_even_after_rebind() ->
 
 
 def make_provider_fallback_router() -> tuple[SchemaRouter, ExecutionPlan]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tools = [
         ToolSpec(
             name="mp_api",
@@ -1222,7 +1219,7 @@ async def test_event_stream_reports_binding_unavailable_fallback_reason() -> Non
 
 
 def _make_execution_ready_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     unbound = ToolSpec(
         name="preferred_unbound",
         provider="provider_a",

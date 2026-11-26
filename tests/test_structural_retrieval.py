@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import EndpointSpec, InMemoryRegistry, SchemaPlanner, SchemaRouter, ToolSpec
+from schemarouter import EndpointSpec, InMemoryRegistry, SchemaPlanner, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 
 def _ranking_registry() -> InMemoryRegistry:
@@ -220,8 +221,7 @@ async def test_structural_sync_async_retrieval_parity() -> None:
 
 def test_schema_router_exposes_opt_in_structural_retrieval() -> None:
     registry = _ranking_registry()
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         registry=registry,
         structural_retrieval=True,
     )

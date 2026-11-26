@@ -13,7 +13,6 @@ from schemarouter import (
     NativeDeclaredConcept,
     NativeDeclaredFieldGroup,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
@@ -30,6 +29,7 @@ from scripts.research_legacy_decisions import (
     DecisionResult,
     DecisionSelection,
 )
+from scripts.research_legacy_router import legacy_router
 
 PRINCIPAL = PrincipalContext(subject="index-experiment", roles=("analyst",))
 GROUP = NativeDeclaredFieldGroup(
@@ -46,7 +46,7 @@ GROUP = NativeDeclaredFieldGroup(
 
 
 def _source():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             operation="queue_*.read",

@@ -55,7 +55,6 @@ def source(schema, *, wildcard=False, host=False, unit=False):
         source_type="shapes", license="reviewed",
     ),))
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="allow"))
     router.add_tool(ToolSpec(name="shapes", source_type="shapes", license="reviewed",
         endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[field],
@@ -138,7 +137,7 @@ async def test_hidden_source_descendant_blocks_parent_with_disjoint_result_path(
     policy = AuthorizationPolicy(default_effect="allow", data_rules=(DataScopeRule(
         operation="shapes.read", roles_any=("reader",), hidden_fields=("hidden_alias",),
     ),))
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     tool = ToolSpec(name="shapes", source_type="shapes", license="reviewed",
         endpoints=[EndpointSpec(name="read", read_only=True, output_fields=fields)])
     router.add_tool(tool)

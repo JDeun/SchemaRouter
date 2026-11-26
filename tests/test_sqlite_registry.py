@@ -10,10 +10,10 @@ from schemarouter import (
     PersistedDocumentLimits,
     PlanRequest,
     RegistrationError,
-    SchemaRouter,
     SQLiteRegistry,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def tool(name: str, *, field_name: str = "value") -> ToolSpec:
@@ -400,7 +400,7 @@ def test_schema_router_can_plan_and_execute_with_reopened_sqlite_registry(tmp_pa
         registry.register(tool("weather"))
 
     with SQLiteRegistry(path) as reopened:
-        router = SchemaRouter(_legacy_routing=True, registry=reopened)
+        router = legacy_router(registry=reopened)
         router.executor.bind(
             "weather",
             lambda endpoint, arguments: {"value": f"result:{arguments['id']}"},

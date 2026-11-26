@@ -21,9 +21,9 @@ from schemarouter import (
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
-    SchemaRouter,
 )
 from schemarouter.errors import SchemaRouterError
+from scripts.research_legacy_router import legacy_router
 
 
 @pytest.mark.asyncio
@@ -44,8 +44,7 @@ async def test_mcp_http_registered_unavailable_recovery_stale_zero_handler_calls
         stderr=subprocess.PIPE,
         text=True,
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(

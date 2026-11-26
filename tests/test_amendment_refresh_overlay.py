@@ -132,7 +132,7 @@ async def test_unchanged_provider_with_local_field_has_no_false_breaking_drift()
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -162,7 +162,7 @@ async def test_compatible_provider_change_applies_and_preserves_local_overlay() 
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -192,7 +192,7 @@ async def test_provider_removing_amendment_target_goes_pending_review() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -236,7 +236,7 @@ async def test_semantic_unit_and_path_annotations_survive_refresh() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -272,7 +272,7 @@ async def test_binding_is_restamped_only_to_final_effective_contract() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -308,7 +308,7 @@ async def test_provider_baseline_change_hidden_by_overlay_is_persisted() -> None
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -341,7 +341,7 @@ async def test_provider_baseline_change_hidden_by_overlay_is_persisted() -> None
 def test_sqlite_registry_preserves_reproducible_amendment_provenance(tmp_path) -> None:
     path = tmp_path / "registry.sqlite3"
     with SQLiteRegistry(path) as registry:
-        router = SchemaRouter(_legacy_routing=True, registry=registry)
+        router = SchemaRouter(registry=registry)
         key = router.add_tool(
             ToolSpec(
                 name="persisted",

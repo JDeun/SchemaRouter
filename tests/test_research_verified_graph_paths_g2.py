@@ -17,6 +17,7 @@ from schemarouter import (
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_router import legacy_router
 from scripts.research_verified_graph_paths_g2 import (
     DeclaredGraphGoalG2,
     DeclaredInputBindingG2,
@@ -46,7 +47,7 @@ def _router(
     wrong_middle_output: bool = False, root_identifier: bool = True,
     property_strength: bool = True, omit_license: bool = False,
 ) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(
@@ -327,7 +328,7 @@ def test_protocol_neutral_business_record_graph_uses_same_native_contracts(query
     the typed graph rule. Real OpenAPI/MCP/OPTIMADE adapter transfer is
     separately gated in #1545, not claimed by this fixture.
     """
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("analyst",),

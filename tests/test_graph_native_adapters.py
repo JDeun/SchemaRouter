@@ -92,7 +92,7 @@ class FakeNeo4jDriver:
 @pytest.mark.asyncio
 async def test_neo4j_native_adapter_discovers_and_executes_parameterized_traversal() -> None:
     driver = FakeNeo4jDriver()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = await router.aadd_neo4j_graph(
         driver,
         database="neo4j",
@@ -155,7 +155,7 @@ class FakeNeptuneDataClient:
 @pytest.mark.asyncio
 async def test_neptune_database_adapter_uses_json_parameter_payload() -> None:
     client = FakeNeptuneDataClient()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = await router.aadd_neptune_graph(
         client,
         graph_name="social",
@@ -253,7 +253,7 @@ class FakeArangoDatabase:
 @pytest.mark.asyncio
 async def test_arangodb_native_adapter_uses_bind_vars_and_edge_definitions() -> None:
     database = FakeArangoDatabase()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = await router.aadd_arango_graph(
         database,
         database_name="arango",
@@ -334,7 +334,7 @@ class FakeSparqlClient:
 @pytest.mark.asyncio
 async def test_sparql_native_adapter_is_read_only_and_iri_bounded() -> None:
     client = FakeSparqlClient()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = await router.aadd_sparql_graph(
         client,
         endpoint="https://example.test/sparql",
@@ -383,7 +383,7 @@ async def test_neo4j_trusted_filter_scope_fails_before_vendor_traversal() -> Non
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     await router.aadd_neo4j_graph(
         driver,
         database="neo4j",
@@ -435,7 +435,7 @@ async def test_sparql_trusted_filter_scope_fails_before_vendor_traversal() -> No
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     await router.aadd_sparql_graph(
         client,
         endpoint="https://example.test/sparql",
@@ -484,7 +484,7 @@ async def test_native_graph_respects_relationship_data_scope_before_vendor_call(
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     await router.aadd_neo4j_graph(
         driver,
         database="neo4j",

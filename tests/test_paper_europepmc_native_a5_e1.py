@@ -61,7 +61,6 @@ class FakeEuropePMC:
 
 def _router(*, client: httpx.AsyncClient | None = None, role: str = "reader") -> SchemaRouter:
     return SchemaRouter(
-        _legacy_routing=True,
         http_client=client,
         network_policy=NetworkPolicy.trusted_internal(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),

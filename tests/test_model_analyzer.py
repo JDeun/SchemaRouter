@@ -14,10 +14,11 @@ from schemarouter import (
     ToolSpec,
 )
 from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
+from scripts.research_legacy_router import legacy_router
 
 
 def make_router(model) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, analyzer=ModelQueryAnalyzer(model))
+    router = legacy_router(analyzer=ModelQueryAnalyzer(model))
     router.add_tool(
         ToolSpec(
             name="users",
@@ -153,7 +154,7 @@ async def test_model_analyzer_never_receives_execution_metadata() -> None:
             "evidence": {},
         }
 
-    router = SchemaRouter(_legacy_routing=True, analyzer=ModelQueryAnalyzer(model))
+    router = legacy_router(analyzer=ModelQueryAnalyzer(model))
     router.add_tool(
         ToolSpec(
             name="secure",
@@ -197,7 +198,7 @@ async def test_model_analyzer_catalog_exposes_qualifiers_without_execution_metad
             "evidence": {},
         }
 
-    router = SchemaRouter(_legacy_routing=True, analyzer=ModelQueryAnalyzer(model))
+    router = legacy_router(analyzer=ModelQueryAnalyzer(model))
     router.add_tool(
         ToolSpec(
             name="materials",
@@ -257,7 +258,7 @@ async def test_model_analyzer_preserves_caller_field_evidence_without_model_auth
             "evidence": {},
         }
 
-    router = SchemaRouter(_legacy_routing=True, analyzer=ModelQueryAnalyzer(model))
+    router = legacy_router(analyzer=ModelQueryAnalyzer(model))
     router.add_tool(
         ToolSpec(
             name="directory",
@@ -306,7 +307,7 @@ async def test_model_analyzer_rejects_unbounded_catalog_before_model_call() -> N
         return {}
 
     analyzer = ModelQueryAnalyzer(model, max_catalog_endpoints=2)
-    router = SchemaRouter(_legacy_routing=True, analyzer=analyzer)
+    router = legacy_router(analyzer=analyzer)
     for index in range(3):
         router.add_tool(
             ToolSpec(
@@ -335,8 +336,7 @@ async def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> Non
             "evidence": {},
         }
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=ModelQueryAnalyzer(model, max_catalog_endpoints=3))
     for index in range(3):
         router.add_tool(
@@ -462,8 +462,7 @@ async def test_model_analyzer_fails_closed_when_registry_never_stabilizes() -> N
             "evidence": {},
         }
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=ModelQueryAnalyzer(model, max_registry_retries=1)
     )
     holder["router"] = router

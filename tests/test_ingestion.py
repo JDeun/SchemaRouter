@@ -13,6 +13,7 @@ from schemarouter import (
     ToolCall,
     UnsupportedSchemaSourceError,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def openapi_document() -> dict:
@@ -66,7 +67,7 @@ async def test_cross_origin_openapi_is_ingested_but_not_auto_bound() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         await router.add_url(
             "https://docs.example.com/openapi.json",
         )
@@ -209,7 +210,7 @@ paths:
         return httpx.Response(200, text=yaml_body, headers={"content-type": "application/yaml"})
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://docs.example.com/openapi.yaml",
             kind="openapi",
@@ -231,7 +232,7 @@ async def test_html_is_not_silently_inferred_as_openapi() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError):
             await router.add_url(
                 "https://docs.example.com/api",
@@ -256,7 +257,7 @@ async def test_schema_redirects_must_stay_on_original_origin() -> None:
         transport=httpx.MockTransport(handler),
         follow_redirects=True,
     ) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError, match="cross-origin"):
             await router.add_url(
                 "https://docs.example.com/openapi.json",
@@ -309,7 +310,7 @@ async def test_openapi_document_size_is_bounded() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(UnsupportedSchemaSourceError, match="safety limit"):
             await router.add_url(
                 "https://docs.example.com/openapi.json",
@@ -355,7 +356,7 @@ async def test_adapter_error_redacts_source_query_secret() -> None:
         async def load(self, context):
             raise RuntimeError("adapter failure")
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.register_adapter(ExplodingAdapter())
     source = "https://docs.example.com/schema?token=top-secret"
 
@@ -484,7 +485,7 @@ paths:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://docs.example.com/anchored.yaml",
             kind="openapi",
@@ -515,7 +516,7 @@ x-aliases:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(
             UnsupportedSchemaSourceError,
             match="YAML schema parser resource budget exceeded: alias count",
@@ -555,7 +556,7 @@ async def test_openapi_yaml_rejects_logical_alias_expansion_budget() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(
             UnsupportedSchemaSourceError,
             match="logical alias expansion exceeds",
@@ -591,7 +592,7 @@ async def test_openapi_yaml_rejects_excessive_nesting_before_construction() -> N
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(
             UnsupportedSchemaSourceError,
             match="nesting depth exceeds 64",
@@ -620,7 +621,7 @@ x-cycle: &loop [*loop]
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(
             UnsupportedSchemaSourceError,
             match="cyclic alias graph",

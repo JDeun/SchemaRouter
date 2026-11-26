@@ -19,6 +19,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_paired_native_concept_agent_e0 import (
     EVIDENCE,
     run_paired_concept_agent_e0,
@@ -47,7 +48,7 @@ CATALOG = NativeConceptCatalog(concepts=(
 
 
 def _router(*, hide: bool = False) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("analyst",),

@@ -13,6 +13,7 @@ from schemarouter import (
     ToolSpec,
     TypedExecutionState,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_state_backfill import (
     legacy_areretrieve_state_aware,
     legacy_reretrieve_state_aware,
@@ -20,7 +21,7 @@ from scripts.research_legacy_state_backfill import (
 
 
 def _router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     for name in ("a_route", "b_route", "c_route", "d_route"):
         router.add_tool(
             ToolSpec(

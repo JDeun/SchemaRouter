@@ -11,7 +11,6 @@ from schemarouter import (
     CapabilityFieldContract,
     NativeDeclaredFieldGroup,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
@@ -22,6 +21,7 @@ from schemarouter.semantic_attestations import (
     apply_host_semantic_attestation,
 )
 from scripts.research_legacy_field_group import retrieve_authorized_field_group
+from scripts.research_legacy_router import legacy_router
 
 ANALYST = PrincipalContext(subject="host-analyst", roles=("analyst",))
 
@@ -124,7 +124,7 @@ def test_mcp_untrusted_readonly_hint_is_never_promoted_into_authority():
     assert ep.output_fields[0].semantic_id == "crm.status"
     assert ep.metadata["annotations"]["readOnlyHint"] is True
 
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="cases.read_case", roles_any=("analyst",),
@@ -288,7 +288,7 @@ def test_approved_existing_openapi_fields_feed_real_authorized_fieldgroup_topk()
             ("output_field", "status", "crm.status"),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="contacts.lookup",
@@ -408,7 +408,7 @@ def test_real_openapi_to_mcp_attested_native_semantics_reuse_g3_typed_graph():
             ("output_field", "status", "crm.status"),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("analyst",),

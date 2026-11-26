@@ -329,7 +329,7 @@ def test_milvus_adapter_uses_filter_templates_not_value_interpolation() -> None:
 
 def test_router_qdrant_convenience_registration_uses_native_backend() -> None:
     client = FakeQdrantClient()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     keys = router.add_qdrant_vector_store(
         client,
@@ -354,7 +354,7 @@ def test_router_qdrant_convenience_registration_uses_native_backend() -> None:
 
 def test_router_milvus_convenience_registration_uses_native_backend() -> None:
     client = FakeMilvusClient()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     keys = router.add_milvus_vector_store(
         client,
@@ -678,7 +678,7 @@ def test_pgvector_dimension_contract_reads_reflected_type_dimension() -> None:
 
 
 def test_router_remaining_native_vector_registration_helpers() -> None:
-    pinecone = SchemaRouter(_legacy_routing=True)
+    pinecone = SchemaRouter()
     pinecone_keys = pinecone.add_pinecone_vector_store(
         FakePineconeClient(),
         lambda _query: [0.1, 0.2, 0.3],
@@ -694,7 +694,7 @@ def test_router_remaining_native_vector_registration_helpers() -> None:
     )
     assert pinecone_keys == ("pinecone.docs",)
 
-    chroma = SchemaRouter(_legacy_routing=True)
+    chroma = SchemaRouter()
     chroma_keys = chroma.add_chroma_vector_store(
         FakeChromaClient(),
         lambda _query: [0.1, 0.2, 0.3],
@@ -702,7 +702,7 @@ def test_router_remaining_native_vector_registration_helpers() -> None:
     )
     assert chroma_keys == ("chroma.docs",)
 
-    weaviate = SchemaRouter(_legacy_routing=True)
+    weaviate = SchemaRouter()
     weaviate_keys = weaviate.add_weaviate_vector_store(
         FakeWeaviateClient(),
         lambda _query: [0.1, 0.2, 0.3],
@@ -770,7 +770,7 @@ def test_router_qdrant_selection_pushes_down_before_catalog_listing() -> None:
         def get_collections(self):
             raise AssertionError("router selection should bypass Qdrant catalog listing")
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = router.add_qdrant_vector_store(
         SelectedClient(),
         lambda _query: [0.1, 0.2, 0.3],
@@ -782,7 +782,7 @@ def test_router_qdrant_selection_pushes_down_before_catalog_listing() -> None:
 
 
 def test_router_milvus_discovery_budget_reaches_native_backend() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(RegistrationError, match="Milvus fields"):
         router.add_milvus_vector_store(
@@ -802,7 +802,7 @@ async def test_qdrant_public_router_executes_registered_native_backend() -> None
     from schemarouter import ExecutionPlan, ToolCall
 
     client = FakeQdrantClient()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = await router.aadd_qdrant_vector_store(
         client,
         lambda query: [0.1, 0.2, 0.3],
@@ -839,7 +839,6 @@ async def test_qdrant_public_execute_denies_guest_before_native_query() -> None:
     """Preserve vendor call isolation on the real registered Qdrant adapter."""
     client = FakeQdrantClient()
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

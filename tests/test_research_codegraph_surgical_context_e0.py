@@ -18,12 +18,12 @@ from schemarouter import (
     NativeDeclaredConcept,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_router import legacy_router
 
 READER = PrincipalContext(subject="reader-one", roles=("reader",))
 VIEWER = PrincipalContext(subject="viewer-one", roles=("viewer",))
@@ -31,7 +31,7 @@ QUERY = "case status"
 
 
 def _source(*, missing_input: bool = False, extra_consumers: int = 0):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

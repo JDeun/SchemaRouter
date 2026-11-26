@@ -9,6 +9,7 @@ from schemarouter import (
     SchemaSourceError,
     UnsupportedSchemaSourceError,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def root_document(ref: str) -> dict:
@@ -118,7 +119,7 @@ async def test_opt_in_resolves_same_origin_nested_external_refs_and_preserves_va
         raise AssertionError(f"unexpected URL: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         await router.add_url(
             "https://docs.example.com/spec/openapi.json",
             kind="openapi",
@@ -401,7 +402,7 @@ async def test_external_ref_supports_same_origin_schema_id_rebasing() -> None:
         raise AssertionError(f"unexpected URL: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         await router.add_url(
             "https://docs.example.com/openapi.json",
             kind="openapi",
@@ -757,7 +758,7 @@ async def test_external_ref_opt_in_requires_real_boolean() -> None:
             lambda request: httpx.Response(500, request=request)
         )
     ) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(
             SchemaSourceError,
             match="openapi_external_refs must be a boolean",
@@ -787,7 +788,7 @@ async def test_external_ref_limits_require_positive_integers(
             lambda request: httpx.Response(500, request=request)
         )
     ) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(SchemaSourceError, match=message):
             await router.add_url(
                 "https://docs.example.com/openapi.json",

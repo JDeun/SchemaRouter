@@ -18,6 +18,7 @@ from schemarouter import (
 from schemarouter.adapters.sqlite_database import introspect_sqlite_database
 from schemarouter.errors import BindingDriftError, RegistrationError, SchemaRouterError
 from schemarouter.registry import InMemoryRegistry
+from scripts.research_legacy_router import legacy_router
 
 
 def _connection() -> sqlite3.Connection:
@@ -92,7 +93,7 @@ def _plan(
 
 def test_sqlite_introspection_registers_typed_tables_and_views() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     keys = router.add_sqlite_database(
         connection,
@@ -132,7 +133,7 @@ def test_sqlite_introspection_registers_typed_tables_and_views() -> None:
 @pytest.mark.asyncio
 async def test_sqlite_execution_is_projected_parameterized_and_bounded() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_sqlite_database(connection, database_name="company")
 
     result = await router.execute(
@@ -169,7 +170,7 @@ async def test_sqlite_execution_is_projected_parameterized_and_bounded() -> None
 @pytest.mark.asyncio
 async def test_sqlite_execution_honors_configured_default_limit() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_sqlite_database(
         connection,
         database_name="company",
@@ -191,7 +192,7 @@ async def test_sqlite_execution_honors_configured_default_limit() -> None:
 
 def test_sqlite_registration_can_limit_visible_tables_before_model_exposure() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     keys = router.add_sqlite_database(
         connection,
@@ -229,7 +230,7 @@ async def test_database_tools_compose_with_employee_and_executive_authorization(
         )
     )
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     router.add_sqlite_database(connection, database_name="company")
 
     employee = PrincipalContext(subject="alice", roles=("employee",))
@@ -280,7 +281,7 @@ async def test_database_tools_compose_with_employee_and_executive_authorization(
 
 def test_sqlite_database_connection_never_enters_model_visible_metadata() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_sqlite_database(connection, database_name="company")
 
     tool = router.registry.get("company.employees")
@@ -298,7 +299,7 @@ def test_sqlite_registration_rolls_back_all_contracts_on_middle_bind_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     real_bind = router.executor.bind
     bind_calls = 0
 
@@ -349,7 +350,7 @@ def test_sqlite_registration_rejects_concurrent_key_insertion_atomically() -> No
 
     connection = _connection()
     registry = RacingRegistry()
-    router = SchemaRouter(_legacy_routing=True, registry=registry)
+    router = legacy_router(registry=registry)
 
     with pytest.raises(RegistrationError, match="registry changed concurrently"):
         router.add_sqlite_database(
@@ -367,7 +368,7 @@ def test_sqlite_registration_rejects_concurrent_key_insertion_atomically() -> No
 
 def test_sqlite_discovery_relation_budget_is_failure_atomic() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     with pytest.raises(RegistrationError, match="discovered relation count"):
         router.add_sqlite_database(
@@ -382,7 +383,7 @@ def test_sqlite_discovery_relation_budget_is_failure_atomic() -> None:
 
 def test_sqlite_explicit_selection_is_pushed_down_before_catalog_limit() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     keys = router.add_sqlite_database(
         connection,
@@ -397,7 +398,7 @@ def test_sqlite_explicit_selection_is_pushed_down_before_catalog_limit() -> None
 
 def test_sqlite_column_budget_is_failure_atomic() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     with pytest.raises(RegistrationError, match="column count"):
         router.add_sqlite_database(
@@ -413,7 +414,7 @@ def test_sqlite_column_budget_is_failure_atomic() -> None:
 
 def test_sqlite_generated_contract_budget_is_failure_atomic() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     with pytest.raises(RegistrationError, match="generated schema bytes"):
         router.add_sqlite_database(
@@ -429,7 +430,7 @@ def test_sqlite_generated_contract_budget_is_failure_atomic() -> None:
 
 def test_sqlite_registration_rejects_preexisting_orphan_runtime_state_without_mutation() -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     binding = next(
         item
         for item in introspect_sqlite_database(
@@ -471,7 +472,7 @@ def test_sqlite_registration_preserves_newer_runtime_writer_during_failed_rollba
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     connection = _connection()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     real_bind = router.executor.bind
     bind_calls = 0
     concurrently_rebound_key: str | None = None
@@ -526,7 +527,7 @@ async def test_sqlite_public_execute_denies_unavailable_and_stale_before_driver(
             ),),
             default_effect="deny",
         )
-        router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+        router = legacy_router(authorization_policy=policy)
         (key,) = router.add_sqlite_database(
             connection, database_name="company", tables={"employees"},
         )

@@ -29,6 +29,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 CATALOG: tuple[dict[str, Any], ...] = (
     {
@@ -399,7 +400,7 @@ def evaluate(catalog_size: int = len(CATALOG)) -> dict[str, Any]:
     _assert_installed_wheel()
 
     tools = _tool_definitions(catalog_size)
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     _register_retrieval_mirror(router, tools)
     strategy = SchemaRouterToolSearchStrategy(router, max_results=3)
 

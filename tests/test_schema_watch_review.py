@@ -3,9 +3,9 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from schemarouter import SchemaRouter
 from schemarouter.adapters.base import AdapterLoadResult
 from schemarouter.errors import SchemaSourceError
+from scripts.research_legacy_router import legacy_router
 
 
 def _document(
@@ -64,7 +64,7 @@ async def test_accept_pending_refetches_and_applies_exact_reviewed_candidate() -
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -110,7 +110,7 @@ async def test_reject_pending_clears_only_the_reviewed_candidate() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -146,7 +146,7 @@ async def test_accept_pending_fails_closed_after_registry_mutation() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -183,7 +183,7 @@ async def test_candidate_change_before_approval_returns_to_pending_review() -> N
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -225,7 +225,7 @@ async def test_accept_pending_refuses_same_contract_from_different_source_identi
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -295,7 +295,7 @@ async def test_security_review_requires_explicit_acceptance() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -330,7 +330,7 @@ async def test_reject_refuses_wrong_candidate_fingerprint() -> None:
         return httpx.Response(200, json=state["document"], request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",

@@ -21,6 +21,7 @@ from scripts.research_legacy_host_field_contract import (
     RequiredEnumValue,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _endpoint(
@@ -63,8 +64,7 @@ def _router(
         name="view-public", effect="allow", operation="*.*",
         roles_any=("viewer",),
     ))
-    return_router = SchemaRouter(
-        _legacy_routing=True,
+    return_router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             rules=tuple(rules), default_effect="deny",
             data_rules=(
@@ -203,7 +203,7 @@ def test_hidden_output_fields_do_not_reappear_in_selector() -> None:
 
 
 def test_missing_rbac_policy_rejected_not_silently_unscoped() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     with pytest.raises(PolicyViolationError, match="explicit authorization"):
         select_authorized_field_contract(
             router, "marine", principal=VIEWER,

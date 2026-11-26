@@ -19,11 +19,11 @@ from schemarouter import (
     PaperUnderstanding,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.concept_retrieval import _merged_concept_constraints, resolve_native_concepts
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="neutral-test", roles=("reader",))
 
@@ -81,8 +81,7 @@ def test_unspecified_and_explicit_source_are_not_disjoint_alias_authority():
 
 
 def _providers(*, count=3, host=False):
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(
         AuthorizationRule(effect="allow", operation="*.read", roles_any=("reader",)),
     )))

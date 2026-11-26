@@ -9,7 +9,6 @@ from schemarouter import (
     EndpointSpec,
     ExecutionPolicy,
     PlanRequest,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.adapters.mcp import (
@@ -20,6 +19,7 @@ from schemarouter.adapters.mcp import (
     inspect_mcp_url,
 )
 from schemarouter.errors import SchemaSourceError
+from scripts.research_legacy_router import legacy_router
 
 
 class RecordingFactory:
@@ -230,8 +230,7 @@ class BoundRecordingFactory:
 @pytest.mark.asyncio
 async def test_transport_neutral_mcp_factory_needs_no_fake_url() -> None:
     factory = BoundRecordingFactory()
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
 
@@ -262,8 +261,7 @@ async def test_transport_neutral_mcp_factory_needs_no_fake_url() -> None:
 async def test_mcp_factory_bind_failure_rolls_back_registration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
     factory = BoundRecordingFactory()
@@ -288,8 +286,7 @@ async def test_mcp_factory_bind_failure_rolls_back_registration(
 async def test_mcp_stdio_bind_failure_rolls_back_registration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
     tool = ToolSpec(
@@ -439,8 +436,7 @@ async def test_mcp_discovery_rejects_repeated_cursor_without_registration() -> N
             "same": ([_catalog_tool("second")], "same"),
         }
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True)
     )
 

@@ -28,11 +28,11 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _router(structural: bool = False) -> SchemaRouter:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         registry=InMemoryRegistry(), structural_retrieval=structural)
     # "aa_" sorts before "zz_" so the alphabetical fallback puts the destructive
     # route first; the names make the ordering visible rather than incidental.

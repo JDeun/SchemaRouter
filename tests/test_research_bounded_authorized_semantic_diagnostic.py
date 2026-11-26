@@ -20,6 +20,7 @@ from scripts.research_bounded_authorized_semantic_diagnostic import (
     propose_bounded_semantic_shortlist,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend
+from scripts.research_legacy_router import legacy_router
 
 VIEWER = PrincipalContext(subject="host-viewer", roles=("viewer",))
 OUTSIDER = PrincipalContext(subject="host-outsider", roles=("outsider",))
@@ -43,8 +44,7 @@ def _read_tool(name: str) -> ToolSpec:
 
 
 def _router() -> SchemaRouter:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         registry=InMemoryRegistry(),
         authorization_policy=AuthorizationPolicy(
             rules=(

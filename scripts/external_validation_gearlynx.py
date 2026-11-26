@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import EndpointSpec, ParameterSpec, SchemaRouter, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "examples/external_validation/gearlynx-router/catalog.json"
@@ -86,7 +87,7 @@ def native_search(query: str, tools: list[dict[str, Any]], limit: int = 20) -> l
 
 
 def build_router(tools: list[dict[str, Any]]) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     for tool in tools:
         params = [
             ParameterSpec(name=name, required=False, json_schema={"type": "string"})

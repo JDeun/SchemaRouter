@@ -6,7 +6,6 @@ from dataclasses import asdict
 
 import pytest
 
-from schemarouter import SchemaRouter
 from schemarouter.authorization import (
     AuthorizationPolicy,
     AuthorizationRule,
@@ -22,6 +21,7 @@ from schemarouter.models import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_trusted_host_intent_preflight_e0 import (
     _fits_public_schema,
     preflight_trusted_host_intent_e0,
@@ -38,7 +38,7 @@ QUERIES = {
 
 
 def make_router():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(

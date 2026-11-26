@@ -6,6 +6,7 @@ from collections import Counter
 import pytest
 
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from scripts.research_legacy_router import legacy_router
 
 
 @pytest.fixture(scope="module")
@@ -44,8 +45,7 @@ def test_four_original_publishers_in_one_catalog_preserve_methods(four_tools: tu
         "model",
     }
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     for tool in four_tools:
         assert tool.source_type is None and tool.license is None

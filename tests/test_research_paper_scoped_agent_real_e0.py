@@ -14,7 +14,6 @@ from schemarouter import (
     ParameterSpec,
     PolicyViolationError,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.paper_understood_direct_plan import (
@@ -24,6 +23,7 @@ from schemarouter.paper_understood_direct_plan import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_paper_scoped_agent_episode_e0 import (
     run_paper_scoped_agent_episode_e0,
 )
@@ -44,7 +44,7 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 
 def source(*, required_argument=False, input_semantic=None, hops=0,
            host_direct=False):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("viewer",),

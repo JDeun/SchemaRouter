@@ -18,7 +18,6 @@ from schemarouter import (
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     PrincipalContext,
-    SchemaRouter,
 )
 from schemarouter.adapters import review_optimade_paper_tool, tool_from_mcp, tool_from_openapi
 from schemarouter.adapters.optimade import _tool_from_discovery
@@ -34,6 +33,7 @@ from schemarouter.semantic_attestations import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 class ScriptedAgent:
@@ -137,8 +137,7 @@ def _fixtures(*, fail_second: bool = False,
          {"type": "structures", "id": "source-123",
           "chemical_formula_descriptive": "O2Si"}),
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny", rules=(AuthorizationRule(

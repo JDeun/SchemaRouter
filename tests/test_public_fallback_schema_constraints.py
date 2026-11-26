@@ -13,12 +13,12 @@ from schemarouter import (
     PlanRequest,
     PrincipalContext,
     RunConfig,
-    SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
     compare_capability_fields,
 )
 from schemarouter.validation import json_schemas_compatible
+from scripts.research_legacy_router import legacy_router
 
 CASES = (
     ({"type": "string", "enum": ["open"]},
@@ -50,8 +50,7 @@ CASES = (
 def _router(
     required, candidate, primary_value, backup_value, mode, *, units=False, output_schema=None,
 ):
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(default_effect="allow"))
     invoked = []
     for name, schema, value in (

@@ -9,6 +9,7 @@ from test_paper_configured_planning import _configure, _configured
 
 from schemarouter import PlanRequest, RunConfig, SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_langgraph_node
+from scripts.research_legacy_router import legacy_router
 
 
 @schema_tool(read_only=True)
@@ -25,7 +26,7 @@ class GraphState(TypedDict, total=False):
 
 
 def make_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_callable(add)
     return router
 

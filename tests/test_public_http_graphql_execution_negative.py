@@ -82,7 +82,6 @@ async def test_http_json_public_denial_unavailable_recovery_and_stale_zero_io() 
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         router = SchemaRouter(
-            _legacy_routing=True,
             http_client=client, authorization_policy=_policy("crossref.get_work")
         )
         key = router.add_http_tool(

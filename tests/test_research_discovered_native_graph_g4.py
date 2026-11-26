@@ -13,7 +13,6 @@ from schemarouter import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     PrincipalContext,
-    SchemaRouter,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.semantic_attestations import (
@@ -24,6 +23,7 @@ from schemarouter.semantic_attestations import (
 from scripts.research_discovered_native_graph_g4 import (
     discover_authorized_native_graph_paths_g4,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_native_semantic_graph_g3 import ApprovedNativeRouteG3
 
 ANALYST = PrincipalContext(subject="analyst", roles=("analyst",))
@@ -126,7 +126,7 @@ def _approved(tools):
 
 def _router(*, targets=1, hidden=False, denied=False):
     tools = _native_tools(targets=targets)
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=() if denied else (AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("analyst", "viewer"),

@@ -33,7 +33,7 @@ def test_canonical_mcp_identity_is_preserved_without_normalization_collision() -
         _tool("example.tool", "look up the dotted example tool"),
         _tool("example_tool", "look up the underscored example tool"),
     ]
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     _register_mcp_retrieval_mirror(router, tools)
 
     assert router.registry.get("example.tool").name == "example.tool"
@@ -42,7 +42,7 @@ def test_canonical_mcp_identity_is_preserved_without_normalization_collision() -
 
 
 def test_dynamic_filter_is_fail_closed_without_expected_run_context() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     _register_mcp_retrieval_mirror(router, [_tool("example.tool", "dotted example")])
     dynamic_filter = SchemaRouterDynamicMCPFilter(router)
 
@@ -55,7 +55,7 @@ def test_dynamic_filter_never_widens_host_allowlist() -> None:
         _tool("weather.lookup", "current weather lookup"),
         _tool("delete_record", "delete archived record"),
     ]
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     _register_mcp_retrieval_mirror(router, tools)
     dynamic_filter = SchemaRouterDynamicMCPFilter(router)
 
@@ -69,7 +69,7 @@ def test_dynamic_filter_never_widens_host_allowlist() -> None:
 
 
 def test_repeated_discovery_is_cached_and_does_not_execute_tools() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     _register_mcp_retrieval_mirror(
         router,
         [_tool("weather.lookup", "current weather in a city")],

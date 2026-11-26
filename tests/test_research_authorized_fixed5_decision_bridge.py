@@ -32,13 +32,14 @@ from scripts.research_bounded_authorized_semantic_diagnostic import (
     propose_bounded_semantic_shortlist,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend
+from scripts.research_legacy_router import legacy_router
 
 SECRET = "PRIVATE-CANARY-1481"
 VIEWER = PrincipalContext(subject="synthetic-viewer", roles=("viewer",))
 
 
 def fixture_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(effect="deny", operation="archive.*",

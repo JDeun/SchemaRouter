@@ -18,9 +18,9 @@ from schemarouter import (
     PaperNativeRankPolicy,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="query-condition", roles=("reader",))
 CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
@@ -35,8 +35,7 @@ INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
 
 
 def source(*, parameters=(), restricted=False, identifier=False):
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(default_effect="allow",
         data_rules=(DataScopeRule(operation="weather.read", roles_any=("reader",),
             hidden_fields=("private",)),) if restricted else ()))
@@ -396,7 +395,7 @@ SHARED_ROUTES = ("north.read", "south.read")
 def _shared_fixture(*, approved=True, wrong_semantic=False, missing=False,
                     ambiguous=False, hidden=False, invalid_value=False,
                     owner_targets=False, header=False, alias_collision=False):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="allow",
         data_rules=(DataScopeRule(operation="south.read", hidden_fields=("private",)),)
         if hidden else (),

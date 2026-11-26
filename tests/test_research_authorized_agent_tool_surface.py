@@ -26,6 +26,7 @@ from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 SECRET = "SECRET_HIDDEN_CANARY_1749"
@@ -34,8 +35,7 @@ OUTSIDER = PrincipalContext(subject="synthetic-outsider", roles=("outsider",))
 
 
 def fixture_router() -> SchemaRouter:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
             rules=(
@@ -589,7 +589,7 @@ async def test_host_invocation_requires_actual_bound_trusted_invoker():
 
 @pytest.mark.asyncio
 async def test_host_invocation_denies_a_registered_mutation_before_real_io():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="actions.update", roles_any=("viewer",),

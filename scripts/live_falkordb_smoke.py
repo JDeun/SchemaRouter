@@ -48,7 +48,7 @@ def run(host: str, port: int) -> dict[str, Any]:
         ).result_set[0][0]
     )
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     keys = router.add_falkordb_graph(
         client,
         graphs={graph_name},

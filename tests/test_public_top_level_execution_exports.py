@@ -25,6 +25,7 @@ from schemarouter import (
     ainvoke_selective,
     execute_selective_plan,
 )
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
@@ -43,8 +44,7 @@ def _registered() -> tuple[SchemaRouter, list[int], PlanRequest, RunConfig, RunC
         dispatched.append(user_id)
         return {"user_id": str(user_id)}
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(
                 effect="allow", operation="lookup.call", roles_any=("reader",),

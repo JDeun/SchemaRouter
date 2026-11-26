@@ -20,6 +20,7 @@ from schemarouter.errors import PlanningError
 from scripts.research_declared_concept_graph_bridge_e0 import (
     DeclaredConceptGraphAnalyzer,
 )
+from scripts.research_legacy_router import legacy_router
 
 VIEWER = PrincipalContext(subject="synthetic-viewer", roles=("viewer",))
 ALIASES = (
@@ -35,8 +36,7 @@ ALIASES = (
 
 
 def _router(*, graph: bool) -> SchemaRouter:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=DeclaredConceptGraphAnalyzer(ALIASES) if graph else None,
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

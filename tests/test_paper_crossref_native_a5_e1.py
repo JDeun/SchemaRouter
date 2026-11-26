@@ -71,7 +71,6 @@ class FakeCrossref:
 
 def _router(*, http_client: httpx.AsyncClient | None = None) -> SchemaRouter:
     return SchemaRouter(
-        _legacy_routing=True,
         http_client=http_client,
         network_policy=NetworkPolicy.trusted_internal(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),

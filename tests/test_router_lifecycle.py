@@ -11,7 +11,7 @@ from schemarouter import SchemaRouter, SQLiteRegistry
 
 @pytest.mark.asyncio
 async def test_aclose_is_safe_before_start_and_idempotent() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     await router.aclose()
     await router.aclose()
@@ -22,7 +22,7 @@ async def test_aclose_is_safe_before_start_and_idempotent() -> None:
 
 @pytest.mark.asyncio
 async def test_aclose_stops_all_background_managers() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     await router.start_health_monitor(interval_seconds=60)
     await router.start_schema_watcher()
     await router.start_native_schema_watcher(interval_seconds=60)
@@ -44,7 +44,7 @@ async def test_aclose_stops_all_background_managers() -> None:
 
 @pytest.mark.asyncio
 async def test_aclose_handles_partial_startup() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     await router.start_health_monitor(interval_seconds=60)
 
     await router.aclose()
@@ -55,7 +55,7 @@ async def test_aclose_handles_partial_startup() -> None:
 
 @pytest.mark.asyncio
 async def test_async_context_manager_closes_background_tasks() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     async with router as entered:
         assert entered is router
@@ -73,7 +73,7 @@ async def test_async_context_manager_closes_background_tasks() -> None:
 
 @pytest.mark.asyncio
 async def test_context_manager_does_not_suppress_body_exception() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     with pytest.raises(RuntimeError, match="body failure"):
         async with router:
@@ -87,7 +87,7 @@ async def test_context_manager_does_not_suppress_body_exception() -> None:
 async def test_aclose_attempts_all_components_before_reporting_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     calls: list[str] = []
 
     async def fail_watch() -> None:
@@ -110,7 +110,7 @@ async def test_aclose_attempts_all_components_before_reporting_error(
 async def test_aclose_propagates_cancellation_after_attempting_all_components(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     calls: list[str] = []
 
     async def cancel_watch() -> None:
@@ -133,7 +133,7 @@ async def test_aclose_propagates_cancellation_after_attempting_all_components(
 async def test_aclose_prioritizes_cancellation_over_other_shutdown_errors(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     calls: list[str] = []
 
     async def fail_watch() -> None:
@@ -156,7 +156,7 @@ async def test_aclose_prioritizes_cancellation_over_other_shutdown_errors(
 @pytest.mark.asyncio
 async def test_aclose_does_not_close_injected_http_client() -> None:
     async with httpx.AsyncClient() as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
 
         await router.aclose()
 
@@ -169,7 +169,7 @@ async def test_aclose_does_not_close_injected_sqlite_registry(
 ) -> None:
     registry = SQLiteRegistry(tmp_path / "registry.sqlite3")
     try:
-        router = SchemaRouter(_legacy_routing=True, registry=registry)
+        router = SchemaRouter(registry=registry)
 
         await router.aclose()
 

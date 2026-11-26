@@ -88,7 +88,7 @@ def test_unknown_allowlisted_plugin_fails_before_import(monkeypatch) -> None:
 
 def test_router_exposes_explicit_plugin_loader(monkeypatch) -> None:
     loaded = _install_fake_entry_points(monkeypatch, "demo")
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     assert router.load_adapter_plugins(allowlist={"demo"}) == ("demo",)
     assert "demo" in router.adapter_registry.kinds()

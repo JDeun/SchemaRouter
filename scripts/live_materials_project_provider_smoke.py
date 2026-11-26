@@ -8,15 +8,16 @@ from time import perf_counter
 import httpx
 from compatibility_report import new_report, write_report
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import PlanRequest
 from schemarouter.adapters.optimade import _base_info_attributes, _bounded_get
+from scripts.research_legacy_router import legacy_router
 
 PROVIDER_ID = "materials-project"
 EXPECTED_OPTIMADE_URL = "https://optimade.materialsproject.org/v1"
 
 
 async def run_smoke() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     resolution = router.resolve_provider(PROVIDER_ID)
     methods = {method.method_id: method for method in resolution.methods}

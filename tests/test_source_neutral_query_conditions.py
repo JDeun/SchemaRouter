@@ -19,16 +19,16 @@ from schemarouter import (
     PaperIntentRegistry,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="reader", roles=("reader",))
 
 
 def _source(*, required=(), parameters=False, routes=2):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

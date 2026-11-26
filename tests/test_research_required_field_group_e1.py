@@ -16,6 +16,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
+from scripts.research_legacy_router import legacy_router
 from scripts.research_required_field_group_e1 import (
     DeclaredFieldGroupAnalyzer,
     DeclaredRequiredFieldGroup,
@@ -73,8 +74,7 @@ def _router() -> SchemaRouter:
             ),
         ),
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=DeclaredFieldGroupAnalyzer(GROUP),
         authorization_policy=policy,
     )
@@ -142,8 +142,7 @@ def test_group_pre_k_only_exposes_complete_compatible_authorized_tool(query: str
 
 def test_two_partial_sources_do_not_form_a_proven_full_endpoint() -> None:
     """An arbitrary union of A-only and B-only tool contracts is not a join."""
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=DeclaredFieldGroupAnalyzer(GROUP),
         authorization_policy=AuthorizationPolicy(default_effect="allow"),
     )

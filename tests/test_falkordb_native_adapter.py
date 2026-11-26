@@ -114,7 +114,7 @@ def _plan(
 @pytest.mark.asyncio
 async def test_falkordb_discovers_schema_and_uses_read_only_bounded_traversal() -> None:
     client = FakeFalkorDB()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     keys = await router.aadd_falkordb_graph(
         client,
@@ -181,7 +181,7 @@ async def test_falkordb_respects_relationship_scope_before_traversal_call() -> N
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     await router.aadd_falkordb_graph(client, graphs={"social"}, remote=False)
 
     principal = PrincipalContext(subject="alice", roles=("employee",))

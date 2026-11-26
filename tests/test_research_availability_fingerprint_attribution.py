@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import build_fixture
-from schemarouter import AuthorizationPolicy, SchemaRouter, ToolSpec
+from schemarouter import AuthorizationPolicy, ToolSpec
 from schemarouter.executor import RegistryExecutor
 from schemarouter.planner import SchemaPlanner
 from scripts.research_availability_fingerprint_attribution import (
@@ -12,6 +12,7 @@ from scripts.research_availability_fingerprint_attribution import (
     evaluate,
     sample,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def test_instrument_tool_property_restores_after_real_scoped_lookup() -> None:
@@ -47,8 +48,7 @@ def test_relevant_active_cooldown_still_invokes_fingerprint() -> None:
 
 def test_unmodified_route_policy_control_reports_same_real_api() -> None:
     router, policy = build_fixture(100)
-    control = SchemaRouter(
-        _legacy_routing=True,
+    control = legacy_router(
         registry=router.registry,
         authorization_policy=AuthorizationPolicy(
             rules=policy.rules, default_effect=policy.default_effect,

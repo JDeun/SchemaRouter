@@ -16,7 +16,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
 )
@@ -26,6 +25,7 @@ from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_router import legacy_router
 
 PRIVATE = "secret_field_reference_xyz"
 VIEWER = PrincipalContext(subject="authorized-viewer", roles=("viewer",))
@@ -73,8 +73,7 @@ def _router():
             visible_fields=("public_value",),
         ),),
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=policy,
         analyzer=InspectingAnalyzer(),
     )
@@ -222,8 +221,7 @@ def _semantic_unit_router(*, tainted: bool, channel: str):
         else:
             raise AssertionError("unknown fixture channel")
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=Inspect(),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

@@ -71,7 +71,7 @@ class NestedContractAdapter:
 
 @pytest.mark.asyncio
 async def test_custom_adapter_nested_field_contract_is_preserved() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     router.register_adapter(NestedContractAdapter())
 
     tool = await router.add_url(

@@ -52,7 +52,7 @@ def test_schema_router_accepts_structural_registry_implementation() -> None:
             return self.inner.endpoint(tool_key, endpoint_name)
 
     registry = ProxyRegistry()
-    router = SchemaRouter(_legacy_routing=True, registry=registry)
+    router = SchemaRouter(registry=registry)
     router.add_tool(
         ToolSpec(
             name="custom",
@@ -439,7 +439,7 @@ def test_base_registry_protocol_does_not_require_compare_and_swap() -> None:
             return self.inner.endpoint(tool_key, endpoint_name)
 
     registry = LegacyRegistry()
-    router = SchemaRouter(_legacy_routing=True, registry=registry)
+    router = SchemaRouter(registry=registry)
     assert router.add_tool(
         ToolSpec(name="legacy", endpoints=[EndpointSpec(name="run")])
     ) == "legacy"

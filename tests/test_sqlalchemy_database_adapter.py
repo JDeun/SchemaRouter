@@ -65,7 +65,7 @@ def _plan(
 
 def test_sqlalchemy_engine_introspection_compiles_relational_contract() -> None:
     engine = _engine()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
 
     keys = router.add_sqlalchemy_database(
         engine,
@@ -101,7 +101,7 @@ def test_sqlalchemy_engine_introspection_compiles_relational_contract() -> None:
 @pytest.mark.asyncio
 async def test_sqlalchemy_execution_uses_core_projection_and_parameter_binding() -> None:
     engine = _engine()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     router.add_sqlalchemy_database(
         engine,
         database_name="warehouse",
@@ -142,7 +142,7 @@ async def test_sqlalchemy_execution_uses_core_projection_and_parameter_binding()
 
 def test_sqlalchemy_engine_object_and_url_are_not_model_visible() -> None:
     engine = _engine()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     router.add_sqlalchemy_database(
         engine,
         database_name="warehouse",
@@ -163,7 +163,7 @@ def test_sqlalchemy_engine_object_and_url_are_not_model_visible() -> None:
 @pytest.mark.asyncio
 async def test_native_sqlalchemy_schema_refresh_reintrospects_current_contract() -> None:
     engine = _engine()
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     try:
         router.add_sqlalchemy_database(
             engine,
@@ -189,7 +189,7 @@ def test_sqlalchemy_discovery_rejects_oversized_relation_catalog_atomically() ->
                 "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL)"
             )
 
-        router = SchemaRouter(_legacy_routing=True)
+        router = SchemaRouter()
         with pytest.raises(RegistrationError, match="max_discovery_relations=1"):
             router.add_sqlalchemy_database(
                 engine,
@@ -206,7 +206,7 @@ def test_sqlalchemy_discovery_rejects_oversized_relation_catalog_atomically() ->
 def test_sqlalchemy_discovery_rejects_wide_relation_atomically() -> None:
     engine = _engine()
     try:
-        router = SchemaRouter(_legacy_routing=True)
+        router = SchemaRouter()
         with pytest.raises(RegistrationError, match="exposes 4 columns"):
             router.add_sqlalchemy_database(
                 engine,
@@ -223,7 +223,7 @@ def test_sqlalchemy_discovery_rejects_wide_relation_atomically() -> None:
 def test_sqlalchemy_generated_contract_budget_is_failure_atomic() -> None:
     engine = _engine()
     try:
-        router = SchemaRouter(_legacy_routing=True)
+        router = SchemaRouter()
         with pytest.raises(RegistrationError, match="generated schema bytes"):
             router.add_sqlalchemy_database(
                 engine,

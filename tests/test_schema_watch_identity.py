@@ -323,7 +323,7 @@ async def test_pending_review_does_not_advance_watch_pin() -> None:
 
 @pytest.mark.asyncio
 async def test_trusted_local_amendment_makes_existing_watch_stale_contract() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     original = _tool(
         adapter="openapi",
         source="https://source.example.test/openapi.json",
@@ -343,7 +343,7 @@ async def test_trusted_local_amendment_makes_existing_watch_stale_contract() -> 
 
 @pytest.mark.asyncio
 async def test_direct_tool_replacement_clears_native_schema_refresh_state() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     original = _tool(
         adapter="openapi",
         source="https://source.example.test/openapi.json",
@@ -448,7 +448,7 @@ async def test_openapi_replacement_origin_never_receives_old_watch_headers() -> 
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         original = await router.add_url(
             "https://source-a.example.test/openapi.json",
             kind="openapi",

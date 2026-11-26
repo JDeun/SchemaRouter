@@ -13,12 +13,12 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PrincipalContext,
-    SchemaRouter,
     ServerProjectionSpec,
     ToolSpec,
 )
 from schemarouter.models import AuthRequirementSet, AuthSchemeRequirement
 from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_router import legacy_router
 
 CANARY = "wire_private_source_xyz_2749"
 AUTH_CANARY = "auth_hidden_scope_xyz_8163"
@@ -36,8 +36,7 @@ def _router(*, auth_canary: bool = False):
             )
             return KeywordAnalyzer().analyze(request, registry)
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=AuditingAnalyzer(),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",

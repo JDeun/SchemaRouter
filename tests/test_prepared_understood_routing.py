@@ -26,6 +26,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_router import legacy_router
 
 CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
     concept_id="crm.owner", aliases=("customer owner", "고객 담당자", "顧客担当者"),
@@ -86,7 +87,7 @@ def test_understood_direct_host_root_accepts_only_explicit_host_inputs():
 
 
 def _two_hop_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
@@ -221,7 +222,7 @@ def test_hidden_output_decoys_do_not_exhaust_named_graph_candidate_budget():
 def test_named_graph_availability_errors_never_echo_private_callback_diagnostics():
     # An unfit named endpoint skips direct candidate evaluation but is still
     # checked by the graph-target prefilter, where a callback may throw.
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

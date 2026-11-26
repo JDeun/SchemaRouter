@@ -17,7 +17,6 @@ from schemarouter import (
     NativeSchemaPostingIndex,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
     observe_and_execute_paper_plan,
@@ -31,6 +30,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperUnderstanding,
 )
 from scripts.research_legacy_field_group import retrieve_authorized_field_group
+from scripts.research_legacy_router import legacy_router
 
 ALIASES = ("record value", "레코드 값", "レコードの値")
 READER = PrincipalContext(subject="reader", roles=("reader",))
@@ -56,7 +56,7 @@ def _fixture(schema, value):
         source_type="records", license="host-reviewed",
     ),))
     seen = []
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader", "viewer"),

@@ -19,7 +19,6 @@ from schemarouter import (
     ParameterSpec,
     PolicyViolationError,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.paper_understood_direct_plan import (
@@ -38,6 +37,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     AuthorizedPaperUnderstoodDirectFixed5Selector,
 )
+from scripts.research_legacy_router import legacy_router
 
 QUERY = "Please show case status and priority"
 PRINCIPAL = PrincipalContext(subject="case-reviewer", roles=("viewer",))
@@ -108,7 +108,7 @@ def _router(*, hidden=False):
             hidden_fields=("priority",),
         ),) if hidden else (),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     router.add_tool(_complete_tool("complete"))
     router.add_tool(ToolSpec(
         name="partial", description="Case status only",

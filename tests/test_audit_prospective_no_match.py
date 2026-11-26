@@ -5,8 +5,9 @@ import hashlib
 
 import pytest
 
-from schemarouter import EndpointSpec, SchemaRouter, ToolSpec
+from schemarouter import EndpointSpec, ToolSpec
 from scripts.audit_prospective_no_match import audit, canonical_sha
+from scripts.research_legacy_router import legacy_router
 
 
 def query_sha(text: str) -> str:
@@ -14,7 +15,7 @@ def query_sha(text: str) -> str:
 
 
 def fixture():
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(ToolSpec(
         name="paper", description="Synthetic paper catalog",
         endpoints=[

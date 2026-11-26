@@ -41,6 +41,7 @@ from schemarouter.adapters.sqlite_database import SQLiteTableInvoker
 from schemarouter.adapters.vector_store import VectorCollectionInvoker
 from schemarouter.authorization import _current_data_scope
 from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
+from scripts.research_legacy_router import legacy_router
 
 
 def _call(
@@ -137,7 +138,7 @@ async def test_sql_scope_hides_fields_before_retrieval_and_enforces_row_predicat
     connection.commit()
 
     policy = _employee_policy("company.employees.select")
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     router.add_sqlite_database(connection, database_name="company")
 
     employee = PrincipalContext(
@@ -273,7 +274,7 @@ async def test_vector_scope_hides_tenant_field_and_injects_trusted_filter() -> N
         ),
     )
     backend = _VectorBackend()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2],
@@ -361,7 +362,7 @@ async def test_vector_scope_requires_explicit_filter_capability_before_query() -
         ),
     )
     backend = _UndeclaredScopedVectorBackend()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2],
@@ -458,7 +459,7 @@ async def test_record_scope_injects_tenant_filter_without_model_parameter() -> N
         ),
     )
     backend = _RecordBackend()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -555,7 +556,7 @@ async def test_graph_scope_restricts_relationship_schema_and_default_traversal()
         ),
     )
     backend = _GraphBackend()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     await router.aadd_graph_store(
         backend,
         database_name="knowledge",
@@ -705,7 +706,7 @@ def _custom_scoped_router(invoker: Any) -> tuple[SchemaRouter, ExecutionPlan, Pr
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     tool = ToolSpec(
         name="custom.read",
         endpoints=[
@@ -789,8 +790,7 @@ async def test_authorized_planning_and_executable_surfaces_hide_scoped_schema_fr
         }
 
     policy = _employee_policy("company.employees.select")
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         analyzer=ModelQueryAnalyzer(model),
         authorization_policy=policy,
     )

@@ -15,11 +15,11 @@ from schemarouter import (
     NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
-    SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_router import legacy_router
 
 
 @pytest.mark.asyncio
@@ -55,7 +55,7 @@ async def test_global_source_cannot_overwrite_an_intent_recall_owner_source(owne
 
 
 def _named_source(kind):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

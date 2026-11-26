@@ -38,7 +38,7 @@ def _source(aliases):
         intent_id="case.lookup", required_concept_ids=("case.first", "case.second"),
     ),))
     understood = PaperUnderstanding(intent_id="case.lookup")
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="case.read", roles_any=("reader",),
         ),),

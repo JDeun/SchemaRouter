@@ -17,6 +17,7 @@ from schemarouter import (
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.adapters.optimade import _tool_from_discovery
 from schemarouter.capability_contracts import CapabilityFieldContract
+from scripts.research_legacy_router import legacy_router
 from scripts.research_verified_graph_paths_g2 import (
     DeclaredGraphGoalG2,
     DeclaredInputBindingG2,
@@ -104,7 +105,7 @@ def _router(
         AuthorizationRule(effect="allow", operation="cases.read_case",
                           roles_any=("analyst", "viewer")),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=rules,
         data_rules=(
             (DataScopeRule(

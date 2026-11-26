@@ -8,14 +8,15 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import PlanRequest
+from scripts.research_legacy_router import legacy_router
 
 PROVIDER_ID = "tavily"
 BASE_URL = "https://api.tavily.com"
 
 
 async def run_smoke() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     resolution = router.resolve_provider(PROVIDER_ID, methods={"rest"})
     assert resolution.provider_id == PROVIDER_ID
     assert resolution.methods[0].status == "available"

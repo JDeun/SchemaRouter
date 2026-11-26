@@ -21,6 +21,7 @@ from schemarouter import (
     ToolCall,
 )
 from schemarouter.errors import RegistrationError
+from scripts.research_legacy_router import legacy_router
 
 
 class FakeRecordBackend:
@@ -173,7 +174,7 @@ def _plan(
 
 
 def test_record_store_introspection_covers_all_four_models() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     keys = router.add_record_store(
         FakeRecordBackend(),
         database_name="nosql",
@@ -218,7 +219,7 @@ def test_record_store_introspection_covers_all_four_models() -> None:
 @pytest.mark.asyncio
 async def test_document_query_is_bounded_filtered_and_projected() -> None:
     backend = FakeRecordBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -255,7 +256,7 @@ async def test_document_query_is_bounded_filtered_and_projected() -> None:
 
 @pytest.mark.asyncio
 async def test_key_value_store_rejects_raw_query_dsl() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         FakeRecordBackend(),
         database_name="nosql",
@@ -277,7 +278,7 @@ async def test_key_value_store_rejects_raw_query_dsl() -> None:
 @pytest.mark.asyncio
 async def test_time_series_query_passes_only_declared_time_bounds() -> None:
     backend = FakeRecordBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -324,7 +325,7 @@ async def test_record_sources_compose_with_principal_authorization() -> None:
             ),
         )
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = legacy_router(authorization_policy=policy)
     await router.aadd_record_store(
         FakeRecordBackend(),
         database_name="nosql",
@@ -358,7 +359,7 @@ async def test_record_sources_compose_with_principal_authorization() -> None:
 
 
 def test_record_store_can_limit_sources_before_registration() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     keys = router.add_record_store(
         FakeRecordBackend(),
         database_name="nosql",
@@ -388,7 +389,7 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
             return tuple(sources)
 
     backend = MutableBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -430,7 +431,7 @@ async def test_native_schema_refresh_does_not_commit_when_health_transition_prep
             return tuple(sources)
 
     backend = MutableBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -482,7 +483,7 @@ async def test_native_schema_refresh_rejects_concurrent_writer_before_commit(
             return tuple(sources)
 
     backend = MutableBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -538,7 +539,7 @@ async def test_native_schema_refresh_serializes_concurrent_probe_registration(
             return tuple(sources)
 
     backend = MutableBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -605,7 +606,7 @@ async def test_native_schema_refresh_rolls_back_registry_and_binding_on_rebind_f
             return tuple(sources)
 
     backend = MutableBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -669,7 +670,7 @@ async def test_native_record_schema_refresh_quarantines_breaking_drift() -> None
             return tuple(sources)
 
     backend = MutableBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -689,7 +690,7 @@ async def test_native_record_schema_refresh_quarantines_breaking_drift() -> None
 @pytest.mark.asyncio
 async def test_native_schema_refresh_lifecycle_controls() -> None:
     backend = FakeRecordBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -722,7 +723,7 @@ async def test_native_schema_refresh_lifecycle_controls() -> None:
 
 @pytest.mark.asyncio
 async def test_native_schema_watcher_isolates_unexpected_source_failure() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         FakeRecordBackend(),
         database_name="nosql",
@@ -799,7 +800,7 @@ async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
             )
 
     backend = BlockingBackend()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
@@ -858,7 +859,7 @@ def test_record_discovery_catalog_limit_stops_unbounded_iterable() -> None:
 
             return generate()
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     with pytest.raises(RegistrationError, match="max_discovery_sources=3"):
         router.add_record_store(
             LargeCatalogBackend(),
@@ -887,7 +888,7 @@ def test_record_discovery_rejects_oversized_fields_before_registration() -> None
                 ),
             )
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     with pytest.raises(RegistrationError, match="exposes 3 fields"):
         router.add_record_store(
             WideSourceBackend(),
@@ -900,7 +901,7 @@ def test_record_discovery_rejects_oversized_fields_before_registration() -> None
 
 
 def test_record_generated_contract_budget_is_failure_atomic() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
 
     with pytest.raises(RegistrationError, match="generated schema bytes"):
         router.add_record_store(

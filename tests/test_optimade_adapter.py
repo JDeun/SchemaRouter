@@ -16,6 +16,7 @@ from schemarouter import (
 )
 from schemarouter.adapters import OPTIMADERemoteInvoker
 from schemarouter.adapters.optimade import _bounded_get
+from scripts.research_legacy_router import legacy_router
 
 
 def base_info() -> dict:
@@ -186,7 +187,7 @@ async def test_optimade_discovery_planning_and_execution_use_response_fields() -
         raise AssertionError(f"unexpected request: {request.method} {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         await router.add_url(
             "https://materials.example/optimade",
             kind="optimade",
@@ -277,7 +278,7 @@ async def test_optimade_single_entry_uses_encoded_id_and_field_projection() -> N
         raise AssertionError(f"unexpected request: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         await router.add_url(
             "https://materials.example/v1",
             kind="optimade",
@@ -314,7 +315,7 @@ async def test_optimade_index_metadatabase_is_not_silently_executable() -> None:
         return httpx.Response(404)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(SchemaSourceError, match="index meta-databases"):
             await router.add_url(
                 "https://index.example",
@@ -372,7 +373,7 @@ async def test_optimade_rejects_conflicting_entry_info_identity() -> None:
         raise AssertionError(f"unexpected request: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(SchemaSourceError, match="no usable entry schemas"):
             await router.add_url(
                 "https://materials.example",
@@ -590,7 +591,7 @@ async def test_optimade_untyped_list_unit_is_preserved_but_not_promoted() -> Non
         raise AssertionError(str(request.url))
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         tool = await router.add_url(
             "https://materials.example/optimade/v1",
             kind="optimade",

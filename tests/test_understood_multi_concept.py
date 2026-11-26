@@ -19,11 +19,11 @@ from schemarouter import (
     PaperUnderstanding,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.paper_understood_direct_plan import compile_paper_understood_direct_plan
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="reader", roles=("reader",))
 # Explicit local fixture authorities, not claims about external provider licences.
@@ -109,7 +109,7 @@ def _field(name, semantic, kind="string", **kwargs):
 
 
 def _router():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

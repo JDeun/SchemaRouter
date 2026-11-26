@@ -20,6 +20,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.integrations import OpenTelemetryRunExporter, trace_run_events
+from scripts.research_legacy_router import legacy_router
 
 
 def _tracer():
@@ -30,7 +31,7 @@ def _tracer():
 
 
 def _router(*, fail: bool = False) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         ToolSpec(
             name="weather",

@@ -18,9 +18,9 @@ from schemarouter import (
     PaperIntentRegistry,
     ParameterSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="scoped-needs", roles=("reader",))
 INTENTS = PaperIntentRegistry(
@@ -34,8 +34,7 @@ INTENTS = PaperIntentRegistry(
 
 
 def source(*, required=True, parameters=None, qualifiers=None, collision=False, second=False):
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(default_effect="allow"))
     owners = []
     roots = set()

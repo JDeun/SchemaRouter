@@ -16,6 +16,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_router import legacy_router
 
 CANARY = "denied_route_sidecar_27391"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -40,7 +41,7 @@ def _router(*, tainted: bool = True, scoped: bool = True):
             visible_fields=("public_value",),
         ),) if scoped else (),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy, analyzer=Analyzer())
+    router = legacy_router(authorization_policy=policy, analyzer=Analyzer())
     router.add_tool(ToolSpec(
         name="records", description=raw,
         provider=raw or "public_provider",
@@ -136,8 +137,7 @@ def test_competing_topk_routes_ignore_denied_metadata(
     def build(*, tainted: bool) -> SchemaRouter:
         raw = f"hidden_{CANARY}" if tainted else ""
         allowed = ("records.read", "reference.read")
-        router = SchemaRouter(
-            _legacy_routing=True,
+        router = legacy_router(
             analyzer=KeywordAnalyzer(),
             structural_retrieval=structural_retrieval,
             authorization_policy=AuthorizationPolicy(

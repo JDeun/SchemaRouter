@@ -17,7 +17,6 @@ from schemarouter import (
     NativeSchemaPostingIndex,
     PolicyViolationError,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.errors import ModelAnalysisError
@@ -35,6 +34,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     AuthorizedPaperUnderstoodDirectFixed5Selector,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_paper_scoped_understand_e0 import (
     analyze_paper_understanding_scoped,
 )
@@ -85,7 +85,7 @@ def _tool(name, *, description="case status priority"):
 
 
 def _router():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(
             AuthorizationRule(
                 effect="deny", operation="secret.read", roles_any=("viewer",),

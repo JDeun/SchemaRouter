@@ -17,11 +17,11 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _router() -> SchemaRouter:
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             rules=(
                 AuthorizationRule(

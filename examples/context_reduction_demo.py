@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 
-from schemarouter import EndpointSpec, FieldSpec, SchemaRouter, ToolSpec
+from schemarouter import EndpointSpec, FieldSpec, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 
 def tool_for_domain(domain: str, *, aliases: list[str] | None = None) -> ToolSpec:
@@ -43,7 +44,7 @@ def compact_json_size(value: object) -> int:
 
 
 def main() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     distractors = [
         "finance",
         "calendar",

@@ -140,7 +140,7 @@ async def test_openapi_refresh_uses_etag_and_304_without_registry_write() -> Non
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -182,7 +182,7 @@ async def test_openapi_refresh_uses_last_modified_when_etag_missing() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -218,7 +218,7 @@ async def test_stale_openapi_etag_falls_back_to_full_compare_and_updates_cache()
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -256,7 +256,7 @@ async def test_openapi_external_refs_mode_does_not_use_root_validator_shortcut()
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -289,7 +289,7 @@ async def test_openrpc_refresh_uses_etag_and_304() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://rpc.test/openrpc.json",
             kind="openrpc",
@@ -324,7 +324,7 @@ async def test_odata_refresh_uses_metadata_etag_and_304() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://odata.test/v1",
             kind="odata",
@@ -359,7 +359,7 @@ async def test_breaking_candidate_does_not_poison_validator_cache() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -415,7 +415,7 @@ async def test_report_only_compatible_candidate_keeps_current_validator() -> Non
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         tool = await router.add_url(
             "https://example.test/openapi.json",
             kind="openapi",
@@ -475,7 +475,7 @@ async def test_same_key_source_replacement_does_not_reuse_old_etag() -> None:
         raise AssertionError(f"unexpected host: {request.url.host}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         original = await router.add_url(
             "https://source-a.example.test/openapi.json",
             kind="openapi",
@@ -515,7 +515,7 @@ async def test_cross_adapter_same_key_does_not_inherit_validator_cache() -> None
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = SchemaRouter(http_client=client)
         original = await router.add_url(
             "https://source-a.example.test/openapi.json",
             kind="openapi",
@@ -546,7 +546,7 @@ async def test_cross_adapter_same_key_does_not_inherit_validator_cache() -> None
 
 
 def test_validator_metadata_without_matching_source_digest_is_ignored() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="legacy",
         remote=True,
@@ -570,7 +570,7 @@ def test_validator_metadata_without_matching_source_digest_is_ignored() -> None:
 
 
 def test_validator_metadata_with_malformed_source_digest_is_ignored() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="malformed",
         remote=True,
@@ -595,7 +595,7 @@ def test_validator_metadata_with_malformed_source_digest_is_ignored() -> None:
 
 
 def test_validator_cache_lookup_without_current_tool_fails_closed() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="remote",
         remote=True,

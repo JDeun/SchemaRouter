@@ -9,11 +9,12 @@ import sys
 import pytest
 
 from schemarouter import EndpointSpec, FieldSpec, ParameterSpec, SchemaRouter, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 
 def _offline_registered_source_router() -> tuple[SchemaRouter, list[str]]:
     """Original-shaped routes: real registry/planner, never fake ranking outputs."""
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     called: list[str] = []
 
     def no_network(endpoint: str, arguments: dict) -> dict:

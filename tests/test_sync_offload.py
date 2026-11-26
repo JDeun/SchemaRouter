@@ -166,7 +166,7 @@ async def test_sync_health_probe_timeouts_share_the_same_bounded_pool() -> None:
 
 @pytest.mark.asyncio
 async def test_router_aclose_closes_router_owned_sync_offload_pool() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     await router.aclose()
 
     with pytest.raises(NonRetryableInvocationError, match="worker pool is closed"):

@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from schemarouter import PlanRequest, SchemaRouter, SchemaSourceError
+from scripts.research_legacy_router import legacy_router
 
 
 def _base_info(entry_types: list[str]) -> dict:
@@ -72,7 +73,7 @@ async def test_optimade_rejects_unsafe_entry_type_paths() -> None:
         raise AssertionError("unsafe entry type must not be requested")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(SchemaSourceError, match="no usable entry schemas"):
             await router.add_url(
                 "https://materials.example",
@@ -125,7 +126,7 @@ async def test_optimade_runtime_headers_are_not_model_parameters() -> None:
         raise AssertionError(f"unexpected request: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         await router.add_url(
             "https://materials.example",
             kind="optimade",
@@ -210,7 +211,7 @@ async def test_optimade_cross_origin_redirect_is_rejected() -> None:
         raise AssertionError("cross-origin redirect target must never be requested")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        router = legacy_router(http_client=client)
         with pytest.raises(SchemaSourceError, match="cross-origin"):
             await router.add_url(
                 "https://materials.example/v1",

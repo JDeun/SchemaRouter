@@ -25,6 +25,7 @@ from schemarouter import (
     replay_run_events,
 )
 from schemarouter.errors import NonRetryableInvocationError
+from scripts.research_legacy_router import legacy_router
 
 
 def event(
@@ -45,7 +46,7 @@ def event(
 
 
 def make_router(counter: dict[str, int] | None = None) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         ToolSpec(
             name="weather",
@@ -76,7 +77,7 @@ def make_router(counter: dict[str, int] | None = None) -> SchemaRouter:
 
 
 def make_secret_router(*, fail: bool = False) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         ToolSpec(
             name="secret_echo",

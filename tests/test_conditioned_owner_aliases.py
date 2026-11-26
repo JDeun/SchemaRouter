@@ -151,7 +151,7 @@ def test_reused_aliases_still_count_toward_the_original_total_budget():
 @pytest.mark.asyncio
 async def test_resolved_owner_role_reuses_public_field_proof_and_live_acl():
     catalog = _roles()
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="author.read", roles_any=("reader",),
         ),),

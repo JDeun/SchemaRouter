@@ -20,7 +20,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PolicyViolationError,
-    SchemaRouter,
     ToolSpec,
 )
 from scripts.agent_utility_generated_common import (
@@ -34,6 +33,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     AuthorizedConceptGraphFixed5Selector,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _view(router, query="case status", *, principal=ACTOR):
@@ -107,7 +107,7 @@ def test_graph_selector_passes_two_routes_to_existing_agent() -> None:
 def test_graph_view_redacts_nested_hidden_metadata() -> None:
     # Real registered source metadata contains the hidden nested label, not
     # merely a string asserted absent from an unrelated generated schema.
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(effect="allow", operation="*.*", roles_any=("viewer",)),),
         data_rules=(DataScopeRule(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from schemarouter.adapters.openapi import tool_from_openapi
 from schemarouter.models import EndpointSpec, FieldSpec
+from scripts.research_legacy_router import legacy_router
 
 
 def _document(response_schema: dict) -> dict:
@@ -308,7 +309,7 @@ def test_nested_field_can_receive_full_trusted_contract_enrichment() -> None:
     tool_payload["endpoints"] = [amended_endpoint]
     amended_tool = ToolSpec.model_validate(tool_payload)
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(tool)
     router.amend_capability(tool.key, amended_tool)
 

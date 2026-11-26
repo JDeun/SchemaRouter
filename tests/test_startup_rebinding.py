@@ -10,7 +10,6 @@ from schemarouter import (
     BindingReconciliationError,
     EndpointSpec,
     RegistrationError,
-    SchemaRouter,
     SQLiteRegistry,
     ToolSpec,
     TrustedBindingConfig,
@@ -19,6 +18,7 @@ from schemarouter.adapters.python import tool_from_callable
 from schemarouter.integrations.langchain import tool_from_langchain
 from schemarouter.integrations.llamaindex import tool_from_llamaindex
 from schemarouter.rebinding import register_rebinding_strategy
+from scripts.research_legacy_router import legacy_router
 
 
 def _tool(
@@ -216,7 +216,7 @@ def test_sqlite_restart_rehydrates_all_builtin_binding_families(tmp_path) -> Non
     }
 
     with SQLiteRegistry(path) as registry:
-        router = SchemaRouter(_legacy_routing=True, registry=registry)
+        router = legacy_router(registry=registry)
         before_documents = {
             tool.key: tool.model_dump_json()
             for tool in registry.tools()
@@ -240,7 +240,7 @@ def test_sqlite_restart_rehydrates_all_builtin_binding_families(tmp_path) -> Non
 
 
 def test_bind_existing_intentionally_unbound_clears_old_process_binding() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("sdk", "private_sdk")
     router.add_tool(tool)
 
@@ -261,7 +261,7 @@ def test_bind_existing_intentionally_unbound_clears_old_process_binding() -> Non
 
 
 def test_rehydrate_reports_missing_config_and_strict_mode_fails() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     first = _tool("first", "private_sdk")
     second = _tool("second", "private_sdk")
     router.add_tool(first)
@@ -298,7 +298,7 @@ def test_rehydrate_reports_missing_config_and_strict_mode_fails() -> None:
 
 
 def test_rehydrate_required_tools_rejects_unknown_registry_key() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(_tool("known", "private_sdk"))
 
     with pytest.raises(RegistrationError, match="absent"):
@@ -310,7 +310,7 @@ def test_rehydrate_required_tools_rejects_unknown_registry_key() -> None:
 
 
 def test_mcp_bound_transport_fingerprint_mismatch_is_incompatible() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool(
         "mcp_bound",
         "mcp",
@@ -339,7 +339,7 @@ def test_mcp_bound_transport_fingerprint_mismatch_is_incompatible() -> None:
 
 
 def test_mcp_http_custom_factory_requirement_survives_restart() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool(
         "mcp_http_custom",
         "mcp",
@@ -371,7 +371,7 @@ def test_mcp_http_custom_factory_requirement_survives_restart() -> None:
 
 
 def test_authenticated_mcp_http_requires_runtime_headers_after_restart() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool(
         "mcp_http",
         "mcp",
@@ -395,7 +395,7 @@ def test_authenticated_mcp_http_requires_runtime_headers_after_restart() -> None
 
 
 def test_openrpc_without_approved_or_supplied_base_url_is_missing_config() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool(
         "rpc",
         "openrpc",
@@ -417,7 +417,7 @@ def test_openrpc_without_approved_or_supplied_base_url_is_missing_config() -> No
 def test_bind_existing_detects_registry_drift_before_storing_invoker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("sdk", "private_sdk")
     router.add_tool(tool)
 
@@ -444,7 +444,7 @@ def test_bind_existing_detects_registry_drift_before_storing_invoker(
 
 
 def test_resolver_receives_detached_tool_snapshot() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("sdk", "private_sdk")
     router.add_tool(tool)
 
@@ -461,7 +461,7 @@ def test_resolver_receives_detached_tool_snapshot() -> None:
 
 
 def test_resolver_failure_is_reported_without_leaking_exception_text() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("sdk", "private_sdk")
     router.add_tool(tool)
 
@@ -477,7 +477,7 @@ def test_resolver_failure_is_reported_without_leaking_exception_text() -> None:
 
 
 def test_wrong_framework_object_identity_is_incompatible() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool(
         "langchain",
         "langchain_tool",
@@ -498,7 +498,7 @@ def test_wrong_framework_object_identity_is_incompatible() -> None:
 
 
 def test_builtin_adapter_cannot_bypass_rebinding_checks_with_generic_invoker() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool(
         "openapi_bypass",
         "openapi",
@@ -525,7 +525,7 @@ def test_builtin_adapter_cannot_bypass_rebinding_checks_with_generic_invoker() -
 
 
 def test_intentionally_unbound_does_not_delete_stale_binding() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("private", "private_sdk")
     router.add_tool(tool)
     router.executor.bind(
@@ -555,7 +555,7 @@ def test_intentionally_unbound_does_not_delete_stale_binding() -> None:
 
 
 def test_rehydrate_skips_resolver_for_already_ready_contract() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("private", "private_sdk")
     router.add_tool(tool)
     router.executor.bind(
@@ -603,8 +603,7 @@ def test_openapi_rebinding_reuses_router_injected_http_client(
 
     monkeypatch.setattr(rebinding_module, "OpenAPIRemoteInvoker", build_invoker)
 
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         http_client=sentinel_client)  # type: ignore[arg-type]
     tool = _tool(
         "openapi_client",
@@ -660,7 +659,7 @@ def test_trusted_binding_config_repr_redacts_secrets_and_live_objects() -> None:
 
 
 def test_strict_reconciliation_error_retains_safe_report() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("required", "private_sdk")
     router.add_tool(tool)
 
@@ -679,7 +678,7 @@ def test_strict_reconciliation_error_retains_safe_report() -> None:
 
 
 def test_python_rebinding_rejects_same_identity_with_changed_schema() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     persisted = tool_from_callable(
         _python_fixture,
         name="python_changed",
@@ -710,7 +709,7 @@ def test_python_rebinding_rejects_same_identity_with_changed_schema() -> None:
 
 
 def test_python_rebinding_accepts_trusted_amendment_overlay() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_callable(
         _python_fixture,
         name="python_amended",
@@ -749,7 +748,7 @@ def test_framework_rebinding_rejects_live_schema_mismatch(
     framework: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     if framework == "langchain":
         live = _LangChainFixture()
         persisted = tool_from_langchain(
@@ -796,7 +795,7 @@ def test_framework_rebinding_rejects_live_schema_mismatch(
 
 
 def test_rehydrate_refuses_config_created_for_concurrently_replaced_snapshot() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     original = _tool("private_race", "private_sdk")
     router.add_tool(original)
 
@@ -825,7 +824,7 @@ def test_rehydrate_refuses_config_created_for_concurrently_replaced_snapshot() -
 
 
 def test_bind_existing_can_pin_caller_reviewed_fingerprint() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     original = _tool("private_pin", "private_sdk")
     router.add_tool(original)
     replacement = original.model_copy(deep=True)
@@ -860,7 +859,7 @@ def test_registered_rebinding_strategy_extends_runtime_without_switch_edit() -> 
 
     register_rebinding_strategy(adapter, strategy)
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     tool = _tool("custom_rebind", adapter)
     router.add_tool(tool)
 

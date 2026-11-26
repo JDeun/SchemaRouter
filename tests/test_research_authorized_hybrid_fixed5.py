@@ -13,7 +13,6 @@ from schemarouter import (
     FieldSpec,
     PolicyViolationError,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.errors import PlanningError
@@ -29,13 +28,14 @@ from scripts.research_authorized_hybrid_fixed5 import (
     AuthorizedHybridFixed5Selector,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend
+from scripts.research_legacy_router import legacy_router
 
 SECRET = "HIDDEN-HYBRID-1483"
 PRINCIPAL = PrincipalContext(subject="safe-reader", roles=("reader",))
 
 
 def scoped(query="Read marine data"):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(effect="deny", operation="archive.*",
