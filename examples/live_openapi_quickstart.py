@@ -7,10 +7,11 @@ import asyncio
 import httpx
 
 from schemarouter import (
-    PlanRequest,
+    ExecutionPlan,
     ProviderAccessMethod,
     ProviderProfile,
     SchemaRouter,
+    ToolCall,
     ToolResult,
 )
 
@@ -26,7 +27,7 @@ async def run_quickstart(
 ) -> ToolResult:
     """Resolve a provider, register its adapter path, and execute one live capability."""
 
-    router = SchemaRouter(_legacy_routing=True, http_client=http_client)
+    router = SchemaRouter(http_client=http_client)
     provider_id = DEFAULT_PROVIDER
 
     if source != DEFAULT_SOURCE:
@@ -66,15 +67,24 @@ async def run_quickstart(
             f"({len(tool.endpoints)} endpoints on this tool)"
         )
 
-        plan = router.plan(
-            PlanRequest(
-                query="API directory metrics total number of APIs",
-                preferred_tools=[tool.key],
-                max_calls=1,
-            )
+        # Provider registration is the subject of this example. The host
+        # explicitly selects the known metrics endpoint; no lexical ranking.
+        endpoint = tool.endpoint(METRICS_ENDPOINT)
+        if not any(field.name == "numAPIs" for field in endpoint.output_fields):
+            raise RuntimeError("metrics response contract did not expose numAPIs")
+        plan = ExecutionPlan(
+            query="API directory metrics total number of APIs",
+            registry_version=router.registry.version,
+            calls=[ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                fields=["numAPIs"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )],
         )
         if len(plan.calls) != 1 or plan.calls[0].endpoint != METRICS_ENDPOINT:
-            raise RuntimeError("planner did not select the APIs.guru metrics route")
+            raise RuntimeError("host did not select the APIs.guru metrics route")
         call = plan.calls[0]
         print(f"selected: {call.tool}:{call.endpoint}")
 

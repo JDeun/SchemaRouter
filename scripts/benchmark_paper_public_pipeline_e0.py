@@ -548,7 +548,9 @@ async def _measure_load(
         "concurrency": concurrency, "max_outstanding_requests_observed": peak_outstanding,
         "scheduling": "closed-loop clients; one outstanding request per client; no burst backlog",
         "dispatch": "single event loop" if asynchronous else "bounded thread pool",
-        "queue_boundary": "client submission to API entry (event-loop turn and, for sync, worker entry)",
+        "queue_boundary": (
+            "client submission to API entry (event-loop turn and, for sync, worker entry)"
+        ),
         "service_boundary": "public compile plus exact-route oracle and receipt serialization",
         "samples": samples, "wall_ms": _percentiles([s["wall_ms"] for s in samples]),
         "threshold_exceedances": [{

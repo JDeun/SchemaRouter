@@ -85,6 +85,34 @@ async def _expect(
     raise AssertionError(f"expected {error_type.__name__}")
 
 
+def _host_plan(
+    router: SchemaRouter,
+    query: str,
+    *routes: tuple[str, str, dict[str, object]],
+) -> ExecutionPlan:
+    """Exercise execution-only contracts with exact host-selected routes.
+
+    This fixture performs no discovery, scoring, argument inference or
+    execution authorization. The current registry and executor remain the
+    source of truth for schema validation, policy, and binding checks.
+    """
+    calls = []
+    for tool_key, endpoint_name, arguments in routes:
+        tool = router.registry.get(tool_key)
+        endpoint = tool.endpoint(endpoint_name)
+        calls.append(ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
+            arguments=arguments,
+            fields=[field.name for field in endpoint.output_fields],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
+        ))
+    return ExecutionPlan(
+        query=query, registry_version=router.registry.version, calls=calls,
+    )
+
+
 async def scenario_happy_path() -> dict[str, object]:
     router = SchemaRouter(_legacy_routing=True)
     key = router.add_callable(current_weather)
@@ -169,29 +197,24 @@ async def scenario_capability_retrieval() -> dict[str, object]:
 
 
 async def scenario_policy_and_approval() -> dict[str, object]:
-    denied_router = SchemaRouter(_legacy_routing=True)
+    denied_router = SchemaRouter()
     denied_key = denied_router.add_callable(update_profile)
-    denied_request = PlanRequest(
-        query="update profile value",
-        preferred_tools=[denied_key],
-        arguments={"value": 2},
+    denied_plan = _host_plan(
+        denied_router, "update profile value", (denied_key, "call", {"value": 2}),
     )
-    await _expect(PolicyViolationError, denied_router.ainvoke(denied_request))
+    await _expect(PolicyViolationError, denied_router.execute(denied_plan))
 
     approval_required = SchemaRouter(
-        _legacy_routing=True,
         policy=ExecutionPolicy(
             allow_mutations=True,
             approval_mode="non_read_only",
         )
     )
     required_key = approval_required.add_callable(update_profile)
-    required_request = PlanRequest(
-        query="update profile value",
-        preferred_tools=[required_key],
-        arguments={"value": 3},
+    required_plan = _host_plan(
+        approval_required, "update profile value", (required_key, "call", {"value": 3}),
     )
-    await _expect(ApprovalDeniedError, approval_required.ainvoke(required_request))
+    await _expect(ApprovalDeniedError, approval_required.execute(required_plan))
 
     approvals: list[str] = []
 
@@ -201,7 +224,6 @@ async def scenario_policy_and_approval() -> dict[str, object]:
         return True
 
     approved_router = SchemaRouter(
-        _legacy_routing=True,
         policy=ExecutionPolicy(
             allow_mutations=True,
             approval_mode="non_read_only",
@@ -209,13 +231,9 @@ async def scenario_policy_and_approval() -> dict[str, object]:
         approval_callback=approve,
     )
     approved_key = approved_router.add_callable(update_profile)
-    approved = await approved_router.ainvoke(
-        PlanRequest(
-            query="update profile value",
-            preferred_tools=[approved_key],
-            arguments={"value": 4},
-        )
-    )
+    approved = await approved_router.execute(_host_plan(
+        approved_router, "update profile value", (approved_key, "call", {"value": 4}),
+    ))
     assert approved[0].data == 5
     assert approvals == [f"{approved_key}.call"]
     return {
@@ -233,7 +251,6 @@ async def scenario_scoped_policy_rule() -> dict[str, object]:
         return True
 
     router = SchemaRouter(
-        _legacy_routing=True,
         policy=ExecutionPolicy(
             allow_mutations=True,
             rules=(
@@ -249,28 +266,18 @@ async def scenario_scoped_policy_rule() -> dict[str, object]:
     key = router.add_callable(update_profile)
     assert key == "update_profile"
 
-    result = await router.ainvoke(
-        PlanRequest(
-            query="update profile value",
-            preferred_tools=[key],
-            arguments={"value": 10},
-        )
-    )
+    result = await router.execute(_host_plan(
+        router, "update profile value", (key, "call", {"value": 10}),
+    ))
     assert result[0].data == 11
     assert approvals == ["update_profile.call"]
     return {"scoped_rule": "approved_and_executed"}
 
 
 async def scenario_schema_drift() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     key = router.add_callable(lookup_value)
-    plan = await router.aplan(
-        PlanRequest(
-            query="lookup value key",
-            preferred_tools=[key],
-            arguments={"key": "alpha"},
-        )
-    )
+    plan = _host_plan(router, "lookup value key", (key, "call", {"key": "alpha"}))
     assert plan.executable
 
     original = router.registry.get(key)
@@ -296,7 +303,7 @@ async def scenario_schema_drift() -> dict[str, object]:
 
 
 async def scenario_binding_drift() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     key = router.add_callable(lookup_value)
 
     original = router.registry.get(key)
@@ -306,14 +313,8 @@ async def scenario_binding_drift() -> dict[str, object]:
     )
     router.registry.register(changed, replace=True)
 
-    # Replan against the new contract but intentionally keep the old invoker binding.
-    plan = await router.aplan(
-        PlanRequest(
-            query="lookup value key",
-            preferred_tools=[key],
-            arguments={"key": "beta"},
-        )
-    )
+    # Pin the new contract but intentionally keep the old invoker binding.
+    plan = _host_plan(router, "lookup value key", (key, "call", {"key": "beta"}))
     assert plan.executable
 
     await _expect(BindingDriftError, router.execute(plan))
@@ -321,7 +322,7 @@ async def scenario_binding_drift() -> dict[str, object]:
 
 
 async def scenario_tool_execution_contract_drift() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     original = ToolSpec(
         name="remote_contract",
         remote=True,
@@ -336,12 +337,7 @@ async def scenario_tool_execution_contract_drift() -> dict[str, object]:
         "remote_contract",
         lambda endpoint, arguments: {"origin": "a"},
     )
-    plan = await router.aplan(
-        PlanRequest(
-            query="remote contract run",
-            preferred_tools=["remote_contract"],
-        )
-    )
+    plan = _host_plan(router, "remote contract run", ("remote_contract", "run", {}))
 
     changed = original.model_copy(deep=True)
     changed.execution_metadata["approved_base_url"] = "https://b.example/api"
@@ -356,17 +352,13 @@ async def scenario_tool_execution_contract_drift() -> dict[str, object]:
 
 
 async def scenario_output_validation() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     key = router.add_callable(invalid_output)
     await _expect(
         SchemaValidationError,
-        router.ainvoke(
-            PlanRequest(
-                query="invalid output value",
-                preferred_tools=[key],
-                arguments={"value": 7},
-            )
-        ),
+        router.execute(_host_plan(
+            router, "invalid output value", (key, "call", {"value": 7}),
+        )),
     )
     return {"invalid_runtime_output": "blocked"}
 
@@ -382,14 +374,10 @@ async def scenario_retry_and_budget() -> dict[str, object]:
             raise TransientInvocationError("transient")
         return value
 
-    retry_router = SchemaRouter(_legacy_routing=True)
+    retry_router = SchemaRouter()
     retry_key = retry_router.add_callable(flaky)
-    result = await retry_router.ainvoke(
-        PlanRequest(
-            query="flaky value",
-            preferred_tools=[retry_key],
-            arguments={"value": 9},
-        ),
+    result = await retry_router.execute(
+        _host_plan(retry_router, "flaky value", (retry_key, "call", {"value": 9})),
         config=RunConfig(
             retry=RetryPolicy(
                 max_attempts=2,
@@ -405,16 +393,12 @@ async def scenario_retry_and_budget() -> dict[str, object]:
         await asyncio.sleep(0.05)
         return value
 
-    budget_router = SchemaRouter(_legacy_routing=True)
+    budget_router = SchemaRouter()
     budget_key = budget_router.add_callable(slow)
     await _expect(
         ExecutionBudgetExceededError,
-        budget_router.ainvoke(
-            PlanRequest(
-                query="slow value",
-                preferred_tools=[budget_key],
-                arguments={"value": 1},
-            ),
+        budget_router.execute(
+            _host_plan(budget_router, "slow value", (budget_key, "call", {"value": 1})),
             config=RunConfig(
                 budget=ExecutionBudget(max_elapsed_seconds=0.01),
             ),
@@ -449,16 +433,15 @@ async def scenario_parallel_read_only() -> dict[str, object]:
         finally:
             active -= 1
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     first_key = router.add_callable(first)
     second_key = router.add_callable(second)
 
-    results = await router.ainvoke(
-        PlanRequest(
-            query="first second value",
-            preferred_tools=[first_key, second_key],
-            arguments={"value": 5},
-            max_calls=2,
+    results = await router.execute(
+        _host_plan(
+            router, "first second value",
+            (first_key, "call", {"value": 5}),
+            (second_key, "call", {"value": 5}),
         ),
         config=RunConfig(
             execution_mode="parallel_read_only",
@@ -472,7 +455,7 @@ async def scenario_parallel_read_only() -> dict[str, object]:
 
 
 async def scenario_scientific_unit_contract() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     field = FieldSpec(
         name="elastic_modulus",
         semantic_id="elastic_modulus",
@@ -497,12 +480,9 @@ async def scenario_scientific_unit_contract() -> dict[str, object]:
         lambda endpoint_name, arguments: {"elastic_modulus": 130.0},
     )
 
-    result = await router.ainvoke(
-        PlanRequest(
-            query="elastic modulus",
-            preferred_tools=["scientific_materials"],
-        )
-    )
+    result = await router.execute(_host_plan(
+        router, "elastic modulus", ("scientific_materials", "read", {}),
+    ))
 
     assert result[0].data == {"elastic_modulus": 130_000_000_000.0}
     contract = result[0].field_contracts["elastic_modulus"]
@@ -588,7 +568,7 @@ async def scenario_parameter_alias_routing() -> dict[str, object]:
 
 
 async def scenario_scientific_field_qualifiers() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     endpoint = EndpointSpec(
         name="read",
         read_only=True,
@@ -612,12 +592,9 @@ async def scenario_scientific_field_qualifiers() -> dict[str, object]:
         lambda endpoint_name, arguments: {"elastic_modulus": 130.0},
     )
 
-    result = await router.ainvoke(
-        PlanRequest(
-            query="elastic modulus",
-            preferred_tools=["qualified_materials"],
-        )
-    )
+    result = await router.execute(_host_plan(
+        router, "elastic modulus", ("qualified_materials", "read", {}),
+    ))
 
     contract = result[0].field_contracts["elastic_modulus"]
     assert contract.qualifiers == {
@@ -683,7 +660,7 @@ async def scenario_execution_ready_planning() -> dict[str, object]:
 
 
 async def scenario_binding_aware_fallback() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     primary = ToolSpec(
         name="primary_route",
         provider="provider",
@@ -759,7 +736,7 @@ async def scenario_binding_aware_fallback() -> dict[str, object]:
 
 
 async def scenario_inspection_redaction() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="redaction_probe",
         remote=True,
