@@ -106,6 +106,7 @@ async def run_crossref_paper_a5(
     """
     validated_doi = validate_host_crossref_doi(host_doi)
     router = SchemaRouter(
+        _legacy_routing=True,  # historical A5 agent-surface capture
         http_client=http_client,
         network_policy=network_policy or NetworkPolicy.public_only(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),

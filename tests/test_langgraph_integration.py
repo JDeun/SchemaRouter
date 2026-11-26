@@ -5,7 +5,6 @@ import pytest
 pytest.importorskip("langgraph")
 
 from langgraph.graph import END, START, StateGraph
-
 from test_paper_configured_planning import _configure, _configured
 
 from schemarouter import PlanRequest, RunConfig, SchemaRouter, SchemaValidationError, schema_tool

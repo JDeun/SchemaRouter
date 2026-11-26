@@ -108,6 +108,7 @@ async def run_europepmc_paper_a5(
     """Execute one source-checked native GET after explicit host review."""
     doi = validate_host_europepmc_query(f"DOI:{host_doi}")
     router = SchemaRouter(
+        _legacy_routing=True,  # historical A5 agent-surface capture
         http_client=http_client,
         network_policy=network_policy or NetworkPolicy.public_only(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),
