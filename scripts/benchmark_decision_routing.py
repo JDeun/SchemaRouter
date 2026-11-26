@@ -33,7 +33,6 @@ from schemarouter import (  # noqa: E402
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    PairwiseDecisionBackend,
     PlanRequest,
     SchemaPlanner,
     ToolSpec,
@@ -47,6 +46,7 @@ from schemarouter.integrations import (  # noqa: E402
     OllamaDecisionBackend,
     SystemOneDecisionBackend,
 )
+from scripts.research_legacy_pairwise import PairwiseDecisionBackend  # noqa: E402
 
 
 @dataclass(frozen=True)

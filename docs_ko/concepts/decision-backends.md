@@ -228,7 +228,7 @@ SchemaRouter는 백엔드에 연락하기 전에 결정적인 로컬 사전 검�
 | 백엔드 | 적합한 사용 사례 | 고려사항 |
 | --- | --- | --- |
 | Deterministic / embedding | 외부 제공자에 의존하지 않고 예측 가능한 로컬 동작 | 모호한 표현에 대한 의미적 유연성이 제한됨 |
-| Pairwise scorer / reranker | 제한된 로컬 권한 안에서 질의와 선택지 사이의 관련성을 직접 평가 | 모델·런타임 운영과 점수 보정은 애플리케이션의 책임 |
+| Pairwise scorer / reranker (과거 연구 전용) | 비교 실험을 위해 질의와 선택지 사이의 관련성을 직접 평가 | 모델·런타임 운영과 점수 보정은 애플리케이션의 책임 |
 | `CallableDecisionBackend`를 통한 호스팅 범용 LLM | 기존 GPT, Gemini, Claude 등 클라우드 모델 클라이언트를 재사용 | 제공자 지연 시간·비용 발생; 구조화 출력 프롬프트 및 인증정보를 애플리케이션에서 관리 |
 | Laya | PyTorch MPS/Metal을 통한 Apple Silicon 지원을 포함한 빠른 로컬 제한 선택 | 현재 단일 선택 어댑터만 지원하며 품질은 체크포인트·도메인에 따라 달라짐 |
 | Ollama | 다른 애플리케이션 작업을 위해 이미 배포된 범용 로컬 LLM 재사용 | 자기회귀 생성은 전용 결정 모델보다 연산이 무겁고 느림 |
@@ -302,23 +302,12 @@ backend = EmbeddingDecisionBackend(
 
 ## 질의·후보 쌍별 점수화
 
-`PairwiseDecisionBackend`는 질의와 각 허용 후보의 관련성을 직접 채점하는 크로스 인코더, 재순위화 모델 또는 애플리케이션 소유 모델을 제공자와 무관하게 연결하는 경로입니다.
-
-```python
-from schemarouter import PairwiseDecisionBackend
-
-backend = PairwiseDecisionBackend(
-    score_pairs,
-    min_score=0.20,
-    min_margin=0.05,
-)
-```
-
-점수 계산기는 `(query, option_text)` 쌍의 배치를 받아 각 쌍마다 `[0, 1]` 범위의 신뢰도 점수 하나를 정확히 반환합니다. SchemaRouter는 이 점수를 로컬에서 정렬하고 각 위치를 원래 불투명한 선택지 ID로 연결합니다. 따라서 점수 계산기에 새로운 경로를 만들어낼 권한을 주지 않고도 `operation_fit_backend`, `candidate_fit_backend`, 엔드포인트 구분 또는 최종 제한 결정 단계에 사용할 수 있습니다.
-
-기본 포맷터는 선택지 레이블과 설명만 전달하며 `DecisionOption.metadata`는 전달하지 않습니다. 배치 크기 불일치, 잘못된 값, NaN/Infinity 또는 `[0, 1]` 밖의 점수는 안전하게 거부됩니다. 비동기 점수 계산기는 일반 비동기 계획 경로를 통해 지원됩니다.
-
-SchemaRouter는 Transformers, Torch, 특정 재순위화 모델 또는 호스팅 순위 API에 종속되지 않습니다. 점수 계산 모델과 점수 보정은 애플리케이션이 소유합니다. 모델이 범위 제한 없는 로짓을 출력한다면 백엔드에 반환하기 전에 보정되었거나 별도로 명시적으로 정의된 `[0, 1]` 신뢰도로 바꿔야 합니다. 임계값은 모델과 작업 부하에 따라 달라지며 홀드아웃 평가 데이터가 아닌 개발·보정 데이터에서 결정해야 합니다.
+Pairwise Decision Backend는 더 이상 SchemaRouter 배포 패키지의 일부가 아닙니다.
+과거 구현은 비교 실험 재현을 위해 `scripts/research_legacy_pairwise.py`에 보존하며,
+Algorithm 1의 기본 순위 결정에는 사용하지 않습니다. 점수 범위 검증, 메타데이터 격리,
+선택 보류 및 비동기 점수 계산에 대한 회귀 테스트는 `tests/test_pairwise_decision_backend.py`에
+유지합니다. 기존 애플리케이션은 `PairwiseDecisionBackend`와 `PairwiseScoreCallable`이
+`schemarouter`에서 계속 공개된다고 가정해서는 안 됩니다.
 
 ## Jev / TypeSafe System One
 

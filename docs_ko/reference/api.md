@@ -94,10 +94,6 @@
 
 ::: schemarouter.inspect_traces
 
-## PairwiseDecisionBackend
-
-::: schemarouter.PairwiseDecisionBackend
-
 ## CallableDecisionBackend
 
 ::: schemarouter.CallableDecisionBackend

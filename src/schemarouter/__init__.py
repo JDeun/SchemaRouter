@@ -432,7 +432,6 @@ from .operation_fit import (
     validate_declared_operation_fit,
 )
 from .operation_intent import OperationIntentHypothesis, infer_operation_intent
-from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .paper_consumer_execution import (
     PaperExecutedToolSequence,
     PaperUnderstoodExecutedGraph,
@@ -879,8 +878,6 @@ __all__ = [
     "ObservedStateField",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
-    "PairwiseDecisionBackend",
-    "PairwiseScoreCallable",
     "ParameterSpec",
     "PlanCoverage",
     "PlanExplanation",

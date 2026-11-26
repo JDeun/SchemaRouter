@@ -62,9 +62,9 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "en_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2",
-      "ko_blob": "8ab8e53996ca5d6687bf1e662a2615029a491ad2",
-      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy."
+      "en_blob": "967ee400011e15cdb9a987906db4e5ef536dcc0c",
+      "ko_blob": "460e01c0a9aed672084811075077e39f168316c1",
+      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off."
     },
     {
       "path": "concepts/design-principles.md",
@@ -633,9 +633,9 @@
     },
     {
       "path": "reference/api.md",
-      "en_blob": "7718ac477ea53e3a42ecac8c38485a5fe7748893",
-      "ko_blob": "8943ac7b06e0c7a9cc315bba7d3392fb1514b2da",
-      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch."
+      "en_blob": "a05d15126f09278918302daf478ec68d0adc5958",
+      "ko_blob": "ef9f846714ec82fbec2ca2c6540e7c499caba7ec",
+      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off."
     },
     {
       "path": "reference/models.md",
@@ -984,6 +984,7 @@
   "review_amendments": [
     "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification.",
     "2026-11-02: Added preserved original-paper Algorithm 1 bilingual parity audit pair (#1846); recorded current source blobs without independent human translation sign-off.",
-    "2026-11-26: Re-reviewed seven changed EN/KO page pairs after adaptive and state-conditioned backfill removal; synchronized exact source/target blobs and source translation manifest. Historical results and fixed Top-K typed-state eligibility preserved. AI-assisted source comparison only, not independent human review."
+    "2026-11-26: Re-reviewed seven changed EN/KO page pairs after adaptive and state-conditioned backfill removal; synchronized exact source/target blobs and source translation manifest. Historical results and fixed Top-K typed-state eligibility preserved. AI-assisted source comparison only, not independent human review.",
+    "2026-11-26: Re-reviewed EN/KO API and decision-backend pages after removal of installed PairwiseDecisionBackend and PairwiseScoreCallable; archived comparison and regression scope explicit. AI-assisted source comparison only."
   ]
 }

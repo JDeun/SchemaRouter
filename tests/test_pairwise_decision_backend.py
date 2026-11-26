@@ -3,14 +3,15 @@ from typing import Any
 
 import pytest
 
+import schemarouter
 from schemarouter import (
     DecisionOption,
     DecisionRequest,
-    PairwiseDecisionBackend,
     PlanningError,
     choose_async,
     choose_sync,
 )
+from scripts.research_legacy_pairwise import PairwiseDecisionBackend
 
 
 def request(*, max_selections: int = 1) -> DecisionRequest:
@@ -171,3 +172,8 @@ def test_pairwise_backend_accepts_generator_batches() -> None:
     result = choose_sync(PairwiseDecisionBackend(score), request())
 
     assert result.selections[0].option_id == "candidate:0"
+
+
+def test_pairwise_backend_is_not_part_of_installed_product() -> None:
+    assert not hasattr(schemarouter, "PairwiseDecisionBackend")
+    assert not hasattr(schemarouter, "PairwiseScoreCallable")

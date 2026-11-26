@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-12",
+  "review_date": "2026-11-26",
   "issue": 1202,
   "scope": "Targeted bilingual review of decision-backend deployment tradeoffs and non-code English prose remnants; not a corpus semantic certificate.",
   "reviewer_status": "AI-assisted targeted review; independent human sentence-level sign-off not established.",
   "path": "concepts/decision-backends.md",
-  "en_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2",
-  "ko_blob": "8ab8e53996ca5d6687bf1e662a2615029a491ad2",
+  "en_blob": "967ee400011e15cdb9a987906db4e5ef536dcc0c",
+  "ko_blob": "460e01c0a9aed672084811075077e39f168316c1",
   "findings": [
     {
       "section": "Bounded field selection",
@@ -21,7 +21,7 @@
     {
       "section": "Choosing a decision backend",
       "decision": "mixed-language-comparison-fixed",
-      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency."
+      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency. 2026-11-26: Both language tables now mark the pairwise row as historical research only; all six rows retain their comparative tradeoffs."
     },
     {
       "section": "Local Laya decision model",

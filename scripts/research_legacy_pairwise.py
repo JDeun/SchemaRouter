@@ -1,3 +1,5 @@
+"""Historical pairwise scorer baseline; outside the installed routing package."""
+
 from __future__ import annotations
 
 import inspect
@@ -5,7 +7,7 @@ import math
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Any
 
-from .decisions import (
+from schemarouter.decisions import (
     DecisionOption,
     DecisionOptionTextCallable,
     DecisionRequest,
@@ -13,7 +15,7 @@ from .decisions import (
     DecisionSelection,
     validate_decision,
 )
-from .errors import PlanningError
+from schemarouter.errors import PlanningError
 
 PairwiseScoreCallable = Callable[
     [list[tuple[str, str]]],
