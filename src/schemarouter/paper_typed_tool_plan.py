@@ -334,7 +334,7 @@ def _bounded_parameter_value(value: Any, *, string_limit: int = 4096) -> bool:
         return False
 
 
-def _direct_input_shape(schema: dict[str, Any], depth: int = 0) -> bool:
+def _direct_input_shape(schema: Any, depth: int = 0) -> bool:
     """Prove explicit scalar/array/closed-object alternatives, not open JSON."""
     if depth > 4 or type(schema) is not dict:
         return False
@@ -393,6 +393,8 @@ def _bounded_direct_parameter_fit(schema: dict[str, Any], value: Any) -> bool:
     def fits(node: dict[str, Any], item: Any) -> bool:
         if "anyOf" in node or "oneOf" in node:
             options = node.get("anyOf", node.get("oneOf"))
+            if type(options) is not list:
+                return False
             matches = sum(fits(option, item) for option in options)
             return matches == 1 if "oneOf" in node else matches > 0
         kinds = {
