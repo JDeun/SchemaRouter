@@ -76,6 +76,8 @@ def _configured(*, count=2, needs_input=False, configure=True):
 def _forbid_lexical(ctx, monkeypatch):
     def forbidden(*args, **kwargs):
         pytest.fail("configured product planning entered the retired lexical candidate path")
+    for name in ("_build_paper_direct_plan", "_build_paper_query_plan"):
+        assert not hasattr(ctx.router.planner, name)
     for name in ("_analyze_sync", "_analyze_async", "_candidates", "_build_plan"):
         monkeypatch.setattr(ctx.router.planner, name, forbidden)
 

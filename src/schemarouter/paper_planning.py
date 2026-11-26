@@ -23,6 +23,7 @@ from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstandin
 if TYPE_CHECKING:
     from .executor import RegistryExecutor, _BindingSnapshot
     from .planner import SchemaPlanner
+    from .registry import ToolRegistry
     from .runtime import SchemaRouter
 
 
@@ -33,6 +34,60 @@ def _declaration_json(value: Any) -> str:
     except Exception:
         raise PolicyViolationError("paper planning declaration changed or invalid") from None
 
+
+def _build_paper_direct_plan(
+    registry: ToolRegistry, query: str, receipt: PaperTypedToolPlan,
+) -> ExecutionPlan:
+    """Assemble a freshly proven Algorithm 1 plan for the ordinary executor.
+
+    The field session owns compilation and live proof revalidation. This
+    private bridge never ranks again, binds model proposals, or treats a
+    diagnostic's partial calls as a complete executable plan.
+    """
+    if (
+        receipt.status != "ready" or receipt.executable_authority is not False
+        or receipt.bindings or receipt.requested_k != 5
+        or not 1 <= len(receipt.calls) <= receipt.requested_k
+        or len({(item.call.tool, item.call.endpoint) for item in receipt.calls})
+        != len(receipt.calls)
+        or receipt.coverage is not None and (
+            receipt.coverage.complete is not True or receipt.coverage.uncovered
+        )
+    ):
+        raise PolicyViolationError(
+            "paper direct execution requires a ready independent field-complete plan"
+        )
+    if any(not item.call.executable for item in receipt.calls):
+        raise PolicyViolationError("paper direct execution has unresolved inputs")
+    if receipt.registry_version != registry.version:
+        raise PolicyViolationError("paper direct plan source revision changed")
+    return ExecutionPlan(
+        query=query,
+        registry_version=receipt.registry_version,
+        calls=[item.call.model_copy(deep=True) for item in receipt.calls],
+        coverage=receipt.coverage.model_copy(deep=True) if receipt.coverage else None,
+    )
+
+def _build_paper_query_plan(
+    registry: ToolRegistry, query: str, receipt: PaperTypedToolPlan, *, max_calls: int,
+) -> ExecutionPlan:
+    """Preserve incomplete paper diagnostics without declaring them executable."""
+    status = receipt.status if len(receipt.calls) <= max_calls else "budget_unsatisfied"
+    if status == "ready":
+        plan = _build_paper_direct_plan(registry, query, receipt)
+        plan.planning_status = status
+        return plan
+    if receipt.executable_authority or receipt.bindings:
+        raise PolicyViolationError("paper query plan must contain independent source calls")
+    if receipt.registry_version != registry.version:
+        raise PolicyViolationError("paper query plan source revision changed")
+    return ExecutionPlan(
+        query=query, registry_version=receipt.registry_version,
+        calls=[item.call.model_copy(deep=True) for item in receipt.calls],
+        coverage=receipt.coverage.model_copy(deep=True) if receipt.coverage else None,
+        planning_status=status,
+        warnings=[f"Algorithm 1 planning status: {status}"],
+    )
 
 @dataclass(frozen=True, slots=True, repr=False, eq=False)
 class _PreparedPaperPlanning:
@@ -169,8 +224,8 @@ class _PreparedPaperPlanning:
         raw_json = _declaration_json(decoded)
         receipt = prepared.compile(decoded)
         check_request()
-        plan = self.planner._build_paper_query_plan(
-            pinned_request.query, receipt, max_calls=pinned_request.max_calls,
+        plan = _build_paper_query_plan(
+            self.router.registry, pinned_request.query, receipt, max_calls=pinned_request.max_calls,
         )
         bindings = {call.tool: self.executor._binding_snapshot(call.tool) for call in plan.calls}
         witness = _PaperPlanWitness(

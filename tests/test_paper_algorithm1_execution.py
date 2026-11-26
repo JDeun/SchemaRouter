@@ -148,6 +148,7 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
 
     monkeypatch.setattr(module, "compile_paper_typed_tool_plan", forbidden)
     monkeypatch.setattr(module, "compile_paper_understood_graph_plan", forbidden)
+    assert not hasattr(session._router.planner, "_build_paper_direct_plan")
     monkeypatch.setattr(session._router.planner, "_build_plan", forbidden)
     monkeypatch.setattr(session._router.planner, "_analyze_sync", forbidden)
     monkeypatch.setattr(session._router.planner, "_candidates", forbidden)

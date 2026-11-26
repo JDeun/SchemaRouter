@@ -626,6 +626,7 @@ class SchemaFieldRoutingSession:
         """
         from .executor import _require_bound_invoker_generation
         from .models import ExecutionPlan
+        from .paper_planning import _build_paper_direct_plan
         from .paper_typed_tool_plan import _check_current_call_scopes
         from .runs import ExecutionBudget, RunConfig
 
@@ -693,7 +694,7 @@ class SchemaFieldRoutingSession:
             return current
 
         original = compile_current()
-        execution_plan = planner._build_paper_direct_plan(query, original)
+        execution_plan = _build_paper_direct_plan(router.registry, query, original)
         # Pin all targets together. A first source may not silently rebind a
         # later source and have its replacement accepted as a fresh witness.
         bindings = {
