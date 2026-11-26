@@ -44,7 +44,7 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 
 def source(*, required_argument=False, input_semantic=None, hops=0,
            host_direct=False):
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("viewer",),

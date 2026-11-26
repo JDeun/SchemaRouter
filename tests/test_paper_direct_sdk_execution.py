@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from test_research_paper_scoped_agent_real_e0 import CATALOG, INTENTS, QUERY
-from test_research_paper_scoped_native_direct_e1 import _fixture
+from test_research_paper_scoped_native_direct_e1 import _native_router
 
 from schemarouter import ExecutionPlan, PrincipalContext
 from schemarouter.errors import PolicyViolationError
@@ -38,8 +38,8 @@ def _direct_kwargs(session):
 async def test_direct_sdk_refuses_nonready_paper_receipts(monkeypatch, status):
     import schemarouter.field_routing_session as paper
 
-    view, _index, seen = _fixture(requires_input=False)
-    session = view.router.prepare_field_routing(catalog=CATALOG)
+    router, _index, seen = _native_router(requires_input=False)
+    session = router.prepare_field_routing(catalog=CATALOG)
     kwargs = _direct_kwargs(session)
     ready = session.compile_understood(principal=PRINCIPAL, **kwargs)
     assert ready.status == "ready" and ready.calls[0].call.executable
@@ -56,8 +56,7 @@ async def test_direct_sdk_refuses_nonready_paper_receipts(monkeypatch, status):
 
 @pytest.mark.asyncio
 async def test_direct_sdk_dispatches_one_host_proven_native_call(monkeypatch):
-    view, _index, seen = _fixture(requires_input=False)
-    router = view.router
+    router, _index, seen = _native_router(requires_input=False)
     session = router.prepare_field_routing(catalog=CATALOG)
     execute = AsyncMock(wraps=router.execute)
     monkeypatch.setattr(router, "execute", execute)
@@ -79,8 +78,7 @@ async def test_direct_sdk_dispatches_one_host_proven_native_call(monkeypatch):
 async def test_direct_sdk_refuses_binding_mutated_by_availability(monkeypatch):
     import schemarouter.field_routing_session as paper
 
-    view, _index, seen = _fixture(requires_input=False)
-    router = view.router
+    router, _index, seen = _native_router(requires_input=False)
     session = router.prepare_field_routing(catalog=CATALOG)
     original = paper.compile_paper_understood_direct_plan
     compiled = 0
@@ -108,7 +106,7 @@ async def test_direct_sdk_refuses_binding_mutated_by_availability(monkeypatch):
         return True
 
     monkeypatch.setattr(paper, "compile_paper_understood_direct_plan", compile_plan)
-    router.planner.availability_predicate = availability
+    router._source_availability.predicate = availability
     with pytest.raises(PolicyViolationError):
         await session.aexecute_direct(QUERY, principal=PRINCIPAL, **_direct_kwargs(session))
     assert swapped and seen == [] and replaced == []
@@ -120,8 +118,7 @@ async def test_direct_sdk_rejects_unsafe_execution_shapes(monkeypatch, case):
     """Never dispatch a dependent, unbound or mutating paper route."""
     import schemarouter.field_routing_session as paper
 
-    view, _index, seen = _fixture(requires_input=False)
-    router = view.router
+    router, _index, seen = _native_router(requires_input=False)
     if case == "not_read_only":
         tool = router.registry.get("complete")
         tool.endpoint("read").read_only = False
@@ -147,8 +144,8 @@ async def test_direct_sdk_rejects_unsafe_execution_shapes(monkeypatch, case):
 @pytest.mark.asyncio
 async def test_direct_sdk_real_registered_native_invoker_end_to_end():
     """Public SDK must reach the real registered executor, not a mocked execute."""
-    view, _index, seen = _fixture(requires_input=False)
-    session = view.router.prepare_field_routing(catalog=CATALOG)
+    router, _index, seen = _native_router(requires_input=False)
+    session = router.prepare_field_routing(catalog=CATALOG)
     results = await session.aexecute_direct(
         QUERY, principal=PRINCIPAL, **_direct_kwargs(session),
     )
@@ -161,8 +158,8 @@ async def test_direct_sdk_real_registered_native_invoker_end_to_end():
 
 @pytest.mark.asyncio
 async def test_direct_sdk_real_native_invoker_uses_only_host_arguments():
-    view, _index, seen = _fixture()
-    session = view.router.prepare_field_routing(
+    router, _index, seen = _native_router()
+    session = router.prepare_field_routing(
         catalog=CATALOG, approved_host_roots=frozenset({"complete.read"}),
     )
     results = await session.aexecute_direct(

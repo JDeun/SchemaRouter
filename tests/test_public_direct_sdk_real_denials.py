@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 from test_paper_direct_sdk_execution import _direct_kwargs
 from test_research_paper_scoped_agent_real_e0 import CATALOG, QUERY
-from test_research_paper_scoped_native_direct_e1 import _fixture
+from test_research_paper_scoped_native_direct_e1 import _native_router
 
 from schemarouter import AuthorizationPolicy, PrincipalContext
 from schemarouter.errors import PolicyViolationError
@@ -31,8 +31,7 @@ async def test_direct_sdk_real_registered_native_denials_never_dispatch(
 ) -> None:
     """Policy/argument/source denial must happen before any real native call."""
     requires_input = case == "missing_host_arguments"
-    view, _index, invoked = _fixture(requires_input=requires_input)
-    router = view.router
+    router, _index, invoked = _native_router(requires_input=requires_input)
     session = router.prepare_field_routing(
         catalog=CATALOG,
         approved_host_roots=(
@@ -61,8 +60,7 @@ async def test_direct_sdk_real_registered_native_denials_never_dispatch(
 @pytest.mark.asyncio
 async def test_direct_sdk_real_registered_native_recovers_from_temporary_unavailability() -> None:
     """Recovery must preserve source-bound argument integrity and never skip policy."""
-    view, _index, invoked = _fixture(requires_input=False)
-    router = view.router
+    router, _index, invoked = _native_router(requires_input=False)
     session = router.prepare_field_routing(catalog=CATALOG)
     principal = PrincipalContext(subject="member", roles=("viewer",))
     router.mark_access_unavailable("complete", "read", cooldown_seconds=120)
@@ -90,8 +88,7 @@ async def test_direct_sdk_same_contract_binding_generation_drift_never_dispatche
     The registry and endpoint fingerprints stay identical; only the *bound*
     invoker generation changes after SDK proof but before native invocation.
     """
-    view, _index, original_invocations = _fixture(requires_input=False)
-    router = view.router
+    router, _index, original_invocations = _native_router(requires_input=False)
     session = router.prepare_field_routing(catalog=CATALOG)
     principal = PrincipalContext(subject="member", roles=("viewer",))
     replacement_invocations: list[dict] = []

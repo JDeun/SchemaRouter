@@ -22,7 +22,7 @@
       "blob_sha": {
         ".github/workflows/external-validation-clicshopping-v433-dev.yml": "72b9179bc982571386510dc3c696ce95437b7621",
         "benchmarks/external-validation-clicshopping-v433/source-inventory.json": "eaeb4f8f63ecc5c2b5eb6f941d608893a5a268b7",
-        "scripts/run_clicshopping_v433_dev.py": "63fe11ea3ad8e379cdaf181f41c9528238e105d9",
+        "scripts/run_clicshopping_v433_dev.py": "e36ee2d14a802cb0116544fbb6027861d951328a",
         "scripts/validate_clicshopping_v433_inventory.py": "a81030dcaa8d69e0b1b3ec7c53c97d360128dc70"
       },
       "source_class": "visible_public_development_only",
@@ -41,7 +41,7 @@
         "scripts/run_clear_your_tools_external_validation.py": "34594751318bb9621dee3a888c02f9f1cf19f71e",
         "scripts/validate_cyt_sdk_development_result.py": "34ea847e41f9fa630ba3b2c762d88c4e220f8a3c",
         "scripts/build_cyt_development_scaling_catalogs.py": "bee15b55c828485d69544053fa1f38efe6637b34",
-        "scripts/run_schemarouter_external_validation.py": "a2b60ae90860eda82d71c17e46ae22ee74a783a2"
+        "scripts/run_schemarouter_external_validation.py": "ba7db4bd98ad8f57ffc07c4d492b061c90427e30"
       },
       "source_class": "synthetic_visible_development_only",
       "reason": "Pinned local SDK and synthetic 100/250/500/1000 catalogs; not independent performance evidence"

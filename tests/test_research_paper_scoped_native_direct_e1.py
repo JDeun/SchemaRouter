@@ -26,9 +26,9 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 
 
-def _fixture(*, requires_input: bool = True, on_invoke=None):
+def _native_router(*, requires_input: bool = True, on_invoke=None, legacy=False):
     seen = []
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(_legacy_routing=legacy, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="complete.read", roles_any=("viewer",),
         ),),
@@ -63,15 +63,22 @@ def _fixture(*, requires_input: bool = True, on_invoke=None):
             ],
         )],
     ), invoke)
-    view = capture_authorized_agent_tool_surface(
-        router, QUERY, principal=PrincipalContext(
-            subject="native-e1", roles=("viewer",),
-        ),
-    )
     index = NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
         approved_host_roots=(frozenset({"complete.read"})
                              if requires_input else frozenset()),
+    )
+    return router, index, seen
+
+
+def _fixture(*, requires_input: bool = True, on_invoke=None):
+    router, index, seen = _native_router(
+        requires_input=requires_input, on_invoke=on_invoke, legacy=True,
+    )
+    view = capture_authorized_agent_tool_surface(
+        router, QUERY, principal=PrincipalContext(
+            subject="native-e1", roles=("viewer",),
+        ),
     )
     return view, index, seen
 

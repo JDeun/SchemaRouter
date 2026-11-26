@@ -191,7 +191,7 @@ def benchmark_selectivity(*, noise_routes: int = 5100, iterations: int = 20,
         # This condition changes only current availability, not registered
         # ToolSpec source; witness protects it throughout each query.
         denied_now = frozenset(unavailable)
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             (lambda tool, ep: tool.key not in denied_now)
             if denied_now else None
         )
@@ -219,7 +219,7 @@ def benchmark_selectivity(*, noise_routes: int = 5100, iterations: int = 20,
     run("broad_semantic_no_path", names, query=BROAD_QUERY,
         group=BROAD_GROUP, expected=0, samples=broad_iterations)
 
-    router.planner.availability_predicate = None
+    router._source_availability.predicate = None
     return {
         "evidence_tier": EVIDENCE,
         "independent_e2_qualified": False,

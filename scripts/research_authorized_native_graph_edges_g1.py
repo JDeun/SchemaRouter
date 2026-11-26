@@ -107,7 +107,7 @@ def _safe_routes(
         raise ValueError("G1 requires explicit principal authorization")
     visible = router._scoped_analysis_registry(principal, allowed)
     entries: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
-    availability = router.planner.availability_predicate
+    availability = router._source_availability_predicate()
     visible_field_count = 0
     for tool in visible.tools():
         for endpoint in tool.endpoints:
