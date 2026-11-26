@@ -25,6 +25,12 @@ from schemarouter import (
 )
 from schemarouter.errors import SchemaValidationError
 from schemarouter.field_group_retrieval import _scalar_contract
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
+from schemarouter.paper_understood_direct_plan import (
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperUnderstanding,
+)
 
 ALIASES = ("record value", "레코드 값", "レコードの値")
 READER = PrincipalContext(subject="reader", roles=("reader",))
@@ -78,6 +84,22 @@ def _fixture(schema, value):
     return router, group, catalog, seen
 
 
+def _direct_kwargs(session):
+    return {
+        "understanding": PaperUnderstanding(
+            intent_id="record.lookup", concept_ids=("record.value",),
+            named_tools=("records",),
+        ),
+        "intent_registry": PaperIntentRegistry(intents=(PaperIntentDeclaration(
+            intent_id="record.lookup", required_concept_ids=("record.value",),
+        ),)),
+        "rank_policy": PaperNativeRankPolicy(
+            snapshot_id=session.snapshot_id, direct_score_mode="paper_v1",
+            focus_direct=True,
+        ),
+    }
+
+
 @pytest.mark.parametrize("schema,valid,invalid", SCALARS)
 @pytest.mark.parametrize("query", ALIASES)
 async def test_constrained_scalar_survives_public_field_routing_and_execution(
@@ -94,7 +116,9 @@ async def test_constrained_scalar_survives_public_field_routing_and_execution(
     assert plan.status == "ready"
     assert plan.calls[0].call.fields == ["record_id", "value"]
     assert seen == []
-    result, = await session.aexecute_direct(query, principal=READER)
+    result, = await session.aexecute_direct(
+        query, principal=READER, **_direct_kwargs(session),
+    )
     assert result.data == {"record_id": "record-1", "value": valid}
     assert seen == [("read", {})]
     assert router.retrieve_authorized(query, principal=READER) == baseline
@@ -107,7 +131,9 @@ async def test_original_scalar_assertions_still_validate_actual_provider_values(
     router, _group, catalog, seen = _fixture(schema, invalid)
     session = router.prepare_field_routing(catalog=catalog)
     with pytest.raises(SchemaValidationError):
-        await session.aexecute_direct(ALIASES[0], principal=READER)
+        await session.aexecute_direct(
+            ALIASES[0], principal=READER, **_direct_kwargs(session),
+        )
     assert seen == [("read", {})]
 
 
@@ -199,7 +225,9 @@ async def test_canonical_unit_bounds_reach_public_field_plan_and_execution():
     assert plan.status == "ready"
     value_meta = next(field for field in plan.calls[0].fields_meta if field.name == "value")
     assert value_meta.source_unit == "degC" and value_meta.unit == "K"
-    result, = await session.aexecute_direct(ALIASES[0], principal=READER)
+    result, = await session.aexecute_direct(
+        ALIASES[0], principal=READER, **_direct_kwargs(session),
+    )
     assert result.data == {"record_id": "record-1", "value": 298.15}
     assert seen == [("read", {})]
 

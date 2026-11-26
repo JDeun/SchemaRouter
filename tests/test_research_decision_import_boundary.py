@@ -62,6 +62,8 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         assert RETIRED.isdisjoint(alias.name for alias in node.names), path
                 elif isinstance(node, ast.Import):
                     assert all(
-                        not alias.name.startswith(("schemarouter.decisions", "schemarouter.analyzers"))
+                        not alias.name.startswith((
+                            "schemarouter.decisions", "schemarouter.analyzers",
+                        ))
                         for alias in node.names
                     ), path

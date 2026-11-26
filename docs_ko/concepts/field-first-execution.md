@@ -66,6 +66,35 @@ Schema-independent 프로토콜에서는 각 need의 `qualifiers`로 동일한 �
 
 각 call의 `fields_meta`는 현재 scoped schema view의 `PaperPlanFieldMeta.source_path`, `result_path`, `json_schema`와 정규화된 단위·값 계약을 제공합니다. Policy는 경로를 평탄화하거나 metadata를 숨길 수 있습니다. 모델 기반 query receipt에는 검증 후 분리 복사한 `understanding_hints`도 포함되지만, 이것은 검증된 질문의 의미나 입력 권한이 아닌 신뢰하지 않는 제안입니다. `status="ready"`인 경우에도 모든 receipt의 `executable_authority=False`를 유지합니다.
 
+## Algorithm 1 직접 계획 실행 {#execute-an-algorithm-1-direct-plan}
+
+`session.aexecute_direct(...)`는 Algorithm 1 직접 계획을 새로 compile한 뒤 기존 executor로 실행합니다. 구조화된 `PaperUnderstanding`, 호스트의 `PaperIntentRegistry`, 현재 principal과 snapshot에 고정된 `PaperNativeRankPolicy`가 필요하며, 정책은 `direct_score_mode="paper_v1"`, `focus_direct=True`여야 합니다. Understanding은 계속 신뢰하지 않는 제안이며, 허용되는 필드와 route는 호스트가 검토한 catalog 및 현재 원본 계약으로 결정합니다. 이 메서드는 질문만 받던 이전 어휘 기반 직접 실행 진입점을 대체하며, `alternative_index`는 더 이상 받지 않습니다.
+
+Session과 호스트 소유 선언을 준비한 뒤 다음과 같이 호출합니다.
+
+```python
+from schemarouter import PaperNativeRankPolicy
+
+rank_policy = PaperNativeRankPolicy(
+    snapshot_id=session.snapshot_id,
+    direct_score_mode="paper_v1",
+    focus_direct=True,
+)
+results = await session.aexecute_direct(
+    query,
+    understanding=understanding,
+    principal=principal,
+    intent_registry=intent_registry,
+    rank_policy=rank_policy,
+    host_source_arguments=approved_host_arguments,
+    k=5,
+)
+```
+
+고정된 K5 한도 안에서 직접 compiler가 선택한 독립적인 읽기 전용 source call을 1개에서 5개까지 실행할 수 있습니다. 실행 전에 모든 필수 필드 집합의 coverage가 충족되고 모든 필수 입력이 제공되어야 합니다. 모델의 `parameter_hints`는 인자를 연결하지 않으며, 별도로 승인한 `host_source_arguments`만 입력값을 제공할 수 있습니다. 누락된 입력, 불완전한 coverage, 의존성 binding과 안전하지 않은 route는 거부합니다. 명시된 source의 입력이 없으면 G5 producer를 추가하지 않고 pending 상태를 유지하며, 실행 과정에서 어휘 기반 planner나 fallback route로 대체하지 않습니다.
+
+이 연결 경로는 현재 원본 계약, 권한, 필드 노출 범위, 가용성과 native invoker generation을 다시 검사하며, await한 before-call hook 이후에도 검사합니다. 실행 예산은 선택된 call마다 한 번의 시도를 허용합니다. `compile_understood(...)`는 계속 `executable_authority=False`인 진단용 receipt를 반환하며, ready receipt도 실행 권한을 부여할 수 없습니다. 명시적으로 선택하는 이 메서드는 기본 `router.plan(...)` 경로를 바꾸지 않습니다.
+
 ## Field-first가 중요한 이유
 
 Elastic modulus 하나만 필요한데 complete material record를 가져오면 upstream bytes/latency, JSON parsing/validation, downstream LLM의 irrelevant value, prompt token, distractor 위험이 증가합니다. 그래서 response field를 afterthought가 아니라 execution plan 일부로 취급합니다.

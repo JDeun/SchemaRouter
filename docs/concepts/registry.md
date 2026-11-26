@@ -81,11 +81,14 @@ contract, not a particular invoker instance. Changed endpoint/tool fingerprints 
 authorization still reject the call before either invoker runs. A concurrent rebind after the
 attempt's binding snapshot is taken does not cancel that already-selected invocation.
 
-The opt-in `SchemaFieldRoutingSession.aexecute_direct()` also pins the native invoker generation
-from its host proof through the executor's binding checks. A rebind in a before-call hook is
+The opt-in `SchemaFieldRoutingSession.aexecute_direct()` compiles a fresh Algorithm 1 direct plan
+from the required structured understanding, host intent registry and current `paper_v1` rank policy
+with `focus_direct=True`. It pins every selected native invoker generation from the source proof
+through the executor's binding checks, including after awaited before-call hooks. A rebind is
 rejected even when the contract is unchanged. A fresh direct execution can recompile its proof
-against the replacement. Neither contract turns a plan, receipt or model selection into
-execution authority.
+against the replacement. Neither contract turns a plan, receipt or model selection into execution
+authority. See [Algorithm 1 direct execution](field-first-execution.md#execute-an-algorithm-1-direct-plan)
+for the explicit arguments and independent-source bound.
 
 `router.authorization_policy` and `router.executor.authorization_policy` share the same current
 policy. Replacing it through either API affects planning and the executor's next authorization

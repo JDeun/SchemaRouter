@@ -3044,7 +3044,9 @@ def test_corroborate_mode_rejects_incompatible_datatypes() -> None:
         max_calls=2, retrieval_mode="corroborate",
     ),
 ])
-async def test_product_async_and_sync_share_post_analysis_builder(plan_request, monkeypatch) -> None:
+async def test_product_async_and_sync_share_post_analysis_builder(
+    plan_request, monkeypatch,
+) -> None:
     reg = InMemoryRegistry()
     for name, provider, access_mode in (
         ("mp_api", "materials_project", "openapi"),

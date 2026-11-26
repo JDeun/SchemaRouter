@@ -71,7 +71,9 @@ _MISSING = object()
 
 # Opt-in task-local host witness, checked at the actual executor binding lookup
 # even when awaited before-call hooks mutate the registered invoker.
-_required_bound_invoker_generation: ContextVar[tuple[object, str, int] | None] = ContextVar(
+_required_bound_invoker_generation: ContextVar[
+    tuple[object, str, int, Callable[[], None] | None] | None
+] = ContextVar(
     "schemarouter_required_bound_invoker_generation", default=None,
 )
 
@@ -79,8 +81,9 @@ _required_bound_invoker_generation: ContextVar[tuple[object, str, int] | None] =
 @contextmanager
 def _require_bound_invoker_generation(
     executor: RegistryExecutor, tool_key: str, generation: int,
+    *, revalidate: Callable[[], None] | None = None,
 ) -> Iterator[None]:
-    token = _required_bound_invoker_generation.set((executor, tool_key, generation))
+    token = _required_bound_invoker_generation.set((executor, tool_key, generation, revalidate))
     try:
         yield
     finally:
@@ -1174,6 +1177,14 @@ class RegistryExecutor:
         """Recheck approval authority in the worker immediately before sync invocation."""
 
         self._assert_execution_policy_snapshot(policy)
+        required = _required_bound_invoker_generation.get()
+        if required is not None:
+            # The worker inherits the task-local proof. Queuing a sync call
+            # must not discard a host witness checked before submission.
+            self._binding_for_validated_contract(
+                required[1], self.registry.get(required[1]).fingerprint,
+            )
+            self._assert_execution_policy_snapshot(policy)
         return invoker(*args)
 
     async def _approve(
@@ -1228,11 +1239,21 @@ class RegistryExecutor:
         required = _required_bound_invoker_generation.get()
         if required is not None and (
             self is not required[0]
-            or (tool_key, binding.generation) != required[1:]
+            or (tool_key, binding.generation) != required[1:3]
         ):
             raise PolicyViolationError(
                 "native invoker binding changed during host-pinned execution"
             )
+        if required is not None and required[3] is not None:
+            # Revalidate the same host-owned plan after awaited approval or
+            # before-call hooks and at each actual dispatch. The callback is
+            # private and task-local; a public plan cannot install a witness.
+            required[3]()
+            binding = self._binding_snapshot(tool_key)
+            if (tool_key, binding.generation) != required[1:3]:
+                raise PolicyViolationError(
+                    "native invoker binding changed during host-pinned execution"
+                )
         if binding.invoker is None:
             raise ExecutionError(f"no invoker bound for tool {tool_key!r}")
         if binding.fingerprint != tool_fingerprint:

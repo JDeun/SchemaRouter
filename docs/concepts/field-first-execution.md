@@ -170,6 +170,50 @@ paths or redact metadata. The model-backed query receipt also carries detached, 
 `understanding_hints`; these remain untrusted suggestions, not verified query meaning or input
 authority. All these receipts retain `executable_authority=False`, including `status="ready"`.
 
+## Execute an Algorithm 1 direct plan
+
+`session.aexecute_direct(...)` executes a freshly compiled Algorithm 1 direct plan through the
+existing executor. It requires a structured `PaperUnderstanding`, the host's `PaperIntentRegistry`,
+the current principal and a snapshot-pinned `PaperNativeRankPolicy` with
+`direct_score_mode="paper_v1"` and `focus_direct=True`. The understanding remains an untrusted
+proposal; the host-reviewed catalog and current source contracts determine the permitted fields
+and routes. This method replaces the earlier query-only lexical direct execution entry point;
+`alternative_index` is no longer accepted.
+
+After preparing the session and the host-owned declarations, call:
+
+```python
+from schemarouter import PaperNativeRankPolicy
+
+rank_policy = PaperNativeRankPolicy(
+    snapshot_id=session.snapshot_id,
+    direct_score_mode="paper_v1",
+    focus_direct=True,
+)
+results = await session.aexecute_direct(
+    query,
+    understanding=understanding,
+    principal=principal,
+    intent_registry=intent_registry,
+    rank_policy=rank_policy,
+    host_source_arguments=approved_host_arguments,
+    k=5,
+)
+```
+
+The fixed K5 bound permits one to five independent read-only source calls selected by the direct
+compiler. Every required field group must be covered and every required input must be supplied
+before dispatch. Model `parameter_hints` do not bind arguments; only separately approved
+`host_source_arguments` can supply them. Missing inputs, incomplete coverage, dependency bindings
+and unsafe routes are rejected. An explicit source with missing inputs remains pending instead of
+adding G5 producers, and execution does not substitute the lexical planner or a fallback route.
+
+The bridge rechecks current source contracts, authorization, field visibility, availability and
+native invoker generations, including after awaited before-call hooks. Its execution budget allows
+one attempt per selected call. `compile_understood(...)` continues to return a diagnostic receipt
+with `executable_authority=False`; a ready receipt cannot authorize execution. This explicit method
+does not change the default `router.plan(...)` path.
+
 ## Why field-first matters
 
 If a user asks for one material property such as elastic modulus, fetching a complete material

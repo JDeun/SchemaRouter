@@ -20,7 +20,7 @@
         {
           "name": "authorization_policy",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1231
+          "source_line": 1236
         },
         {
           "name": "input_schema",
@@ -682,62 +682,62 @@
         {
           "name": "prepare",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 185
+          "source_line": 202
         },
         {
           "name": "refresh",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 220
+          "source_line": 237
         },
         {
           "name": "revise_catalog",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 280
+          "source_line": 297
         },
         {
           "name": "snapshot_id",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 336
+          "source_line": 353
         },
         {
           "name": "catalog_revision_id",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 348
+          "source_line": 365
         },
         {
           "name": "indexed_route_count",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 359
+          "source_line": 376
         },
         {
           "name": "inspect_visible_fields",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 363
+          "source_line": 380
         },
         {
           "name": "discover",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 524
+          "source_line": 544
         },
         {
           "name": "compile",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 539
+          "source_line": 559
         },
         {
           "name": "compile_understood",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 561
+          "source_line": 581
         },
         {
           "name": "aexecute_direct",
           "kind": "registered-tool-execution",
-          "source_line": 589
+          "source_line": 609
         },
         {
           "name": "acompile_query",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 691
+          "source_line": 744
         }
       ]
     }

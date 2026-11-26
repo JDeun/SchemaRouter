@@ -7,10 +7,10 @@ import unicodedata
 from collections.abc import Awaitable, Callable, Set
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
-from .errors import ModelAnalysisError, PlanningError
+from .errors import ModelAnalysisError, PlanningError, PolicyViolationError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
 from .execution_state import TypedExecutionState
 from .models import (
@@ -54,6 +54,9 @@ from .validation import (
     json_schema_types,
     json_schemas_compatible,
 )
+
+if TYPE_CHECKING:
+    from .paper_typed_tool_plan import PaperTypedToolPlan
 
 # Match normalized Korean syllables and Japanese kana/kanji as lexical
 # spans so explicitly declared multilingual aliases can be retrieved.
@@ -2616,6 +2619,39 @@ class SchemaPlanner:
             candidates=tuple(ordered),
             required_coverage=required,
             warnings=(),
+        )
+
+    def _build_paper_direct_plan(
+        self, query: str, receipt: PaperTypedToolPlan,
+    ) -> ExecutionPlan:
+        """Assemble a freshly proven Algorithm 1 plan for the ordinary executor.
+
+        The field session owns compilation and live proof revalidation. This
+        private bridge never ranks again, binds model proposals, or treats a
+        diagnostic's partial calls as a complete executable plan.
+        """
+        if (
+            receipt.status != "ready" or receipt.executable_authority is not False
+            or receipt.bindings or receipt.requested_k != 5
+            or not 1 <= len(receipt.calls) <= receipt.requested_k
+            or len({(item.call.tool, item.call.endpoint) for item in receipt.calls})
+            != len(receipt.calls)
+            or receipt.coverage is not None and (
+                receipt.coverage.complete is not True or receipt.coverage.uncovered
+            )
+        ):
+            raise PolicyViolationError(
+                "paper direct execution requires a ready independent field-complete plan"
+            )
+        if any(not item.call.executable for item in receipt.calls):
+            raise PolicyViolationError("paper direct execution has unresolved inputs")
+        if receipt.registry_version != self.registry.version:
+            raise PolicyViolationError("paper direct plan source revision changed")
+        return ExecutionPlan(
+            query=query,
+            registry_version=receipt.registry_version,
+            calls=[item.call.model_copy(deep=True) for item in receipt.calls],
+            coverage=receipt.coverage.model_copy(deep=True) if receipt.coverage else None,
         )
 
     def _build_plan(

@@ -6,6 +6,7 @@ records whether a genuinely bound native capability was actually invoked.
 from __future__ import annotations
 
 import pytest
+from test_paper_direct_sdk_execution import _direct_kwargs
 from test_research_paper_scoped_agent_real_e0 import CATALOG, QUERY
 from test_research_paper_scoped_native_direct_e1 import _fixture
 
@@ -51,7 +52,9 @@ async def test_direct_sdk_real_registered_native_denials_never_dispatch(
         router.executor.hooks = ExecutionHooks(before_call=(revoke,))
 
     with pytest.raises(PolicyViolationError):
-        await session.aexecute_direct(QUERY, principal=principal)
+        await session.aexecute_direct(
+            QUERY, principal=principal, **_direct_kwargs(session),
+        )
     assert invoked == [], "Rejected native plan must never reach bound provider"
 
 
@@ -65,11 +68,15 @@ async def test_direct_sdk_real_registered_native_recovers_from_temporary_unavail
     router.mark_access_unavailable("complete", "read", cooldown_seconds=120)
 
     with pytest.raises(PolicyViolationError):
-        await session.aexecute_direct(QUERY, principal=principal)
+        await session.aexecute_direct(
+            QUERY, principal=principal, **_direct_kwargs(session),
+        )
     assert invoked == []
 
     router.mark_access_available("complete", "read")
-    results = await session.aexecute_direct(QUERY, principal=principal)
+    results = await session.aexecute_direct(
+        QUERY, principal=principal, **_direct_kwargs(session),
+    )
     assert invoked == [{}]
     assert len(results) == 1
     assert results[0].tool == "complete"
@@ -107,7 +114,9 @@ async def test_direct_sdk_same_contract_binding_generation_drift_never_dispatche
         PolicyViolationError,
         match="native invoker binding changed during host-pinned execution",
     ):
-        await session.aexecute_direct(QUERY, principal=principal)
+        await session.aexecute_direct(
+            QUERY, principal=principal, **_direct_kwargs(session),
+        )
 
     assert router.registry.get("complete").fingerprint == fingerprint
     assert router.executor._binding_snapshot("complete").generation != old.generation
@@ -117,7 +126,9 @@ async def test_direct_sdk_same_contract_binding_generation_drift_never_dispatche
     # Without the stale host witness, fresh SDK recompilation is permitted:
     # the unchanged read-only contract can dispatch through the new generation.
     router.executor.hooks = ExecutionHooks()
-    result = await session.aexecute_direct(QUERY, principal=principal)
+    result = await session.aexecute_direct(
+        QUERY, principal=principal, **_direct_kwargs(session),
+    )
     assert replacement_invocations == [{}]
     assert original_invocations == []
     assert len(result) == 1 and result[0].data["case_id"] == "replacement"
