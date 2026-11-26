@@ -24,7 +24,7 @@ from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts import benchmark_native_g5_build_fingerprint_ab_e0 as fixture
 
 
-def _router(monkeypatch, n: int, packed: bool = True, *, registry=None):
+def _router(monkeypatch, n: int, packed: bool = True, *, registry=None, router_factory=SchemaRouter):
     monkeypatch.setattr(fixture, "TOOLS", 2)
     monkeypatch.setattr(fixture, "ENDPOINTS_PER_TOOL", 1)
     templates = fixture._synthetic_router().registry.tools()
@@ -32,8 +32,7 @@ def _router(monkeypatch, n: int, packed: bool = True, *, registry=None):
     endpoints = [root.model_copy(update={"name": "root"}, deep=True)] + [
         consumer.model_copy(update={"name": f"read_{i}"}, deep=True) for i in range(1, n)
     ]
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = router_factory(
         registry=registry, authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),
@@ -118,7 +117,7 @@ def test_user_callbacks_keep_fresh_detached_source_snapshots(monkeypatch, kind: 
         def health(tool, endpoint):
             observe(tool)
             return True
-        router.planner.availability_predicate = health
+        router._source_availability.predicate = health
     elif custom in {"scope", "scope_class"}:
         original = router._data_scope_endpoint_view
 
@@ -194,7 +193,7 @@ def test_user_callbacks_keep_fresh_detached_source_snapshots(monkeypatch, kind: 
             observe(tool)
             return original(_router, tool, endpoint)
         monkeypatch.setattr(SchemaRouter, "_is_snapshot_access_available", health)
-        router.planner.availability_predicate = router._is_snapshot_access_available
+        router._source_availability.predicate = router._is_snapshot_access_available
     elif custom == "fingerprint_class":
         original = _SourceAvailability.fingerprint
 
@@ -251,7 +250,7 @@ def test_same_callback_revocation_never_publishes_cached_candidates(
                 router.registry = registry
         return not (change == "health" and revoked and endpoint.name == "read_1")
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(PolicyViolationError):
         _lookup(posting if kind == "posting" else graph, router)
     assert revoked
@@ -291,31 +290,11 @@ def test_default_cooldowns_reuse_source_hash_but_still_deny_and_recover(monkeypa
     assert reads == hashes == 2
 
 
-def test_shared_source_authority_keeps_exact_snapshot_fingerprints_and_legacy_override(monkeypatch):
+def test_native_source_fixture_has_no_lexical_snapshot(monkeypatch):
     router, posting, _graph = _router(monkeypatch, 4)
-    authority = router._source_availability
-    assert not hasattr(router.planner, "_snapshot_tool_fingerprint")
-    index = router.planner._index()
-    tool = index.tools[0]
-    detached = tool.model_copy(deep=True)
-    detached.description = "a different contract"
-    assert authority.snapshot is index.fingerprints
-    assert authority.snapshot.get(detached) is None
-    assert authority.fingerprint(tool) == tool.fingerprint
-    assert authority.fingerprint(detached) == detached.fingerprint != tool.fingerprint
-
-    # Existing host overrides remain authoritative for native lookup.
+    assert router.planner is None
+    assert router._source_availability.snapshot is None
     callback = lambda _tool, _endpoint: False  # noqa: E731
-    monkeypatch.setattr(router.planner, "availability_predicate", callback)
+    monkeypatch.setattr(router._source_availability, "predicate", callback)
     assert router._source_availability_predicate() is callback
     assert _lookup(posting, router).status == "no_proven_hit"
-
-
-def test_native_lookup_rejects_replaced_legacy_availability_owner(monkeypatch):
-    router, posting, _graph = _router(monkeypatch, 4)
-    monkeypatch.setattr(
-        router.planner, "_source_availability",
-        _SourceAvailability(router._source_availability_predicate()),
-    )
-    with pytest.raises(PolicyViolationError, match="source availability mismatch"):
-        _lookup(posting, router)
