@@ -49,6 +49,9 @@ state = await graph.ainvoke({"query": "current weather", "arguments": {"city": "
 
 Default node는 `state["schemarouter_request"]`의 string/`PlanRequest`/compatible mapping 또는 `state["query"]` string과 optional `state["arguments"]` mapping을 받습니다.
 
+Algorithm 1을 `configure_field_routing(...)`으로 설정한 router에서는 node가 호출 시점의 설정을 따릅니다. `schemarouter_request`에 `PaperPlanRequest` 또는 해당 mapping을 전달하십시오. 질문만 있으면 `query`를 사용해도 됩니다. 소스별 승인 인자는 `PaperPlanRequest.host_source_arguments`에 명시하고, 기존 flat `arguments`를 변환하거나 누락하지 않습니다. 요청 factory 역시 같은 계약을 따릅니다. `RunConfig`의 신뢰된 principal과 실행 검증은 유지합니다.
+
+
 Result는 partial LangGraph state update로 반환합니다.
 
 ```python
@@ -76,7 +79,7 @@ node = to_langgraph_node(
 )
 ```
 
-Factory는 string, `PlanRequest`, compatible mapping을 반환할 수 있습니다.
+Factory는 string 또는 현재 router에 맞는 요청 타입(`PlanRequest`/`PaperPlanRequest`)이나 compatible mapping을 반환할 수 있습니다.
 
 ## Trust boundary
 

@@ -33,6 +33,14 @@ def _coerce_export_run_config(
     return run_config.model_copy(update={"run_id": uuid4().hex})
 
 
+def _require_endpoint_export_mode(router: SchemaRouter) -> None:
+    if router._paper_planning is not None:
+        raise PolicyViolationError(
+            "configured paper routing requires plan/aplan and execute; "
+            "raw endpoint export is unavailable",
+        )
+
+
 def _authorized_endpoint_view(
     router: SchemaRouter,
     tool_key: str,
@@ -41,6 +49,7 @@ def _authorized_endpoint_view(
     *,
     audit_export: bool = True,
 ) -> tuple[ToolSpec, EndpointSpec, EndpointSpec]:
+    _require_endpoint_export_mode(router)
     tool = router.registry.get(tool_key)
     endpoint = tool.endpoint(endpoint_name)
     policy = router.authorization_policy
@@ -77,6 +86,7 @@ def _authorized_endpoint_view(
     projected = router._data_scope_endpoint_view(principal, tool, endpoint)
     if projected is None:
         raise PolicyViolationError("authorization denied for requested data scope")
+    _require_endpoint_export_mode(router)
     return tool, endpoint, projected
 
 
@@ -99,6 +109,7 @@ def _resolve_live_exported_endpoint(
     run_config: RunConfig,
     expected: _ExportedEndpointContract,
 ) -> tuple[ToolSpec, EndpointSpec, EndpointSpec]:
+    _require_endpoint_export_mode(router)
     try:
         tool, endpoint, visible_endpoint = _authorized_endpoint_view(
             router,

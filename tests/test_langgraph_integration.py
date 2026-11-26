@@ -6,7 +6,9 @@ pytest.importorskip("langgraph")
 
 from langgraph.graph import END, START, StateGraph
 
-from schemarouter import PlanRequest, SchemaRouter, SchemaValidationError, schema_tool
+from test_paper_configured_planning import _configure, _configured
+
+from schemarouter import PlanRequest, RunConfig, SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_langgraph_node
 
 
@@ -134,3 +136,49 @@ def test_langgraph_node_still_enforces_schemarouter_validation() -> None:
                 "arguments": {"a": "not-an-int", "b": 3},
             }
         )
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("request_kind", ["model", "mapping", "factory"])
+async def test_configured_langgraph_preserves_source_local_host_arguments(request_kind):
+    ctx = _configured(count=2, needs_input=True)
+    request = ctx.request
+    options = {"run_config": RunConfig(principal=ctx.principal)}
+    if request_kind == "factory":
+        options["request_factory"] = lambda _state: request.model_dump(mode="json")
+        state = {}
+    else:
+        state = {"schemarouter_request": (
+            request if request_kind == "model" else request.model_dump(mode="json")
+        )}
+    result = await to_langgraph_node(ctx.router, **options).ainvoke(state)
+    assert sorted(item["tool"] for item in result["schemarouter_results"]) == [
+        "source_0", "source_1",
+    ]
+    assert all(arguments == {"sample_id": "host-7"} for _, _, arguments in ctx.seen)
+    assert len(ctx.model.payloads) == 1
+
+
+def test_langgraph_node_created_before_configuration_uses_current_paper_mode():
+    ctx = _configured(count=1, needs_input=False, configure=False)
+    node = to_langgraph_node(ctx.router, run_config=RunConfig(principal=ctx.principal))
+    _configure(ctx)
+    result = node.invoke({"query": ctx.request.query})
+    assert [item["tool"] for item in result["schemarouter_results"]] == ["source_0"]
+    assert len(ctx.model.payloads) == 1
+
+
+@pytest.mark.parametrize("state", [
+    {"query": "measurement value", "arguments": {"sample_id": "SECRET_CANARY"}},
+    {"query": "measurement value", "host_source_arguments": {"source_0.read": {}}},
+    {"schemarouter_request": {
+        "query": "measurement value", "arguments": {"sample_id": "SECRET_CANARY"},
+    }},
+    {"schemarouter_request": PlanRequest(query="measurement value")},
+])
+def test_configured_langgraph_never_reinterprets_flat_arguments_or_leaks_values(state):
+    ctx = _configured(count=1, needs_input=True)
+    node = to_langgraph_node(ctx.router, run_config=RunConfig(principal=ctx.principal))
+    with pytest.raises((TypeError, ValueError)) as caught:
+        node.invoke(state)
+    assert "SECRET_CANARY" not in str(caught.value)
+    assert ctx.model.payloads == [] and ctx.seen == []

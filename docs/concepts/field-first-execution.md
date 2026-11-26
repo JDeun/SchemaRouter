@@ -223,6 +223,14 @@ fallback options have different meanings. An unconfigured router rejects `PaperP
 Missing invoker bindings do not cause `plan_executable(...)` or automatic invocation to select a
 different source. Requests that cannot meet the complete plan and execution contract fail closed.
 
+On a configured router, legacy lexical `retrieve`, `retrieve_routes`, `retrieve_executable`,
+`retrieve_state_aware` and their sync/async authorization or configured wrappers refuse rather than
+bypass Algorithm 1. Use standard `plan/aplan` or the session's non-executing diagnostic compile
+receipt. LangGraph forwards `PaperPlanRequest` or a query; flat arguments are not automatically
+converted to source-local host inputs. Raw endpoint exports to LangChain/LlamaIndex and calls
+through previously exported tools are refused on the configured router. Tool registration and the
+existing executor authorization remain unchanged.
+
 The returned `ExecutionPlan` retains paper `planning_status`, coverage and any proven partial
 calls for inspection. Ordinary legacy plans leave `planning_status=None` and omit it from serialized
 output. A non-ready paper status makes `plan.executable` false and blocks execution;

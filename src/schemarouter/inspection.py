@@ -393,7 +393,11 @@ def inspect_router(
     return RouterInspection(
         registry=inspect_registry(router.registry),
         planner=PlannerInspection(
-            analyzer=type(planner.analyzer).__name__,
+            analyzer=(
+                "PaperQueryUnderstanding"
+                if router._paper_planning is not None
+                else type(planner.analyzer).__name__
+            ),
         ),
         decision_traces=tuple(
             inspect_capability_decision_trace(trace)

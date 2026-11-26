@@ -18,6 +18,7 @@ from schemarouter import (
     PlanRequest,
     PrincipalContext,
     RunConfig,
+    TypedExecutionState,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.hooks import ExecutionHooks
@@ -484,3 +485,113 @@ async def test_configured_session_direct_execution_is_retired_before_compilation
     ):
         await ctx.session.aexecute_direct(ctx.request.query, **ctx.owner)
     assert compiler_calls == [] and ctx.model.payloads == [] and ctx.seen == []
+
+@pytest.mark.parametrize("method", [
+    "retrieve", "aretrieve", "retrieve_routes", "aretrieve_routes",
+    "retrieve_executable", "aretrieve_executable",
+    "retrieve_state_aware", "aretrieve_state_aware",
+    "retrieve_authorized", "aretrieve_authorized",
+    "retrieve_routes_authorized", "aretrieve_routes_authorized",
+    "retrieve_executable_authorized", "aretrieve_executable_authorized",
+])
+async def test_configured_router_refuses_legacy_retrieval_before_analysis(method, monkeypatch):
+    ctx = _configured(count=1)
+    _forbid_lexical(ctx, monkeypatch)
+    kwargs = {}
+    if method.endswith("_authorized"):
+        kwargs["principal"] = ctx.principal
+    if method.endswith("_state_aware"):
+        kwargs["execution_state"] = TypedExecutionState()
+    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
+        result = getattr(ctx.router, method)(ctx.request.query, **kwargs)
+        if asyncio.iscoroutine(result):
+            await result
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+
+@pytest.mark.parametrize("method", [
+    "retrieve", "aretrieve", "retrieve_routes", "aretrieve_routes",
+    "retrieve_executable", "aretrieve_executable",
+    "retrieve_state_aware", "aretrieve_state_aware",
+])
+async def test_configured_wrapper_cannot_reenter_legacy_retrieval(method, monkeypatch):
+    ctx = _configured(count=1)
+    _forbid_lexical(ctx, monkeypatch)
+    wrapper = ctx.router.with_config(RunConfig(principal=ctx.principal))
+    kwargs = {"execution_state": TypedExecutionState()} if method.endswith("_state_aware") else {}
+    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
+        result = getattr(wrapper, method)(ctx.request.query, **kwargs)
+        if asyncio.iscoroutine(result):
+            await result
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+
+@pytest.mark.parametrize("surface", [
+    "to_langchain_tool", "to_langchain_tools", "to_llamaindex_tool", "to_llamaindex_tools",
+])
+def test_configured_endpoint_export_refuses_before_disclosure_or_sdk_import(surface):
+    from schemarouter import integrations
+
+    ctx = _configured(count=1)
+    args = () if surface.endswith("_tools") else ("source_0", "read")
+    with pytest.raises(PolicyViolationError, match="raw endpoint export is unavailable"):
+        getattr(integrations, surface)(ctx.router, *args)
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+
+def test_inspection_reports_actual_prepared_understanding_without_model_details():
+    ctx = _configured(count=1, configure=False)
+    assert ctx.router.inspect().planner.analyzer == "KeywordAnalyzer"
+    _configure(ctx)
+    planner = ctx.router.inspect().planner.model_dump()
+    assert planner == {"analyzer": "PaperQueryUnderstanding"}
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+def test_exported_endpoint_contract_refuses_after_router_configuration():
+    from schemarouter.integrations._export_contract import (
+        _authorized_endpoint_view,
+        _capture_exported_endpoint_contract,
+        _resolve_live_exported_endpoint,
+    )
+
+    ctx = _configured(count=1, configure=False)
+    config = RunConfig(principal=ctx.principal)
+    source = _authorized_endpoint_view(ctx.router, "source_0", "read", config)
+    expected = _capture_exported_endpoint_contract(*source)
+    _configure(ctx)
+    with pytest.raises(PolicyViolationError, match="raw endpoint export is unavailable"):
+        _resolve_live_exported_endpoint(ctx.router, "source_0", "read", config, expected)
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+
+async def test_legacy_retrieval_started_before_configuration_cannot_publish(monkeypatch):
+    ctx = _configured(count=1, configure=False)
+    original = ctx.router.planner.aretrieve_with_additional_availability
+
+    async def configure_before_return(*args, **kwargs):
+        result = await original(*args, **kwargs)
+        _configure(ctx)
+        return result
+
+    monkeypatch.setattr(
+        ctx.router.planner, "aretrieve_with_additional_availability", configure_before_return,
+    )
+    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
+        await ctx.router.aretrieve_authorized(ctx.request.query, principal=ctx.principal)
+    assert ctx.model.payloads == [] and ctx.seen == []
+
+
+def test_paper_name_identity_is_independent_of_lexical_planner(monkeypatch):
+    from schemarouter import planner
+    from schemarouter._schema_identity import _locale_lexical_text, _normalize
+    from schemarouter.paper_query_needs import _normalize as paper_normalize
+
+    def forbidden(_text):
+        pytest.fail("paper query identity called the legacy planner")
+
+    monkeypatch.setattr(planner, "_normalize", forbidden)
+    assert paper_normalize is _normalize
+    assert paper_normalize("Ｂａｎｄ＿Ｇａｐ") == "bandgap"
+    assert paper_normalize("고객") == "고객"
+    assert paper_normalize("ｶﾞ") == "ガ"
+    assert _locale_lexical_text("① ㎏") == "① ㎏"

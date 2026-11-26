@@ -2,6 +2,8 @@
 
 SchemaRouter는 자체 스키마 검증과 실행 경계를 유지하면서 등록된 엔드포인트를 LlamaIndex 도구로 노출할 수 있습니다.
 
+**Algorithm 1 설정 경계:** `configure_field_routing(...)`을 적용한 router는 LlamaIndex raw endpoint export와 이전에 생성된 export의 실행을 거부합니다. 준비된 논문 계획의 검증을 우회하지 않도록 표준 `plan/aplan` 및 `execute` 또는 `invoke/ainvoke`를 사용하십시오. 기존 도구 가져오기와 등록은 유지되며, 아래 raw endpoint export 예제는 미설정 router에 한합니다.
+
 ## 설치
 
 배포된 패키지를 사용하는 경우 선택적 추가 의존성(extra)을 설치합니다.

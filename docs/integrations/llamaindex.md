@@ -3,6 +3,11 @@
 SchemaRouter can expose registered endpoints as LlamaIndex tools while retaining SchemaRouter's
 schema validation and execution boundary.
 
+**Configured Algorithm 1 boundary:** A router using `configure_field_routing(...)` refuses raw
+LlamaIndex endpoint exports and invocation through earlier exports. Use standard `plan/aplan` and
+`execute`, or `invoke/ainvoke`, so the prepared paper-plan proof cannot be bypassed. Import and tool
+registration remain supported; the raw endpoint export examples below apply to unconfigured routers.
+
 ## Install
 
 For consumers, install the published optional extra:

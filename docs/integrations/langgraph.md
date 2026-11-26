@@ -68,6 +68,14 @@ The default node accepts either:
    compatible with `PlanRequest`; or
 2. a string at `state["query"]` plus an optional mapping at `state["arguments"]`.
 
+With `configure_field_routing(...)`, the node follows the active Algorithm 1 configuration at
+invocation time. Supply `PaperPlanRequest` or its mapping in `schemarouter_request`, or use `query`
+for a query without host inputs. Explicit source-local approved inputs belong in
+`PaperPlanRequest.host_source_arguments`; flat `arguments` are refused rather than reinterpreted
+or dropped. The same contract applies to request factories. Trusted `RunConfig` principal and
+execution checks remain in force.
+
+
 The result is returned as a partial LangGraph state update:
 
 ```python
@@ -105,7 +113,8 @@ node = to_langgraph_node(
 )
 ```
 
-The factory may return a string, a `PlanRequest`, or a mapping compatible with `PlanRequest`.
+The factory may return a string, the active request type (`PlanRequest` or `PaperPlanRequest`),
+or a mapping compatible with it.
 
 ## Trust boundary
 

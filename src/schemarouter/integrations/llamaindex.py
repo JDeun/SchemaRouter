@@ -26,6 +26,7 @@ from ._export_contract import (
     _authorized_endpoint_view,
     _capture_exported_endpoint_contract,
     _coerce_export_run_config,
+    _require_endpoint_export_mode,
     _resolve_live_exported_endpoint,
 )
 
@@ -442,6 +443,7 @@ def to_llamaindex_tool(
     run_config: RunConfig | dict[str, Any] | None = None,
 ):
     """Expose one principal-aware endpoint as a LlamaIndex FunctionTool."""
+    _require_endpoint_export_mode(router)
     try:
         from llama_index.core.tools import FunctionTool
     except ImportError as exc:
@@ -518,6 +520,7 @@ def to_llamaindex_tools(
     run_config: RunConfig | dict[str, Any] | None = None,
 ) -> list[Any]:
     """Expose principal-visible endpoints as LlamaIndex FunctionTool objects."""
+    _require_endpoint_export_mode(router)
     resolved_config = _coerce_export_run_config(run_config)
     selected = set(tool_keys) if tool_keys is not None else None
     if router.authorization_policy is not None and resolved_config.principal is None:
@@ -551,4 +554,5 @@ def to_llamaindex_tools(
             except PolicyViolationError:
                 continue
             tools.append(exported)
+    _require_endpoint_export_mode(router)
     return tools

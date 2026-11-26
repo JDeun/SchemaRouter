@@ -3,6 +3,11 @@
 SchemaRouter integrates with LangChain as an optional boundary, not as a replacement for the
 LangChain runtime.
 
+**Configured Algorithm 1 boundary:** A router using `configure_field_routing(...)` refuses raw
+LangChain endpoint exports and invocation through earlier exports. Use standard `plan/aplan` and
+`execute`, or `invoke/ainvoke`, so the prepared paper-plan proof cannot be bypassed. Import and tool
+registration remain supported; the raw endpoint export examples below apply to unconfigured routers.
+
 ## Install
 
 For consumers:

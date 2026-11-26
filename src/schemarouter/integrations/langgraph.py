@@ -3,15 +3,33 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from ..models import PlanRequest, ToolResult
+from pydantic import ValidationError
+
+from ..models import PaperPlanRequest, PlanRequest, ToolResult
 from ..runs import RunConfig
 from ..runtime import SchemaRouter
 
 LangGraphState = Mapping[str, Any]
-LangGraphRequestFactory = Callable[[LangGraphState], PlanRequest | str | Mapping[str, Any]]
+LangGraphRequestFactory = Callable[
+    [LangGraphState], PaperPlanRequest | PlanRequest | str | Mapping[str, Any],
+]
 
 
-def _coerce_request(value: Any) -> PlanRequest | str:
+def _coerce_request(
+    value: Any, *, paper_configured: bool,
+) -> PaperPlanRequest | PlanRequest | str:
+    if paper_configured:
+        if isinstance(value, PaperPlanRequest):
+            return value
+        if type(value) is str:
+            value = {"query": value}
+        if isinstance(value, Mapping):
+            try:
+                return PaperPlanRequest.model_validate(dict(value))
+            except ValidationError:
+                # Never include nested host input values in framework errors.
+                raise ValueError("invalid LangGraph PaperPlanRequest") from None
+        raise TypeError("configured LangGraph routing requires PaperPlanRequest or query")
     if isinstance(value, PlanRequest | str):
         return value
     if isinstance(value, Mapping):
@@ -28,12 +46,13 @@ def _request_from_state(
     query_key: str,
     arguments_key: str,
     request_factory: LangGraphRequestFactory | None,
-) -> PlanRequest | str:
+    paper_configured: bool,
+) -> PaperPlanRequest | PlanRequest | str:
     if request_factory is not None:
-        return _coerce_request(request_factory(state))
+        return _coerce_request(request_factory(state), paper_configured=paper_configured)
 
     if request_key is not None and request_key in state:
-        return _coerce_request(state[request_key])
+        return _coerce_request(state[request_key], paper_configured=paper_configured)
 
     query = state.get(query_key)
     if not isinstance(query, str) or not query.strip():
@@ -51,6 +70,13 @@ def _request_from_state(
     if not isinstance(raw_arguments, Mapping):
         raise TypeError(f"state[{arguments_key!r}] must be a mapping when provided")
 
+    if paper_configured:
+        if raw_arguments or "host_source_arguments" in state:
+            raise ValueError(
+                "configured LangGraph routing requires an explicit PaperPlanRequest "
+                "for host_source_arguments; flat arguments are not supported",
+            )
+        return _coerce_request(query, paper_configured=True)
     return PlanRequest(query=query, arguments=dict(raw_arguments))
 
 
@@ -86,8 +112,10 @@ def to_langgraph_node(
     optional arguments mapping. The node returns a partial state update under result_key. Results
     are serialized to JSON-compatible dictionaries by default for checkpoint-friendly state.
 
-    request_factory can adapt arbitrary application state into a PlanRequest or string without
-    giving LangGraph direct access to SchemaRouter execution authority.
+    With prepared Algorithm 1 configured, a complete request is a PaperPlanRequest or its
+    mapping; a bare query is allowed, but flat arguments are rejected. The host must supply
+    source-local inputs explicitly. request_factory adapts application state without giving
+    LangGraph direct access to SchemaRouter execution authority.
     """
     if not result_key:
         raise ValueError("result_key must be non-empty")
@@ -116,6 +144,7 @@ def to_langgraph_node(
             query_key=query_key,
             arguments_key=arguments_key,
             request_factory=request_factory,
+            paper_configured=router._paper_planning is not None,
         )
         results = router.invoke(request, config=run_config)
         return _node_update(
@@ -133,6 +162,7 @@ def to_langgraph_node(
             query_key=query_key,
             arguments_key=arguments_key,
             request_factory=request_factory,
+            paper_configured=router._paper_planning is not None,
         )
         results = await router.ainvoke(request, config=run_config)
         return _node_update(

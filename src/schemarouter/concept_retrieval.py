@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import model_validator
 
+from ._schema_identity import _locale_lexical_text
 from .authorization import PrincipalContext
 from .capability_contracts import CapabilityFieldContract
 from .field_group_retrieval import (
@@ -19,7 +20,6 @@ from .field_group_retrieval import (
     retrieve_authorized_field_group,
 )
 from .models import CapabilityRetrieval, StrictModel
-from .planner import _locale_lexical_text
 from .validation import json_schemas_compatible
 
 if TYPE_CHECKING:
@@ -33,8 +33,8 @@ _ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
 
 
 def _normalized(value: str) -> str:
-    # Reuse the narrow Korean NFC + Japanese width folding from the existing
-    # lexical engine; NEVER apply global NFKC to scientific units.
+    # Use shared narrow Korean NFC + Japanese width folding;
+    # NEVER apply global NFKC to scientific units.
     return _locale_lexical_text(value).casefold()
 
 

@@ -101,6 +101,8 @@ if plan.executable:
 
 설정된 계획 경로는 질문 문자열 또는 `PaperPlanRequest`를 받습니다. 승인된 인자는 `host_source_arguments`에서 source route ID별로 보관하며 기본값은 빈 mapping입니다. `max_calls`는 1에서 5까지의 엄격한 정수이고 기본값은 5이며, 고정 K5 안에서의 call 예산입니다. 설정된 router는 flat argument와 fallback option의 의미가 다른 기존 `PlanRequest`를 거부합니다. 설정하지 않은 router는 `PaperPlanRequest`를 거부합니다. Invoker binding이 없더라도 `plan_executable(...)`이나 자동 호출이 다른 source를 선택하지 않습니다. 전체 계획 및 실행 계약을 충족할 수 없는 요청은 fail-closed로 처리합니다.
 
+설정된 router는 `retrieve`·`retrieve_routes`·`retrieve_executable`·`retrieve_state_aware`와 동기/비동기 권한 및 설정 래퍼를 통해 기존 어휘 기반 후보 조회로 우회할 수 없습니다. 이 메서드들은 명시적으로 거부됩니다. 표준 `plan/aplan` 또는 session의 비실행 진단용 compile receipt를 사용하십시오. LangGraph는 `PaperPlanRequest`나 질문 문자열을 전달하며, 기존 flat argument를 source-local host 입력으로 자동 변환하지 않습니다. LangChain/LlamaIndex의 개별 raw endpoint export와 기존 export의 실행도 설정된 router에서 거부합니다. 도구 등록과 기존 실행기 권한 검증은 그대로 유지합니다.
+
 반환된 `ExecutionPlan`은 paper `planning_status`, coverage와 입증된 일부 call을 검토용으로 보존합니다. 일반 legacy plan은 `planning_status=None`을 유지하고 직렬화 결과에서 이 항목을 생략합니다. Ready가 아닌 paper status에서는 `plan.executable`이 false이고 실행을 막습니다. 남아 있는 call에 인자가 모두 있어도 부분 coverage를 실행 가능한 계획으로 바꿀 수 없습니다. 상세한 `fields_meta`, `parameters_meta`와 신뢰하지 않는 parameter proposal은 session의 진단용 compile receipt에서 계속 확인할 수 있으며, 표준 `ExecutionPlan`에 추가되지는 않습니다. 원본이 바뀌면 준비된 설정은 무효가 되므로, session을 refresh하고 새 snapshot을 검토·설정한 뒤 다시 계획해야 합니다.
 
 발급된 계획은 설정된 router용 비공개 proof를 보유합니다. 내용을 바꾸지 않은 deep copy는 이 proof를 보존하지만 직렬화 후 복원하면 보존되지 않습니다. 복원된 계획을 실행하려면 다시 계획하십시오. 공개 status나 직렬화된 계획 내용 자체가 원본·실행 권한을 부여하지는 않습니다.

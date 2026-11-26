@@ -135,7 +135,7 @@ print(snapshot.model_dump_json(indent=2))
 
 The live view adds:
 
-- analyzer class;
+- active understanding path (`PaperQueryUnderstanding` for configured routing, legacy analyzer class otherwise);
 - execution policy;
 - actual bound tool keys from the current executor;
 - access paths currently inside an availability cooldown;

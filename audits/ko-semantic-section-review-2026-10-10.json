@@ -101,10 +101,10 @@
     {
       "path": "integrations/langgraph.md",
       "section": 5,
-      "en_blob": "93080d5b5e271f93cb47b601d98057bd72e3e419",
-      "ko_blob": "b692851b81d983407a6687b60d405b708014f9cf",
+      "en_blob": "bb6cef1106b270af2dc8c84ea8e099e9036ffb9d",
+      "ko_blob": "a79536173f89bc47f2638c231919e16171384593",
       "decision": "meaning-preserved",
-      "evidence": "Korean states arbitrary graph state can be mapped without changing default keys"
+      "evidence": "Korean states arbitrary graph state can be mapped without changing default keys 2026-11-26: request factories still adapt arbitrary state and now accept the active request type, including PaperPlanRequest; flat arguments are refused for configured paper routing."
     },
     {
       "path": "project/adoption-scorecard.md",

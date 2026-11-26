@@ -2,6 +2,8 @@
 
 SchemaRouter는 LangChain 런타임의 대체제가 아니라 선택적으로 추가할 수 있는 실행 경계로 통합됩니다.
 
+**Algorithm 1 설정 경계:** `configure_field_routing(...)`을 적용한 router는 LangChain raw endpoint export와 이전에 생성된 export의 실행을 거부합니다. 준비된 논문 계획의 검증을 우회하지 않도록 표준 `plan/aplan` 및 `execute` 또는 `invoke/ainvoke`를 사용하십시오. 기존 도구 가져오기와 등록은 유지되며, 아래 raw endpoint export 예제는 미설정 router에 한합니다.
+
 ## 설치
 
 배포 패키지를 사용하는 경우:

@@ -5,11 +5,11 @@ from typing import Any
 
 from pydantic import ConfigDict, Field, ValidationInfo, model_validator
 
+from ._schema_identity import _normalize
 from .concept_retrieval import NativeConceptCatalog
 from .models import StrictModel
 from .paper_typed_tool_plan import _bounded_parameter_value
 from .paper_understood_direct_plan import PaperUnderstanding, _bounded_name
-from .planner import _normalize
 
 
 class PaperQueryNeed(StrictModel):

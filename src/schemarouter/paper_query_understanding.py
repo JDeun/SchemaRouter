@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
 
+from ._schema_identity import _normalize
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_text
 from .capability_contracts import CapabilityFieldContract
@@ -795,8 +796,6 @@ def _prepare_model_query(
             ],
         }
         def resolve_tool(name: str) -> str | None:
-            from .planner import _normalize
-
             permitted = router._authorization_predicate(principal)
             if permitted is None:
                 raise PolicyViolationError("paper query lacks source authorization")

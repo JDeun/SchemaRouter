@@ -3,12 +3,12 @@ from __future__ import annotations
 import inspect
 import math
 import re
-import unicodedata
 from collections.abc import Awaitable, Callable, Set
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Protocol
 
+from ._schema_identity import _locale_lexical_text, _normalize
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import ModelAnalysisError, PlanningError, PolicyViolationError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
@@ -64,38 +64,6 @@ if TYPE_CHECKING:
 _TOKEN_RE = re.compile(
     r"[A-Za-z0-9_]+|[가-힣]+|[ぁ-ゖ]+|[ァ-ヺー]+|[一-鿿々〆]+"
 )
-_HALFWIDTH_KATAKANA_RE = re.compile(r"[\uFF66-\uFF9F]+")
-_FULLWIDTH_ASCII_IDENTIFIER_RE = re.compile(r"[０-９Ａ-Ｚａ-ｚ＿]+")
-
-
-def _locale_lexical_text(text: str) -> str:
-    """Compose canonical Unicode, then fold only Japanese halfwidth kana.
-
-    Korean NFD Jamo and NFC Hangul must search the same declared aliases.
-    Do not apply global NFKC: unrelated compatibility symbols and units are
-    not interchangeable capability names or numerical evidence.
-    """
-    canonical = unicodedata.normalize("NFC", text)
-    kana_folded = _HALFWIDTH_KATAKANA_RE.sub(
-        lambda match: unicodedata.normalize("NFKC", match.group()),
-        canonical,
-    )
-    # Fullwidth ASCII letters/digits/underscore occur in Japanese tool
-    # names and requests. Fold only those exact compatibility characters,
-    # not all NFKC symbols: measurement units or circled numbers must never
-    # gain a new capability identity by incidental normalization.
-    identifier_folded = _FULLWIDTH_ASCII_IDENTIFIER_RE.sub(
-        lambda match: unicodedata.normalize("NFKC", match.group()),
-        kana_folded,
-    )
-    # Mixed-width input such as "カﾞ" is fullwidth KA followed by a
-    # halfwidth dakuten. Folding the mark leaves a combining mark; compose
-    # again to recover the same declared "ガ" lexical identity.
-    return unicodedata.normalize("NFC", identifier_folded)
-
-
-def _normalize(text: str) -> str:
-    return "".join(ch.lower() for ch in _locale_lexical_text(text) if ch.isalnum())
 
 
 def _semantic_trigrams(value: str) -> frozenset[str]:

@@ -4017,6 +4017,12 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             deep=True, update={"candidates": projected},
         )
 
+    def _require_legacy_retrieval_mode(self) -> None:
+        if self._paper_planning is not None:
+            raise PolicyViolationError(
+                "configured paper routing uses plan/aplan; lexical retrieval is unavailable",
+            )
+
     def retrieve_routes(
         self,
         request: PlanRequest | str,
@@ -4024,6 +4030,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
         """Return lightweight Top-K route references under active authorization."""
+        self._require_legacy_retrieval_mode()
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
@@ -4051,6 +4058,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         result = self._project_route_retrieval_data_scope(result, principal)
         self._check_retrieval_authority_witness(witness)
+        self._require_legacy_retrieval_mode()
         return result
 
     async def aretrieve_routes(
@@ -4060,6 +4068,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
+        self._require_legacy_retrieval_mode()
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
@@ -4087,6 +4096,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         result = self._project_route_retrieval_data_scope(result, principal)
         self._check_retrieval_authority_witness(witness)
+        self._require_legacy_retrieval_mode()
         return result
 
     def retrieve_routes_authorized(
@@ -4146,6 +4156,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Return Top-K typed capabilities under any active principal context."""
+        self._require_legacy_retrieval_mode()
 
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
@@ -4179,6 +4190,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         projected = self._project_retrieval_data_scope(retrieval, principal)
         self._check_retrieval_authority_witness(witness)
+        self._require_legacy_retrieval_mode()
         return projected
 
     async def aretrieve(
@@ -4188,6 +4200,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
+        self._require_legacy_retrieval_mode()
 
         witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
@@ -4221,6 +4234,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         projected = self._project_retrieval_data_scope(retrieval, principal)
         self._check_retrieval_authority_witness(witness)
+        self._require_legacy_retrieval_mode()
         return projected
 
     def prepare_field_routing(
@@ -4456,6 +4470,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Return Top-K authorized capabilities with a ready local binding."""
+        self._require_legacy_retrieval_mode()
 
         principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
@@ -4491,7 +4506,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 k=k,
                 executable_only=True,
             )
-        return self._project_retrieval_data_scope(retrieval, principal)
+        projected = self._project_retrieval_data_scope(retrieval, principal)
+        self._require_legacy_retrieval_mode()
+        return projected
 
     async def aretrieve_executable(
         self,
@@ -4500,6 +4517,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
+        self._require_legacy_retrieval_mode()
 
         principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
@@ -4535,7 +4553,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 k=k,
                 executable_only=True,
             )
-        return self._project_retrieval_data_scope(retrieval, principal)
+        projected = self._project_retrieval_data_scope(retrieval, principal)
+        self._require_legacy_retrieval_mode()
+        return projected
 
     def retrieve_executable_authorized(
         self,
