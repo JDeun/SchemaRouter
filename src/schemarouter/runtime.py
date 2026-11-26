@@ -4,7 +4,7 @@ import asyncio
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -81,6 +81,7 @@ from .models import (
     EndpointSpec,
     ExecutionPlan,
     FieldSpec,
+    PaperPlanRequest,
     ParameterSpec,
     PlanRequest,
     ScoreComponent,
@@ -146,6 +147,10 @@ from .traces import RunTraceStore, append_run_event_async
 if TYPE_CHECKING:
     from .concept_retrieval import NativeConceptCatalog
     from .field_routing_session import SchemaFieldRoutingSession
+    from .paper_native_rank import PaperNativeRankPolicy
+    from .paper_planning import _PreparedPaperPlanning
+    from .paper_query_understanding import PaperFieldModel
+    from .paper_understood_direct_plan import PaperIntentRegistry
 
 _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
@@ -530,6 +535,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             structural_retrieval=structural_retrieval,
             availability_predicate=self._is_snapshot_access_available,
         )
+        self._paper_planning: _PreparedPaperPlanning | None = None
         self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
             self.registry,
@@ -1053,6 +1059,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         principal_audit_id: str | None = None,
         phase: AuthorizationAuditPhase = "execution",
     ) -> None:
+        configured = self._paper_planning
+        if configured is not None:
+            configured.validate_plan(plan, principal, execution=phase == "execution")
+        elif plan._planning_witness is not None:
+            raise PolicyViolationError("paper planning configuration changed; replan")
         policy = self.authorization_policy
         if policy is None:
             return
@@ -1183,6 +1194,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
             )
 
+        if configured is not None:
+            configured.validate_plan(plan, principal, execution=phase == "execution")
+
     async def __aenter__(self) -> SchemaRouter:
         return self
 
@@ -1238,7 +1252,8 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return PlanRequest.model_json_schema()
+        request_type = PaperPlanRequest if self._paper_planning is not None else PlanRequest
+        return request_type.model_json_schema()
 
     @property
     def output_schema(self) -> dict[str, Any]:
@@ -3813,10 +3828,34 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
         )
 
-    def plan(self, request: PlanRequest | str) -> ExecutionPlan:
+    def _paper_configuration_for(
+        self, request: PlanRequest | PaperPlanRequest | str,
+    ) -> _PreparedPaperPlanning | None:
+        configured = self._paper_planning
+        if configured is None and isinstance(request, PaperPlanRequest):
+            raise ValueError(
+                "PaperPlanRequest requires configure_field_routing; no lexical fallback",
+            )
+        if configured is not None and isinstance(request, PlanRequest):
+            raise ValueError(
+                "configured paper planning requires str or PaperPlanRequest, not PlanRequest",
+            )
+        return configured
+
+    def plan(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
         """Schema-aware planning under any active trusted principal context."""
 
         principal = _current_principal_context()
+        configured = self._paper_configuration_for(request)
+        if configured is not None:
+            plan = self._run_sync_call(
+                lambda: configured.aplan(
+                    request, principal=principal, executable_only=False,
+                ),
+            )
+            self._validate_plan_authorization(plan, principal, phase="plan")
+            return plan
+        request = cast(PlanRequest | str, request)
         predicate = self._authorization_predicate(principal)
         if predicate is None:
             plan = self.planner.plan(request)
@@ -3844,10 +3883,16 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
 
-    async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
+    async def aplan(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
         """Async schema-aware planning under any active trusted principal context."""
 
         principal = _current_principal_context()
+        configured = self._paper_configuration_for(request)
+        if configured is not None:
+            plan = await configured.aplan(request, principal=principal, executable_only=False)
+            self._validate_plan_authorization(plan, principal, phase="plan")
+            return plan
+        request = cast(PlanRequest | str, request)
         predicate = self._authorization_predicate(principal)
         if predicate is None:
             plan = await self.planner.aplan(request)
@@ -3880,7 +3925,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     def plan_authorized(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         principal: PrincipalContext,
     ) -> ExecutionPlan:
@@ -3891,7 +3936,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def aplan_authorized(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         principal: PrincipalContext,
     ) -> ExecutionPlan:
@@ -4198,6 +4243,32 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             self, catalog=catalog, approved_host_roots=approved_host_roots,
         )
 
+    def configure_field_routing(
+        self,
+        session: SchemaFieldRoutingSession,
+        *,
+        model: PaperFieldModel,
+        intent_registry: PaperIntentRegistry,
+        rank_policy: PaperNativeRankPolicy,
+        model_visible_intent_ids: tuple[str, ...],
+        max_model_input_bytes: int = 32768,
+        max_model_output_bytes: int = 4096,
+    ) -> None:
+        """Use a host-prepared Algorithm 1 contract for standard planning entrypoints.
+
+        Principal and source-local arguments remain request-owned. Source or
+        owner revisions require an explicitly refreshed session/configuration;
+        failed paper understanding never falls back to lexical planning.
+        """
+        from .paper_planning import _PreparedPaperPlanning
+
+        self._paper_planning = _PreparedPaperPlanning.prepare(
+            self, session, model=model, intent_registry=intent_registry,
+            rank_policy=rank_policy, model_visible_intent_ids=model_visible_intent_ids,
+            max_model_input_bytes=max_model_input_bytes,
+            max_model_output_bytes=max_model_output_bytes,
+        )
+
     def retrieve_authorized(
         self,
         request: PlanRequest | str,
@@ -4271,10 +4342,20 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             tool.fingerprint,
         )
 
-    def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+    def plan_executable(self, request: PlanRequest | PaperPlanRequest | str) -> ExecutionPlan:
         """Plan only across authorized routes with a ready local binding."""
 
         principal = _current_principal_context()
+        configured = self._paper_configuration_for(request)
+        if configured is not None:
+            plan = self._run_sync_call(
+                lambda: configured.aplan(
+                    request, principal=principal, executable_only=True,
+                ),
+            )
+            self._validate_plan_authorization(plan, principal, phase="plan")
+            return plan
+        request = cast(PlanRequest | str, request)
         predicate = self._combined_availability_predicate(
             principal,
             self._binding_ready,
@@ -4303,10 +4384,18 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             plan = self.planner.plan_with_additional_availability(request, predicate)
         return plan
 
-    async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+    async def aplan_executable(
+        self, request: PlanRequest | PaperPlanRequest | str,
+    ) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_executable`."""
 
         principal = _current_principal_context()
+        configured = self._paper_configuration_for(request)
+        if configured is not None:
+            plan = await configured.aplan(request, principal=principal, executable_only=True)
+            self._validate_plan_authorization(plan, principal, phase="plan")
+            return plan
+        request = cast(PlanRequest | str, request)
         predicate = self._combined_availability_predicate(
             principal,
             self._binding_ready,
@@ -4340,7 +4429,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     def plan_executable_authorized(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         principal: PrincipalContext,
     ) -> ExecutionPlan:
@@ -4351,7 +4440,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def aplan_executable_authorized(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         principal: PrincipalContext,
     ) -> ExecutionPlan:
@@ -4509,7 +4598,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def ainvoke(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
@@ -4520,7 +4609,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     def invoke(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
@@ -4528,7 +4617,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def abatch(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         config: RunConfig | dict[str, Any] | None = None,
         return_exceptions: bool = False,
@@ -4589,7 +4678,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     def batch(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         config: RunConfig | dict[str, Any] | None = None,
         return_exceptions: bool = False,
@@ -4604,7 +4693,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def abatch_as_completed(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         config: RunConfig | dict[str, Any] | None = None,
         return_exceptions: bool = False,
@@ -4658,7 +4747,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     def batch_as_completed(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         config: RunConfig | dict[str, Any] | None = None,
         return_exceptions: bool = False,
@@ -4673,7 +4762,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def astream(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> AsyncIterator[ToolResult]:
@@ -4720,7 +4809,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     def stream(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> Iterator[ToolResult]:
@@ -4728,7 +4817,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def astream_events(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
         trace_store: RunTraceStore | None = None,
@@ -4764,7 +4853,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         if run_config.include_payloads:
             request_payload["input"] = (
                 request.model_dump(mode="json")
-                if isinstance(request, PlanRequest)
+                if isinstance(request, (PlanRequest, PaperPlanRequest))
                 else request
             )
 
@@ -5900,7 +5989,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def run(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
@@ -5908,7 +5997,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
     async def arun(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
@@ -6012,15 +6101,15 @@ class ConfiguredSchemaRouter:
         with _principal_execution_context(self.config.principal):
             return await self.router.aretrieve_executable(request, k=k)
 
-    def invoke(self, request: PlanRequest | str) -> list[ToolResult]:
+    def invoke(self, request: PlanRequest | PaperPlanRequest | str) -> list[ToolResult]:
         return self.router.invoke(request, config=self.config)
 
-    async def ainvoke(self, request: PlanRequest | str) -> list[ToolResult]:
+    async def ainvoke(self, request: PlanRequest | PaperPlanRequest | str) -> list[ToolResult]:
         return await self.router.ainvoke(request, config=self.config)
 
     def batch(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         return_exceptions: bool = False,
     ) -> list[list[ToolResult] | BaseException]:
@@ -6032,7 +6121,7 @@ class ConfiguredSchemaRouter:
 
     async def abatch(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         return_exceptions: bool = False,
     ) -> list[list[ToolResult] | BaseException]:
@@ -6044,7 +6133,7 @@ class ConfiguredSchemaRouter:
 
     def batch_as_completed(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         return_exceptions: bool = False,
     ) -> Iterator[tuple[int, list[ToolResult] | Exception]]:
@@ -6056,7 +6145,7 @@ class ConfiguredSchemaRouter:
 
     def abatch_as_completed(
         self,
-        requests: Sequence[PlanRequest | str],
+        requests: Sequence[PlanRequest | PaperPlanRequest | str],
         *,
         return_exceptions: bool = False,
     ) -> AsyncIterator[tuple[int, list[ToolResult] | Exception]]:
@@ -6066,15 +6155,15 @@ class ConfiguredSchemaRouter:
             return_exceptions=return_exceptions,
         )
 
-    def stream(self, request: PlanRequest | str) -> Iterator[ToolResult]:
+    def stream(self, request: PlanRequest | PaperPlanRequest | str) -> Iterator[ToolResult]:
         return self.router.stream(request, config=self.config)
 
-    def astream(self, request: PlanRequest | str) -> AsyncIterator[ToolResult]:
+    def astream(self, request: PlanRequest | PaperPlanRequest | str) -> AsyncIterator[ToolResult]:
         return self.router.astream(request, config=self.config)
 
     def astream_events(
         self,
-        request: PlanRequest | str,
+        request: PlanRequest | PaperPlanRequest | str,
         *,
         trace_store: RunTraceStore | None = None,
     ) -> AsyncIterator[RunEvent]:

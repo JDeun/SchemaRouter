@@ -10,7 +10,7 @@ import inspect
 import json
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
@@ -318,6 +318,61 @@ def _compile_query_needs(
     ), frozenset(named_tools)
 
 
+@dataclass(frozen=True, slots=True)
+class _PreparedModelQuery:
+    """Pinned model disclosure and repeatable source compilation, never authority."""
+
+    _payload: dict[str, Any] | None = field(repr=False)
+    _response_type: type[PaperQueryUnderstanding] | type[PaperUnderstanding] = field(repr=False)
+    _compile: Callable[[PaperQueryUnderstanding | PaperUnderstanding], PaperTypedToolPlan] = field(
+        repr=False,
+    )
+    _verify: Callable[[], None] = field(repr=False)
+    _max_input_bytes: int = field(repr=False)
+    _max_output_bytes: int = field(repr=False)
+    _direct_parameters: bool = field(default=False, repr=False)
+
+    def verify(self) -> None:
+        """Recheck the exact source, owner declarations and principal witness."""
+        self._verify()
+
+    async def understand(
+        self, model: PaperFieldModel,
+    ) -> PaperQueryUnderstanding | PaperUnderstanding:
+        """Call the host model once, or abstain without disclosure when none is allowed."""
+        if not callable(model):
+            raise ValueError("explicit model callback required")
+        self.verify()
+        if self._payload is None:
+            return PaperUnderstanding(intent_id=None)
+        return await _understand_query(
+            model, self._payload, response_type=self._response_type,
+            max_input_bytes=self._max_input_bytes, max_output_bytes=self._max_output_bytes,
+            verify=self.verify, direct_parameters=self._direct_parameters,
+        )
+
+    def compile(self, decoded: PaperQueryUnderstanding | PaperUnderstanding) -> PaperTypedToolPlan:
+        """Re-prove all decoded query conditions without another model call or event loop."""
+        self.verify()
+        if type(decoded) is not self._response_type:
+            raise ModelAnalysisError("model understanding has the wrong query protocol")
+        try:
+            # A caller may retain and mutate a decoded Pydantic model. Repeat
+            # the same strict validation, including the direct-parameter
+            # context, and detach every nested query need before source use.
+            current = self._response_type.model_validate(
+                decoded.model_dump(mode="python", warnings=False), strict=True,
+                context={"paper_direct_parameters": self._direct_parameters},
+            )
+        except Exception:
+            self.verify()
+            raise ModelAnalysisError("invalid structured paper model response") from None
+        self.verify()
+        plan = self._compile(current)
+        self.verify()
+        return plan
+
+
 async def compile_model_query(
     session: SchemaFieldRoutingSession,
     query: str,
@@ -342,6 +397,40 @@ async def compile_model_query(
     contract. Explicit concept IDs select the earlier disclosure protocol.
     Live source checks constrain both; model hints never become host arguments.
     """
+    if not callable(model):
+        raise ValueError("explicit model callback required")
+    prepared = _prepare_model_query(
+        session, query, principal=principal, intent_registry=intent_registry,
+        model_visible_intent_ids=model_visible_intent_ids,
+        model_visible_concept_ids=model_visible_concept_ids,
+        model_visible_tool_keys=model_visible_tool_keys,
+        host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+        max_model_input_bytes=max_model_input_bytes,
+        max_model_output_bytes=max_model_output_bytes,
+        rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
+    )
+    return prepared.compile(await prepared.understand(model))
+
+
+def _prepare_model_query(
+    session: SchemaFieldRoutingSession,
+    query: str,
+    *,
+    principal: PrincipalContext,
+    intent_registry: PaperIntentRegistry,
+    model_visible_intent_ids: tuple[str, ...],
+    model_visible_concept_ids: tuple[str, ...] | None = None,
+    model_visible_tool_keys: tuple[str, ...] = (),
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    k: int = 5,
+    max_hops: int = 2,
+    max_model_input_bytes: int = 32768,
+    max_model_output_bytes: int = 4096,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
+) -> _PreparedModelQuery:
+    """Prepare one schema-scoped protocol and its repeatable deterministic compiler."""
     independent = model_visible_concept_ids is None
     if (
         type(query) is not str
@@ -356,8 +445,6 @@ async def compile_model_query(
         raise PolicyViolationError("paper query requires trusted principal")
     if not isinstance(intent_registry, PaperIntentRegistry):
         raise ValueError("host-approved intent registry required")
-    if not callable(model):
-        raise ValueError("explicit model callback required")
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
     if (
@@ -707,12 +794,6 @@ async def compile_model_query(
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }
-        raw = await _understand_query(
-            model, payload, response_type=PaperQueryUnderstanding,
-            max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
-            verify=verify, direct_parameters=direct_parameters,
-        )
-
         def resolve_tool(name: str) -> str | None:
             from .planner import _normalize
 
@@ -740,17 +821,24 @@ async def compile_model_query(
             verify()
             return matches[0] if len(matches) == 1 else None
 
-        plan, verified_named_tools = _compile_query_needs(
-            raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
-            compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
-            router=router, principal=principal, verify=verify,
-            retain_raw_rank_concepts=(
-                rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
-            ),
-        )
-        return finalize(
-            plan, raw.parameter_hints, intent_id=raw.intent_id,
-            verified_named_tools=verified_named_tools,
+        def compile_independent(decoded: PaperQueryUnderstanding | PaperUnderstanding):
+            assert isinstance(decoded, PaperQueryUnderstanding)
+            plan, verified_named_tools = _compile_query_needs(
+                decoded, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
+                compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
+                router=router, principal=principal, verify=verify,
+                retain_raw_rank_concepts=(
+                    rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
+                ),
+            )
+            return finalize(
+                plan, decoded.parameter_hints, intent_id=decoded.intent_id,
+                verified_named_tools=verified_named_tools,
+            )
+
+        return _PreparedModelQuery(
+            payload, PaperQueryUnderstanding, compile_independent, verify,
+            max_model_input_bytes, max_model_output_bytes, direct_parameters,
         )
 
     # These are owner-reviewed concepts that still have a current, accessible,
@@ -829,7 +917,11 @@ async def compile_model_query(
         if set(approved_intents[iid].required_concept_ids) <= offered_ids
     ]
     if not offered_intents:
-        return abstain()
+        verify()
+        return _PreparedModelQuery(
+            None, PaperUnderstanding, lambda _decoded: abstain(), verify,
+            max_model_input_bytes, max_model_output_bytes,
+        )
 
     # Only host-approved, currently scoped, non-destructive tool identities
     # may reach the model. Schema bodies/hidden route IDs are not disclosed.
@@ -887,28 +979,30 @@ async def compile_model_query(
             "Never invent fields, values, credentials or permissions, or invoke providers.",
         ],
     }
-    understood = await _understand_query(
-        model, payload, response_type=PaperUnderstanding,
-        max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
-        verify=verify,
+    def compile_offered(decoded: PaperQueryUnderstanding | PaperUnderstanding):
+        assert isinstance(decoded, PaperUnderstanding)
+        if (
+            decoded.intent_id is not None
+            and decoded.intent_id not in {i.intent_id for i in offered_intents}
+            or not set(decoded.concept_ids) <= offered_ids
+            or not set(decoded.named_tools) <= set(offered_tools)
+        ):
+            raise ModelAnalysisError("model selected unoffered paper identities")
+        if decoded.intent_id is None:
+            plan = abstain()
+        else:
+            plan = compile_hint(decoded)
+        if plan.coverage is None:
+            plan = replace(plan, coverage=_owner_query_field_coverage(
+                decoded, concepts=approved_concepts, intents=approved_intents,
+                source_proven=bool(plan.calls) and plan.status in {
+                    "ready", "requires_arguments", "requires_observation",
+                },
+            ))
+        plan = replace(plan, understanding_hints=decoded.model_dump(mode="json"))
+        return finalize(plan, decoded.parameter_hints)
+
+    return _PreparedModelQuery(
+        payload, PaperUnderstanding, compile_offered, verify,
+        max_model_input_bytes, max_model_output_bytes,
     )
-    if (
-        understood.intent_id is not None
-        and understood.intent_id not in {i.intent_id for i in offered_intents}
-        or not set(understood.concept_ids) <= offered_ids
-        or not set(understood.named_tools) <= set(offered_tools)
-    ):
-        raise ModelAnalysisError("model selected unoffered paper identities")
-    if understood.intent_id is None:
-        plan = abstain()
-    else:
-        plan = compile_hint(understood)
-    if plan.coverage is None:
-        plan = replace(plan, coverage=_owner_query_field_coverage(
-            understood, concepts=approved_concepts, intents=approved_intents,
-            source_proven=bool(plan.calls) and plan.status in {
-                "ready", "requires_arguments", "requires_observation",
-            },
-        ))
-    plan = replace(plan, understanding_hints=understood.model_dump(mode="json"))
-    return finalize(plan, understood.parameter_hints)

@@ -18,11 +18,11 @@ user query
 
 G5 dependency producer에는 계속 단위 없는 스칼라 identifier가 필요하며, 신뢰된 호스트 입력의 기존 스칼라 한도도 유지합니다. 원본 container가 선언된 숨김 하위 필드와 겹치면 결과 경로가 달라도 제외합니다. 제한된 view의 schema stripping도 유지합니다. 필드 요건을 입증하려고 raw registry에서 제거된 중첩 계약 정보를 복구하지 않습니다.
 
-필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 준비된 경로는 명시적으로 선택해야 하며 기본 라우팅을 바꾸지 않습니다.
+필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 호스트가 이 경로를 명시적으로 준비하고 설정하며, 설정하지 않은 router는 기존 어휘 기반 라우팅을 유지합니다.
 
 ## 준비된 schema-only plan
 
-`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. `session.acompile_query(...)`에서 `model_visible_concept_ids`를 생략하면 schema-independent 모델 프로토콜을 사용합니다. 애플리케이션의 모델에는 질문, 고정된 intent 이름과 응답 형식·규칙만 전달하며 concept alias, 필드 이름, tool catalog, route ID는 보내지 않습니다. 명시적인 tuple을 전달하면 승인된 concept ID/alias와 tool 이름을 공개하는 기존 offered-ID 프로토콜을 유지합니다. 이 API들은 명시적으로 선택해야 합니다. `router.plan(...)`의 기본 `KeywordAnalyzer`는 어휘 기반이며, 일반적인 다국어 이해·시간 조건 추론·질문에서 인자 값을 추출하는 기능을 제공하지 않습니다.
+`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. `session.acompile_query(...)`에서 `model_visible_concept_ids`를 생략하면 schema-independent 모델 프로토콜을 사용합니다. 애플리케이션의 모델에는 질문, 고정된 intent 이름과 응답 형식·규칙만 전달하며 concept alias, 필드 이름, tool catalog, route ID는 보내지 않습니다. 명시적인 tuple을 전달하면 승인된 concept ID/alias와 tool 이름을 공개하는 기존 offered-ID 프로토콜을 유지합니다. 이 API들은 명시적으로 선택해야 합니다. Field-routing을 설정하지 않으면 `router.plan(...)`은 어휘 기반 `KeywordAnalyzer`를 사용하며, 일반적인 다국어 이해·시간 조건 추론·질문에서 인자 값을 추출하는 기능을 제공하지 않습니다. 준비된 session을 설정하면 아래의 Algorithm 1 경로를 선택합니다.
 
 각 concept의 필수 필드 집합 전체를 그 concept의 source type과 license에 따라 권한이 있는 endpoint에서 독립적으로 입증합니다. `NativeDeclaredConcept`의 `source_type=None`과 `license=None`은 source type이나 license를 제한하지 않는다는 뜻이며, 실제 원본 metadata를 제거하지 않습니다. 따라서 독립적인 concept들은 서로 다른 tool과 license를 사용할 수 있습니다. Semantic ID가 같더라도 schema·단위·qualifier 요건이 호환되지 않으면 ID만으로 합치지 않고 독립적인 입증을 유지합니다. 입증된 route들을 합치고, 반복되는 route는 선택 필드의 합집합을 원본 선언 순서로 보존합니다. Identifier와 호스트가 요구한 intent group은 recall을 보존하며, 결과가 항상 최소 필드 수라고 보장하지는 않습니다. 전체 route 집합은 K5 한도를 따르므로 합집합이 다섯 route를 넘으면 call 없이 `budget_unsatisfied`를 반환합니다.
 일반 intent는 `required_concept_ids=()`를 선언할 수 있으며, 임의의 대표 필드를 추가하지 않습니다.
@@ -66,9 +66,48 @@ Schema-independent 프로토콜에서는 각 need의 `qualifiers`로 동일한 �
 
 각 call의 `fields_meta`는 현재 scoped schema view의 `PaperPlanFieldMeta.source_path`, `result_path`, `json_schema`와 정규화된 단위·값 계약을 제공합니다. Policy는 경로를 평탄화하거나 metadata를 숨길 수 있습니다. 모델 기반 query receipt에는 검증 후 분리 복사한 `understanding_hints`도 포함되지만, 이것은 검증된 질문의 의미나 입력 권한이 아닌 신뢰하지 않는 제안입니다. `status="ready"`인 경우에도 모든 receipt의 `executable_authority=False`를 유지합니다.
 
+## 표준 계획에 Algorithm 1 설정 {#configure-algorithm-1-for-standard-planning}
+
+`router.configure_field_routing(...)`는 같은 router가 준비한 session을 표준 `plan(...)`, `aplan(...)`에 연결합니다. 호스트는 understanding 모델, 검토한 intent registry, 노출할 intent ID와 현재 snapshot에 고정된 rank policy를 제공하며, 정책은 `direct_score_mode="paper_v1"`, `focus_direct=True`여야 합니다. 설정 과정에서 intent/rank 선언을 검증하고 복사합니다. 모델에는 schema-independent 질문 프로토콜을 전달하며, 이 설정으로 offered concept/tool ID나 의존성 탐색을 활성화하지 않습니다.
+
+```python
+from schemarouter import PaperNativeRankPolicy, PaperPlanRequest, RunConfig
+
+session = router.prepare_field_routing(
+    catalog=catalog, approved_host_roots=approved_host_roots,
+)
+router.configure_field_routing(
+    session,
+    model=understand,
+    intent_registry=intent_registry,
+    rank_policy=PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        direct_score_mode="paper_v1",
+        focus_direct=True,
+    ),
+    model_visible_intent_ids=("information.lookup",),
+)
+request = PaperPlanRequest(
+    query=query,
+    host_source_arguments=approved_host_arguments,
+    max_calls=5,
+)
+plan = await router.aplan_authorized(request, principal=principal)
+if plan.executable:
+    results = await router.execute(plan, config=RunConfig(principal=principal))
+```
+
+예시의 intent ID는 호스트 registry에 존재해야 하며, `approved_host_roots`는 명시적인 호스트 입력을 허용한 source route ID의 `frozenset`입니다. 계획 요청마다 신뢰된 principal이 필요하며, `plan_authorized(...)`와 `aplan_authorized(...)`는 표준 계획 메서드에 해당 요청의 principal context를 설정합니다. 설정 자체가 principal의 권한을 부여하지는 않습니다. 모델은 계획당 한 번 호출하고, 실행 시에는 모델을 다시 호출하지 않고 전체 질문 요건을 현재 원본·정책 상태와 대조하여 재검증합니다.
+
+설정된 계획 경로는 질문 문자열 또는 `PaperPlanRequest`를 받습니다. 승인된 인자는 `host_source_arguments`에서 source route ID별로 보관하며 기본값은 빈 mapping입니다. `max_calls`는 1에서 5까지의 엄격한 정수이고 기본값은 5이며, 고정 K5 안에서의 call 예산입니다. 설정된 router는 flat argument와 fallback option의 의미가 다른 기존 `PlanRequest`를 거부합니다. 설정하지 않은 router는 `PaperPlanRequest`를 거부합니다. Invoker binding이 없더라도 `plan_executable(...)`이나 자동 호출이 다른 source를 선택하지 않습니다. 전체 계획 및 실행 계약을 충족할 수 없는 요청은 fail-closed로 처리합니다.
+
+반환된 `ExecutionPlan`은 paper `planning_status`, coverage와 입증된 일부 call을 검토용으로 보존합니다. 일반 legacy plan은 `planning_status=None`을 유지하고 직렬화 결과에서 이 항목을 생략합니다. Ready가 아닌 paper status에서는 `plan.executable`이 false이고 실행을 막습니다. 남아 있는 call에 인자가 모두 있어도 부분 coverage를 실행 가능한 계획으로 바꿀 수 없습니다. 상세한 `fields_meta`, `parameters_meta`와 신뢰하지 않는 parameter proposal은 session의 진단용 compile receipt에서 계속 확인할 수 있으며, 표준 `ExecutionPlan`에 추가되지는 않습니다. 원본이 바뀌면 준비된 설정은 무효가 되므로, session을 refresh하고 새 snapshot을 검토·설정한 뒤 다시 계획해야 합니다.
+
+발급된 계획은 설정된 router용 비공개 proof를 보유합니다. 내용을 바꾸지 않은 deep copy는 이 proof를 보존하지만 직렬화 후 복원하면 보존되지 않습니다. 복원된 계획을 실행하려면 다시 계획하십시오. 공개 status나 직렬화된 계획 내용 자체가 원본·실행 권한을 부여하지는 않습니다.
+
 ## Algorithm 1 직접 계획 실행 {#execute-an-algorithm-1-direct-plan}
 
-`session.aexecute_direct(...)`는 Algorithm 1 직접 계획을 새로 compile한 뒤 기존 executor로 실행합니다. 구조화된 `PaperUnderstanding`, 호스트의 `PaperIntentRegistry`, 현재 principal과 snapshot에 고정된 `PaperNativeRankPolicy`가 필요하며, 정책은 `direct_score_mode="paper_v1"`, `focus_direct=True`여야 합니다. Understanding은 계속 신뢰하지 않는 제안이며, 허용되는 필드와 route는 호스트가 검토한 catalog 및 현재 원본 계약으로 결정합니다. 이 메서드는 질문만 받던 이전 어휘 기반 직접 실행 진입점을 대체하며, `alternative_index`는 더 이상 받지 않습니다.
+`session.aexecute_direct(...)`는 router에 field-routing 설정이 없을 때 Algorithm 1 직접 계획을 새로 compile한 뒤 기존 executor로 실행합니다. `configure_field_routing(...)`을 활성화하면 이 session 실행 진입점은 호출을 거부합니다. 설정된 계획의 proof를 유지하도록 표준 계획을 세운 뒤 `execute(...)`를 사용하거나 `invoke(...)`/`ainvoke(...)`를 사용하십시오. 설정하지 않은 session 메서드에는 구조화된 `PaperUnderstanding`, 호스트의 `PaperIntentRegistry`, 현재 principal과 snapshot에 고정된 `PaperNativeRankPolicy`가 필요하며, 정책은 `direct_score_mode="paper_v1"`, `focus_direct=True`여야 합니다. Understanding은 계속 신뢰하지 않는 제안이며, 허용되는 필드와 route는 호스트가 검토한 catalog 및 현재 원본 계약으로 결정합니다. 이 메서드는 질문만 받던 이전 어휘 기반 직접 실행 진입점을 대체하며, `alternative_index`는 더 이상 받지 않습니다.
 
 Session과 호스트 소유 선언을 준비한 뒤 다음과 같이 호출합니다.
 
@@ -93,7 +132,7 @@ results = await session.aexecute_direct(
 
 고정된 K5 한도 안에서 직접 compiler가 선택한 독립적인 읽기 전용 source call을 1개에서 5개까지 실행할 수 있습니다. 실행 전에 모든 필수 필드 집합의 coverage가 충족되고 모든 필수 입력이 제공되어야 합니다. 모델의 `parameter_hints`는 인자를 연결하지 않으며, 별도로 승인한 `host_source_arguments`만 입력값을 제공할 수 있습니다. 누락된 입력, 불완전한 coverage, 의존성 binding과 안전하지 않은 route는 거부합니다. 명시된 source의 입력이 없으면 G5 producer를 추가하지 않고 pending 상태를 유지하며, 실행 과정에서 어휘 기반 planner나 fallback route로 대체하지 않습니다.
 
-이 연결 경로는 현재 원본 계약, 권한, 필드 노출 범위, 가용성과 native invoker generation을 다시 검사하며, await한 before-call hook 이후에도 검사합니다. 실행 예산은 선택된 call마다 한 번의 시도를 허용합니다. `compile_understood(...)`는 계속 `executable_authority=False`인 진단용 receipt를 반환하며, ready receipt도 실행 권한을 부여할 수 없습니다. 명시적으로 선택하는 이 메서드는 기본 `router.plan(...)` 경로를 바꾸지 않습니다.
+이 연결 경로는 현재 원본 계약, 권한, 필드 노출 범위, 가용성과 native invoker generation을 다시 검사하며, await한 before-call hook 이후에도 검사합니다. 실행 예산은 선택된 call마다 한 번의 시도를 허용합니다. `compile_understood(...)`는 계속 `executable_authority=False`인 진단용 receipt를 반환하며, ready receipt도 실행 권한을 부여할 수 없습니다. 이 메서드 호출은 표준 계획 설정을 설치하지 않습니다. 표준 계획에는 `configure_field_routing(...)`를 사용하십시오.
 
 ## Field-first가 중요한 이유
 

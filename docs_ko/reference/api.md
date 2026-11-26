@@ -30,6 +30,10 @@
 
 ::: schemarouter.PlanRequest
 
+## PaperPlanRequest
+
+::: schemarouter.PaperPlanRequest
+
 ## ToolResult
 
 ::: schemarouter.ToolResult

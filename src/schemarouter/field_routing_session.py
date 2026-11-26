@@ -629,6 +629,10 @@ class SchemaFieldRoutingSession:
         from .paper_typed_tool_plan import _check_current_call_scopes
         from .runs import ExecutionBudget, RunConfig
 
+        if self._router._paper_planning is not None:
+            raise PolicyViolationError(
+                "configured field routing uses router.plan/aplan and execute"
+            )
         if (
             not isinstance(rank_policy, PaperNativeRankPolicy)
             or rank_policy.direct_score_mode != "paper_v1"

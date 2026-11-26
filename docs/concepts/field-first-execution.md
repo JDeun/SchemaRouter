@@ -34,7 +34,8 @@ Requirements use the canonical output contract after an explicitly declared unit
 Raw source assertions are validated before conversion. Canonical bounds and finite values are
 transformed; predicates that cannot be proved after conversion are omitted only from the canonical
 description, so a stricter requirement remains unproved. Identity normalization preserves the
-original numeric value and type. This prepared path remains opt-in and does not change default routing.
+original numeric value and type. The host explicitly prepares and configures this path; an
+unconfigured router retains its existing lexical routing.
 
 ## Prepared schema-only plans
 
@@ -44,9 +45,10 @@ and the host's `PaperIntentRegistry`. In `session.acompile_query(...)`, omitting
 `model_visible_concept_ids` selects the schema-independent model protocol: the application's model
 receives the query, fixed intent names and response format/rules, without concept aliases, field
 names, tool catalog or route IDs. Passing an explicit tuple retains the earlier offered-ID protocol,
-which discloses the approved concept IDs/aliases and tool names. These APIs are opt-in. The default `KeywordAnalyzer` in
-`router.plan(...)` remains lexical: it does not provide general multilingual understanding, temporal
-reasoning or extraction of argument values from query text.
+which discloses the approved concept IDs/aliases and tool names. These APIs are opt-in. Without
+field-routing configuration, `router.plan(...)` uses the lexical `KeywordAnalyzer`, which does not
+provide general multilingual understanding, temporal reasoning or extraction of argument values
+from query text. Configuring the prepared session selects the Algorithm 1 path described below.
 
 Each concept's complete required field group is proved independently at an authorized endpoint
 under its own source type and license. In `NativeDeclaredConcept`, `source_type=None` and
@@ -170,10 +172,78 @@ paths or redact metadata. The model-backed query receipt also carries detached, 
 `understanding_hints`; these remain untrusted suggestions, not verified query meaning or input
 authority. All these receipts retain `executable_authority=False`, including `status="ready"`.
 
+## Configure Algorithm 1 for standard planning
+
+`router.configure_field_routing(...)` connects a session prepared by that same router to standard
+`plan(...)` and `aplan(...)`. The host supplies its understanding model, reviewed intent registry,
+visible intent IDs and a current snapshot-pinned rank policy with `direct_score_mode="paper_v1"`
+and `focus_direct=True`. Configuration validates and copies the intent/rank declarations. The
+model receives the schema-independent query protocol; offered concept/tool IDs and dependency
+discovery are not enabled through this configuration.
+
+```python
+from schemarouter import PaperNativeRankPolicy, PaperPlanRequest, RunConfig
+
+session = router.prepare_field_routing(
+    catalog=catalog, approved_host_roots=approved_host_roots,
+)
+router.configure_field_routing(
+    session,
+    model=understand,
+    intent_registry=intent_registry,
+    rank_policy=PaperNativeRankPolicy(
+        snapshot_id=session.snapshot_id,
+        direct_score_mode="paper_v1",
+        focus_direct=True,
+    ),
+    model_visible_intent_ids=("information.lookup",),
+)
+request = PaperPlanRequest(
+    query=query,
+    host_source_arguments=approved_host_arguments,
+    max_calls=5,
+)
+plan = await router.aplan_authorized(request, principal=principal)
+if plan.executable:
+    results = await router.execute(plan, config=RunConfig(principal=principal))
+```
+
+The intent ID in this example must exist in the host's registry; `approved_host_roots` is the
+`frozenset` of source route IDs approved for explicit host inputs. Each planning request requires
+a trusted principal; `plan_authorized(...)` and `aplan_authorized(...)` establish that request's
+principal context for the standard planning methods. Configuration does not grant a principal
+permission. The model is called once per plan; execution revalidates the complete query needs
+against current source and policy state without another model call.
+
+Configured planning accepts a query string or `PaperPlanRequest`. The request keeps approved
+arguments under their source route IDs in `host_source_arguments`, which defaults to an empty
+mapping. `max_calls` is a strict integer from one to five, defaulting to five; it is a call budget
+within fixed K5. A configured router rejects the older `PlanRequest`, whose flat arguments and
+fallback options have different meanings. An unconfigured router rejects `PaperPlanRequest`.
+Missing invoker bindings do not cause `plan_executable(...)` or automatic invocation to select a
+different source. Requests that cannot meet the complete plan and execution contract fail closed.
+
+The returned `ExecutionPlan` retains paper `planning_status`, coverage and any proven partial
+calls for inspection. Ordinary legacy plans leave `planning_status=None` and omit it from serialized
+output. A non-ready paper status makes `plan.executable` false and blocks execution;
+partial coverage cannot become executable merely because the remaining calls have arguments.
+Detailed `fields_meta`, `parameters_meta` and untrusted parameter proposals remain available in the
+session's diagnostic compile receipts; they are not added to the standard `ExecutionPlan`.
+Source changes invalidate the prepared configuration: refresh the session and review
+and configure the new snapshot before replanning.
+
+Issued plans carry a private proof for the configured router. An unchanged deep copy preserves
+that proof, but serialization and reconstruction do not. Replan before executing a reconstructed
+plan. Neither the public status nor serialized plan contents grant source or execution authority.
+
 ## Execute an Algorithm 1 direct plan
 
 `session.aexecute_direct(...)` executes a freshly compiled Algorithm 1 direct plan through the
-existing executor. It requires a structured `PaperUnderstanding`, the host's `PaperIntentRegistry`,
+existing executor while its router has no field-routing configuration. Once
+`configure_field_routing(...)` is active, this session execution entry point refuses the call;
+use standard planning followed by `execute(...)`, or `invoke(...)`/`ainvoke(...)`, so execution
+retains the configured plan's proof. The unconfigured session method requires a structured
+`PaperUnderstanding`, the host's `PaperIntentRegistry`,
 the current principal and a snapshot-pinned `PaperNativeRankPolicy` with
 `direct_score_mode="paper_v1"` and `focus_direct=True`. The understanding remains an untrusted
 proposal; the host-reviewed catalog and current source contracts determine the permitted fields
@@ -211,8 +281,8 @@ adding G5 producers, and execution does not substitute the lexical planner or a 
 The bridge rechecks current source contracts, authorization, field visibility, availability and
 native invoker generations, including after awaited before-call hooks. Its execution budget allows
 one attempt per selected call. `compile_understood(...)` continues to return a diagnostic receipt
-with `executable_authority=False`; a ready receipt cannot authorize execution. This explicit method
-does not change the default `router.plan(...)` path.
+with `executable_authority=False`; a ready receipt cannot authorize execution. Calling this method
+does not install a standard-planning configuration; use `configure_field_routing(...)` for that.
 
 ## Why field-first matters
 

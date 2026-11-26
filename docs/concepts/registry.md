@@ -73,7 +73,8 @@ tool fingerprint != current tool fingerprint
 Invoker bindings also carry the tool fingerprint that existed at bind time. Replacing a tool
 contract without rebinding its transport yields `BindingDriftError`.
 
-Ordinary `SchemaRouter.execute()`, `invoke()` and `ainvoke()` validate the registered contract
+For ordinary plans without a configured Algorithm 1 proof, `SchemaRouter.execute()`, `invoke()`
+and `ainvoke()` validate the registered contract
 and use a coherent, fingerprint-matched binding snapshot for each invocation attempt. Trusted
 local code may replace an invoker under the same contract; a before-call hook can therefore
 rebind a tool and dispatch through the replacement. The plan pins the declared execution
@@ -89,6 +90,22 @@ rejected even when the contract is unchanged. A fresh direct execution can recom
 against the replacement. Neither contract turns a plan, receipt or model selection into execution
 authority. See [Algorithm 1 direct execution](field-first-execution.md#execute-an-algorithm-1-direct-plan)
 for the explicit arguments and independent-source bound.
+
+Once standard field routing is configured, the session's `aexecute_direct()` entry point refuses
+execution. Use the configured standard planning and execution methods to retain their issued-plan proof.
+
+`router.configure_field_routing(...)` installs a prepared session from that same router for
+standard planning. Its reviewed intent/rank declarations are copied and pinned to the prepared
+source snapshot. Every request still needs a current trusted principal and authorization policy.
+A source change makes the configuration stale until the host refreshes the session and configures
+the reviewed new snapshot. Existing issued plans must be replanned.
+
+Plans issued through this configured path carry a private proof of their complete query needs,
+source state, principal and binding generations. Execution revalidates that proof after awaited
+hooks without calling the understanding model again. An unchanged deep copy preserves the proof;
+serializing and reconstructing the plan does not. A configured router rejects a reconstructed plan
+until it is replanned. Public `planning_status`, coverage or a caller-built `ExecutionPlan` cannot
+replace that proof or grant execution authority.
 
 `router.authorization_policy` and `router.executor.authorization_policy` share the same current
 policy. Replacing it through either API affects planning and the executor's next authorization

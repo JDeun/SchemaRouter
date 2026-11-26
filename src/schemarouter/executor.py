@@ -1389,6 +1389,30 @@ class RegistryExecutor:
         budget: ExecutionBudget | None = None,
         _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
+        witness = call._planning_witness
+        if witness is None:
+            return await self._execute_call(call, retry=retry, budget=budget, _tracker=_tracker)
+        from .paper_planning import _PaperPlanWitness
+
+        if not isinstance(witness, _PaperPlanWitness):
+            raise PolicyViolationError("invalid local paper planning witness")
+        witness.validate_call(self, call)
+        with _require_bound_invoker_generation(
+            self, call.tool, witness.generation(call.tool),
+            revalidate=lambda: witness.validate_call(self, call),
+        ):
+            result = await self._execute_call(call, retry=retry, budget=budget, _tracker=_tracker)
+            witness.validate_call(self, call)
+            return result
+
+    async def _execute_call(
+        self,
+        call: ToolCall,
+        *,
+        retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        _tracker: ExecutionBudgetTracker | None = None,
+    ) -> ToolResult:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         execution_policy = self._execution_policy_snapshot()
         tracker._check_elapsed(stage="input schema validation")
@@ -1691,6 +1715,19 @@ class RegistryExecutor:
             raise last_unavailable
         raise ExecutionError("fallback chain contained no executable candidates")
 
+    def _snapshot_paper_plan(self, plan: ExecutionPlan) -> ExecutionPlan:
+        witness = plan._planning_witness
+        if witness is None and plan.planning_status is None:
+            return plan
+        from .paper_planning import _PaperPlanWitness
+
+        if not isinstance(witness, _PaperPlanWitness):
+            raise PolicyViolationError("paper execution requires a locally issued plan; replan")
+        witness.validate_plan(self, plan, _current_principal_context(), execution=True)
+        # A caller can retain the submitted plan while hooks await. Snapshot
+        # all calls together so later edits cannot inject an unproved call.
+        return plan.model_copy(deep=True)
+
     async def execute(
         self,
         plan: ExecutionPlan,
@@ -1706,6 +1743,7 @@ class RegistryExecutor:
     def validate_parallel_read_only(self, plan: ExecutionPlan) -> None:
         """Fail before launching tasks unless every primary group has a trusted read-only route."""
 
+        self._snapshot_paper_plan(plan)
         for index, call in enumerate(plan.calls):
             route = plan.fallback_route(index)
             if route is not None:
@@ -1762,6 +1800,7 @@ class RegistryExecutor:
         if max_concurrency < 1:
             raise ValueError("max_concurrency must be >= 1")
 
+        plan = self._snapshot_paper_plan(plan)
         self.validate_parallel_read_only(plan)
         tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
         call_count = len(plan.calls)
@@ -1819,6 +1858,7 @@ class RegistryExecutor:
         retry: RetryPolicy | None = None,
         budget: ExecutionBudget | None = None,
     ) -> AsyncIterator[ToolResult]:
+        plan = self._snapshot_paper_plan(plan)
         tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
         for index, call in enumerate(plan.calls):
             route = plan.fallback_route(index)

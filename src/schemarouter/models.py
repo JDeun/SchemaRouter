@@ -5,7 +5,7 @@ import math
 from collections.abc import Iterator
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_serializer, model_validator
 
 from .canonical_json import canonical_json_sha256
 
@@ -908,6 +908,14 @@ FallbackScope = Literal["disabled", "same_provider", "cross_provider"]
 RetrievalMode = Literal["coverage", "corroborate"]
 
 
+class PaperPlanRequest(StrictModel):
+    """Query and explicit source-local host inputs for configured Algorithm 1 planning."""
+
+    query: str = Field(min_length=2, max_length=4096)
+    host_source_arguments: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    max_calls: int = Field(default=5, ge=1, le=5, strict=True)
+
+
 class PlanRequest(StrictModel):
     query: str
     concepts: list[str] = Field(default_factory=list)
@@ -1071,6 +1079,10 @@ class PlanExplanation(StrictModel):
 
 
 class ToolCall(StrictModel):
+    # Only a local prepared planner can attach this extra restriction. It is
+    # absent from JSON/schema and never replaces source authorization.
+    _planning_witness: object | None = PrivateAttr(default=None)
+
     tool: str
     endpoint: str
     arguments: dict[str, Any] = Field(default_factory=dict)
@@ -1115,13 +1127,30 @@ class PlanCoverage(StrictModel):
     complete: bool = False
 
 
+PlanStatus = Literal[
+    "ready", "requires_arguments", "requires_observation", "no_proven_hit",
+    "over_k_unranked", "budget_unsatisfied", "ambiguous_paths",
+]
+
+
 class ExecutionPlan(StrictModel):
+    _planning_witness: object | None = PrivateAttr(default=None)
+
     query: str
     registry_version: int
     calls: list[ToolCall] = Field(default_factory=list, max_length=32)
     fallback_routes: list[FallbackRoute] = Field(default_factory=list, max_length=32)
     warnings: list[str] = Field(default_factory=list)
     coverage: PlanCoverage | None = None
+    planning_status: PlanStatus | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_plan(self, handler: Any) -> dict[str, Any]:
+        value = handler(self)
+        if self.planning_status is None:
+            # Preserve the wire shape of existing, unconfigured plans.
+            value.pop("planning_status", None)
+        return value
 
     @model_validator(mode="after")
     def validate_fallback_routes(self) -> ExecutionPlan:
@@ -1136,7 +1165,11 @@ class ExecutionPlan(StrictModel):
 
     @property
     def executable(self) -> bool:
-        return bool(self.calls) and all(call.executable for call in self.calls)
+        return (
+            self.planning_status in (None, "ready")
+            and (self.planning_status is None or self.coverage is None or self.coverage.complete)
+            and bool(self.calls) and all(call.executable for call in self.calls)
+        )
 
     def fallback_route(self, primary_call_index: int) -> FallbackRoute | None:
         return next(

@@ -2654,6 +2654,27 @@ class SchemaPlanner:
             coverage=receipt.coverage.model_copy(deep=True) if receipt.coverage else None,
         )
 
+    def _build_paper_query_plan(
+        self, query: str, receipt: PaperTypedToolPlan, *, max_calls: int,
+    ) -> ExecutionPlan:
+        """Preserve incomplete paper diagnostics without declaring them executable."""
+        status = receipt.status if len(receipt.calls) <= max_calls else "budget_unsatisfied"
+        if status == "ready":
+            plan = self._build_paper_direct_plan(query, receipt)
+            plan.planning_status = status
+            return plan
+        if receipt.executable_authority or receipt.bindings:
+            raise PolicyViolationError("paper query plan must contain independent source calls")
+        if receipt.registry_version != self.registry.version:
+            raise PolicyViolationError("paper query plan source revision changed")
+        return ExecutionPlan(
+            query=query, registry_version=receipt.registry_version,
+            calls=[item.call.model_copy(deep=True) for item in receipt.calls],
+            coverage=receipt.coverage.model_copy(deep=True) if receipt.coverage else None,
+            planning_status=status,
+            warnings=[f"Algorithm 1 planning status: {status}"],
+        )
+
     def _build_plan(
         self,
         request: PlanRequest,

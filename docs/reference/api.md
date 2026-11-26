@@ -30,6 +30,10 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 
 ::: schemarouter.PlanRequest
 
+## PaperPlanRequest
+
+::: schemarouter.PaperPlanRequest
+
 ## ToolResult
 
 ::: schemarouter.ToolResult
