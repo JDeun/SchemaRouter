@@ -39,9 +39,7 @@ from .planning_context import PlanningContext, RegistrySnapshot, SnapshotToolReg
 from .planning_stages import (
     CandidatePipelineResult,
     assemble_execution_plan,
-    select_fallbacks_async,
     select_fallbacks_sync,
-    select_primary_candidates_async,
     select_primary_candidates_sync,
 )
 from .registry import ToolRegistry
@@ -771,7 +769,6 @@ class SchemaPlanner:
         return self._build_plan(
             request,
             intent,
-            async_decision=False,
             catalog_snapshot=catalog_snapshot,
         )
 
@@ -1281,7 +1278,6 @@ class SchemaPlanner:
         return self._build_plan(
             request,
             intent,
-            async_decision=False,
             additional_availability_predicate=predicate,
             scoring_endpoint_transform=endpoint_transform,
             catalog_snapshot=catalog_snapshot,
@@ -1324,7 +1320,6 @@ class SchemaPlanner:
         return self._build_plan(
             request,
             intent,
-            async_decision=False,
             additional_availability_predicate=predicate,
             catalog_snapshot=catalog_snapshot,
         )
@@ -2214,18 +2209,6 @@ class SchemaPlanner:
             return False, [f"{prefix}: local evidence insufficient: " + ", ".join(missing)]
         return True, []
 
-    async def _assess_evidence_async(
-        self,
-        request: PlanRequest,
-        candidate: _Candidate,
-        selected_fields: list[str],
-        requested: EvidenceRequirements,
-        field_requested: dict[str, EvidenceRequirements],
-    ) -> tuple[bool, list[str]]:
-        return self._assess_evidence_sync(
-            request, candidate, selected_fields, requested, field_requested,
-        )
-
     @staticmethod
     def _field_semantics(
         endpoint: EndpointSpec,
@@ -2613,90 +2596,6 @@ class SchemaPlanner:
             ),
         )
 
-    async def _compile_candidate_async(
-        self,
-        request: PlanRequest,
-        intent: QueryIntent,
-        candidate: _Candidate,
-        warnings: list[str],
-        *,
-        warn_ignored_arguments: bool = True,
-    ) -> ToolCall | None:
-        authoritative_endpoint = candidate.endpoint
-        endpoint = _visible_endpoint(candidate)
-        arguments, _, dropped, ambiguous_aliases = self._bind_arguments(
-            endpoint,
-            intent.arguments,
-        )
-        if ambiguous_aliases and warn_ignored_arguments:
-            warnings.append(
-                f"{candidate.tool.key}.{endpoint.name}: ambiguous parameter aliases: "
-                + ", ".join(ambiguous_aliases)
-            )
-        unambiguous_dropped = [
-            name
-            for name in dropped
-            if name not in set(ambiguous_aliases)
-        ]
-        if unambiguous_dropped and warn_ignored_arguments:
-            warnings.append(
-                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                + ", ".join(unambiguous_dropped)
-            )
-        missing = [
-            parameter.name
-            for parameter in endpoint.parameters
-            if parameter.required and parameter.name not in arguments
-        ]
-        fields = self._project_fields(
-            endpoint,
-            intent,
-            candidate.matched_fields,
-        )
-        evidence = self._evidence(
-            candidate.tool,
-            endpoint,
-            fields,
-        )
-        matched_field_evidence = self._matched_field_evidence(
-            candidate,
-            fields,
-            intent.field_evidence,
-        )
-        call_field_evidence = {
-            field_name: requirement
-            for field_name, (_, requirement) in matched_field_evidence.items()
-        }
-        evidence_ok, evidence_warnings = await self._assess_evidence_async(
-            request,
-            candidate,
-            fields,
-            intent.evidence,
-            intent.field_evidence,
-        )
-        warnings.extend(evidence_warnings)
-        if not evidence_ok:
-            return None
-
-        return ToolCall(
-            tool=candidate.tool.key,
-            endpoint=endpoint.name,
-            arguments=arguments,
-            fields=fields,
-            evidence=evidence,
-            required_evidence=intent.evidence,
-            field_evidence=call_field_evidence,
-            schema_fingerprint=authoritative_endpoint.fingerprint,
-            tool_fingerprint=candidate.tool.fingerprint,
-            missing_required_arguments=missing,
-            score=candidate.score,
-            explanation=self._build_explanation(
-                candidate,
-                fields,
-                dropped,
-            ),
-        )
-
     def _candidate_pipeline_sync(
         self,
         context: PlanningContext,
@@ -2719,25 +2618,11 @@ class SchemaPlanner:
             warnings=(),
         )
 
-    async def _candidate_pipeline_async(
-        self,
-        context: PlanningContext,
-        *,
-        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None,
-        scoring_endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None] | None,
-    ) -> CandidatePipelineResult[_Candidate, tuple[str, tuple[str, ...]]]:
-        return self._candidate_pipeline_sync(
-            context,
-            additional_availability_predicate=additional_availability_predicate,
-            scoring_endpoint_transform=scoring_endpoint_transform,
-        )
-
     def _build_plan(
         self,
         request: PlanRequest,
         intent: QueryIntent,
         *,
-        async_decision: bool,
         additional_availability_predicate: Callable[
             [ToolSpec, EndpointSpec],
             bool,
@@ -2750,7 +2635,6 @@ class SchemaPlanner:
         | None = None,
         catalog_snapshot: RegistrySnapshot | None = None,
     ) -> ExecutionPlan:
-        del async_decision
         context = self._planning_context(
             request,
             intent,
@@ -2887,123 +2771,14 @@ class SchemaPlanner:
         | None = None,
         catalog_snapshot: RegistrySnapshot | None = None,
     ) -> ExecutionPlan:
-        context = self._planning_context(
+        # Only query analysis can await in the installed deterministic planner.
+        # Both entrypoints use the same post-analysis source snapshot and builder.
+        return self._build_plan(
             request,
             intent,
-            scoring_endpoint_transform=scoring_endpoint_transform,
-            catalog_snapshot=catalog_snapshot,
-        )
-        catalog_snapshot = context.registry
-        pipeline = await self._candidate_pipeline_async(
-            context,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
-        )
-        all_candidates = list(pipeline.all_candidates)
-        candidates = list(pipeline.candidates)
-        required_coverage = pipeline.required_coverage
-        warnings = list(pipeline.warnings)
-        if not candidates:
-            return assemble_execution_plan(
-                query=request.query,
-                registry_version=catalog_snapshot.version,
-                primary_pairs=(),
-                fallback_routes=(),
-                warnings=[
-                    *warnings,
-                    "no schema candidate matched the request",
-                ],
-                required_coverage=required_coverage,
-                all_candidates=all_candidates,
-                selected_coverage=lambda candidate, call: (
-                    self._coverage_requirements_for_candidate(
-                        candidate,
-                        request.query,
-                        field_names=set(call.fields),
-                    )
-                ),
-                build_coverage=self._plan_coverage,
-                coverage_warning=self._coverage_warning,
-            )
-
-        primary_selection = await select_primary_candidates_async(
-            candidates=candidates,
-            max_calls=request.max_calls,
-            retrieval_mode=request.retrieval_mode,
-            required_coverage=required_coverage,
-            coverage_matrix=lambda ranked: self._field_coverage_matrix(
-                request,
-                ranked,
-            ),
-            compile_candidate=lambda candidate: self._compile_candidate_async(
-                request,
-                intent,
-                candidate,
-                warnings,
-            ),
-            provider_key=lambda candidate: (
-                candidate.tool.provider or candidate.tool.key
-            ),
-            corroboration_compatible=self._corroboration_semantics_compatible,
-            selected_coverage=lambda candidate, call: (
-                self._coverage_requirements_for_candidate(
-                    candidate,
-                    request.query,
-                    field_names=set(call.fields),
-                )
-            ),
-        )
-        primary_pairs = list(primary_selection.pairs)
-        required_coverage = primary_selection.required_coverage
-
-        fallback_selection = await select_fallbacks_async(
-            primary_pairs=tuple(primary_pairs),
-            all_candidates=tuple(all_candidates),
-            fallback_scope=request.fallback_scope,
-            max_fallbacks=request.max_fallbacks,
-            is_read_only=lambda candidate: candidate.endpoint.read_only is True,
-            ordered_candidates=lambda primary, ranked, scope: (
-                self._ordered_fallback_candidates(
-                    primary,
-                    list(ranked),
-                    scope=scope,
-                )
-            ),
-            compile_candidate=lambda candidate: self._compile_candidate_async(
-                request,
-                intent,
-                candidate,
-                warnings,
-                warn_ignored_arguments=False,
-            ),
-            is_executable=lambda call: call.executable,
-            compatible=self._fallback_semantics_compatible,
-        )
-        fallback_routes = [
-            FallbackRoute(
-                primary_call_index=index,
-                alternatives=list(alternatives),
-            )
-            for index, alternatives in fallback_selection.routes
-        ]
-
-        return assemble_execution_plan(
-            query=request.query,
-            registry_version=catalog_snapshot.version,
-            primary_pairs=primary_pairs,
-            fallback_routes=fallback_routes,
-            warnings=warnings,
-            required_coverage=required_coverage,
-            all_candidates=all_candidates,
-            selected_coverage=lambda candidate, call: (
-                self._coverage_requirements_for_candidate(
-                    candidate,
-                    request.query,
-                    field_names=set(call.fields),
-                )
-            ),
-            build_coverage=self._plan_coverage,
-            coverage_warning=self._coverage_warning,
+            catalog_snapshot=catalog_snapshot,
         )
 
     @staticmethod

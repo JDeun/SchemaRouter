@@ -3025,3 +3025,69 @@ def test_corroborate_mode_rejects_incompatible_datatypes() -> None:
     )
 
     assert len(plan.calls) == 1
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("plan_request", [
+    PlanRequest(query="unrelated dinosaur fossils"),
+    PlanRequest(query="band gap", preferred_tools=["mp_api"]),
+    PlanRequest(
+        query="Si band gap", preferred_tools=["mp_api"],
+        arguments={"formula": "Si", "undeclared": 1},
+        fallback_scope="cross_provider", max_fallbacks=2,
+    ),
+    PlanRequest(
+        query="Si band gap", preferred_tools=["mp_api"],
+        arguments={"formula": "Si"}, evidence=EvidenceRequirements(units=True),
+    ),
+    PlanRequest(
+        query="Si band gap", concepts=["band gap"], arguments={"formula": "Si"},
+        max_calls=2, retrieval_mode="corroborate",
+    ),
+])
+async def test_product_async_and_sync_share_post_analysis_builder(plan_request, monkeypatch) -> None:
+    reg = InMemoryRegistry()
+    for name, provider, access_mode in (
+        ("mp_api", "materials_project", "openapi"),
+        ("mp_optimade", "materials_project", "optimade"),
+        ("oqmd_api", "oqmd", "openapi"),
+    ):
+        reg.register(_provider_tool(
+            name, provider=provider, access_mode=access_mode, aliases=["band gap"],
+        ))
+    planner = SchemaPlanner(reg)
+    original = planner._build_plan
+    snapshots = []
+
+    def tracked(*args, **kwargs):
+        snapshots.append(kwargs["catalog_snapshot"].version)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(planner, "_build_plan", tracked)
+    sync_plan = planner.plan(plan_request)
+    async_plan = await planner.aplan(plan_request)
+    assert sync_plan == async_plan
+    assert snapshots == [reg.version, reg.version]
+
+
+@pytest.mark.asyncio
+async def test_product_async_and_sync_share_scoped_and_availability_plan() -> None:
+    planner = SchemaPlanner(registry())
+    request = PlanRequest(query="band gap", arguments={"formula": "Si"})
+
+    def denied(_tool, _endpoint):
+        return False
+
+    def visible(_tool, endpoint):
+        return endpoint.model_copy(update={
+            "output_fields": [field for field in endpoint.output_fields if field.identifier],
+        })
+
+    assert planner.plan_with_additional_availability(
+        request, denied,
+    ) == await planner.aplan_with_additional_availability(request, denied)
+
+    assert planner.plan_with_scoped_schema(
+        request, lambda _tool, _endpoint: True, visible,
+    ) == await planner.aplan_with_scoped_schema(
+        request, lambda _tool, _endpoint: True, visible,
+    )

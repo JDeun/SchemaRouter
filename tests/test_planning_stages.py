@@ -5,14 +5,14 @@ import pytest
 from schemarouter.models import PlanCoverage, ToolCall
 from schemarouter.planning_stages import (
     assemble_execution_plan,
-    select_fallbacks_async,
     select_fallbacks_sync,
-    select_primary_candidates_async,
     select_primary_candidates_sync,
 )
 from scripts.research_legacy_decision_policy import (
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
+    select_fallbacks_async,
+    select_primary_candidates_async,
 )
 
 

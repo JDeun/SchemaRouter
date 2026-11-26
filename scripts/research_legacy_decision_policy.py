@@ -6,7 +6,7 @@ The base planner and canonical registry/validation infrastructure are reused.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Set
+from collections.abc import Awaitable, Callable, Sequence, Set
 from dataclasses import replace
 from typing import Any, Literal, TypeVar
 
@@ -16,6 +16,8 @@ from schemarouter.errors import PlanningError
 from schemarouter.models import (
     EndpointSpec,
     EvidenceRequirements,
+    ExecutionPlan,
+    FallbackRoute,
     FieldSelectionExplanation,
     PlanExplanation,
     PlanRequest,
@@ -30,7 +32,15 @@ from schemarouter.planner import (
     _visible_endpoint,
 )
 from schemarouter.planning_context import PlanningContext, RegistrySnapshot
-from schemarouter.planning_stages import CandidatePipelineResult, CandidateT, CoverageT
+from schemarouter.planning_stages import (
+    CallT,
+    CandidatePipelineResult,
+    CandidateT,
+    CoverageT,
+    FallbackSelectionResult,
+    PrimarySelectionResult,
+    assemble_execution_plan,
+)
 from scripts.research_legacy_decisions import (
     DecisionBackend,
     DecisionOption,
@@ -211,6 +221,155 @@ async def run_candidate_pipeline_async(
             ]
         ),
     )
+
+
+async def select_primary_candidates_async(
+    *,
+    candidates: list[CandidateT],
+    max_calls: int,
+    retrieval_mode: str,
+    required_coverage: Set[CoverageT],
+    coverage_matrix: Callable[
+        [list[CandidateT]],
+        tuple[Sequence[Set[CoverageT]], Set[CoverageT]],
+    ],
+    compile_candidate: Callable[
+        [CandidateT],
+        Awaitable[CallT | None],
+    ],
+    provider_key: Callable[[CandidateT], str],
+    corroboration_compatible: Callable[
+        [CandidateT, CallT, CandidateT, CallT],
+        bool,
+    ],
+    selected_coverage: Callable[[CandidateT, CallT], Set[CoverageT]],
+) -> PrimarySelectionResult[CandidateT, CallT, CoverageT]:
+    """Async counterpart preserving the exact primary-selection policy."""
+
+    pairs: list[tuple[CandidateT, CallT]] = []
+    effective_required = set(required_coverage)
+
+    if max_calls <= 1:
+        for candidate in candidates:
+            call = await compile_candidate(candidate)
+            if call is not None:
+                pairs.append((candidate, call))
+                break
+        return PrimarySelectionResult(
+            pairs=tuple(pairs),
+            required_coverage=frozenset(effective_required),
+        )
+
+    candidate_coverage, matrix_required = coverage_matrix(candidates)
+    effective_required = set(matrix_required)
+    uncovered = set(effective_required)
+    selected_providers: set[str] = set()
+
+    for candidate, potential_coverage in zip(
+        candidates,
+        candidate_coverage,
+        strict=True,
+    ):
+        if len(pairs) >= max_calls:
+            break
+
+        candidate_provider = provider_key(candidate)
+        if retrieval_mode == "corroborate":
+            if effective_required and not (
+                potential_coverage & effective_required
+            ):
+                continue
+            if candidate_provider in selected_providers:
+                continue
+        elif effective_required and not (potential_coverage & uncovered):
+            continue
+
+        call = await compile_candidate(candidate)
+        if call is None:
+            continue
+
+        if (
+            retrieval_mode == "corroborate"
+            and pairs
+            and not any(
+                corroboration_compatible(
+                    selected_candidate,
+                    selected_call,
+                    candidate,
+                    call,
+                )
+                for selected_candidate, selected_call in pairs
+            )
+        ):
+            continue
+
+        pairs.append((candidate, call))
+        selected_providers.add(candidate_provider)
+
+        if effective_required:
+            covered = selected_coverage(candidate, call)
+            uncovered.difference_update(covered & potential_coverage)
+            if retrieval_mode == "coverage" and not uncovered:
+                break
+
+    return PrimarySelectionResult(
+        pairs=tuple(pairs),
+        required_coverage=frozenset(effective_required),
+    )
+
+
+async def select_fallbacks_async(
+    *,
+    primary_pairs: tuple[tuple[CandidateT, CallT], ...],
+    all_candidates: tuple[CandidateT, ...],
+    fallback_scope: str,
+    max_fallbacks: int,
+    is_read_only: Callable[[CandidateT], bool],
+    ordered_candidates: Callable[
+        [CandidateT, tuple[CandidateT, ...], str],
+        list[CandidateT],
+    ],
+    compile_candidate: Callable[[CandidateT], Awaitable[CallT | None]],
+    is_executable: Callable[[CallT], bool],
+    compatible: Callable[[CandidateT, CallT, CandidateT, CallT], bool],
+) -> FallbackSelectionResult[CallT]:
+    """Async counterpart preserving the exact fallback policy."""
+
+    if fallback_scope == "disabled" or max_fallbacks <= 0:
+        return FallbackSelectionResult(routes=())
+
+    routes: list[tuple[int, tuple[CallT, ...]]] = []
+    for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+        if not is_read_only(primary_candidate):
+            continue
+
+        alternatives: list[CallT] = []
+        for candidate in ordered_candidates(
+            primary_candidate,
+            all_candidates,
+            fallback_scope,
+        ):
+            if len(alternatives) >= max_fallbacks:
+                break
+            if not is_read_only(candidate):
+                continue
+
+            alternative = await compile_candidate(candidate)
+            if alternative is None or not is_executable(alternative):
+                continue
+            if not compatible(
+                primary_candidate,
+                primary_call,
+                candidate,
+                alternative,
+            ):
+                continue
+            alternatives.append(alternative)
+
+        if alternatives:
+            routes.append((index, tuple(alternatives)))
+
+    return FallbackSelectionResult(routes=tuple(routes))
 
 
 class LegacyDecisionPlanner(SchemaPlanner):
@@ -1734,4 +1893,140 @@ class LegacyDecisionPlanner(SchemaPlanner):
                     ranked,
                 )
             ),
+        )
+
+    async def _abuild_plan(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
+    ) -> ExecutionPlan:
+        context = self._planning_context(
+            request,
+            intent,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
+        )
+        catalog_snapshot = context.registry
+        pipeline = await self._candidate_pipeline_async(
+            context,
+            additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+        )
+        all_candidates = list(pipeline.all_candidates)
+        candidates = list(pipeline.candidates)
+        required_coverage = pipeline.required_coverage
+        warnings = list(pipeline.warnings)
+        if not candidates:
+            return assemble_execution_plan(
+                query=request.query,
+                registry_version=catalog_snapshot.version,
+                primary_pairs=(),
+                fallback_routes=(),
+                warnings=[
+                    *warnings,
+                    "no schema candidate matched the request",
+                ],
+                required_coverage=required_coverage,
+                all_candidates=all_candidates,
+                selected_coverage=lambda candidate, call: (
+                    self._coverage_requirements_for_candidate(
+                        candidate,
+                        request.query,
+                        field_names=set(call.fields),
+                    )
+                ),
+                build_coverage=self._plan_coverage,
+                coverage_warning=self._coverage_warning,
+            )
+
+        primary_selection = await select_primary_candidates_async(
+            candidates=candidates,
+            max_calls=request.max_calls,
+            retrieval_mode=request.retrieval_mode,
+            required_coverage=required_coverage,
+            coverage_matrix=lambda ranked: self._field_coverage_matrix(
+                request,
+                ranked,
+            ),
+            compile_candidate=lambda candidate: self._compile_candidate_async(
+                request,
+                intent,
+                candidate,
+                warnings,
+            ),
+            provider_key=lambda candidate: (
+                candidate.tool.provider or candidate.tool.key
+            ),
+            corroboration_compatible=self._corroboration_semantics_compatible,
+            selected_coverage=lambda candidate, call: (
+                self._coverage_requirements_for_candidate(
+                    candidate,
+                    request.query,
+                    field_names=set(call.fields),
+                )
+            ),
+        )
+        primary_pairs = list(primary_selection.pairs)
+        required_coverage = primary_selection.required_coverage
+
+        fallback_selection = await select_fallbacks_async(
+            primary_pairs=tuple(primary_pairs),
+            all_candidates=tuple(all_candidates),
+            fallback_scope=request.fallback_scope,
+            max_fallbacks=request.max_fallbacks,
+            is_read_only=lambda candidate: candidate.endpoint.read_only is True,
+            ordered_candidates=lambda primary, ranked, scope: (
+                self._ordered_fallback_candidates(
+                    primary,
+                    list(ranked),
+                    scope=scope,
+                )
+            ),
+            compile_candidate=lambda candidate: self._compile_candidate_async(
+                request,
+                intent,
+                candidate,
+                warnings,
+                warn_ignored_arguments=False,
+            ),
+            is_executable=lambda call: call.executable,
+            compatible=self._fallback_semantics_compatible,
+        )
+        fallback_routes = [
+            FallbackRoute(
+                primary_call_index=index,
+                alternatives=list(alternatives),
+            )
+            for index, alternatives in fallback_selection.routes
+        ]
+
+        return assemble_execution_plan(
+            query=request.query,
+            registry_version=catalog_snapshot.version,
+            primary_pairs=primary_pairs,
+            fallback_routes=fallback_routes,
+            warnings=warnings,
+            required_coverage=required_coverage,
+            all_candidates=all_candidates,
+            selected_coverage=lambda candidate, call: (
+                self._coverage_requirements_for_candidate(
+                    candidate,
+                    request.query,
+                    field_names=set(call.fields),
+                )
+            ),
+            build_coverage=self._plan_coverage,
+            coverage_warning=self._coverage_warning,
         )
