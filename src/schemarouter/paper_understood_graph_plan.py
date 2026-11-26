@@ -306,7 +306,7 @@ def _compile_paper_understood_graph_plan(
     permitted_targets = router._authorization_predicate(principal)
     if permitted_targets is None:
         raise PolicyViolationError("paper named graph lacks current source policy")
-    available = router.planner.availability_predicate
+    available = router._source_availability_predicate()
     scoped_targets: set[str] = set()
     target_limit = (
         MAX_OWNER_RANKABLE_PATHS if rank_policy is not None else 32

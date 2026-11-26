@@ -21,7 +21,7 @@ def eager_baseline(router, query: str, role: str, k: int):
     def callback(tool, endpoint):
         return router.executor.is_access_available_for_contract(
             tool.key, endpoint.name,
-            router.planner._snapshot_tool_fingerprint(tool),
+            router._source_availability.fingerprint(tool),
         )
     with patch.object(router.planner, "availability_predicate", callback):
         return router.retrieve_authorized(
@@ -46,7 +46,7 @@ def test_no_cooldown_skips_expensive_tool_fingerprint() -> None:
     )
     fingerprint.assert_not_called()
     with patch.object(
-        router.planner, "_snapshot_tool_fingerprint",
+        router._source_availability, "fingerprint",
         side_effect=AssertionError("fingerprint during clear access check"),
     ):
         result = router.retrieve_authorized(
@@ -156,7 +156,7 @@ async def test_async_authorized_cooldown_and_full_output_parity() -> None:
     def eager(tool, endpoint):
         return router.executor.is_access_available_for_contract(
             tool.key, endpoint.name,
-            router.planner._snapshot_tool_fingerprint(tool),
+            router._source_availability.fingerprint(tool),
         )
 
     with patch.object(router.planner, "availability_predicate", eager):

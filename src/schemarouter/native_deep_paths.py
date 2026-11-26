@@ -105,7 +105,7 @@ def lookup_bounded_native_paths(
     permitted = router._authorization_predicate(actor)
     if permitted is None:
         raise PolicyViolationError("G5 bounded paths require explicit authorization")
-    availability = router.planner.availability_predicate
+    availability = router._source_availability_predicate()
 
     def authorized(route: str) -> tuple[ToolSpec, EndpointSpec] | None:
         where = index.field_index.route_locations.get(route)

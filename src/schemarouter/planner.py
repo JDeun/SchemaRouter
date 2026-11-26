@@ -9,6 +9,7 @@ from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
 from ._schema_identity import _locale_lexical_text, _normalize
+from ._source_availability import _SnapshotFingerprints, _SourceAvailability
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import ModelAnalysisError, PlanningError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
@@ -434,10 +435,7 @@ class _CandidateIndex:
         self._tool_identifier_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_identifier_refs: dict[str, set[_EndpointRef]] = {}
         self._declared_semantics: set[str] = set()
-        self._tool_fingerprints_by_identity = {
-            id(tool): tool.fingerprint
-            for tool in tools
-        }
+        self.fingerprints = _SnapshotFingerprints(tools)
 
         for tool in tools:
             for endpoint in tool.endpoints:
@@ -518,7 +516,7 @@ class _CandidateIndex:
     def tool_fingerprint(self, tool: ToolSpec) -> str | None:
         """Return a fingerprint cached for this exact version-frozen ToolSpec object."""
 
-        return self._tool_fingerprints_by_identity.get(id(tool))
+        return self.fingerprints.get(tool)
 
     @property
     def declared_semantics(self) -> frozenset[str]:
@@ -590,12 +588,28 @@ class SchemaPlanner:
         self.analyzer = analyzer or KeywordAnalyzer()
         self.candidate_index = candidate_index
         self.structural_retrieval = structural_retrieval
-        self.availability_predicate = availability_predicate
+        self._source_availability = _SourceAvailability(availability_predicate)
         self._candidate_index: _CandidateIndex | None = None
         self._structural_specificity_cache: (
             tuple[int, dict[str, float]] | None
         ) = None
 
+
+    @property
+    def availability_predicate(self) -> Callable[[ToolSpec, EndpointSpec], bool] | None:
+        """Compatibility view of the same source authority used by the router."""
+        return self._source_availability.predicate
+
+    @availability_predicate.setter
+    def availability_predicate(
+        self, value: Callable[[ToolSpec, EndpointSpec], bool] | None,
+    ) -> None:
+        self._source_availability.predicate = value
+
+    @availability_predicate.deleter
+    def availability_predicate(self) -> None:
+        # Preserve ordinary attribute replacement/restoration (e.g. patch.object).
+        del self._source_availability.predicate
 
     def _analysis_retry_budget(self) -> int:
         configured = getattr(self.analyzer, "max_registry_retries", 2)
@@ -1359,6 +1373,7 @@ class SchemaPlanner:
             after = self.registry.version
             if before == after:
                 self._candidate_index = _CandidateIndex(after, tools)
+                self._source_availability.snapshot = self._candidate_index.fingerprints
                 return self._candidate_index
 
         raise PlanningError(
@@ -1418,15 +1433,6 @@ class SchemaPlanner:
                 )
             ),
         )
-    def _snapshot_tool_fingerprint(self, tool: ToolSpec) -> str:
-        """Reuse the fingerprint for an immutable index snapshot when available."""
-
-        if self._candidate_index is not None:
-            cached = self._candidate_index.tool_fingerprint(tool)
-            if cached is not None:
-                return cached
-        return tool.fingerprint
-
     def _candidates(
         self,
         request: PlanRequest,

@@ -92,7 +92,7 @@ def _host_approved_paper_roots(
             or endpoint.destructive is True or _host_source_input_names(endpoint) is None
         ):
             continue
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
         if availability is not None and not availability(tool, endpoint):
             continue
         visible = router._data_scope_endpoint_view(principal, tool, endpoint)
@@ -266,7 +266,7 @@ def retrieve_paper_field_coverage(
             or endpoint.destructive is True
         ):
             raise PolicyViolationError("original required-field route invalid")
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
         if availability is not None and not availability(tool, endpoint):
             raise PolicyViolationError("original required-field route revoked")
         visible = router._data_scope_endpoint_view(principal, tool, endpoint)

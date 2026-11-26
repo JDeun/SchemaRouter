@@ -73,7 +73,7 @@ def _query_source_observer(
         claims = principal.model_dump_json()
         policy_digest = _policy_contents_digest(policy)
         original_calls = tuple(item.call.model_dump_json() for item in plan.calls)
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
     except Exception:
         raise PolicyViolationError("query input source eligibility changed") from None
 
@@ -84,7 +84,7 @@ def _query_source_observer(
             or _policy_contents_digest(router.authorization_policy) != policy_digest
             or principal.model_dump_json() != claims
             or tuple(item.call.model_dump_json() for item in plan.calls) != original_calls
-            or router.planner.availability_predicate is not availability
+            or router._source_availability_predicate() is not availability
         ):
             raise PolicyViolationError("query input source eligibility changed")
 

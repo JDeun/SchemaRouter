@@ -337,7 +337,7 @@ def select_authorized_field_contract(
                 "authorization policy changed during field contract selection"
             )
 
-    availability = router.planner.availability_predicate
+    availability = router._source_availability_predicate()
     registry = router.registry
     try:
         retrieved = router.retrieve_authorized(
@@ -351,7 +351,7 @@ def select_authorized_field_contract(
         ) from None
     if (
         router.authorization_policy is not policy
-        or router.planner.availability_predicate is not availability
+        or router._source_availability_predicate() is not availability
         or router.registry is not registry
     ):
         raise PolicyViolationError(
@@ -481,7 +481,7 @@ def select_authorized_field_contract(
         verified.registry_version != router.registry.version
         or router.registry is not registry
         or router.authorization_policy is not policy
-        or router.planner.availability_predicate is not availability
+        or router._source_availability_predicate() is not availability
     ):
         raise PolicyViolationError(
             "retrieval scope changed during authorized catalog enumeration"
@@ -557,7 +557,7 @@ def select_authorized_field_contract(
         verified.registry_version != router.registry.version
         or router.registry is not registry
         or router.authorization_policy is not policy
-        or router.planner.availability_predicate is not availability
+        or router._source_availability_predicate() is not availability
     ):
         raise PolicyViolationError("retrieval scope changed during contract validation")
     return AuthorizedContractSelection(

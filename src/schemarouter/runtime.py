@@ -12,6 +12,7 @@ import httpx
 from pydantic import TypeAdapter
 
 from ._loop_affinity import SyncLoopRunner
+from ._source_availability import _SourceAvailability
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import (
     MCPBoundClientFactory,
@@ -529,12 +530,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             hooks=execution_hooks,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
+        self._source_availability = _SourceAvailability(self._is_snapshot_access_available)
         self.planner = SchemaPlanner(
             self.registry,
             analyzer=analyzer,
             structural_retrieval=structural_retrieval,
-            availability_predicate=self._is_snapshot_access_available,
         )
+        self.planner._source_availability = self._source_availability
         self._paper_planning: _PreparedPaperPlanning | None = None
         self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
@@ -560,11 +562,26 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             self.registry,
             self._apply_native_schema_binding,
         )
+    def _source_availability_predicate(
+        self,
+    ) -> Callable[[ToolSpec, EndpointSpec], bool] | None:
+        """Return the shared source authority, not a lexical scoring decision."""
+        authority = self._source_availability
+        # During compatibility migration a replaced planner must not silently
+        # introduce another registry or availability authority.
+        if (
+            self.planner.registry is not self.registry
+            or self.planner._source_availability is not authority
+            or self.planner.availability_predicate is not authority.predicate
+        ):
+            raise PolicyViolationError("retrieval authority changed: source availability mismatch")
+        return authority.predicate
+
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract_lazy(
             tool.key,
             endpoint.name,
-            lambda: self.planner._snapshot_tool_fingerprint(tool),
+            lambda: self._source_availability.fingerprint(tool),
         )
 
     def _authorization_predicate(
@@ -4168,7 +4185,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             registry,
             registry.version,
             self.authorization_policy,
-            self.planner.availability_predicate,
+            self._source_availability_predicate(),
         )
 
     def _check_retrieval_authority_witness(
@@ -4181,7 +4198,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             self.registry is not registry
             or self.registry.version != version
             or self.authorization_policy is not policy
-            or self.planner.availability_predicate is not availability
+            or self._source_availability_predicate() is not availability
         ):
             raise PolicyViolationError("retrieval authority changed during request")
 
@@ -6181,5 +6198,6 @@ class ConfiguredSchemaRouter:
 _NATIVE_SOURCE_ROUTER_METHODS = {
     name: getattr(SchemaRouter, name) for name in (
         "_authorization_predicate", "_data_scope_endpoint_view", "_is_snapshot_access_available",
+        "_source_availability_predicate",
     )
 }

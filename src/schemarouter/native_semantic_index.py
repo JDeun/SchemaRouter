@@ -15,6 +15,7 @@ from hashlib import sha256
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
 
+from ._source_availability import _SourceAvailability
 from .authorization import AuthorizationPolicy, AuthorizationRule, DataScopeRule, PrincipalContext
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
@@ -29,7 +30,6 @@ from .field_group_retrieval import (
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
 from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
-from .planner import SchemaPlanner
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
@@ -54,7 +54,7 @@ _SOURCE_RULE_METHODS = {
 }
 _SOURCE_HEALTH_LAZY = RegistryExecutor.is_access_available_for_contract_lazy
 _SOURCE_HEALTH = RegistryExecutor.is_access_available_for_contract
-_SOURCE_PLANNER_FINGERPRINT = SchemaPlanner._snapshot_tool_fingerprint
+_SOURCE_FINGERPRINT = _SourceAvailability.fingerprint
 
 
 class _NativeSourcePass:
@@ -67,7 +67,8 @@ class _NativeSourcePass:
         self.policy = router.authorization_policy
         self.rules = self.policy.rules if self.policy is not None else ()
         self.data_rules = self.policy.data_rules if self.policy is not None else ()
-        self.availability = router.planner.availability_predicate
+        self.authority = router._source_availability
+        self.availability = router._source_availability_predicate()
         self.builtin_policy = (
             type(self.policy) is AuthorizationPolicy
             and all(
@@ -98,7 +99,9 @@ class _NativeSourcePass:
             not self.builtin_policy or policy is not self.policy
             or policy is None or policy.rules is not self.rules
             or policy.data_rules is not self.data_rules
-            or router.planner.availability_predicate is not self.availability
+            or router._source_availability is not self.authority
+            or type(self.authority) is not _SourceAvailability
+            or router._source_availability_predicate() is not self.availability
             or type(router) is not SchemaRouter
             or router.authorization_audit_hook is not None
             or type(registry) not in _SOURCE_REGISTRY_GETTERS
@@ -114,7 +117,7 @@ class _NativeSourcePass:
         for name, method in _SOURCE_POLICY_METHODS.items():
             if getattr(getattr(policy, name), "__func__", None) is not method:
                 return False
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
         if availability is None:
             return True
         return (
@@ -126,9 +129,7 @@ class _NativeSourcePass:
             is _SOURCE_HEALTH_LAZY
             and getattr(router.executor.is_access_available_for_contract, "__func__", None)
             is _SOURCE_HEALTH
-            and type(router.planner) is SchemaPlanner
-            and getattr(router.planner._snapshot_tool_fingerprint, "__func__", None)
-            is _SOURCE_PLANNER_FINGERPRINT
+            and getattr(self.authority.fingerprint, "__func__", None) is _SOURCE_FINGERPRINT
         )
 
     def get(self, tool_key: str, endpoint_name: str) -> tuple[ToolSpec, EndpointSpec, str]:
@@ -676,7 +677,7 @@ class NativeSchemaPostingIndex:
         permitted = router._authorization_predicate(approved_principal)
         if permitted is None:
             raise PolicyViolationError("explicit authorization required")
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
         qualified: list[IndexedNativeFieldCandidate] = []
         visible_field_counts: dict[str, int] = {}
         use_paper_domains = rank_policy is not None and allowed_tool_keys is None

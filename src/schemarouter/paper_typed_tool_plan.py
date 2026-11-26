@@ -502,7 +502,7 @@ def _compile_one_route(
         or endpoint.destructive is True
     ):
         raise PolicyViolationError("paper typed route is not currently permitted")
-    availability = router.planner.availability_predicate
+    availability = router._source_availability_predicate()
     if availability is not None and not availability(tool, endpoint):
         raise PolicyViolationError("paper typed route is currently unavailable")
     visible = router._data_scope_endpoint_view(principal, tool, endpoint)

@@ -14,10 +14,10 @@ from schemarouter import (
     InMemoryRegistry,
     PolicyViolationError,
     RegistryExecutor,
-    SchemaPlanner,
     SchemaRouter,
     ToolSpec,
 )
+from schemarouter._source_availability import _SourceAvailability
 from schemarouter.field_group_retrieval import _complete_fields
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
@@ -96,7 +96,7 @@ def test_original_source_oracle_parity_with_linear_source_copy_and_hash_counts(
 @pytest.mark.parametrize("custom", (
     "availability", "scope", "authorization", "policy", "rule", "registry", "registry_get", "audit",
     "scope_class", "authorization_class", "policy_class", "rule_class", "registry_class",
-    "health_class", "planner_class", "executor_class",
+    "health_class", "fingerprint_class", "executor_class",
 ))
 def test_user_callbacks_keep_fresh_detached_source_snapshots(monkeypatch, kind: str, custom: str):
     class CustomRegistry(InMemoryRegistry):
@@ -193,13 +193,13 @@ def test_user_callbacks_keep_fresh_detached_source_snapshots(monkeypatch, kind: 
             return original(_router, tool, endpoint)
         monkeypatch.setattr(SchemaRouter, "_is_snapshot_access_available", health)
         router.planner.availability_predicate = router._is_snapshot_access_available
-    elif custom == "planner_class":
-        original = SchemaPlanner._snapshot_tool_fingerprint
+    elif custom == "fingerprint_class":
+        original = _SourceAvailability.fingerprint
 
-        def fingerprint(planner, tool):
+        def fingerprint(authority, tool):
             observe(tool)
-            return original(planner, tool)
-        monkeypatch.setattr(SchemaPlanner, "_snapshot_tool_fingerprint", fingerprint)
+            return original(authority, tool)
+        monkeypatch.setattr(_SourceAvailability, "fingerprint", fingerprint)
         for i in range(1, 8):
             router.mark_access_unavailable("tool_0", f"read_{i}", cooldown_seconds=0)
     elif custom == "executor_class":
@@ -287,3 +287,33 @@ def test_default_cooldowns_reuse_source_hash_but_still_deny_and_recover(monkeypa
     result, reads, hashes = _profile(index, router)
     assert result.status == "complete" and len(result.candidates) == 1
     assert reads == hashes == 2
+
+
+def test_shared_source_authority_keeps_exact_snapshot_fingerprints_and_legacy_override(monkeypatch):
+    router, posting, _graph = _router(monkeypatch, 4)
+    authority = router._source_availability
+    assert not hasattr(router.planner, "_snapshot_tool_fingerprint")
+    index = router.planner._index()
+    tool = index.tools[0]
+    detached = tool.model_copy(deep=True)
+    detached.description = "a different contract"
+    assert authority.snapshot is index.fingerprints
+    assert authority.snapshot.get(detached) is None
+    assert authority.fingerprint(tool) == tool.fingerprint
+    assert authority.fingerprint(detached) == detached.fingerprint != tool.fingerprint
+
+    # Existing host overrides remain authoritative for native lookup.
+    callback = lambda _tool, _endpoint: False  # noqa: E731
+    monkeypatch.setattr(router.planner, "availability_predicate", callback)
+    assert router._source_availability_predicate() is callback
+    assert _lookup(posting, router).status == "no_proven_hit"
+
+
+def test_native_lookup_rejects_replaced_legacy_availability_owner(monkeypatch):
+    router, posting, _graph = _router(monkeypatch, 4)
+    monkeypatch.setattr(
+        router.planner, "_source_availability",
+        _SourceAvailability(router._source_availability_predicate()),
+    )
+    with pytest.raises(PolicyViolationError, match="source availability mismatch"):
+        _lookup(posting, router)

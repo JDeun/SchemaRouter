@@ -412,7 +412,7 @@ class SchemaFieldRoutingSession:
         permitted = self._router._authorization_predicate(principal)
         if permitted is None:
             raise PolicyViolationError("field review source authorization missing")
-        availability = self._router.planner.availability_predicate
+        availability = self._router._source_availability_predicate()
 
         # Use the original pinned, authorization-neutral reverse index
         # materialized on source build/refresh. No per-page full posting

@@ -889,7 +889,7 @@ class NativeSchemaGraphIndex:
         permitted = router._authorization_predicate(actor)
         if permitted is None:
             raise PolicyViolationError("G5 explicit authorization required")
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
         wanted = [set(self.field_index.postings.get(x.semantic_id, ()))
                   for x in demand.required_fields]
         targets = set.intersection(*wanted) if wanted else set()
@@ -1353,7 +1353,7 @@ class NativeSchemaGraphIndex:
         permitted = router._authorization_predicate(actor)
         if permitted is None:
             raise PolicyViolationError("G5 two-hop explicit authorization required")
-        availability = router.planner.availability_predicate
+        availability = router._source_availability_predicate()
 
         def authorized(route: str) -> tuple[ToolSpec, EndpointSpec] | None:
             where = self.field_index.route_locations.get(route)

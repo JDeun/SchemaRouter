@@ -554,7 +554,7 @@ def _prepare_model_query(
     if policy is None:
         raise PolicyViolationError("paper query requires explicit source policy")
     policy_digest = _policy_contents_digest(policy)
-    availability = router.planner.availability_predicate
+    availability = router._source_availability_predicate()
 
     def verify() -> None:
         session._index.field_index._assert_source(router)
@@ -575,7 +575,7 @@ def _prepare_model_query(
         if (
             router.authorization_policy is None
             or _policy_contents_digest(router.authorization_policy) != policy_digest
-            or router.planner.availability_predicate is not availability
+            or router._source_availability_predicate() is not availability
             or owner_changed
         ):
             raise PolicyViolationError("paper query source or owner authority changed")

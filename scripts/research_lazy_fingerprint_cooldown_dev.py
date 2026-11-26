@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WIDTHS = (24, 56)
 SOURCES = (
     "src/schemarouter/runtime.py",
+    "src/schemarouter/_source_availability.py",
     "src/schemarouter/executor.py",
     "src/schemarouter/planner.py",
     "src/schemarouter/models.py",
@@ -69,7 +70,7 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
                 ) -> bool:
                     return router.executor.is_access_available_for_contract(
                         tool.key, endpoint.name,
-                        router.planner._snapshot_tool_fingerprint(tool),
+                        router._source_availability.fingerprint(tool),
                     )
 
                 with patch.object(

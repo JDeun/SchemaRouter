@@ -28,6 +28,7 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     build_fixture,
 )
 from schemarouter import AuthorizationPolicy, PlanRequest, SchemaRouter, ToolSpec
+from schemarouter._source_availability import _SourceAvailability
 from schemarouter.executor import RegistryExecutor
 from schemarouter.planner import SchemaPlanner
 from scripts.research_authorized_retrieval_phase_profile import QUERIES
@@ -38,13 +39,14 @@ LANGUAGES = ("en", "ko", "ja")
 ROLES = ("viewer", "editor")
 MODES = ("field_scope", "route_policy_only")
 STAGES = (
-    (SchemaPlanner, "_snapshot_tool_fingerprint", "tool_fingerprint_resolve"),
+    (_SourceAvailability, "fingerprint", "tool_fingerprint_resolve"),
     (RegistryExecutor, "is_access_available_for_contract", "cooldown_lookup"),
     (SchemaPlanner, "_semantic_recall_catalog", "semantic_catalog"),
 )
 SOURCES = (
     "scripts/research_availability_fingerprint_attribution.py",
     "src/schemarouter/runtime.py",
+    "src/schemarouter/_source_availability.py",
     "src/schemarouter/planner.py",
     "src/schemarouter/executor.py",
     "src/schemarouter/models.py",
