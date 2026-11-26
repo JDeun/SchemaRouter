@@ -2250,7 +2250,7 @@ def _semantic_material_embedder(texts: list[str]) -> list[list[float]]:
 
 
 def test_semantic_candidate_recall_recovers_cross_language_empty_lexical_query() -> None:
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_recall_backend=EmbeddingDecisionBackend(
             _semantic_material_embedder
@@ -2274,7 +2274,7 @@ async def test_async_semantic_candidate_recall_supports_async_embedder() -> None
     async def embed(texts: list[str]) -> list[list[float]]:
         return _semantic_material_embedder(texts)
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_recall_backend=EmbeddingDecisionBackend(embed),
         candidate_recall_limit=1,
@@ -2366,7 +2366,7 @@ def test_semantic_candidate_recall_failure_retains_lexical_candidates() -> None:
     def fail(_request):
         raise RuntimeError("embedding unavailable")
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_recall_backend=CallableDecisionBackend(fail),
     ).plan("current weather")
@@ -2381,7 +2381,7 @@ def test_semantic_candidate_recall_failure_retains_lexical_candidates() -> None:
 @pytest.mark.parametrize("limit", [0, -1, True, 1.5])
 def test_semantic_candidate_recall_limit_must_be_positive_integer(limit) -> None:
     with pytest.raises(ValueError, match="candidate_recall_limit"):
-        SchemaPlanner(
+        LegacyDecisionPlanner(
             _semantic_recall_registry(),
             candidate_recall_limit=limit,
         )
@@ -2391,7 +2391,7 @@ def test_capability_fit_gate_suppresses_lexical_false_positive() -> None:
     def abstain(_request):
         return {"abstained": True}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_fit_backend=CallableDecisionBackend(abstain),
     ).plan("weather poem")
@@ -2450,7 +2450,7 @@ def test_capability_fit_gate_failure_retains_authorized_candidates() -> None:
     def fail(_request):
         raise RuntimeError("fit backend unavailable")
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_fit_backend=CallableDecisionBackend(fail),
     ).plan("current weather")
@@ -2471,7 +2471,7 @@ def test_capability_fit_gate_cannot_create_candidates() -> None:
         invoked = True
         return {"selections": [{"option_id": "fit:0"}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_fit_backend=CallableDecisionBackend(fit),
     ).plan("완전히 등록되지 않은 요청")
@@ -2485,7 +2485,7 @@ async def test_async_capability_fit_gate_suppresses_candidates() -> None:
     async def fit(_request):
         return {"abstained": True}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_fit_backend=CallableDecisionBackend(fit),
     ).aplan("current weather")
@@ -2501,7 +2501,7 @@ def test_capability_fit_gate_abstention_keeps_required_coverage_visible() -> Non
     def abstain(_request):
         return {"abstained": True}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         candidate_fit_backend=CallableDecisionBackend(abstain),
     ).plan("band gap")
@@ -2571,7 +2571,7 @@ def test_endpoint_disambiguation_reorders_only_within_primary_tool() -> None:
         )
         return {"selections": [{"option_id": selected.id, "score": 0.9}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
     ).plan("inventory quantity")
@@ -2595,7 +2595,7 @@ def test_endpoint_disambiguation_cannot_switch_tool_domain() -> None:
         assert all(label.startswith("inventory.") for label in seen["labels"])
         return {"selections": [{"option_id": request.options[0].id}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
     ).plan("inventory user update")
@@ -2609,7 +2609,7 @@ def test_endpoint_disambiguation_abstention_retains_candidate_order() -> None:
         _endpoint_disambiguation_registry()
     ).plan("inventory quantity")
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         endpoint_disambiguation_backend=CallableDecisionBackend(
             lambda _request: {"abstained": True}
@@ -2631,7 +2631,7 @@ def test_endpoint_disambiguation_failure_retains_candidate_order() -> None:
     baseline = SchemaPlanner(
         _endpoint_disambiguation_registry()
     ).plan("inventory quantity")
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         endpoint_disambiguation_backend=CallableDecisionBackend(fail),
     ).plan("inventory quantity")
@@ -2651,7 +2651,7 @@ def test_endpoint_disambiguation_skips_multi_call_plans() -> None:
         invoked = True
         return {"selections": [{"option_id": "endpoint:0"}]}
 
-    SchemaPlanner(
+    LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
     ).plan(PlanRequest(query="inventory quantity", max_calls=2))
@@ -2669,7 +2669,7 @@ async def test_async_endpoint_disambiguation_reorders_same_tool_siblings() -> No
         )
         return {"selections": [{"option_id": selected.id}]}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
     ).aplan("inventory quantity")
@@ -2687,7 +2687,7 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
         seen["descriptions"] = [option.description for option in request.options]
         return {"selections": [{"option_id": request.options[0].id}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         operation_fit_backend=CallableDecisionBackend(fit),
     ).plan("inventory quantity")
@@ -2717,7 +2717,7 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
 
 
 def test_operation_fit_gate_abstention_suppresses_near_domain_candidates() -> None:
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         operation_fit_backend=CallableDecisionBackend(
             lambda _request: {"abstained": True}
@@ -2745,7 +2745,7 @@ def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> 
         )
         return {"selections": [{"option_id": selected.id, "score": 0.99}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         operation_fit_backend=CallableDecisionBackend(fit),
     ).plan("inventory quantity")
@@ -2766,7 +2766,7 @@ def test_operation_fit_gate_failure_retains_authorized_candidates() -> None:
     baseline = SchemaPlanner(
         _endpoint_disambiguation_registry()
     ).plan("inventory quantity")
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         operation_fit_backend=CallableDecisionBackend(fail),
     ).plan("inventory quantity")
@@ -2787,7 +2787,7 @@ def test_operation_fit_gate_skips_multi_call_plans() -> None:
         invoked = True
         return {"abstained": True}
 
-    SchemaPlanner(
+    LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         operation_fit_backend=CallableDecisionBackend(fit),
     ).plan(PlanRequest(query="inventory quantity", max_calls=2))
@@ -2800,7 +2800,7 @@ async def test_async_operation_fit_gate_can_suppress_candidates() -> None:
     async def fit(_request):
         return {"abstained": True}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         _endpoint_disambiguation_registry(),
         operation_fit_backend=CallableDecisionBackend(fit),
     ).aplan("delete inventory SKU-101")
@@ -2841,7 +2841,7 @@ def test_operation_fit_includes_trusted_endpoint_aliases_without_tool_domain_tex
         seen["descriptions"] = [option.description for option in request.options]
         return {"selections": [{"option_id": request.options[0].id}]}
 
-    SchemaPlanner(
+    LegacyDecisionPlanner(
         registry,
         operation_fit_backend=CallableDecisionBackend(fit),
     ).plan("file a support request")

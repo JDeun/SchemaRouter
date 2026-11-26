@@ -1,6 +1,6 @@
 # Jev / TypeSafe System One
 
-**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. Other existing bounded fit/recall callbacks remain transitional. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
+**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
 SchemaRouter provides an optional bounded-decision adapter for TypeSafe System One models such as
 Jev. The adapter sits outside the core dependency graph and is **off by default**.

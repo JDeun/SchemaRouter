@@ -1,8 +1,8 @@
 # 결정 백엔드
 
-**개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 기존 fit/recall 콜백은 전환 단계에서 유지됩니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
+**개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 의미 기반 후보 검색, 기능·작업 적합성 및 엔드포인트 구분 콜백도 연구 전용 비교 Planner로 이전되었습니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
 
-SchemaRouter는 로컬 스키마 카탈로그에서 도출한 후보를 제한된 결정 모델로 보완할 수 있습니다. 이 기능은 기본적으로 **비활성화**되어 있습니다.
+과거 비교 Planner에서는 로컬 스키마 카탈로그에서 도출한 후보를 제한된 결정 모델로 보완할 수 있었습니다. 배포 Planner에서는 더 이상 이 기능을 제공하지 않습니다.
 
 Decision backend는 plan generator가 아닙니다. locally authorized된 유한 option ID 집합만 받고 그 안에서만 선택할 수 있습니다. typed execution plan은 계속 SchemaRouter가 구성하며 policy, schema validation, fingerprint, execution authority도 SchemaRouter에 남습니다.
 
@@ -49,7 +49,7 @@ planner = LegacyDecisionPlanner(
 
 ### 제한된 semantic candidate recall
 
-다국어 질의나 바꿔 쓴 질의에서는 등록된 스키마에 적절한 기능이 기술되어 있어도 어휘 기반 검색이 올바른 엔드포인트를 놓칠 수 있습니다. `SchemaPlanner`는 최종 후보 선택 전에 별도의 **후보 재현율 개선 백엔드**를 선택적으로 추가할 수 있습니다.
+다국어 질의나 바꿔 쓴 질의에서는 등록된 스키마에 적절한 기능이 기술되어 있어도 어휘 기반 검색이 올바른 엔드포인트를 놓칠 수 있습니다. `LegacyDecisionPlanner`는 최종 후보 선택 전에 별도의 **후보 재현율 개선 백엔드**를 선택적으로 추가할 수 있습니다.
 
 ```python
 from schemarouter import EmbeddingDecisionBackend
@@ -74,7 +74,7 @@ planner = LegacyDecisionPlanner(
 
 ### 제한된 capability-fit / no-route gate
 
-의미 기반 후보 검색은 재현율을 높이지만 이것만으로는 도메인 밖 질의에도 카탈로그 내 후보를 억지로 선택할 수 있습니다. `SchemaPlanner`는 어휘·의미 검색 이후 최종 후보 선택 이전에 선택적 `candidate_fit_backend`도 지원합니다.
+의미 기반 후보 검색은 재현율을 높이지만 이것만으로는 도메인 밖 질의에도 카탈로그 내 후보를 억지로 선택할 수 있습니다. `LegacyDecisionPlanner`는 어휘·의미 검색 이후 최종 후보 선택 이전에 선택적 `candidate_fit_backend`도 지원합니다.
 
 ```python
 fit = EmbeddingDecisionBackend(
@@ -82,7 +82,7 @@ fit = EmbeddingDecisionBackend(
     min_similarity=0.45,
 )
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=2,
@@ -100,7 +100,7 @@ planner = SchemaPlanner(
 
 광범위한 `candidate_fit_backend`는 검색된 기능 중 하나라도 질의의 도메인에 해당하는지 판단합니다. 그러나 유사 도메인에서 지원되지 않는 작업을 가려내기에는 부족합니다. 예를 들어 레지스트리에는 `lookup`, `update`만 등록돼 있는데 사용자가 계정 `delete`를 요청하더라도 질의가 `users` 도메인에 속한다는 사실 자체는 명확할 수 있습니다.
 
-이를 위해 `SchemaPlanner`는 광범위한 기능 적합성 검사와 동일 도구 내 엔드포인트 구분 사이에 선택적인 `operation_fit_backend`를 지원합니다:
+이를 위해 `LegacyDecisionPlanner`는 광범위한 기능 적합성 검사와 동일 도구 내 엔드포인트 구분 사이에 선택적인 `operation_fit_backend`를 지원합니다:
 
 ```python
 operation_fit = EmbeddingDecisionBackend(
@@ -108,7 +108,7 @@ operation_fit = EmbeddingDecisionBackend(
     min_similarity=0.25,
 )
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=2,
@@ -128,12 +128,12 @@ planner = SchemaPlanner(
 
 ### 제한된 same-tool endpoint disambiguation
 
-의미 기반 검색과 기능 적합성 게이트를 통과해도 선두 도구의 형제 엔드포인트 여러 개가 여전히 적합해 보일 수 있습니다. `SchemaPlanner`는 이 형제 엔드포인트의 순서만 바꾸기 위해 `endpoint_disambiguation_backend`를 선택적으로 사용할 수 있습니다.
+의미 기반 검색과 기능 적합성 게이트를 통과해도 선두 도구의 형제 엔드포인트 여러 개가 여전히 적합해 보일 수 있습니다. `LegacyDecisionPlanner`는 이 형제 엔드포인트의 순서만 바꾸기 위해 `endpoint_disambiguation_backend`를 선택적으로 사용할 수 있습니다.
 
 ```python
 disambiguator = EmbeddingDecisionBackend(multilingual_embed_batch)
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=2,

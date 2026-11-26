@@ -4,7 +4,6 @@ import json
 from datetime import datetime, timezone
 
 from schemarouter import (
-    CallableDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -567,70 +566,17 @@ def test_dashboard_renders_typed_unit_contracts() -> None:
     assert "elastic_modulus:number [GPa→Pa; pressure]" in html
 
 
-def test_live_inspection_reports_semantic_candidate_recall_configuration() -> None:
+def test_live_inspection_has_no_retired_model_ranking_configuration() -> None:
     router = SchemaRouter()
-    router.planner.candidate_recall_backend = CallableDecisionBackend(
-        lambda request: {"selections": [{"option_id": request.options[0].id}]}
-    )
-    router.planner.candidate_recall_limit = 3
-
     snapshot = inspect_router(router)
-
-    assert snapshot.planner.candidate_recall_backend == "CallableDecisionBackend"
-    assert snapshot.planner.candidate_recall_limit == 3
+    planner = snapshot.planner.model_dump()
+    assert planner == {"analyzer": "KeywordAnalyzer"}
 
     html = render_dashboard(snapshot.registry, live=snapshot)
-    assert "Candidate recall" in html
-    assert "CallableDecisionBackend" in html
-    assert "(top 3)" in html
-
-
-def test_live_inspection_reports_capability_fit_configuration() -> None:
-    router = SchemaRouter()
-    router.planner.candidate_fit_backend = CallableDecisionBackend(
-        lambda request: {"selections": [{"option_id": request.options[0].id}]}
-    )
-
-    snapshot = inspect_router(router)
-
-    assert snapshot.planner.candidate_fit_backend == "CallableDecisionBackend"
-
-    html = render_dashboard(snapshot.registry, live=snapshot)
-    assert "Capability fit" in html
-    assert "CallableDecisionBackend" in html
-
-
-def test_live_inspection_reports_endpoint_disambiguation_configuration() -> None:
-    router = SchemaRouter()
-    router.planner.endpoint_disambiguation_backend = CallableDecisionBackend(
-        lambda request: {"selections": [{"option_id": request.options[0].id}]}
-    )
-
-    snapshot = inspect_router(router)
-
-    assert (
-        snapshot.planner.endpoint_disambiguation_backend
-        == "CallableDecisionBackend"
-    )
-
-    html = render_dashboard(snapshot.registry, live=snapshot)
-    assert "Endpoint disambiguation" in html
-    assert "CallableDecisionBackend" in html
-
-
-def test_live_inspection_reports_operation_fit_configuration() -> None:
-    router = SchemaRouter()
-    router.planner.operation_fit_backend = CallableDecisionBackend(
-        lambda request: {"selections": [{"option_id": request.options[0].id}]}
-    )
-
-    snapshot = inspect_router(router)
-
-    assert snapshot.planner.operation_fit_backend == "CallableDecisionBackend"
-
-    html = render_dashboard(snapshot.registry, live=snapshot)
-    assert "Operation fit" in html
-    assert "CallableDecisionBackend" in html
+    for label in (
+        "Candidate recall", "Capability fit", "Operation fit", "Endpoint disambiguation",
+    ):
+        assert label not in html
 
 
 def test_inspection_exposes_trusted_operation_aliases() -> None:

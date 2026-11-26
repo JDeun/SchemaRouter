@@ -136,7 +136,6 @@ print(snapshot.model_dump_json(indent=2))
 The live view adds:
 
 - analyzer class;
-- configured transitional recall, fit and disambiguation backends;
 - execution policy;
 - actual bound tool keys from the current executor;
 - access paths currently inside an availability cooldown;

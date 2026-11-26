@@ -57,7 +57,6 @@ def test_master_switch_overrides_feature_switches() -> None:
     assert policy.reserved_surfaces_enabled is False
 
 
-
 def test_recall_on_empty_requires_enabled_candidate_selection() -> None:
     disabled = DecisionPolicy(recall_on_empty=True)
     master_off = DecisionPolicy(
@@ -76,7 +75,6 @@ def test_recall_on_empty_requires_enabled_candidate_selection() -> None:
     assert enabled.candidate_recall_on_empty_enabled is True
 
 
-
 def test_recall_on_empty_is_visible_in_policy_serialization() -> None:
     policy = DecisionPolicy(
         enabled=True,
@@ -90,7 +88,6 @@ def test_recall_on_empty_is_visible_in_policy_serialization() -> None:
     assert policy.candidate_recall_on_empty_enabled is True
 
 
-
 def test_candidate_abstention_is_independent_from_provider_error_fallback() -> None:
     policy = DecisionPolicy(
         enabled=True,
@@ -101,7 +98,6 @@ def test_candidate_abstention_is_independent_from_provider_error_fallback() -> N
 
     assert policy.candidate_abstention == "no_route"
     assert policy.fallback == "deterministic"
-
 
 
 def test_inherited_candidate_abstention_preserves_error_fallback_semantics() -> None:
@@ -126,3 +122,16 @@ def test_installed_planner_no_longer_accepts_decision_policy_or_backend() -> Non
     assert not hasattr(planner, "decision_backend")
     with pytest.raises(TypeError, match="decision_policy"):
         SchemaPlanner(InMemoryRegistry(), decision_policy=DecisionPolicy(enabled=True))
+
+@pytest.mark.parametrize("name", [
+    "candidate_recall_backend",
+    "candidate_recall_limit",
+    "candidate_fit_backend",
+    "operation_fit_backend",
+    "endpoint_disambiguation_backend",
+])
+def test_installed_planner_rejects_retired_ranking_configuration(name) -> None:
+    assert name not in inspect.signature(SchemaPlanner).parameters
+    assert not hasattr(SchemaPlanner(InMemoryRegistry()), name)
+    with pytest.raises(TypeError, match=name):
+        SchemaPlanner(InMemoryRegistry(), **{name: None})

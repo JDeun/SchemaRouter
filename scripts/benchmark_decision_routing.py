@@ -1372,7 +1372,7 @@ async def main() -> None:
         planners.append(
             (
                 "keyword+semantic-recall",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
@@ -1389,7 +1389,7 @@ async def main() -> None:
         planners.append(
             (
                 fit_name,
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
@@ -1409,7 +1409,7 @@ async def main() -> None:
         planners.append(
             (
                 "+".join(operation_name_parts),
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
@@ -1432,7 +1432,7 @@ async def main() -> None:
         planners.append(
             (
                 "+".join(disambiguation_name_parts),
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
@@ -1452,7 +1452,7 @@ async def main() -> None:
         planners.append(
             (
                 "model-query-analyzer",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     analyzer=ModelQueryAnalyzer(model_callable),
                     candidate_recall_backend=candidate_recall_backend,

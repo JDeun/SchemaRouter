@@ -1,6 +1,6 @@
 # Ollama
 
-**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. Other existing bounded fit/recall callbacks remain transitional. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
+**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
 SchemaRouter can use a locally running Ollama model as a **bounded decision backend**. This does
 not turn SchemaRouter into an Ollama agent system: Ollama does not own the tool loop, does not

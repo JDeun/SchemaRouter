@@ -1,6 +1,6 @@
 # Ollama
 
-**개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 기존 fit/recall 콜백은 전환 단계에서 유지됩니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
+**개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 의미 기반 후보 검색, 기능·작업 적합성 및 엔드포인트 구분 콜백도 연구 전용 비교 Planner로 이전되었습니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
 
 SchemaRouter는 로컬 Ollama model을 **bounded decision backend**로 사용할 수 있습니다. SchemaRouter가 Ollama agent system이 되는 것은 아닙니다. Ollama는 tool loop나 arbitrary execution plan을 소유하지 않고 registered tool을 실행하지 않으며 SchemaRouter가 이미 authorize한 finite option ID 중에서만 선택합니다.
 

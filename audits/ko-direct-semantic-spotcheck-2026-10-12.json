@@ -62,9 +62,9 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "en_blob": "fd3e9abac537e50159695e1abc457e00f7a9c213",
-      "ko_blob": "e1f6d9a3eb21809db8c4249f1b00b7022056fb94",
-      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
+      "en_blob": "3a4111bca52b7360b2843c64184fbeeb33924d53",
+      "ko_blob": "e175f287f48d17338159963be17d655e39f58886",
+      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off."
     },
     {
       "path": "concepts/design-principles.md",
@@ -321,9 +321,9 @@
     },
     {
       "path": "guides/inspection.md",
-      "en_blob": "9d2c0755d9334ee6f4030067c4119f7ab647d033",
-      "ko_blob": "0956c6765500fe586446a2a5476f009d29e80cc6",
-      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
+      "en_blob": "0d8caeaf996303cb7d59104c2f3cabaa40a5afab",
+      "ko_blob": "4e1e43dfea44057191212488b33fe20684d6763a",
+      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off."
     },
     {
       "path": "guides/live-compatibility-matrix.md",
@@ -471,9 +471,9 @@
     },
     {
       "path": "integrations/jev.md",
-      "en_blob": "f8c0db693933594c18955aceba7d7cab0da268d5",
-      "ko_blob": "dc881ca4448b3bdf7576d964c19269b083d02b2e",
-      "notes": "Matched TypeSafe choice bounded identity, SDK version, data privacy and no async client in sync mode, prior unknown-ID rejection and deterministic/error fallback. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
+      "en_blob": "1873e92ac968255906f949795c643c302899279c",
+      "ko_blob": "85a831d234ad09495f99f43e218cd463302bbb11",
+      "notes": "Matched TypeSafe choice bounded identity, SDK version, data privacy and no async client in sync mode, prior unknown-ID rejection and deterministic/error fallback. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off."
     },
     {
       "path": "integrations/langchain.md",
@@ -513,9 +513,9 @@
     },
     {
       "path": "integrations/ollama.md",
-      "en_blob": "b14f224f6cad1d2799c1bedf3ffb2fa0fe52bb7e",
-      "ko_blob": "da1794d1f7972b7a2990f9a7872f25bbd66c064a",
-      "notes": "Matched finite enum IDs, local result revalidation, default loopback, token and self-score caveats, and optional context forwarding. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
+      "en_blob": "40ae03501eed41a5b98615ba0a4c7ad9775d9dff",
+      "ko_blob": "5ef1f62c8829c168f22360252fe657ee2302bc68",
+      "notes": "Matched finite enum IDs, local result revalidation, default loopback, token and self-score caveats, and optional context forwarding. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off."
     },
     {
       "path": "integrations/opentelemetry.md",
@@ -986,6 +986,7 @@
     "2026-11-02: Added preserved original-paper Algorithm 1 bilingual parity audit pair (#1846); recorded current source blobs without independent human translation sign-off.",
     "2026-11-26: Re-reviewed seven changed EN/KO page pairs after adaptive and state-conditioned backfill removal; synchronized exact source/target blobs and source translation manifest. Historical results and fixed Top-K typed-state eligibility preserved. AI-assisted source comparison only, not independent human review.",
     "2026-11-26: Re-reviewed EN/KO API and decision-backend pages after removal of installed PairwiseDecisionBackend and PairwiseScoreCallable; archived comparison and regression scope explicit. AI-assisted source comparison only.",
-    "2026-11-26: Compared four changed bilingual pairs after installed DecisionPolicy removal, historical checkout-only comparisons and live inspection-field removal. AI-assisted source review only."
+    "2026-11-26: Compared four changed bilingual pairs after installed DecisionPolicy removal, historical checkout-only comparisons and live inspection-field removal. AI-assisted source review only.",
+    "2026-11-26: Compared four bilingual pairs after removing remaining model-ranking callbacks from installed planner and relocating their experimental pipeline to checkout-only research. AI-assisted source review only."
   ]
 }

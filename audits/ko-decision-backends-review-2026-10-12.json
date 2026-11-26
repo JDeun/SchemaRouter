@@ -5,8 +5,8 @@
   "scope": "Targeted bilingual review of decision-backend deployment tradeoffs and non-code English prose remnants; not a corpus semantic certificate.",
   "reviewer_status": "AI-assisted targeted review; independent human sentence-level sign-off not established.",
   "path": "concepts/decision-backends.md",
-  "en_blob": "fd3e9abac537e50159695e1abc457e00f7a9c213",
-  "ko_blob": "e1f6d9a3eb21809db8c4249f1b00b7022056fb94",
+  "en_blob": "3a4111bca52b7360b2843c64184fbeeb33924d53",
+  "ko_blob": "e175f287f48d17338159963be17d655e39f58886",
   "findings": [
     {
       "section": "Bounded field selection",
@@ -21,7 +21,7 @@
     {
       "section": "Choosing a decision backend",
       "decision": "mixed-language-comparison-fixed",
-      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency. 2026-11-26: Both language tables now mark the pairwise row as historical research only; all six rows retain their comparative tradeoffs."
+      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency. 2026-11-26: Both language tables now mark the pairwise row as historical research only; all six rows retain their comparative tradeoffs. 2026-11-26: Both language pages explicitly limit the historical model-ranking comparisons to LegacyDecisionPlanner; six comparative rows retained."
     },
     {
       "section": "Local Laya decision model",

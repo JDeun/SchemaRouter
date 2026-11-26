@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from schemarouter import (
-    CallableDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -432,23 +431,24 @@ def test_retrieval_result_is_detached_from_registry_state() -> None:
     assert "mutated-match" not in fresh.candidates[0].matched_fields
 
 
-def test_retrieve_does_not_invoke_planning_candidate_recall_backend() -> None:
+def test_retrieve_does_not_invoke_retired_model_ranking_callbacks() -> None:
     router = make_retrieval_router()
-    called = False
 
-    def planning_recall_backend(_request):
-        nonlocal called
-        called = True
-        raise AssertionError("public retrieve must stay deterministic")
+    def forbidden(*args, **kwargs):
+        pytest.fail("retired model ranking callback was invoked")
 
-    router.planner.candidate_recall_backend = CallableDecisionBackend(
-        planning_recall_backend
-    )
+    baseline = router.retrieve("current Young's modulus", k=2)
+    # Even a host attaching an old attribute dynamically cannot alter retrieval or planning.
+    for name in (
+        "candidate_recall_backend", "candidate_fit_backend", "operation_fit_backend",
+        "endpoint_disambiguation_backend", "decision_backend",
+    ):
+        assert not hasattr(router.planner, name)
+        setattr(router.planner, name, forbidden)
 
-    result = router.retrieve("current Young's modulus", k=2)
-
-    assert len(result.candidates) == 2
-    assert called is False
+    assert router.retrieve("current Young's modulus", k=2) == baseline
+    assert len(baseline.candidates) == 2
+    assert router.plan("current Young's modulus").calls
 
 
 def test_retrieve_routes_matches_full_retrieval_ranking() -> None:

@@ -6,9 +6,9 @@ The base planner and canonical registry/validation infrastructure are reused.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Set
 from dataclasses import replace
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -36,7 +36,10 @@ from schemarouter.planner import (
     _scoring_tool_for_visible_endpoint,
     _visible_endpoint,
 )
-from schemarouter.planning_context import RegistrySnapshot
+from schemarouter.planning_context import PlanningContext, RegistrySnapshot
+from schemarouter.planning_stages import CandidatePipelineResult, CandidateT, CoverageT
+
+ContextT = TypeVar("ContextT")
 
 DecisionFallback = Literal["deterministic", "error"]
 CandidateAbstention = Literal["inherit", "deterministic", "no_route", "error"]
@@ -84,6 +87,132 @@ class DecisionPolicy(BaseModel):
         return False
 
 
+def run_candidate_pipeline_sync(
+    *,
+    context: ContextT,
+    recall: Callable[[ContextT], list[CandidateT]],
+    augment: Callable[
+        [ContextT, list[CandidateT]],
+        tuple[list[CandidateT], list[str]],
+    ],
+    coverage: Callable[[ContextT, list[CandidateT]], Set[CoverageT]],
+    capability_fit: Callable[
+        [ContextT, list[CandidateT]],
+        tuple[list[CandidateT], list[str]],
+    ],
+    operation_fit: Callable[
+        [ContextT, list[CandidateT]],
+        tuple[list[CandidateT], list[str]],
+    ],
+    disambiguate: Callable[
+        [ContextT, list[CandidateT]],
+        tuple[list[CandidateT], list[str]],
+    ],
+    decide: Callable[
+        [ContextT, list[CandidateT]],
+        tuple[list[CandidateT], list[str]],
+    ],
+    order: Callable[[ContextT, list[CandidateT]], list[CandidateT]],
+) -> CandidatePipelineResult[CandidateT, CoverageT]:
+    """Run the deterministic candidate pipeline in its explicit policy order."""
+
+    lexical_candidates = recall(context)
+    all_candidates, recall_warnings = augment(context, lexical_candidates)
+    required_coverage = coverage(context, all_candidates)
+    fit_candidates, fit_warnings = capability_fit(context, all_candidates)
+    operation_candidates, operation_warnings = operation_fit(
+        context,
+        fit_candidates,
+    )
+    disambiguated_candidates, disambiguation_warnings = disambiguate(
+        context,
+        operation_candidates,
+    )
+    selected_candidates, decision_warnings = decide(
+        context,
+        disambiguated_candidates,
+    )
+    ordered_candidates = order(context, selected_candidates)
+
+    return CandidatePipelineResult(
+        all_candidates=tuple(all_candidates),
+        candidates=tuple(ordered_candidates),
+        required_coverage=frozenset(required_coverage),
+        warnings=tuple(
+            [
+                *recall_warnings,
+                *fit_warnings,
+                *operation_warnings,
+                *disambiguation_warnings,
+                *decision_warnings,
+            ]
+        ),
+    )
+
+
+async def run_candidate_pipeline_async(
+    *,
+    context: ContextT,
+    recall: Callable[[ContextT], list[CandidateT]],
+    augment: Callable[
+        [ContextT, list[CandidateT]],
+        Awaitable[tuple[list[CandidateT], list[str]]],
+    ],
+    coverage: Callable[[ContextT, list[CandidateT]], Set[CoverageT]],
+    capability_fit: Callable[
+        [ContextT, list[CandidateT]],
+        Awaitable[tuple[list[CandidateT], list[str]]],
+    ],
+    operation_fit: Callable[
+        [ContextT, list[CandidateT]],
+        Awaitable[tuple[list[CandidateT], list[str]]],
+    ],
+    disambiguate: Callable[
+        [ContextT, list[CandidateT]],
+        Awaitable[tuple[list[CandidateT], list[str]]],
+    ],
+    decide: Callable[
+        [ContextT, list[CandidateT]],
+        Awaitable[tuple[list[CandidateT], list[str]]],
+    ],
+    order: Callable[[ContextT, list[CandidateT]], list[CandidateT]],
+) -> CandidatePipelineResult[CandidateT, CoverageT]:
+    """Async counterpart preserving the exact same stage and warning order."""
+
+    lexical_candidates = recall(context)
+    all_candidates, recall_warnings = await augment(context, lexical_candidates)
+    required_coverage = coverage(context, all_candidates)
+    fit_candidates, fit_warnings = await capability_fit(context, all_candidates)
+    operation_candidates, operation_warnings = await operation_fit(
+        context,
+        fit_candidates,
+    )
+    disambiguated_candidates, disambiguation_warnings = await disambiguate(
+        context,
+        operation_candidates,
+    )
+    selected_candidates, decision_warnings = await decide(
+        context,
+        disambiguated_candidates,
+    )
+    ordered_candidates = order(context, selected_candidates)
+
+    return CandidatePipelineResult(
+        all_candidates=tuple(all_candidates),
+        candidates=tuple(ordered_candidates),
+        required_coverage=frozenset(required_coverage),
+        warnings=tuple(
+            [
+                *recall_warnings,
+                *fit_warnings,
+                *operation_warnings,
+                *disambiguation_warnings,
+                *decision_warnings,
+            ]
+        ),
+    )
+
+
 class LegacyDecisionPlanner(SchemaPlanner):
     """Explicit research comparison arm for the retired DecisionPolicy surfaces."""
 
@@ -92,9 +221,25 @@ class LegacyDecisionPlanner(SchemaPlanner):
         *args: Any,
         decision_backend: DecisionBackend | None = None,
         decision_policy: DecisionPolicy | None = None,
+        candidate_recall_backend: DecisionBackend | None = None,
+        candidate_recall_limit: int = 4,
+        candidate_fit_backend: DecisionBackend | None = None,
+        operation_fit_backend: DecisionBackend | None = None,
+        endpoint_disambiguation_backend: DecisionBackend | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
+        if (
+            not isinstance(candidate_recall_limit, int)
+            or isinstance(candidate_recall_limit, bool)
+            or candidate_recall_limit < 1
+        ):
+            raise ValueError("candidate_recall_limit must be an integer >= 1")
+        self.candidate_recall_backend = candidate_recall_backend
+        self.candidate_recall_limit = candidate_recall_limit
+        self.candidate_fit_backend = candidate_fit_backend
+        self.operation_fit_backend = operation_fit_backend
+        self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.decision_backend = decision_backend
         self.decision_policy = decision_policy or DecisionPolicy()
         if self.decision_policy.enabled and self.decision_backend is None:
@@ -934,4 +1079,659 @@ class LegacyDecisionPlanner(SchemaPlanner):
             score_components=list(candidate.score_components),
             field_selection=selections,
             ignored_arguments=list(ignored_arguments),
+        )
+
+    def _semantic_recall_request(
+        self,
+        request: PlanRequest,
+        catalog: list[_Candidate],
+    ) -> DecisionRequest:
+        options: list[DecisionOption] = []
+        for index, candidate in enumerate(catalog):
+            visible_endpoint = candidate.visible_endpoint or candidate.endpoint
+            field_labels = [
+                field.semantic_id or field.name
+                for field in visible_endpoint.output_fields
+                if not field.identifier
+            ]
+            parts = [
+                (
+                    candidate.tool.description.strip()
+                    if visible_endpoint is candidate.endpoint
+                    else ""
+                ),
+                visible_endpoint.description.strip(),
+            ]
+            if field_labels:
+                parts.append("Fields: " + ", ".join(field_labels))
+            description = "\n".join(part for part in parts if part)
+            options.append(
+                DecisionOption(
+                    id=f"recall:{index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description=description,
+                    metadata={"schema_score": candidate.score},
+                )
+            )
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=min(self.candidate_recall_limit, len(options)),
+            context={"surface": "semantic_candidate_recall"},
+        )
+
+    @staticmethod
+    def _merge_semantic_recall(
+        candidates: list[_Candidate],
+        catalog: list[_Candidate],
+        selected_indexes: list[int],
+    ) -> tuple[list[_Candidate], int]:
+        existing = {
+            (candidate.tool.key, candidate.endpoint.name)
+            for candidate in candidates
+        }
+        merged = list(candidates)
+        added = 0
+        for index in selected_indexes:
+            candidate = catalog[index]
+            key = (candidate.tool.key, candidate.endpoint.name)
+            if key in existing:
+                continue
+            merged.append(
+                replace(
+                    candidate,
+                    selection_source="semantic_recall",
+                )
+            )
+            existing.add(key)
+            added += 1
+        return merged, added
+
+    def _augment_candidates_with_semantic_recall_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidates: list[_Candidate],
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_recall_backend is None:
+            return candidates, []
+
+        catalog = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
+        )
+        if not catalog:
+            return candidates, []
+
+        try:
+            result = choose_sync(
+                self.candidate_recall_backend,
+                self._semantic_recall_request(request, catalog),
+            )
+        except Exception as exc:
+            return candidates, [
+                "semantic candidate recall fallback: "
+                f"{type(exc).__name__}; retained lexical candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, ["semantic candidate recall abstained"]
+
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
+        merged, added = self._merge_semantic_recall(
+            candidates,
+            catalog,
+            selected_indexes,
+        )
+        return merged, [
+            f"semantic candidate recall added {added} candidate(s)"
+        ]
+
+    async def _augment_candidates_with_semantic_recall_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidates: list[_Candidate],
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_recall_backend is None:
+            return candidates, []
+
+        catalog = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
+        )
+        if not catalog:
+            return candidates, []
+
+        try:
+            result = await choose_async(
+                self.candidate_recall_backend,
+                self._semantic_recall_request(request, catalog),
+            )
+        except Exception as exc:
+            return candidates, [
+                "semantic candidate recall fallback: "
+                f"{type(exc).__name__}; retained lexical candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, ["semantic candidate recall abstained"]
+
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
+        merged, added = self._merge_semantic_recall(
+            candidates,
+            catalog,
+            selected_indexes,
+        )
+        return merged, [
+            f"semantic candidate recall added {added} candidate(s)"
+        ]
+
+    @staticmethod
+    def _capability_fit_request(
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> DecisionRequest:
+        options: list[DecisionOption] = []
+        for index, candidate in enumerate(candidates):
+            endpoint = _visible_endpoint(candidate)
+            field_labels = [
+                field.semantic_id or field.name
+                for field in endpoint.output_fields
+                if not field.identifier
+            ]
+            parts = [
+                candidate.tool.description.strip(),
+                endpoint.description.strip(),
+            ]
+            if field_labels:
+                parts.append("Fields: " + ", ".join(field_labels))
+            options.append(
+                DecisionOption(
+                    id=f"fit:{index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description="\n".join(part for part in parts if part),
+                    metadata={"schema_score": candidate.score},
+                )
+            )
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=1,
+            context={"surface": "capability_fit"},
+        )
+
+    def _apply_capability_fit_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_fit_backend is None or not candidates:
+            return candidates, []
+        try:
+            result = choose_sync(
+                self.candidate_fit_backend,
+                self._capability_fit_request(request, candidates),
+            )
+        except Exception as exc:
+            return candidates, [
+                "capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+        if result.abstained or not result.selections:
+            return [], ["capability fit gate abstained; suppressed candidate routes"]
+        accepted = result.selections[0].option_id
+        return candidates, [f"capability fit gate accepted via {accepted}"]
+
+    async def _apply_capability_fit_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_fit_backend is None or not candidates:
+            return candidates, []
+        try:
+            result = await choose_async(
+                self.candidate_fit_backend,
+                self._capability_fit_request(request, candidates),
+            )
+        except Exception as exc:
+            return candidates, [
+                "capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+        if result.abstained or not result.selections:
+            return [], ["capability fit gate abstained; suppressed candidate routes"]
+        accepted = result.selections[0].option_id
+        return candidates, [f"capability fit gate accepted via {accepted}"]
+
+    @staticmethod
+    def _operation_fit_request(
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> DecisionRequest | None:
+        """Build a narrow operation-only fit surface for the leading tool domain.
+
+        This gate deliberately excludes the tool description and output-field labels so
+        domain similarity cannot by itself turn an unsupported operation into a match.
+        It can only suppress the already-authorized candidate set; it never selects,
+        adds, or reorders execution candidates.
+        """
+
+        if request.max_calls > 1 or not candidates:
+            return None
+
+        primary_tool = candidates[0].tool.key
+        sibling_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate.tool.key == primary_tool
+        ]
+        if not sibling_candidates:
+            return None
+
+        options: list[DecisionOption] = []
+        for index, candidate in enumerate(sibling_candidates):
+            endpoint = _visible_endpoint(candidate)
+            operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+            parts = [operation_name]
+            if endpoint.operation_aliases:
+                parts.extend(endpoint.operation_aliases)
+            if endpoint.description.strip():
+                parts.append(endpoint.description.strip())
+            options.append(
+                DecisionOption(
+                    id=f"operation:{index}",
+                    label=endpoint.name,
+                    description="\n".join(part for part in parts if part),
+                    metadata={"tool": primary_tool},
+                )
+            )
+
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=1,
+            context={
+                "surface": "operation_capability_fit",
+                "tool": primary_tool,
+            },
+        )
+
+    def _apply_operation_fit_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.operation_fit_backend is None or not candidates:
+            return candidates, []
+
+        decision_request = self._operation_fit_request(request, candidates)
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = choose_sync(
+                self.operation_fit_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "operation capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return [], [
+                "operation capability fit gate abstained; "
+                "suppressed candidate routes"
+            ]
+
+        accepted = result.selections[0].option_id
+        return candidates, [
+            f"operation capability fit gate accepted via {accepted}"
+        ]
+
+    async def _apply_operation_fit_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.operation_fit_backend is None or not candidates:
+            return candidates, []
+
+        decision_request = self._operation_fit_request(request, candidates)
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = await choose_async(
+                self.operation_fit_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "operation capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return [], [
+                "operation capability fit gate abstained; "
+                "suppressed candidate routes"
+            ]
+
+        accepted = result.selections[0].option_id
+        return candidates, [
+            f"operation capability fit gate accepted via {accepted}"
+        ]
+
+    @staticmethod
+    def _endpoint_disambiguation_request(
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[DecisionRequest | None, list[int]]:
+        if request.max_calls > 1 or len(candidates) < 2:
+            return None, []
+
+        primary_tool = candidates[0].tool.key
+        sibling_indexes = [
+            index
+            for index, candidate in enumerate(candidates)
+            if candidate.tool.key == primary_tool
+        ]
+        if len(sibling_indexes) < 2:
+            return None, []
+
+        options: list[DecisionOption] = []
+        for local_index, candidate_index in enumerate(sibling_indexes):
+            candidate = candidates[candidate_index]
+            endpoint = _visible_endpoint(candidate)
+            field_labels = [
+                field.semantic_id or field.name
+                for field in endpoint.output_fields
+                if not field.identifier
+            ]
+            operation = (
+                "read-only retrieval"
+                if endpoint.read_only is True
+                else "mutating write"
+                if endpoint.read_only is False
+                else "unclassified operation"
+            )
+            parts = [
+                endpoint.description.strip(),
+                f"Operation class: {operation}",
+            ]
+            if field_labels:
+                parts.append("Fields: " + ", ".join(field_labels))
+            options.append(
+                DecisionOption(
+                    id=f"endpoint:{local_index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description="\n".join(part for part in parts if part),
+                    metadata={"candidate_index": candidate_index},
+                )
+            )
+
+        return (
+            DecisionRequest(
+                query=request.query,
+                options=options,
+                max_selections=1,
+                context={
+                    "surface": "endpoint_disambiguation",
+                    "tool": primary_tool,
+                },
+            ),
+            sibling_indexes,
+        )
+
+    @staticmethod
+    def _apply_endpoint_disambiguation_result(
+        candidates: list[_Candidate],
+        sibling_indexes: list[int],
+        option_id: str,
+    ) -> list[_Candidate]:
+        local_index = int(option_id.split(":", 1)[1])
+        chosen_index = sibling_indexes[local_index]
+        chosen = replace(
+            candidates[chosen_index],
+            selection_source="endpoint_disambiguation",
+        )
+        return [
+            chosen,
+            *[
+                candidate
+                for index, candidate in enumerate(candidates)
+                if index != chosen_index
+            ],
+        ]
+
+    def _disambiguate_endpoints_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.endpoint_disambiguation_backend is None or not candidates:
+            return candidates, []
+
+        decision_request, sibling_indexes = self._endpoint_disambiguation_request(
+            request,
+            candidates,
+        )
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = choose_sync(
+                self.endpoint_disambiguation_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "endpoint disambiguation fallback: "
+                f"{type(exc).__name__}; retained candidate order"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, [
+                "endpoint disambiguation abstained; retained candidate order"
+            ]
+
+        selected = result.selections[0].option_id
+        reordered = self._apply_endpoint_disambiguation_result(
+            candidates,
+            sibling_indexes,
+            selected,
+        )
+        return reordered, [
+            f"endpoint disambiguation selected {selected} within "
+            f"{candidates[0].tool.key}"
+        ]
+
+    async def _disambiguate_endpoints_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.endpoint_disambiguation_backend is None or not candidates:
+            return candidates, []
+
+        decision_request, sibling_indexes = self._endpoint_disambiguation_request(
+            request,
+            candidates,
+        )
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = await choose_async(
+                self.endpoint_disambiguation_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "endpoint disambiguation fallback: "
+                f"{type(exc).__name__}; retained candidate order"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, [
+                "endpoint disambiguation abstained; retained candidate order"
+            ]
+
+        selected = result.selections[0].option_id
+        reordered = self._apply_endpoint_disambiguation_result(
+            candidates,
+            sibling_indexes,
+            selected,
+        )
+        return reordered, [
+            f"endpoint disambiguation selected {selected} within "
+            f"{candidates[0].tool.key}"
+        ]
+
+    def _candidate_pipeline_sync(
+        self,
+        context: PlanningContext,
+        *,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None,
+        scoring_endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None] | None,
+    ) -> CandidatePipelineResult[_Candidate, tuple[str, tuple[str, ...]]]:
+        return run_candidate_pipeline_sync(
+            context=context,
+            recall=lambda stage_context: self._candidates(
+                stage_context.request,
+                stage_context.intent,
+                additional_availability_predicate=additional_availability_predicate,
+                scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=stage_context.registry,
+            ),
+            augment=lambda stage_context, lexical: (
+                self._augment_candidates_with_semantic_recall_sync(
+                    stage_context.request,
+                    stage_context.intent,
+                    lexical,
+                    additional_availability_predicate=additional_availability_predicate,
+                    scoring_endpoint_transform=scoring_endpoint_transform,
+                    catalog_snapshot=stage_context.registry,
+                )
+            ),
+            coverage=lambda stage_context, ranked: self._field_coverage_matrix(
+                stage_context.request,
+                ranked,
+            )[1],
+            capability_fit=lambda stage_context, ranked: self._apply_capability_fit_sync(
+                stage_context.request,
+                ranked,
+            ),
+            operation_fit=lambda stage_context, ranked: self._apply_operation_fit_sync(
+                stage_context.request,
+                ranked,
+            ),
+            disambiguate=lambda stage_context, ranked: self._disambiguate_endpoints_sync(
+                stage_context.request,
+                ranked,
+            ),
+            decide=lambda stage_context, ranked: self._select_candidates_sync(
+                stage_context.request,
+                ranked,
+            ),
+            order=lambda stage_context, ranked: (
+                self._order_candidates_for_field_coverage(
+                    stage_context.request,
+                    ranked,
+                )
+            ),
+        )
+
+    async def _candidate_pipeline_async(
+        self,
+        context: PlanningContext,
+        *,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None,
+        scoring_endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None] | None,
+    ) -> CandidatePipelineResult[_Candidate, tuple[str, tuple[str, ...]]]:
+        return await run_candidate_pipeline_async(
+            context=context,
+            recall=lambda stage_context: self._candidates(
+                stage_context.request,
+                stage_context.intent,
+                additional_availability_predicate=additional_availability_predicate,
+                scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=stage_context.registry,
+            ),
+            augment=lambda stage_context, lexical: (
+                self._augment_candidates_with_semantic_recall_async(
+                    stage_context.request,
+                    stage_context.intent,
+                    lexical,
+                    additional_availability_predicate=additional_availability_predicate,
+                    scoring_endpoint_transform=scoring_endpoint_transform,
+                    catalog_snapshot=stage_context.registry,
+                )
+            ),
+            coverage=lambda stage_context, ranked: self._field_coverage_matrix(
+                stage_context.request,
+                ranked,
+            )[1],
+            capability_fit=lambda stage_context, ranked: self._apply_capability_fit_async(
+                stage_context.request,
+                ranked,
+            ),
+            operation_fit=lambda stage_context, ranked: self._apply_operation_fit_async(
+                stage_context.request,
+                ranked,
+            ),
+            disambiguate=lambda stage_context, ranked: self._disambiguate_endpoints_async(
+                stage_context.request,
+                ranked,
+            ),
+            decide=lambda stage_context, ranked: self._select_candidates_async(
+                stage_context.request,
+                ranked,
+            ),
+            order=lambda stage_context, ranked: (
+                self._order_candidates_for_field_coverage(
+                    stage_context.request,
+                    ranked,
+                )
+            ),
         )

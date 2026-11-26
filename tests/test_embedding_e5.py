@@ -14,10 +14,10 @@ from schemarouter import (
     InMemoryRegistry,
     PlanningError,
     PlanRequest,
-    SchemaPlanner,
     ToolSpec,
     choose_sync,
 )
+from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 
 def test_e5_prefix_and_repeated_option_embedding_cache() -> None:
@@ -164,7 +164,7 @@ def test_multilingual_embedding_recovers_english_only_candidate_with_opt_in(quer
         E5CachedEmbedder(encoder),
         min_similarity=0.5,  # Fixture boundary, NOT a deployed threshold.
     )
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         registry, candidate_recall_backend=backend,
         candidate_recall_limit=1,
     )
@@ -190,7 +190,7 @@ def test_unrelated_query_abstains_without_creating_candidate() -> None:
         return [[0.0, 1.0] if text.startswith("query: ") else [1.0, 0.0]
                 for text in texts]
 
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         registry,
         candidate_recall_backend=EmbeddingDecisionBackend(
             E5CachedEmbedder(encoder),

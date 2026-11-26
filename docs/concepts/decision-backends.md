@@ -1,9 +1,9 @@
 # Decision backends
 
-**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. Other existing bounded fit/recall callbacks remain transitional. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
+**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
-SchemaRouter can optionally use a bounded decision model to refine choices that were already
-derived from the local schema catalog. This feature is **off by default**.
+Historically, the comparison planner could use a bounded decision model to refine choices already
+derived from the local schema catalog. The installed planner no longer offers this feature.
 
 Decision backends are not plan generators. They receive a finite set of locally authorized option
 IDs and may select only from that set. SchemaRouter still constructs the typed execution plan and
@@ -65,7 +65,7 @@ insufficient. A provider can never upgrade missing local evidence.
 ### Bounded semantic candidate recall
 
 For multilingual or paraphrased queries, lexical recall can miss a valid endpoint even when the
-registered schema describes the right capability. `SchemaPlanner` can optionally add a separate
+registered schema describes the right capability. `LegacyDecisionPlanner` can optionally add a separate
 **candidate recall backend** before final candidate selection:
 
 ```python
@@ -100,7 +100,7 @@ remote embedding API, or domain encoder.
 ### Bounded capability-fit / no-route gate
 
 Semantic recall improves recall but, by itself, may force an in-catalog candidate for an
-out-of-domain query. `SchemaPlanner` also supports an optional
+out-of-domain query. `LegacyDecisionPlanner` also supports an optional
 `candidate_fit_backend` after lexical/semantic recall and before final candidate selection:
 
 ```python
@@ -109,7 +109,7 @@ fit = EmbeddingDecisionBackend(
     min_similarity=0.45,
 )
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=2,
@@ -136,7 +136,7 @@ the query at all. That is not sufficient for near-domain unsupported operations:
 belong to the `users` domain while asking to `delete` an account even though the registry exposes only
 `lookup` and `update`.
 
-For that case, `SchemaPlanner` supports an optional `operation_fit_backend` between broad capability
+For that case, `LegacyDecisionPlanner` supports an optional `operation_fit_backend` between broad capability
 fit and same-tool endpoint disambiguation:
 
 ```python
@@ -145,7 +145,7 @@ operation_fit = EmbeddingDecisionBackend(
     min_similarity=0.25,
 )
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=2,
@@ -182,13 +182,13 @@ untouched holdout.
 ### Bounded same-tool endpoint disambiguation
 
 After semantic recall and capability-fit gating, multiple sibling endpoints from the same leading
-tool may still remain plausible. `SchemaPlanner` can optionally use
+tool may still remain plausible. `LegacyDecisionPlanner` can optionally use
 `endpoint_disambiguation_backend` to reorder only those sibling endpoints:
 
 ```python
 disambiguator = EmbeddingDecisionBackend(multilingual_embed_batch)
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=2,

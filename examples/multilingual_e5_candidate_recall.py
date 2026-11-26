@@ -1,7 +1,7 @@
-"""Local multilingual candidate recall without any tool execution.
+"""Historical research-only multilingual candidate recall without tool execution.
 
 Install explicitly: pip install sentence-transformers
-Run: python examples/multilingual_e5_candidate_recall.py
+Run from a source checkout: python -m examples.multilingual_e5_candidate_recall
 
 The first run can download model weights. The imported SchemaRouter core does
 not download models or require Torch/sentence-transformers. This example
@@ -17,9 +17,9 @@ from schemarouter import (
     EmbeddingDecisionBackend,
     EndpointSpec,
     InMemoryRegistry,
-    SchemaPlanner,
     ToolSpec,
 )
+from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 
 def main() -> None:
@@ -59,15 +59,15 @@ def main() -> None:
     embedder = E5CachedEmbedder(encode, max_cached_passages=2048)
     recall = EmbeddingDecisionBackend(embedder)
 
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         registry,
         candidate_recall_backend=recall,
         candidate_recall_limit=2,
     )
 
     for query in ("Find material properties", "재료 물성을 찾아줘", "材料の物性を調べたい"):
-        retrieval = planner.retrieve(query, k=2)
-        print(query, [(candidate.route_id, candidate.score) for candidate in retrieval.candidates])
+        plan = planner.plan(query)
+        print(query, [(call.tool, call.endpoint) for call in plan.calls])
 
     # Do not treat the top cosine similarity as a calibrated 'can execute'
     # probability. Evaluate supported / unsupported cohorts before gating

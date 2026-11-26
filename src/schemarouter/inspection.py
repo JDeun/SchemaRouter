@@ -169,11 +169,6 @@ class PlannerInspection(StrictModel):
     """Privacy-safe view of the live planner configuration."""
 
     analyzer: str
-    candidate_recall_backend: str | None = None
-    candidate_recall_limit: int = Field(default=4, ge=1)
-    candidate_fit_backend: str | None = None
-    operation_fit_backend: str | None = None
-    endpoint_disambiguation_backend: str | None = None
 
 
 class HealthProbeInspection(StrictModel):
@@ -395,35 +390,10 @@ def inspect_router(
     """Inspect a live SchemaRouter without exposing invokers, credentials, or payload values."""
 
     planner = router.planner
-    recall_backend = planner.candidate_recall_backend
-    fit_backend = planner.candidate_fit_backend
-    operation_fit_backend = planner.operation_fit_backend
-    disambiguation_backend = planner.endpoint_disambiguation_backend
     return RouterInspection(
         registry=inspect_registry(router.registry),
         planner=PlannerInspection(
             analyzer=type(planner.analyzer).__name__,
-            candidate_recall_backend=(
-                type(recall_backend).__name__
-                if recall_backend is not None
-                else None
-            ),
-            candidate_recall_limit=planner.candidate_recall_limit,
-            candidate_fit_backend=(
-                type(fit_backend).__name__
-                if fit_backend is not None
-                else None
-            ),
-            operation_fit_backend=(
-                type(operation_fit_backend).__name__
-                if operation_fit_backend is not None
-                else None
-            ),
-            endpoint_disambiguation_backend=(
-                type(disambiguation_backend).__name__
-                if disambiguation_backend is not None
-                else None
-            ),
         ),
         decision_traces=tuple(
             inspect_capability_decision_trace(trace)
