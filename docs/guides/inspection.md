@@ -136,8 +136,7 @@ print(snapshot.model_dump_json(indent=2))
 The live view adds:
 
 - analyzer class;
-- configured decision-backend class;
-- bounded decision policy;
+- configured transitional recall, fit and disambiguation backends;
 - execution policy;
 - actual bound tool keys from the current executor;
 - access paths currently inside an availability cooldown;
@@ -159,16 +158,7 @@ Representative `router.inspect()` JSON:
     "unclassified_endpoints": 0
   },
   "planner": {
-    "analyzer": "KeywordAnalyzer",
-    "decision_backend": null,
-    "decision_policy": {
-      "enabled": false,
-      "tool_selection": false,
-      "endpoint_selection": false,
-      "field_selection": false,
-      "evidence_sufficiency": false,
-      "fallback": "deterministic"
-    }
+    "analyzer": "KeywordAnalyzer"
   },
   "execution": {
     "policy": {

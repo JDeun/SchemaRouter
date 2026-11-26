@@ -258,7 +258,6 @@ from .decision_plugins import (
     discover_decision_backend_plugins,
     load_decision_backend_plugin,
 )
-from .decision_policy import DecisionFallback, DecisionPolicy
 from .decisions import (
     CallableDecisionBackend,
     DecisionBackend,
@@ -785,8 +784,6 @@ __all__ = [
     "CapabilityRouteCandidate",
     "CapabilityRouteRetrieval",
     "DecisionBackend",
-    "DecisionFallback",
-    "DecisionPolicy",
     "DecisionCallable",
     "DecisionOption",
     "DecisionOptionTextCallable",

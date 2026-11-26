@@ -1,5 +1,7 @@
 # Ollama
 
+**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. Other existing bounded fit/recall callbacks remain transitional. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
+
 SchemaRouter can use a locally running Ollama model as a **bounded decision backend**. This does
 not turn SchemaRouter into an Ollama agent system: Ollama does not own the tool loop, does not
 construct arbitrary execution plans, and does not execute registered tools. It only selects from
@@ -20,12 +22,12 @@ pip install schemarouter
 ## Configure a local backend
 
 ```python
-from schemarouter import DecisionPolicy, SchemaPlanner
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 from schemarouter.integrations import OllamaDecisionBackend
 
 backend = OllamaDecisionBackend("your-installed-model")
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(

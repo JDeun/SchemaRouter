@@ -2,7 +2,6 @@ import pytest
 
 from schemarouter import (
     CallableDecisionBackend,
-    DecisionPolicy,
     EndpointSpec,
     EvidenceRequirements,
     FieldSpec,
@@ -12,6 +11,7 @@ from schemarouter import (
     SchemaPlanner,
     ToolSpec,
 )
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 
 def registry(
@@ -88,7 +88,7 @@ def test_evidence_backend_receives_only_bounded_binary_decision_after_local_chec
             ]
         }
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(decide),
         decision_policy=DecisionPolicy(
@@ -120,7 +120,7 @@ def test_evidence_backend_receives_only_bounded_binary_decision_after_local_chec
 
 
 def test_evidence_backend_can_only_veto_locally_sufficient_call() -> None:
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(
             lambda _: {
@@ -150,7 +150,7 @@ def test_local_evidence_failure_never_calls_provider_or_gets_upgraded() -> None:
             "selections": [{"option_id": "evidence:sufficient"}],
         }
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(tool_license=None),
         decision_backend=CallableDecisionBackend(must_not_run),
         decision_policy=DecisionPolicy(
@@ -165,7 +165,7 @@ def test_local_evidence_failure_never_calls_provider_or_gets_upgraded() -> None:
 
 
 def test_missing_units_fail_local_evidence_check() -> None:
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(band_gap_unit=None),
         decision_backend=CallableDecisionBackend(
             lambda _: {
@@ -192,7 +192,7 @@ def test_source_type_mismatch_cannot_be_upgraded_by_provider() -> None:
             "selections": [{"option_id": "evidence:sufficient"}],
         }
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(tool_source_type="experimental"),
         decision_backend=CallableDecisionBackend(must_not_run),
         decision_policy=DecisionPolicy(
@@ -210,7 +210,7 @@ def test_source_type_mismatch_cannot_be_upgraded_by_provider() -> None:
 
 
 def test_local_evidence_failure_can_fail_closed_with_error_policy() -> None:
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         registry(tool_license=None),
         decision_backend=CallableDecisionBackend(
             lambda _: {
@@ -229,7 +229,7 @@ def test_local_evidence_failure_can_fail_closed_with_error_policy() -> None:
 
 
 def test_evidence_backend_abstention_falls_back_to_local_assessment() -> None:
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(
             lambda _: {"abstained": True},
@@ -248,7 +248,7 @@ def test_evidence_backend_abstention_falls_back_to_local_assessment() -> None:
 
 
 def test_invalid_evidence_decision_falls_back_to_local_assessment() -> None:
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(
             lambda _: {
@@ -269,7 +269,7 @@ def test_invalid_evidence_decision_falls_back_to_local_assessment() -> None:
 
 
 def test_invalid_evidence_decision_can_fail_closed() -> None:
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(
             lambda _: {
@@ -297,7 +297,7 @@ def test_evidence_surface_is_noop_when_request_has_no_evidence_requirements() ->
             "selections": [{"option_id": "evidence:insufficient"}],
         }
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(must_not_run),
         decision_policy=DecisionPolicy(
@@ -318,7 +318,7 @@ async def test_async_evidence_sufficiency_uses_async_backend() -> None:
             "selections": [{"option_id": "evidence:sufficient"}],
         }
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         registry(),
         decision_backend=CallableDecisionBackend(decide),
         decision_policy=DecisionPolicy(

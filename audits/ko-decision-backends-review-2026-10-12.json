@@ -5,13 +5,13 @@
   "scope": "Targeted bilingual review of decision-backend deployment tradeoffs and non-code English prose remnants; not a corpus semantic certificate.",
   "reviewer_status": "AI-assisted targeted review; independent human sentence-level sign-off not established.",
   "path": "concepts/decision-backends.md",
-  "en_blob": "967ee400011e15cdb9a987906db4e5ef536dcc0c",
-  "ko_blob": "460e01c0a9aed672084811075077e39f168316c1",
+  "en_blob": "fd3e9abac537e50159695e1abc457e00f7a9c213",
+  "ko_blob": "e1f6d9a3eb21809db8c4249f1b00b7022056fb94",
   "findings": [
     {
       "section": "Bounded field selection",
       "decision": "untranslated-prose-fixed",
-      "reason": "The English instruction enabling field selection remained untranslated outside code. Korean now explicitly states that the feature must be enabled."
+      "reason": "The English instruction enabling field selection remained untranslated outside code. Korean now explicitly states that the feature must be enabled. 2026-11-26: Retained historical translated instructions under explicit checkout-only LegacyDecisionPlanner migration notice."
     },
     {
       "section": "Contract invariants",

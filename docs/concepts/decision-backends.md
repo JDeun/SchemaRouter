@@ -1,5 +1,7 @@
 # Decision backends
 
+**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. Other existing bounded fit/recall callbacks remain transitional. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
+
 SchemaRouter can optionally use a bounded decision model to refine choices that were already
 derived from the local schema catalog. This feature is **off by default**.
 
@@ -30,10 +32,11 @@ flowchart TD
 ## Opt in
 
 ```python
-from schemarouter import CallableDecisionBackend, DecisionPolicy, SchemaPlanner
+from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 backend = CallableDecisionBackend(my_decision_model)
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(
@@ -66,11 +69,12 @@ registered schema describes the right capability. `SchemaPlanner` can optionally
 **candidate recall backend** before final candidate selection:
 
 ```python
-from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
+from schemarouter import EmbeddingDecisionBackend
+from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 recall = EmbeddingDecisionBackend(multilingual_embed_batch)
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=4,
@@ -340,7 +344,8 @@ The provider-neutral `CallableDecisionBackend` can wrap the same application-own
 Claude, or other structured-output client:
 
 ```python
-from schemarouter import CallableDecisionBackend, DecisionPolicy, SchemaPlanner
+from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 async def cloud_decider(request):
     # Use the application's existing cloud-model client here.
@@ -362,7 +367,7 @@ async def cloud_decider(request):
 
 backend = CallableDecisionBackend(cloud_decider)
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(

@@ -62,9 +62,9 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "en_blob": "967ee400011e15cdb9a987906db4e5ef536dcc0c",
-      "ko_blob": "460e01c0a9aed672084811075077e39f168316c1",
-      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off."
+      "en_blob": "fd3e9abac537e50159695e1abc457e00f7a9c213",
+      "ko_blob": "e1f6d9a3eb21809db8c4249f1b00b7022056fb94",
+      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
     },
     {
       "path": "concepts/design-principles.md",
@@ -321,9 +321,9 @@
     },
     {
       "path": "guides/inspection.md",
-      "en_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c",
-      "ko_blob": "261900e61a04049ad4b108a07d0ea61ed1b0bc93",
-      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution."
+      "en_blob": "9d2c0755d9334ee6f4030067c4119f7ab647d033",
+      "ko_blob": "0956c6765500fe586446a2a5476f009d29e80cc6",
+      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
     },
     {
       "path": "guides/live-compatibility-matrix.md",
@@ -471,9 +471,9 @@
     },
     {
       "path": "integrations/jev.md",
-      "en_blob": "469d7712c7cecee68cb096be8ca5174a2622a948",
-      "ko_blob": "b45c958ca1959a7be773f33d912e0fb37bd31859",
-      "notes": "Matched TypeSafe choice bounded identity, SDK version, data privacy and no async client in sync mode, prior unknown-ID rejection and deterministic/error fallback."
+      "en_blob": "f8c0db693933594c18955aceba7d7cab0da268d5",
+      "ko_blob": "dc881ca4448b3bdf7576d964c19269b083d02b2e",
+      "notes": "Matched TypeSafe choice bounded identity, SDK version, data privacy and no async client in sync mode, prior unknown-ID rejection and deterministic/error fallback. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
     },
     {
       "path": "integrations/langchain.md",
@@ -513,9 +513,9 @@
     },
     {
       "path": "integrations/ollama.md",
-      "en_blob": "59efd519def797fb4ae2351697955881e7d7912d",
-      "ko_blob": "d35b2574639e0a391b569e37d7e47fed1b97887a",
-      "notes": "Matched finite enum IDs, local result revalidation, default loopback, token and self-score caveats, and optional context forwarding."
+      "en_blob": "b14f224f6cad1d2799c1bedf3ffb2fa0fe52bb7e",
+      "ko_blob": "da1794d1f7972b7a2990f9a7872f25bbd66c064a",
+      "notes": "Matched finite enum IDs, local result revalidation, default loopback, token and self-score caveats, and optional context forwarding. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off."
     },
     {
       "path": "integrations/opentelemetry.md",
@@ -985,6 +985,7 @@
     "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification.",
     "2026-11-02: Added preserved original-paper Algorithm 1 bilingual parity audit pair (#1846); recorded current source blobs without independent human translation sign-off.",
     "2026-11-26: Re-reviewed seven changed EN/KO page pairs after adaptive and state-conditioned backfill removal; synchronized exact source/target blobs and source translation manifest. Historical results and fixed Top-K typed-state eligibility preserved. AI-assisted source comparison only, not independent human review.",
-    "2026-11-26: Re-reviewed EN/KO API and decision-backend pages after removal of installed PairwiseDecisionBackend and PairwiseScoreCallable; archived comparison and regression scope explicit. AI-assisted source comparison only."
+    "2026-11-26: Re-reviewed EN/KO API and decision-backend pages after removal of installed PairwiseDecisionBackend and PairwiseScoreCallable; archived comparison and regression scope explicit. AI-assisted source comparison only.",
+    "2026-11-26: Compared four changed bilingual pairs after installed DecisionPolicy removal, historical checkout-only comparisons and live inspection-field removal. AI-assisted source review only."
   ]
 }

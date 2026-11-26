@@ -169,13 +169,11 @@ class PlannerInspection(StrictModel):
     """Privacy-safe view of the live planner configuration."""
 
     analyzer: str
-    decision_backend: str | None = None
     candidate_recall_backend: str | None = None
     candidate_recall_limit: int = Field(default=4, ge=1)
     candidate_fit_backend: str | None = None
     operation_fit_backend: str | None = None
     endpoint_disambiguation_backend: str | None = None
-    decision_policy: dict[str, object] = Field(default_factory=dict)
 
 
 class HealthProbeInspection(StrictModel):
@@ -397,7 +395,6 @@ def inspect_router(
     """Inspect a live SchemaRouter without exposing invokers, credentials, or payload values."""
 
     planner = router.planner
-    backend = planner.decision_backend
     recall_backend = planner.candidate_recall_backend
     fit_backend = planner.candidate_fit_backend
     operation_fit_backend = planner.operation_fit_backend
@@ -406,7 +403,6 @@ def inspect_router(
         registry=inspect_registry(router.registry),
         planner=PlannerInspection(
             analyzer=type(planner.analyzer).__name__,
-            decision_backend=type(backend).__name__ if backend is not None else None,
             candidate_recall_backend=(
                 type(recall_backend).__name__
                 if recall_backend is not None
@@ -428,7 +424,6 @@ def inspect_router(
                 if disambiguation_backend is not None
                 else None
             ),
-            decision_policy=planner.decision_policy.model_dump(mode="json"),
         ),
         decision_traces=tuple(
             inspect_capability_decision_trace(trace)

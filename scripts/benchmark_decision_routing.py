@@ -28,7 +28,6 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from schemarouter import (  # noqa: E402
     CallableDecisionBackend,
-    DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
     FieldSpec,
@@ -45,6 +44,10 @@ from schemarouter.integrations import (  # noqa: E402
     LayaDecisionBackend,
     OllamaDecisionBackend,
     SystemOneDecisionBackend,
+)
+from scripts.research_legacy_decision_policy import (  # noqa: E402
+    DecisionPolicy,
+    LegacyDecisionPlanner,
 )
 from scripts.research_legacy_pairwise import PairwiseDecisionBackend  # noqa: E402
 
@@ -1478,7 +1481,7 @@ async def main() -> None:
         planners.append(
             (
                 f"callable:{decision_callable_name}",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(
@@ -1509,7 +1512,7 @@ async def main() -> None:
         planners.append(
             (
                 f"plugin:{plugin_name}",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(
@@ -1544,7 +1547,7 @@ async def main() -> None:
         planners.append(
             (
                 "embedding",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(
@@ -1576,7 +1579,7 @@ async def main() -> None:
         planners.append(
             (
                 "jev",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(
@@ -1615,7 +1618,7 @@ async def main() -> None:
         planners.append(
             (
                 system_one_name,
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(
@@ -1650,7 +1653,7 @@ async def main() -> None:
         planners.append(
             (
                 f"laya:{laya_name}",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(
@@ -1683,7 +1686,7 @@ async def main() -> None:
         planners.append(
             (
                 f"ollama:{args.ollama_model}",
-                SchemaPlanner(
+                LegacyDecisionPlanner(
                     registry,
                     decision_backend=recorder,
                     decision_policy=DecisionPolicy(

@@ -2,7 +2,6 @@ import pytest
 
 from schemarouter import (
     CallableDecisionBackend,
-    DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
     EvidenceRequirements,
@@ -15,6 +14,7 @@ from schemarouter import (
     ServerProjectionSpec,
     ToolSpec,
 )
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 
 def registry() -> InMemoryRegistry:
@@ -616,7 +616,7 @@ def test_multi_call_decision_backend_cannot_prune_complementary_coverage() -> No
             ]
         }
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose_redundant_material_routes),
         decision_policy=DecisionPolicy(
@@ -710,7 +710,7 @@ async def test_async_multi_call_decision_backend_preserves_complementary_coverag
         ]
         return {"selections": [{"option_id": option.id} for option in selected]}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose_redundant),
         decision_policy=DecisionPolicy(
@@ -755,7 +755,7 @@ def test_decision_backend_is_off_by_default() -> None:
     backend = CallableDecisionBackend(
         lambda _: {"selections": [{"option_id": "candidate:999"}]}
     )
-    plan = SchemaPlanner(reg, decision_backend=backend).plan(
+    plan = LegacyDecisionPlanner(reg, decision_backend=backend).plan(
         PlanRequest(query="band gap", arguments={"formula": "Si"})
     )
     assert plan.calls[0].endpoint == "search"
@@ -764,7 +764,7 @@ def test_decision_backend_is_off_by_default() -> None:
 def test_enabled_decision_policy_requires_backend() -> None:
     reg = registry()
     with pytest.raises(PlanningError, match="no decision backend"):
-        SchemaPlanner(
+        LegacyDecisionPlanner(
             reg,
             decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
         )
@@ -798,7 +798,7 @@ def test_decision_backend_can_select_from_bounded_candidates() -> None:
             ]
         }
     )
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=backend,
         decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
@@ -812,7 +812,7 @@ def test_invalid_decision_falls_back_to_deterministic_by_default() -> None:
     backend = CallableDecisionBackend(
         lambda _: {"selections": [{"option_id": "candidate:evil"}]}
     )
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=backend,
         decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
@@ -826,7 +826,7 @@ def test_invalid_decision_can_fail_closed_without_fallback() -> None:
     backend = CallableDecisionBackend(
         lambda _: {"selections": [{"option_id": "candidate:evil"}]}
     )
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         reg,
         decision_backend=backend,
         decision_policy=DecisionPolicy(
@@ -841,7 +841,7 @@ def test_invalid_decision_can_fail_closed_without_fallback() -> None:
 
 def test_evidence_sufficiency_surface_no_longer_blocks_planner_construction() -> None:
     reg = registry()
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(
             lambda _: {"selections": [{"option_id": "evidence:sufficient"}]}
@@ -872,7 +872,7 @@ def test_field_decision_selects_only_declared_fields_and_preserves_identifier() 
         density = next(option for option in request.options if option.label == "density")
         return {"selections": [{"option_id": density.id, "score": 0.9}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose_density),
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),
@@ -899,7 +899,7 @@ def test_field_decision_bound_does_not_exceed_deterministic_answer_width() -> No
         ]
         return {"selections": [{"option_id": option_id} for option_id in selected]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(inspect_request),
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),
@@ -923,7 +923,7 @@ def test_invalid_field_decision_falls_back_to_deterministic_projection() -> None
         lambda _: {"selections": [{"option_id": "field:999"}]}
     )
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=backend,
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),
@@ -941,7 +941,7 @@ def test_invalid_field_decision_falls_back_to_deterministic_projection() -> None
 def test_field_decision_abstention_falls_back_to_deterministic_projection() -> None:
     reg = registry()
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),
@@ -961,7 +961,7 @@ def test_field_decision_abstention_falls_back_to_deterministic_projection() -> N
 
 def test_invalid_field_decision_can_fail_closed_without_fallback() -> None:
     reg = registry()
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(
             lambda _: {"selections": [{"option_id": "field:999"}]}
@@ -994,7 +994,7 @@ async def test_async_field_decision_uses_async_backend() -> None:
         )
         return {"selections": [{"option_id": option.id, "score": 0.8}]}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose_formation_energy),
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),
@@ -1016,7 +1016,7 @@ def test_decision_abstention_falls_back_to_deterministic() -> None:
     backend = CallableDecisionBackend(
         lambda _: {"abstained": True},
     )
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=backend,
         decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
@@ -1032,7 +1032,7 @@ def test_decision_provider_error_falls_back_to_deterministic() -> None:
     def failing_backend(_: object) -> dict[str, object]:
         raise RuntimeError("provider unavailable")
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(failing_backend),
         decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
@@ -1053,7 +1053,7 @@ def test_decision_backend_does_not_expand_empty_lexical_recall_by_default() -> N
         called = True
         return {"selections": [{"option_id": "candidate:0"}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose),
         decision_policy=DecisionPolicy(
@@ -1075,7 +1075,7 @@ def test_decision_backend_can_expand_empty_lexical_recall_when_opted_in() -> Non
         assert request.options[0].metadata["schema_score"] == 0.0
         return {"selections": [{"option_id": request.options[0].id, "score": 0.9}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose),
         decision_policy=DecisionPolicy(
@@ -1092,7 +1092,7 @@ def test_decision_backend_can_expand_empty_lexical_recall_when_opted_in() -> Non
 
 def test_empty_recall_abstention_fails_closed_without_arbitrary_deterministic_route() -> None:
     reg = registry()
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
         decision_policy=DecisionPolicy(
@@ -1115,7 +1115,7 @@ def test_empty_recall_provider_error_fails_closed_without_arbitrary_route() -> N
     def fail(_: object) -> dict[str, object]:
         raise RuntimeError("offline")
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(fail),
         decision_policy=DecisionPolicy(
@@ -1139,7 +1139,7 @@ async def test_async_decision_backend_can_expand_empty_lexical_recall() -> None:
     async def choose(request):
         return {"selections": [{"option_id": request.options[0].id}]}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose),
         decision_policy=DecisionPolicy(
@@ -1156,7 +1156,7 @@ async def test_async_decision_backend_can_expand_empty_lexical_recall() -> None:
 
 def test_candidate_abstention_can_suppress_existing_lexical_route() -> None:
     reg = registry()
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
         decision_policy=DecisionPolicy(
@@ -1176,7 +1176,7 @@ def test_candidate_no_route_abstention_does_not_change_provider_error_fallback()
     def fail(_: object) -> dict[str, object]:
         raise RuntimeError("offline")
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(fail),
         decision_policy=DecisionPolicy(
@@ -1198,7 +1198,7 @@ async def test_async_candidate_abstention_can_suppress_route() -> None:
     async def abstain(_: object) -> dict[str, object]:
         return {"abstained": True}
 
-    plan = await SchemaPlanner(
+    plan = await LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(abstain),
         decision_policy=DecisionPolicy(
@@ -1215,7 +1215,7 @@ async def test_async_candidate_abstention_can_suppress_route() -> None:
 
 def test_inherited_candidate_abstention_preserves_fallback_error_behavior() -> None:
     reg = registry()
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
         decision_policy=DecisionPolicy(
@@ -1291,7 +1291,7 @@ def test_plan_explanation_marks_decision_backend_candidate_selection() -> None:
         )
         return {"selections": [{"option_id": option.id}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose_secondary),
         decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
@@ -1309,7 +1309,7 @@ def test_plan_explanation_marks_decision_backend_field_selection() -> None:
         density = next(option for option in request.options if option.label == "density")
         return {"selections": [{"option_id": density.id}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         reg,
         decision_backend=CallableDecisionBackend(choose_density),
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),
@@ -2312,7 +2312,7 @@ def test_semantic_candidate_recall_is_bounded_before_final_decision() -> None:
         )
         return {"selections": [{"option_id": selected.id, "score": 0.95}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         decision_backend=CallableDecisionBackend(final),
         decision_policy=DecisionPolicy(
@@ -2344,7 +2344,7 @@ def test_semantic_candidate_recall_unions_with_existing_lexical_candidates() -> 
         )
         return {"selections": [{"option_id": selected.id}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         decision_backend=CallableDecisionBackend(final),
         decision_policy=DecisionPolicy(
@@ -2421,7 +2421,7 @@ def test_capability_fit_gate_passes_without_selecting_or_reordering_candidates()
         )
         return {"selections": [{"option_id": selected.id, "score": 0.95}]}
 
-    plan = SchemaPlanner(
+    plan = LegacyDecisionPlanner(
         _semantic_recall_registry(),
         decision_backend=CallableDecisionBackend(final),
         decision_policy=DecisionPolicy(

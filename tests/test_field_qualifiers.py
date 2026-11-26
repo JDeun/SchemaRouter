@@ -4,7 +4,6 @@ import pytest
 
 from schemarouter import (
     CallableDecisionBackend,
-    DecisionPolicy,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -17,6 +16,7 @@ from schemarouter import (
 )
 from schemarouter.dashboard import render_dashboard
 from schemarouter.inspection import inspect_registry, inspect_tool_spec
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 
 def _qualified_tool(
@@ -434,7 +434,7 @@ def test_field_decision_options_include_trusted_qualifiers() -> None:
             },
         )
     )
-    planner = SchemaPlanner(
+    planner = LegacyDecisionPlanner(
         registry,
         decision_backend=CallableDecisionBackend(decide),
         decision_policy=DecisionPolicy(enabled=True, field_selection=True),

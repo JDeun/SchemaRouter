@@ -1,5 +1,7 @@
 # 결정 백엔드
 
+**개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 기존 fit/recall 콜백은 전환 단계에서 유지됩니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
+
 SchemaRouter는 로컬 스키마 카탈로그에서 도출한 후보를 제한된 결정 모델로 보완할 수 있습니다. 이 기능은 기본적으로 **비활성화**되어 있습니다.
 
 Decision backend는 plan generator가 아닙니다. locally authorized된 유한 option ID 집합만 받고 그 안에서만 선택할 수 있습니다. typed execution plan은 계속 SchemaRouter가 구성하며 policy, schema validation, fingerprint, execution authority도 SchemaRouter에 남습니다.
@@ -20,10 +22,11 @@ flowchart TD
 ## 활성화
 
 ```python
-from schemarouter import CallableDecisionBackend, DecisionPolicy, SchemaPlanner
+from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 backend = CallableDecisionBackend(my_decision_model)
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(
@@ -49,11 +52,12 @@ planner = SchemaPlanner(
 다국어 질의나 바꿔 쓴 질의에서는 등록된 스키마에 적절한 기능이 기술되어 있어도 어휘 기반 검색이 올바른 엔드포인트를 놓칠 수 있습니다. `SchemaPlanner`는 최종 후보 선택 전에 별도의 **후보 재현율 개선 백엔드**를 선택적으로 추가할 수 있습니다.
 
 ```python
-from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
+from schemarouter import EmbeddingDecisionBackend
+from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 recall = EmbeddingDecisionBackend(multilingual_embed_batch)
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     candidate_recall_backend=recall,
     candidate_recall_limit=4,
@@ -241,7 +245,8 @@ Laya 또는 결정적 백엔드로 작업 요구 사항을 충족한다면 Ollam
 애플리케이션이 이미 호스팅 모델 API를 사용한다면 SchemaRouter는 Ollama나 Laya를 요구하지 않습니다. 제공자 중립적인 `CallableDecisionBackend`로 애플리케이션이 소유한 GPT, Gemini, Claude 또는 기타 구조화 출력 클라이언트를 감쌀 수 있습니다.
 
 ```python
-from schemarouter import CallableDecisionBackend, DecisionPolicy, SchemaPlanner
+from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 async def cloud_decider(request):
     # Use the application's existing cloud-model client here.
@@ -263,7 +268,7 @@ async def cloud_decider(request):
 
 backend = CallableDecisionBackend(cloud_decider)
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(

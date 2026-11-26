@@ -1,4 +1,10 @@
-from schemarouter import DecisionPolicy
+import inspect
+
+import pytest
+
+import schemarouter
+from schemarouter import InMemoryRegistry, SchemaPlanner
+from scripts.research_legacy_decision_policy import DecisionPolicy
 
 
 def test_decision_policy_is_off_by_default() -> None:
@@ -107,3 +113,16 @@ def test_inherited_candidate_abstention_preserves_error_fallback_semantics() -> 
 
     assert policy.candidate_abstention == "inherit"
     assert policy.candidate_abstention_mode == "error"
+
+
+def test_installed_planner_no_longer_accepts_decision_policy_or_backend() -> None:
+    assert not hasattr(schemarouter, "DecisionPolicy")
+    assert not hasattr(schemarouter, "DecisionFallback")
+    parameters = inspect.signature(SchemaPlanner).parameters
+    assert "decision_policy" not in parameters
+    assert "decision_backend" not in parameters
+    planner = SchemaPlanner(InMemoryRegistry())
+    assert not hasattr(planner, "decision_policy")
+    assert not hasattr(planner, "decision_backend")
+    with pytest.raises(TypeError, match="decision_policy"):
+        SchemaPlanner(InMemoryRegistry(), decision_policy=DecisionPolicy(enabled=True))

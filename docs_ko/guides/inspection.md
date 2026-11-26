@@ -121,7 +121,7 @@ snapshot = router.inspect()
 print(snapshot.model_dump_json(indent=2))
 ```
 
-Live view에는 analyzer class, configured decision-backend class, bounded decision policy, execution policy, actual bound tool key, availability cooldown 안의 access path, registered health-probe status/background monitor 상태가 추가됩니다.
+Live view에는 analyzer class, 전환 단계의 recall/fit/disambiguation backend, execution policy, actual bound tool key, availability cooldown 안의 access path, registered health-probe status/background monitor 상태가 추가됩니다.
 
 Invoker object, credential, arbitrary metadata value, argument/result/payload value는 포함하지 않습니다.
 
@@ -138,16 +138,7 @@ Invoker object, credential, arbitrary metadata value, argument/result/payload va
     "unclassified_endpoints": 0
   },
   "planner": {
-    "analyzer": "KeywordAnalyzer",
-    "decision_backend": null,
-    "decision_policy": {
-      "enabled": false,
-      "tool_selection": false,
-      "endpoint_selection": false,
-      "field_selection": false,
-      "evidence_sufficiency": false,
-      "fallback": "deterministic"
-    }
+    "analyzer": "KeywordAnalyzer"
   },
   "execution": {
     "policy": {

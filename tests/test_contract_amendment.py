@@ -535,18 +535,18 @@ def test_a_plan_built_before_the_amendment_is_still_rejected():
 
 
 def test_the_amendment_path_is_not_reachable_from_model_facing_code():
-    # This is a lint against future wiring, not a security proof: it only
-    # greps four named files for the two symbol names, so it cannot catch a
-    # leak introduced through indirection (re-export, dynamic dispatch, a new
-    # decision-adjacent module) and no change in runtime.py, executor.py, or
-    # integrations/ can turn it red. Its job is to fail fast and loudly the
-    # day someone imports `amend_capability` or `restamp_binding` into one of
-    # these four surfaces, which a decision backend receives finite option IDs
-    # from and never a router.
+    # Static lint, not a security proof. Check both installed model-facing
+    # surfaces and their relocated historical comparison implementations.
     from pathlib import Path
 
-    root = Path(__file__).resolve().parents[1] / "src" / "schemarouter"
-    for name in ("decisions.py", "decision_policy.py", "planner.py", "pairwise.py"):
+    root = Path(__file__).resolve().parents[1]
+    for name in (
+        "src/schemarouter/decisions.py",
+        "src/schemarouter/planner.py",
+        "src/schemarouter/paper_query_understanding.py",
+        "scripts/research_legacy_decision_policy.py",
+        "scripts/research_legacy_pairwise.py",
+    ):
         text = (root / name).read_text(encoding="utf-8")
         assert "amend_capability" not in text, name
         assert "restamp_binding" not in text, name

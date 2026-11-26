@@ -1,5 +1,7 @@
 # Jev / TypeSafe System One
 
+**Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. Other existing bounded fit/recall callbacks remain transitional. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
+
 SchemaRouter provides an optional bounded-decision adapter for TypeSafe System One models such as
 Jev. The adapter sits outside the core dependency graph and is **off by default**.
 
@@ -30,14 +32,14 @@ The SDK default model is `jev-latest`. You may override it explicitly.
 ## Synchronous usage
 
 ```python
-from schemarouter import DecisionPolicy, SchemaPlanner
+from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 from schemarouter.integrations import JevDecisionBackend
 
 backend = JevDecisionBackend(
     min_confidence=0.65,
 )
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(
@@ -61,7 +63,7 @@ backend = JevDecisionBackend(
     min_confidence=0.65,
 )
 
-planner = SchemaPlanner(
+planner = LegacyDecisionPlanner(
     registry,
     decision_backend=backend,
     decision_policy=DecisionPolicy(

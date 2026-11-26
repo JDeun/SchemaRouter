@@ -260,7 +260,8 @@ def test_live_router_inspection_reports_actual_binding_without_invoker_object() 
 
     assert snapshot.registry.tool_count == 1
     assert snapshot.planner.analyzer == "KeywordAnalyzer"
-    assert snapshot.planner.decision_backend is None
+    assert "decision_backend" not in snapshot.planner.model_dump()
+    assert "decision_policy" not in snapshot.planner.model_dump()
     assert snapshot.execution.bound_tools == [key]
     assert snapshot.execution.binding_states == {key: "ready"}
     assert snapshot.execution.policy["allow_mutations"] is False

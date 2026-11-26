@@ -157,9 +157,6 @@ def render_dashboard(
         policy = ", ".join(
             f"{key}={value}" for key, value in sorted(live.execution.policy.items())
         )
-        decision = ", ".join(
-            f"{key}={value}" for key, value in sorted(live.planner.decision_policy.items())
-        )
         binding_states = ", ".join(
             f"{key}={value}" for key, value in sorted(live.execution.binding_states.items())
         )
@@ -274,7 +271,6 @@ def render_dashboard(
 <h2>Live router</h2>
 <div class="live-grid">
 <div><strong>Analyzer</strong><br>{escape(live.planner.analyzer)}</div>
-<div><strong>Decision backend</strong><br>{escape(live.planner.decision_backend or "none")}</div>
 <div><strong>Candidate recall</strong><br>
 {escape(live.planner.candidate_recall_backend or "none")}
 (top {live.planner.candidate_recall_limit})</div>
@@ -290,7 +286,6 @@ def render_dashboard(
 <div><strong>Health monitor</strong><br>{escape(health_monitor)}</div>
 <div><strong>Schema watcher</strong><br>{escape(schema_watcher)}</div>
 <div><strong>Execution policy</strong><br><code>{escape(policy)}</code></div>
-<div><strong>Decision policy</strong><br><code>{escape(decision)}</code></div>
 </div>
 
 <h3>Capability decision traces</h3>

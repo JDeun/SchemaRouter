@@ -151,8 +151,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "DECISION_BACKEND_ENTRY_POINT_GROUP",
         "DecisionBackend",
         "DecisionBackendPluginInfo",
-        "DecisionFallback",
-        "DecisionPolicy",
         "DecisionCallable",
         "DecisionOption",
         "DecisionOptionTextCallable",
