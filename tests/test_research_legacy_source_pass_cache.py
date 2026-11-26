@@ -3,17 +3,15 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import PolicyViolationError, SchemaRouter
+from schemarouter import PolicyViolationError
 from schemarouter._source_availability import _SourceAvailability
 from test_native_source_pass_cache import _lookup, _router
 
-
-def _legacy_router(**kwargs):
-    return SchemaRouter(_legacy_routing=True, **kwargs)
+from scripts.research_legacy_router import legacy_router
 
 
 def test_shared_source_authority_keeps_exact_snapshot_fingerprints_and_legacy_override(monkeypatch):
-    router, posting, _graph = _router(monkeypatch, 4, router_factory=_legacy_router)
+    router, posting, _graph = _router(monkeypatch, 4, router_factory=legacy_router)
     authority = router._source_availability
     assert not hasattr(router.planner, "_snapshot_tool_fingerprint")
     index = router.planner._index()
@@ -33,7 +31,7 @@ def test_shared_source_authority_keeps_exact_snapshot_fingerprints_and_legacy_ov
 
 
 def test_native_lookup_rejects_replaced_legacy_availability_owner(monkeypatch):
-    router, posting, _graph = _router(monkeypatch, 4, router_factory=_legacy_router)
+    router, posting, _graph = _router(monkeypatch, 4, router_factory=legacy_router)
     monkeypatch.setattr(
         router.planner, "_source_availability",
         _SourceAvailability(router._source_availability_predicate()),

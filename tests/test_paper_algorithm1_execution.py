@@ -31,6 +31,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
 )
+from scripts.research_legacy_router import legacy_router
 
 QUERY = "Compare the requested measurement across the named sources"
 
@@ -40,7 +41,8 @@ def _fixture(
     legacy=False,
 ):
     principal = PrincipalContext(subject="analyst", roles=("reader",))
-    router = SchemaRouter(_legacy_routing=legacy, authorization_policy=AuthorizationPolicy(
+    router_factory = legacy_router if legacy else SchemaRouter
+    router = router_factory(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),

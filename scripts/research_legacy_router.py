@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from schemarouter import SchemaRouter
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 
-def legacy_router(**kwargs: Any) -> SchemaRouter:
+def legacy_router(**kwargs: Any) -> LegacySchemaRouter:
     """Construct the historical engine, never the product default."""
-    return SchemaRouter(_legacy_routing=True, **kwargs)
+    return LegacySchemaRouter(**kwargs)

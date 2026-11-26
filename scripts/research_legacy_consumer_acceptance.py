@@ -17,7 +17,6 @@ from schemarouter import (
     ParameterSpec,
     PlanRequest,
     RunConfig,
-    SchemaRouter,
     SQLiteRegistry,
     SQLiteRunTraceStore,
     ToolSpec,
@@ -27,10 +26,11 @@ from schemarouter import (
     write_dashboard,
 )
 from scripts.consumer_acceptance import Weather, current_weather
+from scripts.research_legacy_router import legacy_router
 
 
 async def scenario_happy_path() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_callable(current_weather)
 
     request = PlanRequest(
@@ -64,7 +64,7 @@ async def scenario_capability_retrieval() -> dict[str, object]:
         calls += 1
         return Weather(city=city, temperature=21.0)
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     key = router.add_callable(retrieval_probe)
     request = PlanRequest(
         query="current weather city",
@@ -113,7 +113,7 @@ async def scenario_capability_retrieval() -> dict[str, object]:
 
 
 async def scenario_parameter_alias_routing() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     provider_a = ToolSpec(
         name="provider_a",
         provider="a",
@@ -182,7 +182,7 @@ async def scenario_parameter_alias_routing() -> dict[str, object]:
 
 
 async def scenario_execution_ready_planning() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     unbound = ToolSpec(
         name="preferred_unbound",
         provider="provider_a",
@@ -241,7 +241,7 @@ async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
         dashboard_path = root / "dashboard.html"
 
         with SQLiteRegistry(registry_path) as registry:
-            router = SchemaRouter(_legacy_routing=True, registry=registry)
+            router = legacy_router(registry=registry)
             key = router.add_callable(current_weather)
 
             with SQLiteRunTraceStore(trace_path) as traces:
