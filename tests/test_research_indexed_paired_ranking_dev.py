@@ -5,11 +5,6 @@ import math
 
 import pytest
 
-from schemarouter.decisions import (
-    CallableDecisionBackend,
-    DecisionResult,
-    DecisionSelection,
-)
 from scripts.research_indexed_paired_ranking_dev import (
     ARMS,
     _cases,
@@ -18,6 +13,11 @@ from scripts.research_indexed_paired_ranking_dev import (
     build_direct_source,
     lexical_five,
     run_paired_dev,
+)
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+    DecisionResult,
+    DecisionSelection,
 )
 
 

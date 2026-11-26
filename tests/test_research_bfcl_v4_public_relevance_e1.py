@@ -6,7 +6,6 @@ import json
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.research_bfcl_v4_public_relevance_e1 import (
     _parse_jsonl,
@@ -16,6 +15,7 @@ from scripts.research_bfcl_v4_public_relevance_e1 import (
     evidence_only_lexical_guard,
     host_visible_lexical_choice,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 RELEVANT = {
     "name": "weather.forecast",

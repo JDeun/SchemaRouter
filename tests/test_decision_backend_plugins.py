@@ -5,17 +5,19 @@ from types import SimpleNamespace
 import pytest
 
 from schemarouter import (
-    DecisionOption,
-    DecisionRequest,
-    DecisionResult,
-    DecisionSelection,
     PlanningError,
-    choose_sync,
 )
 from scripts.research_legacy_decision_adapters import decision_plugins
 from scripts.research_legacy_decision_adapters.decision_plugins import (
     discover_decision_backend_plugins,
     load_decision_backend_plugin,
+)
+from scripts.research_legacy_decisions import (
+    DecisionOption,
+    DecisionRequest,
+    DecisionResult,
+    DecisionSelection,
+    choose_sync,
 )
 
 

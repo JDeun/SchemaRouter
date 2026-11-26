@@ -96,7 +96,7 @@
 
 ## CallableDecisionBackend
 
-::: schemarouter.CallableDecisionBackend
+이 계약은 배포 API에서 제거되었습니다. 과거 비교 실험에 한해 소스 체크아웃의 `scripts.research_legacy_decisions`를 사용합니다. [연구용 의사결정 백엔드](../concepts/decision-backends.md)를 참고하세요.
 
 ## ContractAmendmentError
 

@@ -27,8 +27,6 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from schemarouter import (  # noqa: E402
-    CallableDecisionBackend,
-    EmbeddingDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -50,6 +48,10 @@ from scripts.research_legacy_decision_adapters.decision_plugins import (  # noqa
 from scripts.research_legacy_decision_policy import (  # noqa: E402
     DecisionPolicy,
     LegacyDecisionPlanner,
+)
+from scripts.research_legacy_decisions import (  # noqa: E402
+    CallableDecisionBackend,
+    EmbeddingDecisionBackend,
 )
 from scripts.research_legacy_pairwise import PairwiseDecisionBackend  # noqa: E402
 

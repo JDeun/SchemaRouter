@@ -28,14 +28,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import (
-    CallableDecisionBackend,
-    DecisionBackend,
-    DecisionRequest,
-    DecisionResult,
-    EmbeddingDecisionBackend,
-    validate_decision,
-)
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
@@ -46,6 +38,14 @@ from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
 from scripts.evaluate_multilingual_embedding_cpu_dev import percentile
 from scripts.research_g5_decision_backend_ranker_e0 import (
     ResearchAuthorizedG5DecisionRanker,
+)
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+    DecisionBackend,
+    DecisionRequest,
+    DecisionResult,
+    EmbeddingDecisionBackend,
+    validate_decision,
 )
 
 ROOT = Path(__file__).resolve().parents[1]

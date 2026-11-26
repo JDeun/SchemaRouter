@@ -6,7 +6,6 @@ import json
 import pytest
 
 from schemarouter import AuthorizationPolicy, AuthorizationRule
-from schemarouter.decisions import EmbeddingDecisionBackend
 from scripts.research_g5_e5_overflow_cpu_dev import (
     ACCOUNT_QUERY_CARRIER,
     ACTOR,
@@ -18,6 +17,7 @@ from scripts.research_g5_e5_overflow_cpu_dev import (
     _source,
     run,
 )
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 
 
 def test_synthetic_native_source_real_g5_24_edges_and_no_gold_model_input():
@@ -143,7 +143,7 @@ def test_injected_embedding_never_attests_pinned_real_e5_or_calibrated_no_fit():
 def test_observer_fails_closed_when_embedding_backend_forges_score_metadata(
     monkeypatch,
 ):
-    from schemarouter.decisions import (
+    from scripts.research_legacy_decisions import (
         DecisionOption,
         DecisionRequest,
         DecisionResult,
@@ -191,7 +191,7 @@ def test_frozen_account_carrier_no_model_preserves_original_source_scope():
 
 
 def test_query_carrier_applied_uniformly_to_all_supported_not_ood():
-    from schemarouter.decisions import CallableDecisionBackend
+    from scripts.research_legacy_decisions import CallableDecisionBackend
 
     captured: list[str] = []
 
@@ -224,7 +224,7 @@ def test_query_carrier_applied_uniformly_to_all_supported_not_ood():
 
 
 def test_identical_source_description_omission_is_opt_in_and_never_scores():
-    from schemarouter.decisions import CallableDecisionBackend
+    from scripts.research_legacy_decisions import CallableDecisionBackend
 
     legacy = []
     shortened = []

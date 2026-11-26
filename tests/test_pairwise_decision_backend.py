@@ -5,9 +5,11 @@ import pytest
 
 import schemarouter
 from schemarouter import (
+    PlanningError,
+)
+from scripts.research_legacy_decisions import (
     DecisionOption,
     DecisionRequest,
-    PlanningError,
     choose_async,
     choose_sync,
 )

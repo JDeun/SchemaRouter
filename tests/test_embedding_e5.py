@@ -6,18 +6,20 @@ import math
 import pytest
 
 from schemarouter import (
-    DecisionOption,
-    DecisionRequest,
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
     EndpointSpec,
     InMemoryRegistry,
     PlanningError,
     PlanRequest,
     ToolSpec,
-    choose_sync,
 )
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
+from scripts.research_legacy_decisions import (
+    DecisionOption,
+    DecisionRequest,
+    EmbeddingDecisionBackend,
+    choose_sync,
+)
 
 
 def test_e5_prefix_and_repeated_option_embedding_cache() -> None:

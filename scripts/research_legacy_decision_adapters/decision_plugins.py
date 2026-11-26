@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from importlib import metadata
 from typing import Any, cast
 
-from schemarouter.decisions import DecisionBackend
+from scripts.research_legacy_decisions import DecisionBackend
 
 DECISION_BACKEND_ENTRY_POINT_GROUP = "schemarouter.decision_backends"
 

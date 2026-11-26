@@ -5,9 +5,9 @@ import json
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_qwen_protocol_boundary_optin_e0 import (
     OptInQwenProtocolBoundaryE0,
 )

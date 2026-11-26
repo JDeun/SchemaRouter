@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from schemarouter import E5CachedEmbedder, EmbeddingDecisionBackend
+from schemarouter import E5CachedEmbedder
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     CORPUS,
     PRINCIPAL,
@@ -34,6 +34,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
 )
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_MODEL = "intfloat/multilingual-e5-base"

@@ -16,11 +16,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import (
-    CallableDecisionBackend,
-    DecisionResult,
-    DecisionSelection,
-)
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import (
     IndexedNativeFieldCandidate,
@@ -29,6 +24,11 @@ from schemarouter.native_semantic_index import (
 from scripts.research_indexed_decision_backend_ranker_e0 import (
     MAX_MODEL_INPUT_BYTES,
     ResearchIndexedFieldDecisionRanker,
+)
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+    DecisionResult,
+    DecisionSelection,
 )
 
 PRINCIPAL = PrincipalContext(subject="index-experiment", roles=("analyst",))

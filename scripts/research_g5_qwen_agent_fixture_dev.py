@@ -15,10 +15,6 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import InMemoryRegistry, NativeDeclaredFieldGroup
-from schemarouter.decisions import (
-    CallableDecisionBackend,
-    DecisionBackend,
-)
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     run_generated_episode,
@@ -52,6 +48,10 @@ from scripts.research_g5_e5_overflow_cpu_dev import (
     QUERIES,
     SERVICE_NAMES,
     _source,
+)
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+    DecisionBackend,
 )
 
 ROOT = Path(__file__).resolve().parents[1]

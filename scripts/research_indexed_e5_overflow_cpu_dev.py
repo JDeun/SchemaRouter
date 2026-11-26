@@ -25,7 +25,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import CallableDecisionBackend, DecisionBackend
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     MODEL_ID,
@@ -37,6 +36,7 @@ from scripts.research_g5_e5_overflow_cpu_dev import OOD, QUERIES, SERVICE_NAMES
 from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend, DecisionBackend
 
 ROOT = Path(__file__).resolve().parents[1]
 K = 5

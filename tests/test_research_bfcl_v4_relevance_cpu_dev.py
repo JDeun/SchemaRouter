@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from schemarouter.decisions import EmbeddingDecisionBackend
 from schemarouter.embedding_e5 import E5CachedEmbedder
 from scripts.research_bfcl_v4_relevance_cpu_dev import (
     ORIGINAL_BLOBS,
@@ -18,6 +17,7 @@ from scripts.research_bfcl_v4_relevance_cpu_dev import (
     load_jsonl,
     load_originals,
 )
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 
 GOOD = {
     "name": "record_search.find",

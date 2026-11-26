@@ -1,6 +1,6 @@
 # Decision backends
 
-**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. The development package also removes the `jev`, `systemone`, and `laya` extras. Install research SDKs explicitly from a source checkout.
+**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. The development package also removes the `jev`, `systemone`, and `laya` extras. Install research SDKs explicitly from a source checkout. The shared request/result/validation contracts and Callable/Embedding/FirstOption backends are also archived in `scripts.research_legacy_decisions` and are not exposed by the development package. Generic E5 vector validation and caching remain independent of decision classes.
 
 **Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
@@ -34,7 +34,7 @@ flowchart TD
 ## Opt in
 
 ```python
-from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 backend = CallableDecisionBackend(my_decision_model)
@@ -71,7 +71,7 @@ registered schema describes the right capability. `LegacyDecisionPlanner` can op
 **candidate recall backend** before final candidate selection:
 
 ```python
-from schemarouter import EmbeddingDecisionBackend
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 recall = EmbeddingDecisionBackend(multilingual_embed_batch)
@@ -346,7 +346,7 @@ The provider-neutral `CallableDecisionBackend` can wrap the same application-own
 Claude, or other structured-output client:
 
 ```python
-from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 async def cloud_decider(request):
@@ -398,7 +398,7 @@ option; SchemaRouter computes cosine similarity locally and maps ranked vector p
 original opaque option IDs.
 
 ```python
-from schemarouter import EmbeddingDecisionBackend
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 
 backend = EmbeddingDecisionBackend(
     embed_batch,
@@ -432,7 +432,7 @@ remain in `tests/test_pairwise_decision_backend.py`. Existing applications must 
 
 ## Jev / TypeSafe System One
 
-SchemaRouter includes an optional `JevDecisionBackend` on current unreleased `main`:
+For historical comparison in a source checkout, use `JevDecisionBackend`:
 
 ```bash
 pip install -e . "typesafe-sdk>=0.7,<1"
@@ -459,8 +459,7 @@ See [Jev / TypeSafe System One](../integrations/jev.md) for sync/async usage and
 
 ## Local Laya decision models
 
-SchemaRouter includes an optional `LayaDecisionBackend` for local non-autoregressive bounded
-decisions:
+The archived `LayaDecisionBackend` performs local non-autoregressive bounded decisions:
 
 ```bash
 pip install -e . "laya>=0.3.6,<1"

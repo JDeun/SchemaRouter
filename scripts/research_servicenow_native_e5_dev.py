@@ -18,17 +18,19 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import (
-    DecisionOption,
-    DecisionRequest,
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
     SchemaRouter,
-    choose_sync,
 )
 from schemarouter.adapters.mcp import tool_from_mcp
 from scripts.external_validation_servicenow_platform_mcp import (
     load_package,
     validate_package,
+)
+from scripts.research_legacy_decisions import (
+    DecisionOption,
+    DecisionRequest,
+    EmbeddingDecisionBackend,
+    choose_sync,
 )
 
 # Match the independently pinned real Open-Meteo E5 CPU study, but do not

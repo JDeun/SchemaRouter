@@ -4,13 +4,15 @@ import pytest
 from pydantic import ValidationError
 
 from schemarouter import (
+    PlanningError,
+)
+from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
     DecisionOption,
     DecisionRequest,
     DecisionResult,
     DecisionSelection,
     FirstOptionDecisionBackend,
-    PlanningError,
     choose_async,
     choose_sync,
 )

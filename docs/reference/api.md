@@ -99,7 +99,7 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 
 ## CallableDecisionBackend
 
-::: schemarouter.CallableDecisionBackend
+This contract is no longer an installed API. For historical comparison only, use `scripts.research_legacy_decisions` from a source checkout. See [research decision backends](../concepts/decision-backends.md).
 
 ## ContractAmendmentError
 

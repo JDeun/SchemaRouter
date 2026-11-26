@@ -6,14 +6,14 @@ import threading
 from importlib import import_module
 from typing import Any
 
-from schemarouter.decisions import (
+from schemarouter.errors import PlanningError
+from scripts.research_legacy_decisions import (
     DecisionOption,
     DecisionRequest,
     DecisionResult,
     DecisionSelection,
     validate_decision,
 )
-from schemarouter.errors import PlanningError
 
 
 class LayaDecisionBackend:

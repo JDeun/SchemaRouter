@@ -23,13 +23,15 @@ from typing import Any
 
 from schemarouter import (
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
     EndpointSpec,
     FieldSpec,
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import DecisionOption, DecisionRequest, choose_sync
+from scripts.research_legacy_decisions import (
+    EmbeddingDecisionBackend,
+)
+from scripts.research_legacy_decisions import DecisionOption, DecisionRequest, choose_sync
 
 BFCL_COMMIT = "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
 ROOT = (

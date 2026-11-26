@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from schemarouter import (
+from scripts.research_legacy_decisions import (
     DecisionRequest,
     DecisionResult,
     DecisionSelection,

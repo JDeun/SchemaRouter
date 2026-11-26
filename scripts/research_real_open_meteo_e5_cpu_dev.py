@@ -21,14 +21,16 @@ from typing import Any
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
-    DecisionOption,
-    DecisionRequest,
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
     InMemoryRegistry,
     PlanRequest,
     PrincipalContext,
     SchemaRouter,
+)
+from scripts.research_legacy_decisions import (
+    DecisionOption,
+    DecisionRequest,
+    EmbeddingDecisionBackend,
     choose_sync,
 )
 from scripts.research_open_meteo_real_openapi_dev import (

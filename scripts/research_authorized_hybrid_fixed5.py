@@ -8,7 +8,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from schemarouter import PolicyViolationError
-from schemarouter.decisions import DecisionBackend
 from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
 )
@@ -16,6 +15,7 @@ from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
     _visible_fingerprints,
 )
+from scripts.research_legacy_decisions import DecisionBackend
 
 STRICT_K = 5
 FIXED_RRF_CONSTANT = 60

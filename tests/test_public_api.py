@@ -147,17 +147,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "BindingResolver",
         "ConfiguredSchemaRouter",
         "ContractAmendmentError",
-        "CallableDecisionBackend",
-        "DecisionBackend",
-        "DecisionCallable",
-        "DecisionOption",
-        "DecisionOptionTextCallable",
-        "DecisionRequest",
-        "DecisionResult",
-        "DecisionSelection",
         "DiscoveryProfile",
-        "EmbeddingCallable",
-        "EmbeddingDecisionBackend",
         "E5CachedEmbedder",
         "DefaultMCPClientFactory",
         "EligibilityStatus",
@@ -187,7 +177,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "FieldInspection",
         "FieldSelectionExplanation",
         "FieldSpec",
-        "FirstOptionDecisionBackend",
         "InMemoryRegistry",
         "EndpointInspection",
         "ExecutionInspection",
@@ -353,8 +342,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "tool_from_callable",
         "tool_from_odata_metadata",
         "analyze_openapi_compatibility",
-        "choose_async",
-        "choose_sync",
         "build_capability_artifact",
         "build_capability_dependency_graph",
         "compare_capability_composition",
@@ -520,3 +507,26 @@ assert "schemarouter.adapters.graph_native" not in sys.modules
 assert "schemarouter.adapters.record_native" not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_retired_decision_contract_is_not_installed() -> None:
+    from importlib.util import find_spec
+
+    assert find_spec("schemarouter.decisions") is None
+    for symbol in (
+        "CallableDecisionBackend",
+        "DecisionBackend",
+        "DecisionCallable",
+        "DecisionOption",
+        "DecisionOptionTextCallable",
+        "DecisionRequest",
+        "DecisionResult",
+        "DecisionSelection",
+        "EmbeddingCallable",
+        "EmbeddingDecisionBackend",
+        "FirstOptionDecisionBackend",
+        "choose_async",
+        "choose_sync",
+    ):
+        assert not hasattr(schemarouter, symbol), symbol
+    assert callable(schemarouter.E5CachedEmbedder)

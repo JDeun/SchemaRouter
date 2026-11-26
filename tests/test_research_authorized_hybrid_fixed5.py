@@ -16,7 +16,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
@@ -29,6 +28,7 @@ from scripts.research_authorized_hybrid_fixed5 import (
     FIXED_RRF_CONSTANT,
     AuthorizedHybridFixed5Selector,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 SECRET = "HIDDEN-HYBRID-1483"
 PRINCIPAL = PrincipalContext(subject="safe-reader", roles=("reader",))

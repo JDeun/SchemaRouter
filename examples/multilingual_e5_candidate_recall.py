@@ -14,12 +14,14 @@ from __future__ import annotations
 
 from schemarouter import (
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
     EndpointSpec,
     InMemoryRegistry,
     ToolSpec,
 )
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
+from scripts.research_legacy_decisions import (
+    EmbeddingDecisionBackend,
+)
 
 
 def main() -> None:

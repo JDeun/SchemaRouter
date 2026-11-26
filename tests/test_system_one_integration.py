@@ -4,8 +4,9 @@ from typing import Any
 
 import pytest
 
-from schemarouter import DecisionOption, DecisionRequest, PlanningError, choose_sync
+from schemarouter import PlanningError
 from scripts.research_legacy_decision_adapters import SystemOneDecisionBackend
+from scripts.research_legacy_decisions import DecisionOption, DecisionRequest, choose_sync
 
 
 class FakeChoiceAnswer:

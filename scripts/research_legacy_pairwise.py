@@ -7,7 +7,8 @@ import math
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Any
 
-from schemarouter.decisions import (
+from schemarouter.errors import PlanningError
+from scripts.research_legacy_decisions import (
     DecisionOption,
     DecisionOptionTextCallable,
     DecisionRequest,
@@ -15,7 +16,6 @@ from schemarouter.decisions import (
     DecisionSelection,
     validate_decision,
 )
-from schemarouter.errors import PlanningError
 
 PairwiseScoreCallable = Callable[
     [list[tuple[str, str]]],

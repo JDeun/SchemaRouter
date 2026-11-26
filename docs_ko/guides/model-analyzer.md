@@ -29,7 +29,7 @@ router = SchemaRouter(
 
 이 callable은 애플리케이션에서 이미 사용하는 호스팅 모델 클라이언트로 구현할 수 있습니다. 예를 들어 GPT, Gemini, Claude 또는 다른 공급자의 구조화 출력 API를 연결하되, SchemaRouter 자체에 해당 공급자의 SDK를 추가하지 않아도 됩니다.
 
-이 방식은 범위가 제한된 `DecisionBackend`와 구분됩니다.
+이 방식은 과거 비교용으로 보존된 범위가 제한된 `DecisionBackend`와 구분됩니다. `CallableDecisionBackend`는 소스 체크아웃의 `scripts.research_legacy_decisions`에서만 사용하며 배포 API가 아닙니다.
 
 | 인터페이스 | 모델에 보이는 정보 | 모델이 반환할 수 있는 정보 | SchemaRouter의 후속 처리 |
 | --- | --- | --- | --- |

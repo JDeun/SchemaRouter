@@ -36,6 +36,19 @@ def run_smoke() -> dict[str, object]:
         # This runs against a real installed wheel, not only the source tree.
         for symbol in (
             "DECISION_BACKEND_ENTRY_POINT_GROUP",
+            "CallableDecisionBackend",
+            "DecisionBackend",
+            "DecisionCallable",
+            "DecisionOption",
+            "DecisionOptionTextCallable",
+            "DecisionRequest",
+            "DecisionResult",
+            "DecisionSelection",
+            "EmbeddingCallable",
+            "EmbeddingDecisionBackend",
+            "FirstOptionDecisionBackend",
+            "choose_async",
+            "choose_sync",
             "DecisionBackendPluginInfo",
             "discover_decision_backend_plugins",
             "load_decision_backend_plugin",
@@ -51,6 +64,7 @@ def run_smoke() -> dict[str, object]:
             assert not hasattr(integrations, symbol), symbol
         for module in (
             "schemarouter.decision_plugins",
+            "schemarouter.decisions",
             "schemarouter.integrations.jev",
             "schemarouter.integrations.laya",
             "schemarouter.integrations.ollama",
@@ -65,7 +79,11 @@ def run_smoke() -> dict[str, object]:
             assert not requirement.lower().startswith(("typesafe-sdk", "laya"))
         files = package.files
         assert files is not None
-        assert not any("research_legacy_decision_adapters" in path.parts for path in files)
+        assert not any(
+            "research_legacy_decision_adapters" in path.parts
+            or path.name == "research_legacy_decisions.py"
+            for path in files
+        )
 
     assert callable(streamable_http_client)
     assert Client is not None

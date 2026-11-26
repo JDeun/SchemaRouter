@@ -8,12 +8,14 @@ import httpx
 import pytest
 
 from schemarouter import (
-    DecisionOption,
-    DecisionRequest,
     PlanningError,
-    choose_sync,
 )
 from scripts.research_legacy_decision_adapters import MicrosoftDecisionOneFoundryBackend
+from scripts.research_legacy_decisions import (
+    DecisionOption,
+    DecisionRequest,
+    choose_sync,
+)
 
 ENDPOINT = "https://example.services.ai.azure.com"
 DEPLOYMENT = "my-microsoft-decision-1-deployment"

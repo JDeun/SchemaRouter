@@ -210,6 +210,8 @@ transport time. The executor still owns schema, policy, retry, and binding-drift
 
 ### 14. Decision models must remain bounded and non-authoritative
 
+This section records the historical comparison contract, now preserved in `scripts.research_legacy_decisions` in a source checkout. The development product does not install or invoke that separate decision backend. The paper understanding stage and trusted execution authority remain distinct.
+
 `DecisionBackend` receives a finite set of locally generated option IDs. Unknown IDs, duplicate
 selections, out-of-range/non-finite scores, and malformed results fail closed. Jev / TypeSafe System
 One is an optional provider adapter; low-confidence valid choices may abstain and deterministic

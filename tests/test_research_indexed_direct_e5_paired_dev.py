@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.research_indexed_direct_e5_paired_dev import (
     LANGUAGES,
     _percentile,
     run,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 def test_public_synthetic_direct_index_benchmark_has_fixed_roster_and_gold_is_scored_later():

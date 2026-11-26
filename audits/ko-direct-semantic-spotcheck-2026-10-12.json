@@ -26,9 +26,9 @@
     },
     {
       "path": "architecture.md",
-      "en_blob": "d2fce0ced51fd9c23449be52376edccbe38ef930",
-      "ko_blob": "885ed7ac472161987dc83c971965663fce709c40",
-      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off."
+      "en_blob": "8a19191da0a6608c76e8bddb0d90f14b70428088",
+      "ko_blob": "a5215571f333f9d408d8d626cb8f1b42cc3e8f2f",
+      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
     },
     {
       "path": "assets/brand/README.md",
@@ -62,9 +62,9 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "en_blob": "8db66a3da75a435df0929b324730b15eec56d204",
-      "ko_blob": "02c1e9e97ea78d72397e50bca816a2c0a908c9a4",
-      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification."
+      "en_blob": "36e98b3d7933fa3d115c1493359c4e4e1f60dcef",
+      "ko_blob": "93b4ec158b15b97d42e92694b2eae57b5a80372c",
+      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
     },
     {
       "path": "concepts/design-principles.md",
@@ -339,9 +339,9 @@
     },
     {
       "path": "guides/model-analyzer.md",
-      "en_blob": "3a16b6252074911ddb692e6d2b73eb64bb16ee0d",
-      "ko_blob": "5d235425ccdc11f52030bb9f490e74a6846c99d9",
-      "notes": "Matched model analyzer versus bounded decision backend, no model execution authority, prompt-injection data boundary and async misuse failure."
+      "en_blob": "5e83fd08637a42a9b50d7864ba17ecea0767ad4d",
+      "ko_blob": "41b56adf52ee578d3bd64d57f65b6b1104a8d7fa",
+      "notes": "Matched model analyzer versus bounded decision backend, no model execution authority, prompt-injection data boundary and async misuse failure. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
     },
     {
       "path": "guides/multi-provider-evidence.md",
@@ -507,9 +507,9 @@
     },
     {
       "path": "integrations/microsoft-foundry-http-adapter.md",
-      "en_blob": "6978f7961e23eb3fb01ff5c4192dca6359278c4d",
-      "ko_blob": "b7bd1f9543c9da0853909a743c4b46566e3d9c20",
-      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged. 2026-10-15: escaped leading numeric issue refs to satisfy bilingual Markdown safety lint; no factual claims changed. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification."
+      "en_blob": "861bee92293ee148ec85e0784bfa423aa33a02ad",
+      "ko_blob": "dcb5cf26ce6bd3af5de5d60c7c5b7954d530c8fe",
+      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged. 2026-10-15: escaped leading numeric issue refs to satisfy bilingual Markdown safety lint; no factual claims changed. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
     },
     {
       "path": "integrations/ollama.md",
@@ -633,9 +633,9 @@
     },
     {
       "path": "reference/api.md",
-      "en_blob": "3c480380d91898a5054f3a4dc834d14f44827415",
-      "ko_blob": "3a9ba009377f5855edfa2e36bbb09275adbe501e",
-      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off."
+      "en_blob": "148b0373f8bb43574516da103b04b0695f95476e",
+      "ko_blob": "42f3f768a68ac5ad750acc0806447784f8ea2326",
+      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
     },
     {
       "path": "reference/models.md",

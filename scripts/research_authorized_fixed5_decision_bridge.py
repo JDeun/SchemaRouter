@@ -9,7 +9,6 @@ import time
 from dataclasses import dataclass, field
 
 from schemarouter import PolicyViolationError
-from schemarouter.decisions import DecisionBackend
 from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
 )
@@ -17,6 +16,7 @@ from scripts.research_bounded_authorized_semantic_diagnostic import (
     DiagnosticSemanticShortlist,
     propose_bounded_semantic_shortlist,
 )
+from scripts.research_legacy_decisions import DecisionBackend
 
 STRICT_K = 5
 MAX_OPTIN_MODEL_INPUT_BYTES = 262144  # 256 KiB, default stays 128 KiB.

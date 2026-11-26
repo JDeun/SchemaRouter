@@ -16,13 +16,13 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import EndpointSpec, InMemoryRegistry, SchemaRouter, ToolSpec
-from schemarouter.decisions import (
+from schemarouter.embedding_e5 import E5CachedEmbedder
+from scripts.research_legacy_decisions import (
     DecisionOption,
     DecisionRequest,
     EmbeddingDecisionBackend,
     choose_sync,
 )
-from schemarouter.embedding_e5 import E5CachedEmbedder
 
 UPSTREAM_REPO = "ShishirPatil/gorilla"
 UPSTREAM_COMMIT = "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"

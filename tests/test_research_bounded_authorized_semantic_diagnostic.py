@@ -15,11 +15,11 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.research_bounded_authorized_semantic_diagnostic import (
     propose_bounded_semantic_shortlist,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 VIEWER = PrincipalContext(subject="host-viewer", roles=("viewer",))
 OUTSIDER = PrincipalContext(subject="host-outsider", roles=("outsider",))

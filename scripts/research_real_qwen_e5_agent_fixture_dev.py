@@ -19,7 +19,6 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from schemarouter.decisions import DecisionBackend
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     run_generated_episode,
@@ -59,6 +58,7 @@ from scripts.research_authorized_fixed5_decision_bridge import (
 from scripts.research_authorized_hybrid_fixed5 import (
     AuthorizedHybridFixed5Selector,
 )
+from scripts.research_legacy_decisions import DecisionBackend
 from scripts.research_paired_agent_fixed5_e0 import (
     ARMS,
     aggregate_paired_e0,

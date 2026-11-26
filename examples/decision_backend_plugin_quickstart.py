@@ -5,14 +5,14 @@ Install the example package first:
     python -m pip install -e examples/decision_backend_plugin_demo
 """
 
-from schemarouter import (
-    DecisionOption,
-    DecisionRequest,
-    choose_sync,
-)
 from scripts.research_legacy_decision_adapters.decision_plugins import (
     discover_decision_backend_plugins,
     load_decision_backend_plugin,
+)
+from scripts.research_legacy_decisions import (
+    DecisionOption,
+    DecisionRequest,
+    choose_sync,
 )
 
 

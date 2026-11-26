@@ -21,17 +21,17 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
-from schemarouter import (  # noqa: E402
-    DecisionOption,
-    DecisionRequest,
-    choose_sync,
-)
 from scripts.evaluate_operation_intent_cpu_dev import (  # noqa: E402
     DESCRIPTIONS,
     load_corpus,
     p95,
 )
 from scripts.research_legacy_decision_adapters import LayaDecisionBackend  # noqa: E402
+from scripts.research_legacy_decisions import (  # noqa: E402
+    DecisionOption,
+    DecisionRequest,
+    choose_sync,
+)
 
 SOURCE_SHA256 = "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7"
 LAYA_VERSION = "0.4.7"

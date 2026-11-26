@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any, cast
 
 from schemarouter import InMemoryRegistry
-from schemarouter.decisions import DecisionBackend
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     run_generated_episode,
@@ -49,6 +48,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
 )
+from scripts.research_legacy_decisions import DecisionBackend
 from scripts.research_real_qwen_e5_agent_fixture_dev import (
     PILOT_IDS,
     PILOT_LANGUAGES,

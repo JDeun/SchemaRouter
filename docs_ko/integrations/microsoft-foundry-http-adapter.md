@@ -22,7 +22,7 @@ Microsoft Foundry는 리소스의
 ```python
 import os
 
-from schemarouter import DecisionOption, DecisionRequest, choose_sync
+from scripts.research_legacy_decisions import DecisionOption, DecisionRequest, choose_sync
 from scripts.research_legacy_decision_adapters import MicrosoftDecisionOneFoundryBackend
 
 backend = MicrosoftDecisionOneFoundryBackend(

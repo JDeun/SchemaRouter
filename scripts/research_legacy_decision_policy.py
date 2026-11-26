@@ -12,13 +12,6 @@ from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
-from schemarouter.decisions import (
-    DecisionBackend,
-    DecisionOption,
-    DecisionRequest,
-    choose_async,
-    choose_sync,
-)
 from schemarouter.errors import PlanningError
 from schemarouter.models import (
     EndpointSpec,
@@ -38,6 +31,13 @@ from schemarouter.planner import (
 )
 from schemarouter.planning_context import PlanningContext, RegistrySnapshot
 from schemarouter.planning_stages import CandidatePipelineResult, CandidateT, CoverageT
+from scripts.research_legacy_decisions import (
+    DecisionBackend,
+    DecisionOption,
+    DecisionRequest,
+    choose_async,
+    choose_sync,
+)
 
 ContextT = TypeVar("ContextT")
 

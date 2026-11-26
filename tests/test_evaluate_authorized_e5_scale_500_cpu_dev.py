@@ -6,11 +6,6 @@ import copy
 import pytest
 
 from schemarouter import ToolSpec
-from schemarouter.decisions import (
-    CallableDecisionBackend,
-    DecisionOption,
-    DecisionRequest,
-)
 from schemarouter.errors import PlanningError
 from scripts.evaluate_authorized_e5_scale_500_cpu_dev import (
     CORPUS,
@@ -31,6 +26,11 @@ from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+    DecisionOption,
+    DecisionRequest,
+)
 
 
 def fake_backend(request):

@@ -5,7 +5,6 @@ import json
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
 from scripts.research_e5_model_visible_order_e0 import (
@@ -15,6 +14,7 @@ from scripts.research_e5_model_visible_order_e0 import (
     UNATTESTED,
     run_order_probe,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 class NoToolWrongFinalAgent:

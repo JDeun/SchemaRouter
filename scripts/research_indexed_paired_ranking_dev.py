@@ -31,7 +31,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import DecisionBackend
 from schemarouter.native_semantic_index import (
     STRICT_K,
     IndexedNativeFieldCandidate,
@@ -53,6 +52,7 @@ from scripts.research_g5_e5_overflow_cpu_dev import (
 from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
+from scripts.research_legacy_decisions import DecisionBackend
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTOR = PrincipalContext(subject="indexed-paired-public-dev", roles=("reader",))

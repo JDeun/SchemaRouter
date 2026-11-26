@@ -21,7 +21,6 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
     EndpointSpec,
     PrincipalContext,
     SchemaRouter,
@@ -38,6 +37,9 @@ from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
 )
 from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Selector
+from scripts.research_legacy_decisions import (
+    EmbeddingDecisionBackend,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks/multilingual-embedding-cpu-dev-20261015.json"

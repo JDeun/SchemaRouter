@@ -4,13 +4,15 @@ import httpx
 import pytest
 
 from schemarouter import (
+    PlanningError,
+)
+from scripts.research_legacy_decision_adapters import OllamaDecisionBackend
+from scripts.research_legacy_decisions import (
     DecisionOption,
     DecisionRequest,
-    PlanningError,
     choose_async,
     choose_sync,
 )
-from scripts.research_legacy_decision_adapters import OllamaDecisionBackend
 
 
 def request(*, max_selections: int = 1) -> DecisionRequest:

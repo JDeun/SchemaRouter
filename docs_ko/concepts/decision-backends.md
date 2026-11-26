@@ -1,6 +1,6 @@
 # 결정 백엔드
 
-**연구 아카이브(개발 브랜치):** Jev, Laya, Ollama, System One, Microsoft Decision-1 및 의사결정 백엔드 플러그인 로더는 이제 `scripts/research_legacy_decision_adapters/`에서만 유지합니다. 과거 비교 실험은 소스 체크아웃이 필요하며 배포 라우터에 포함되지 않습니다. 개발 패키지에서 `jev`, `systemone`, `laya` 설치 옵션도 제거했습니다. 연구 SDK는 소스 체크아웃에서 명시적으로 설치합니다.
+**연구 아카이브(개발 브랜치):** Jev, Laya, Ollama, System One, Microsoft Decision-1 및 의사결정 백엔드 플러그인 로더는 이제 `scripts/research_legacy_decision_adapters/`에서만 유지합니다. 과거 비교 실험은 소스 체크아웃이 필요하며 배포 라우터에 포함되지 않습니다. 개발 패키지에서 `jev`, `systemone`, `laya` 설치 옵션도 제거했습니다. 연구 SDK는 소스 체크아웃에서 명시적으로 설치합니다. 공통 의사결정 요청·응답·검증 계약과 Callable/Embedding/FirstOption 백엔드도 `scripts.research_legacy_decisions`로 이전되었으며, 개발 배포 패키지에서 공개하지 않습니다. E5의 일반 벡터 검증과 캐시는 의사결정 클래스 없이 유지합니다.
 
 **개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 의미 기반 후보 검색, 기능·작업 적합성 및 엔드포인트 구분 콜백도 연구 전용 비교 Planner로 이전되었습니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
 
@@ -24,7 +24,7 @@ flowchart TD
 ## 활성화
 
 ```python
-from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 backend = CallableDecisionBackend(my_decision_model)
@@ -54,7 +54,7 @@ planner = LegacyDecisionPlanner(
 다국어 질의나 바꿔 쓴 질의에서는 등록된 스키마에 적절한 기능이 기술되어 있어도 어휘 기반 검색이 올바른 엔드포인트를 놓칠 수 있습니다. `LegacyDecisionPlanner`는 최종 후보 선택 전에 별도의 **후보 재현율 개선 백엔드**를 선택적으로 추가할 수 있습니다.
 
 ```python
-from schemarouter import EmbeddingDecisionBackend
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
 
 recall = EmbeddingDecisionBackend(multilingual_embed_batch)
@@ -247,7 +247,7 @@ Laya 또는 결정적 백엔드로 작업 요구 사항을 충족한다면 Ollam
 애플리케이션이 이미 호스팅 모델 API를 사용한다면 SchemaRouter는 Ollama나 Laya를 요구하지 않습니다. 제공자 중립적인 `CallableDecisionBackend`로 애플리케이션이 소유한 GPT, Gemini, Claude 또는 기타 구조화 출력 클라이언트를 감쌀 수 있습니다.
 
 ```python
-from schemarouter import CallableDecisionBackend
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 
 async def cloud_decider(request):
@@ -292,7 +292,7 @@ planner = LegacyDecisionPlanner(
 `EmbeddingDecisionBackend`는 로컬·호스팅 임베딩 모델에 대해 특정 제공자 의존성을 추가하지 않는 경로를 제공합니다. 임베더에는 사용자 질의와 허용된 선택지 각각의 텍스트 표현을 순서대로 전달합니다. SchemaRouter는 코사인 유사도를 로컬에서 계산하고 순위가 매겨진 벡터 위치를 원래의 불투명한 선택지 ID로 되돌립니다.
 
 ```python
-from schemarouter import EmbeddingDecisionBackend
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 
 backend = EmbeddingDecisionBackend(
     embed_batch,

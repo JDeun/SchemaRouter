@@ -32,7 +32,7 @@ The callable may be backed by the same hosted model client the application alrea
 example, an application can bridge GPT, Gemini, Claude, or another provider's structured-output API
 without adding that provider SDK to SchemaRouter itself.
 
-This is distinct from a bounded `DecisionBackend`:
+This is distinct from the historical bounded `DecisionBackend` contract. `CallableDecisionBackend` is now source-checkout research only (`scripts.research_legacy_decisions`), not an installed API:
 
 | Surface | Model sees | Model may return | SchemaRouter does next |
 | --- | --- | --- | --- |

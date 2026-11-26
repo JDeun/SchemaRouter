@@ -23,16 +23,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from schemarouter import (  # noqa: E402
-    DecisionOption,
-    DecisionRequest,
     E5CachedEmbedder,
-    EmbeddingDecisionBackend,
-    choose_sync,
 )
 from scripts.evaluate_multilingual_embedding_cpu_dev import (  # noqa: E402
     MODEL_CHOICES,
     aggregate,
     load_development_corpus,
+)
+from scripts.research_legacy_decisions import (  # noqa: E402
+    DecisionOption,
+    DecisionRequest,
+    EmbeddingDecisionBackend,
+    choose_sync,
 )
 
 SIZES = (13, 100, 250, 500)

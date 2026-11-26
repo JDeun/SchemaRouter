@@ -5,15 +5,16 @@
   "reviewed": [
     {
       "path": "architecture.md",
-      "en_blob": "d2fce0ced51fd9c23449be52376edccbe38ef930",
-      "ko_blob": "885ed7ac472161987dc83c971965663fce709c40",
+      "en_blob": "8a19191da0a6608c76e8bddb0d90f14b70428088",
+      "ko_blob": "a5215571f333f9d408d8d626cb8f1b42cc3e8f2f",
       "reviewed_contracts": [
         "Decision backend never owns ToolCall or credentials; Jev sees no DecisionOption.metadata",
         "Provenance/license/unit/source-type evidence must pass local prechecks before a provider can preserve/veto",
         "Execution hooks observe detached state but cannot transform calls/results or make retriable after-hook failures",
         "RunEvent trace data preserves redacted defaults; include_payloads=True requires host-managed sensitive data protection",
         "2026-10-12: reviewed and repinned corrected Korean source; no new independent human sentence-level certification implied.",
-        "2026-11-26: paired AI-assisted review of the module inventory delta only; retired decision providers/plugin loader removed from the installed module list in both languages; preserved historical bounded-provider, hook and trace-privacy contract text. No independent human sentence-level certification implied."
+        "2026-11-26: paired AI-assisted review of the module inventory delta only; retired decision providers/plugin loader removed from the installed module list in both languages; preserved historical bounded-provider, hook and trace-privacy contract text. No independent human sentence-level certification implied.",
+        "2026-11-26: paired AI-assisted delta review marks the historical bounded decision contract as source-only; the finite-choice, provider metadata privacy and execution-authority wording remains intact. No independent certification."
       ]
     },
     {

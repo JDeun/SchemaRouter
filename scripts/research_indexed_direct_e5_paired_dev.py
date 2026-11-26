@@ -21,7 +21,6 @@ from schemarouter import (
     CapabilityFieldContract,
     NativeDeclaredFieldGroup,
 )
-from schemarouter.decisions import CallableDecisionBackend, DecisionBackend
 from scripts.research_g5_e5_overflow_cpu_dev import (
     ACTOR,
     OOD,
@@ -32,6 +31,7 @@ from scripts.research_g5_e5_overflow_cpu_dev import (
 from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend, DecisionBackend
 
 K = 5
 LANGUAGES = ("en", "ko", "ja")

@@ -161,6 +161,8 @@ Protocol이 transport 시점에 selected field를 필요로 하면 call-aware in
 
 ### 14. Decision model은 제한된 비권위적 역할에 머물러야 한다
 
+이 절은 소스 체크아웃의 `scripts.research_legacy_decisions`에 보존된 과거 비교 계약을 설명합니다. 개발 제품은 별도의 의사결정 백엔드를 설치하거나 호출하지 않습니다. 원 논문 경로의 모델 이해 단계 및 신뢰된 실행 권한 경계는 별개입니다.
+
 `DecisionBackend`는 local에서 생성된 유한한 option ID 집합만 받습니다. 알 수 없는 ID, 중복 선택, 범위를 벗어나거나 finite하지 않은 score, malformed result는 fail-closed됩니다. Jev / TypeSafe System One은 optional provider adapter이며 낮은 confidence의 유효한 선택은 abstain할 수 있고 deterministic fallback은 local control에 남습니다.
 
 의사결정 제공자는 `ToolCall` 객체를 생성하지 않으며 실행 자격 증명이나 실행 권한을 받지 않습니다. 출력 필드 선택 시 제공자에게는 선언된 비식별자 출력 필드만 노출됩니다. 식별자 필드는 로컬에서 보존되며 제공자가 제거할 수 없습니다. 증거 충분성을 판단할 때는 제공자를 호출하기 전에 로컬 스키마 메타데이터가 요청된 출처·라이선스·단위·소스 유형 요건을 이미 충족해야 합니다. 이후 제공자는 해당 호출을 유지하거나 거부할 수만 있으며, 누락된 증거를 충족한 것으로 바꿀 수 없습니다. Jev에는 `DecisionOption.metadata`도 전달하지 않습니다.

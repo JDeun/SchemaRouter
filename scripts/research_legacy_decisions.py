@@ -1,3 +1,5 @@
+"""Historical bounded-choice contracts; source-checkout research only."""
+
 from __future__ import annotations
 
 import inspect
@@ -7,8 +9,8 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ._embedding_vectors import coerce_embedding_vectors, embedding_cosine
-from .errors import PlanningError
+from schemarouter._embedding_vectors import coerce_embedding_vectors, embedding_cosine
+from schemarouter.errors import PlanningError
 
 
 class _DecisionModel(BaseModel):

@@ -5,7 +5,6 @@ import json
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS
 from scripts.evaluate_multilingual_embedding_cpu_dev import (
     load_development_corpus,
@@ -14,6 +13,7 @@ from scripts.research_authorized_fingerprint_selector_paired_e5_cpu_dev import (
     ARMS,
     paired_fingerprint_selector_dev,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 def _first_five(request):

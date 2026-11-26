@@ -6,7 +6,6 @@ import json
 import pytest
 
 from schemarouter import AuthorizationPolicy, NativeDeclaredFieldGroup, PolicyViolationError
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
@@ -34,6 +33,7 @@ from scripts.research_g5_qwen_agent_fixture_dev import (
     run_fixture,
     summarize_balanced_prompt_runs,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 class RefusingAgent:

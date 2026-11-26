@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from schemarouter import E5CachedEmbedder, EmbeddingDecisionBackend
+from schemarouter import E5CachedEmbedder
 from scripts.research_bfcl_v4_public_relevance_e1 import (
     BFCL_COMMIT,
     MODEL_ID,
@@ -26,6 +26,7 @@ from scripts.research_bfcl_v4_public_relevance_e1 import (
     _words,
     fetch_original_data,
 )
+from scripts.research_legacy_decisions import EmbeddingDecisionBackend
 
 LIVE_BLOBS = {
     "live_relevance": ("BFCL_v4_live_relevance.json",

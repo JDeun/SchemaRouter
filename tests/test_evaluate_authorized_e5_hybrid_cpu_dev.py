@@ -5,7 +5,6 @@ import copy
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     ARMS,
@@ -15,6 +14,7 @@ from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     run_three_arm_dev,
 )
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 def rank_offered_options(request):

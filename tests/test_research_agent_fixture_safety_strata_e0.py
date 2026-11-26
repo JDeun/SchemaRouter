@@ -170,11 +170,11 @@ def test_forged_or_incomplete_support_strata_fail_closed(mutation):
 
 
 def test_original_source_and_mock_agent_pilot_still_cannot_claim_real_e2():
-    from schemarouter.decisions import CallableDecisionBackend
     from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS
     from scripts.evaluate_multilingual_embedding_cpu_dev import (
         load_development_corpus,
     )
+    from scripts.research_legacy_decisions import CallableDecisionBackend
     from scripts.research_real_local_agent_fixed5_e0_pilot import run_agent_pilot
 
     class NoModel:

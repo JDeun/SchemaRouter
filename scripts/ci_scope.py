@@ -78,11 +78,13 @@ _SCOPE_PATTERNS: dict[str, tuple[str, ...]] = {
         "examples/llamaindex_quickstart.py",
     ),
     "jev": (
+        "scripts/research_legacy_decisions.py",
         "scripts/research_legacy_decision_adapters/jev.py",
         "scripts/research_legacy_decision_adapters/system_one.py",
         "tests/test_jev_integration.py",
     ),
     "laya": (
+        "scripts/research_legacy_decisions.py",
         "scripts/research_legacy_decision_adapters/laya.py",
         "tests/test_laya_integration.py",
     ),

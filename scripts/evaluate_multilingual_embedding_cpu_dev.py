@@ -24,9 +24,11 @@ if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
 from schemarouter import (  # noqa: E402
+    E5CachedEmbedder,
+)
+from scripts.research_legacy_decisions import (  # noqa: E402
     DecisionOption,
     DecisionRequest,
-    E5CachedEmbedder,
     EmbeddingDecisionBackend,
     choose_sync,
 )

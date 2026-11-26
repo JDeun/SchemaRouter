@@ -9,17 +9,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from schemarouter.decisions import (
-    DecisionBackend,
-    DecisionOption,
-    DecisionRequest,
-    choose_sync,
-)
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import (
     MAX_RESEARCH_RANKABLE_POSTINGS,
     STRICT_K,
     IndexedNativeFieldCandidate,
+)
+from scripts.research_legacy_decisions import (
+    DecisionBackend,
+    DecisionOption,
+    DecisionRequest,
+    choose_sync,
 )
 
 MAX_MODEL_INPUT_BYTES = 16_384

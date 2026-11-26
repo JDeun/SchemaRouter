@@ -5,7 +5,6 @@ import copy
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
@@ -13,6 +12,7 @@ from scripts.research_authorized_snapshot_reuse_ab_cpu_dev import (
     PAIR,
     paired_source_reuse_dev,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 def fixed_backend(request):

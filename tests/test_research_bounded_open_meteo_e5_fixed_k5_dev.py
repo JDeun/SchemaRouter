@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.research_bounded_open_meteo_e5_fixed_k5_dev import (
     MAX_REGISTERED_ROUTES,
@@ -15,6 +14,7 @@ from scripts.research_bounded_open_meteo_e5_fixed_k5_dev import (
     percentile_95,
     run_visible_dev,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_open_meteo_real_openapi_dev import (
     SOURCE_COMMIT,
     SOURCE_NAMES,

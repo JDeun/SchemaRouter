@@ -17,7 +17,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
@@ -32,6 +31,7 @@ from scripts.research_authorized_fixed5_decision_bridge import (
 from scripts.research_bounded_authorized_semantic_diagnostic import (
     propose_bounded_semantic_shortlist,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 SECRET = "PRIVATE-CANARY-1481"
 VIEWER = PrincipalContext(subject="synthetic-viewer", roles=("viewer",))

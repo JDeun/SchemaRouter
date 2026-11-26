@@ -5,7 +5,6 @@ import json
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.research_indexed_e5_overflow_cpu_dev import (
     ACTOR,
     OOD,
@@ -15,6 +14,7 @@ from scripts.research_indexed_e5_overflow_cpu_dev import (
     _source,
     run,
 )
+from scripts.research_legacy_decisions import CallableDecisionBackend
 
 
 def test_direct_field_index_uses_native_source_tools_no_execution():

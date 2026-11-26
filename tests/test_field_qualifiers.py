@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from schemarouter import (
-    CallableDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -17,6 +16,9 @@ from schemarouter import (
 from schemarouter.dashboard import render_dashboard
 from schemarouter.inspection import inspect_registry, inspect_tool_spec
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+)
 
 
 def _qualified_tool(

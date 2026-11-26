@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from schemarouter import PolicyViolationError, PrincipalContext, SchemaRouter
-from schemarouter.decisions import (
+from scripts.research_legacy_decisions import (
     DecisionBackend,
     DecisionOption,
     DecisionRequest,

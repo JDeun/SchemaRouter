@@ -1,8 +1,6 @@
 import pytest
 
 from schemarouter import (
-    CallableDecisionBackend,
-    EmbeddingDecisionBackend,
     EndpointSpec,
     EvidenceRequirements,
     FieldSpec,
@@ -15,6 +13,10 @@ from schemarouter import (
     ToolSpec,
 )
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
+from scripts.research_legacy_decisions import (
+    CallableDecisionBackend,
+    EmbeddingDecisionBackend,
+)
 
 
 def registry() -> InMemoryRegistry:

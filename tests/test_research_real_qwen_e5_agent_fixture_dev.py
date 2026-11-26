@@ -6,9 +6,9 @@ import json
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
+from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_real_qwen_e5_agent_fixture_dev import (
     AGENT_MODEL_REVISION,
     PILOT_IDS,

@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from schemarouter.decisions import DecisionBackend
 from scripts import research_authorized_fixed5_decision_bridge as bridge
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     CORPUS,
@@ -39,6 +38,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_fingerprint_scan_ab_cpu_dev import (
     _original_visible_fingerprints,
 )
+from scripts.research_legacy_decisions import DecisionBackend
 
 ROUTES = 500
 ARMS = ("original_per_endpoint", "optimized_once_per_detached_tool")

@@ -4,10 +4,12 @@ from typing import Any
 import pytest
 
 from schemarouter import (
+    PlanningError,
+)
+from scripts.research_legacy_decisions import (
     DecisionOption,
     DecisionRequest,
     EmbeddingDecisionBackend,
-    PlanningError,
     choose_async,
     choose_sync,
 )
