@@ -95,7 +95,8 @@ def test_korean_laya_documentation_preserves_bounded_decision_semantics() -> Non
     )
     for required in (
         "개발 소스 체크아웃",
-        "다음 릴리스가 배포된 뒤",
+        "개발 패키지에 Laya 어댑터와 `laya` extra가 포함되지 않습니다.",
+        'pip install -e . "laya>=0.3.6,<1"',
         "캐시되지 않은 체크포인트 사이를 전환",
         "유효한 옵션 ID를 반환했더라도",
         "신뢰도가 임계값보다 낮은 Laya 선택을 보류",

@@ -11,7 +11,7 @@ from collections.abc import Callable, Iterable
 from hashlib import sha256
 from threading import RLock
 
-from .decisions import EmbeddingDecisionBackend
+from ._embedding_vectors import coerce_embedding_vectors
 from .errors import PlanningError
 
 E5Encoder = Callable[[list[str]], Iterable[Iterable[float]]]
@@ -60,7 +60,7 @@ class E5CachedEmbedder:
                     missing[digest] = passage
 
             batch = ["query: " + texts[0], *missing.values()]
-            vectors = EmbeddingDecisionBackend._coerce_vectors(
+            vectors = coerce_embedding_vectors(
                 self._encoder(batch), expected_count=len(batch),
             )
             query_vector, *new_vectors = vectors

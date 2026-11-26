@@ -17,7 +17,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, cast
 
-from schemarouter.decisions import EmbeddingDecisionBackend
+from schemarouter._embedding_vectors import coerce_embedding_vectors, embedding_cosine
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS, PRINCIPAL
 from scripts.evaluate_authorized_e5_scale_500_cpu_dev import (
     build_scaled_authorized_router,
@@ -123,7 +123,7 @@ def _sync_e5_vectors(backend: Any, texts: list[str]) -> list[list[float]]:
     raw = backend.embedder(texts)
     if inspect.isawaitable(raw):
         raise RuntimeError("real CPU E5 backend unexpectedly returned an awaitable")
-    return EmbeddingDecisionBackend._coerce_vectors(
+    return coerce_embedding_vectors(
         cast(Iterable[Iterable[float]], raw),
         expected_count=len(texts),
     )
@@ -149,8 +149,8 @@ def weighted_rank(
     for index, (full, operation) in enumerate(
         zip(full_vectors, operation_vectors, strict=True)
     ):
-        desc_cosine = EmbeddingDecisionBackend._cosine(query_vector, full)
-        op_cosine = EmbeddingDecisionBackend._cosine(query_vector, operation)
+        desc_cosine = embedding_cosine(query_vector, full)
+        op_cosine = embedding_cosine(query_vector, operation)
         score = (1.0 - weight) * desc_cosine + weight * op_cosine
         if not math.isfinite(score):
             raise ValueError("nonfinite source-only semantic score")

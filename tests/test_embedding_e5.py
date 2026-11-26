@@ -227,3 +227,30 @@ def test_model_receives_no_decision_option_private_metadata() -> None:
     )
     assert result.selections[0].option_id == "option:0"
     assert "DO_NOT_EXPOSE" not in repr(batches)
+
+
+@pytest.mark.parametrize(
+    ("vectors", "error"),
+    [
+        ([], "wrong number"),
+        ([[1.0], []], "empty vector"),
+        ([[1.0], [1.0, 0.0]], "inconsistent vector dimensions"),
+        ([[1.0], [math.inf]], "non-finite"),
+        ([[1.0], "1.0"], "invalid vector"),
+        ([[1.0], [None]], "invalid vector"),
+    ],
+)
+def test_invalid_vector_shapes_leave_e5_cache_empty(vectors, error: str) -> None:
+    embed = E5CachedEmbedder(lambda _: vectors)
+    with pytest.raises(PlanningError, match=error):
+        embed(["query", "passage"])
+    assert not embed._passages
+
+
+def test_e5_vector_validation_is_independent_of_decision_backend(monkeypatch) -> None:
+    def unexpected(*args, **kwargs):
+        pytest.fail("E5 called the legacy decision backend")
+
+    monkeypatch.setattr(EmbeddingDecisionBackend, "_coerce_vectors", unexpected)
+    embed = E5CachedEmbedder(lambda texts: [[1.0, 0.0] for _ in texts])
+    assert embed(["query", "passage"]) == [[1.0, 0.0], [1.0, 0.0]]
