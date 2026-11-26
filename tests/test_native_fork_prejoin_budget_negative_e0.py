@@ -112,7 +112,7 @@ def test_indexed_common_root_prefilter_elides_unrelated_arms_before_cap(
 
     # Remove unrelated routes only at live availability, with the same index.
     # The authorized, source-pinned genuine fork becomes discoverable again.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith("fork_noise_")
     )
     restored = index.lookup_shared_root_forks(
@@ -398,7 +398,7 @@ def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
 
     # Even the tightened budget must handle a live availability revocation
     # without a catalog rebuild or stale partial-candidate disclosure.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith("fork_extra_status_")
     )
     restored = index.lookup_shared_root_forks(

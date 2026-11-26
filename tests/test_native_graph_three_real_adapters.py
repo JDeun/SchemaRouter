@@ -163,7 +163,7 @@ def _catalog(*, mcp_review: bool = True, hide_contact: bool = False):
             hidden_fields=("contact_id",),
         ),) if hide_contact else (),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     for tool in (
         _openapi_contact(), _mcp_case(host_review=mcp_review),
         _discovered_optimade(),

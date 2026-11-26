@@ -112,7 +112,7 @@ def _router(
             hidden_fields=("owner",),
         ),) if hidden_right else (),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     router.add_tool(_root(
         required=required_root_key,
         source_type=root_source_type, license=root_license,
@@ -281,7 +281,7 @@ def test_shared_root_rejects_hidden_denied_optional_or_unhealthy_branch(conditio
         required_root_key=condition != "optional_root",
     )
     if condition == "unavailable":
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             lambda tool, _endpoint: tool.key != "right_0"
         )
     result = _index(router).lookup_shared_root_forks(
@@ -333,7 +333,7 @@ def test_shared_root_rechecks_both_fields_after_live_health_change():
             return right_seen <= 2
         return True
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError, match="G5 fork eligibility changed during lookup",
     ):
@@ -369,7 +369,7 @@ def test_shared_root_callback_error_redacts_original_private_exception():
     def bad_health(_tool, _endpoint):
         raise RuntimeError(secret)
 
-    router.planner.availability_predicate = bad_health
+    router._source_availability.predicate = bad_health
     with pytest.raises(
         PolicyViolationError, match="G5 fork eligibility changed",
     ) as caught:
@@ -522,7 +522,7 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
             )
         leaves.append(leaf)
 
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

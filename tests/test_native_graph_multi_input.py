@@ -77,7 +77,7 @@ def _router(
             ),) if hidden else ()
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     router.add_tool(ToolSpec(
         name="contacts", source_type="crm", license="owner-reviewed",
         endpoints=[EndpointSpec(
@@ -212,13 +212,13 @@ def test_hidden_one_required_identifier_blocks_complete_multi_binding() -> None:
 def test_unavailable_producer_and_schema_version_change_fail_closed() -> None:
     router = _router()
     idx = _index(router)
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, endpoint: tool.key != "contacts"
     )
     assert idx.lookup(
         router, GROUP.aliases[0], group=GROUP, principal=ACTOR,
     ).status == "no_proven_hit"
-    router.planner.availability_predicate = None
+    router._source_availability.predicate = None
     router.add_tool(ToolSpec(
         name="unrelated", source_type="crm", license="owner-reviewed",
         endpoints=[EndpointSpec(name="read", read_only=True)],
@@ -339,7 +339,7 @@ def test_actual_openapi_producer_and_mcp_two_required_inputs_are_bound() -> None
             ),
         ),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

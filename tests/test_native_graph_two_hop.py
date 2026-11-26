@@ -96,7 +96,7 @@ def _router(
             hidden_fields=("case_id",),
         ),) if hidden_intermediate else (),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     router.add_tool(_node(
         "root", output_name="contact_id",
         output_semantic="crm.contact_id", output_type=root_output_type,
@@ -218,7 +218,7 @@ def test_two_hop_explicit_sixth_target_filters_before_k_without_granting_authori
 
 
 def test_one_hop_explicit_sixth_target_filters_before_k():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
@@ -284,7 +284,7 @@ def test_two_hop_same_callable_late_health_revocation_fails_closed():
             disabled = True
         return not (disabled and tool.key == "intermediate")
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError,
         match="G5 two-hop source eligibility changed during lookup",
@@ -323,7 +323,7 @@ def test_two_hop_availability_callback_never_leaks_private_error():
     def broken(_tool, _endpoint):
         raise RuntimeError(secret)
 
-    router.planner.availability_predicate = broken
+    router._source_availability.predicate = broken
     with pytest.raises(
         PolicyViolationError, match="G5 two-hop source eligibility changed",
     ) as caught:

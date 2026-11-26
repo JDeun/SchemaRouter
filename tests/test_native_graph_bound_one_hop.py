@@ -57,7 +57,6 @@ def _fixture(
         ),) if deny_consumer else ()
     )
     router = SchemaRouter(
-        _legacy_routing=True,
         policy=ExecutionPolicy(rules=rules),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
@@ -128,7 +127,7 @@ def _fixture(
         assert endpoint == "read"
         seen.append(("source", dict(arguments)))
         if revoke_consumer_after_source:
-            router.planner.availability_predicate = (
+            router._source_availability.predicate = (
                 lambda tool, candidate: tool.key != "cases"
             )
         return dict(out)

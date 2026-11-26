@@ -89,7 +89,7 @@ def _router(
             hidden_fields=("record_id",),
         ),) if hidden_at is not None else ()
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=rules, data_rules=data_rules,
     ))
     router.add_tool(_tool("root", output="billing.id_0"))
@@ -222,7 +222,7 @@ def test_late_same_callable_revocation_invalidates_all_earlier_deep_paths():
             revoked = True
         return not (revoked and tool.key == "mid_0")
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError,
         match="G5 bounded path eligibility changed during lookup",
@@ -264,7 +264,7 @@ def test_deep_path_availability_exception_redacts_private_provider_details():
     def broken(_tool, _endpoint):
         raise RuntimeError(private)
 
-    router.planner.availability_predicate = broken
+    router._source_availability.predicate = broken
     with pytest.raises(
         PolicyViolationError, match="G5 bounded path eligibility changed",
     ) as caught:
@@ -323,7 +323,7 @@ def test_bounded_graph_budget_counts_rejected_candidate_probes(
             return not tool.key.startswith("target_")
         return not tool.key.startswith("alternate_")
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError,
         match="G5 bounded path eligibility changed during lookup",
