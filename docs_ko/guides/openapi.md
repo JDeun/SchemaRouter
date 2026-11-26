@@ -77,7 +77,7 @@ body: array[string]
 Strictly tagged `oneOf`의 discriminator contract는 각 branch가 자체적으로 unique tag를 증명할
 때만 인식합니다. Mapping 문자열만 믿어서 local schema contract를 약화시키지 않습니다.
 
-임의의 `oneOf`·`anyOf`를 평탄화하면 서로 다른 변형의 필드가 합쳐져 잘못된 본문이 될 수 있습니다. 엄격한 discriminator를 인정하려면 `discriminator.propertyName`이 선언되고, 모든 분기가 객체여야 하며, 각 분기는 해당 필드를 필수로 요구하고 고유한 `const` 또는 단일 값 `enum`을 증명해야 합니다. 모델이 제안한 변형도 로컬에서 전체 검증합니다. 임의의 `oneOf`/`anyOf` 본문은 서로 다른 branch의 필드를 합치지 않고 하나의 타입이 지정된 루트 `body` 파라미터로 보존합니다. 플래너에도 원래의 composed `oneOf` 스키마와 discriminator metadata를 전달하고 전체 객체를 원래 JSON Schema로 검증한 뒤, OpenAPI invoker가 객체를 그대로 JSON 요청의 최상위 값으로 전송합니다. `{"body": ...}` 같은 wrapper를 새로 만들지 않습니다. 호출자가 소유한 `ModelQueryAnalyzer`에 연결된 GPT·Gemini·Claude 등 structured-output 모델이 완전한 `body`를 제안할 수 있지만 알 수 없는 인자와 스키마에 맞지 않는 변형은 실행 전에 로컬에서 거부합니다.
+임의의 `oneOf`·`anyOf`를 평탄화하면 서로 다른 변형의 필드가 합쳐져 잘못된 본문이 될 수 있습니다. 엄격한 discriminator를 인정하려면 `discriminator.propertyName`이 선언되고, 모든 분기가 객체여야 하며, 각 분기는 해당 필드를 필수로 요구하고 고유한 `const` 또는 단일 값 `enum`을 증명해야 합니다. 모델이 제안한 변형도 로컬에서 전체 검증합니다. 임의의 `oneOf`/`anyOf` 본문은 서로 다른 branch의 필드를 합치지 않고 하나의 타입이 지정된 루트 `body` 파라미터로 보존합니다. 플래너에도 원래의 composed `oneOf` 스키마와 discriminator metadata를 전달하고 전체 객체를 원래 JSON Schema로 검증한 뒤, OpenAPI invoker가 객체를 그대로 JSON 요청의 최상위 값으로 전송합니다. `{"body": ...}` 같은 wrapper를 새로 만들지 않습니다. 호출자가 소유한 모델이 완전한 `body`를 제안하더라도 알 수 없는 인자와 스키마에 맞지 않는 변형은 실행 전에 로컬에서 거부합니다. 기존 카탈로그 기반 `ModelQueryAnalyzer`는 연구용으로만 보존합니다.
 
 ```yaml
 schema:

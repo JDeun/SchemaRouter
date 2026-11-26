@@ -1,26 +1,19 @@
 # OpenAPI agent boundary
 
 Use this pattern when a broader agent should reason conversationally but tool execution must stay
-schema-constrained.
+schema-constrained. The agent provides an explicit request and arguments; the product router does not invoke a separate catalog-based model analyzer.
 
 ```python
 from schemarouter import (
     ExecutionPolicy,
-    ModelQueryAnalyzer,
     PlanRequest,
     SchemaRouter,
 )
 
 
-async def structured_model(payload: dict) -> dict:
-    # Bridge to your model provider.
-    ...
-
-
 router = await SchemaRouter.from_url(
     "https://docs.example.com/openapi.json",
     kind="openapi",
-    analyzer=ModelQueryAnalyzer(structured_model),
     base_url="https://api.example.com/",
     trusted_headers={"Authorization": "Bearer ..."},
     policy=ExecutionPolicy(

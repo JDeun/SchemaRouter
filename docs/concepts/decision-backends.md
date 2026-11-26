@@ -521,7 +521,7 @@ registered tools, execution policy, or the deterministic planner.
 ## Benchmarking
 
 Use `scripts/benchmark_decision_routing.py` to compare the deterministic baseline,
-`ModelQueryAnalyzer`, local embedding backends, Jev, Laya, and explicitly selected local Ollama models
+the archived `ModelQueryAnalyzer`, local embedding backends, Jev, Laya, and explicitly selected local Ollama models
 on the same cases.
 
 See [Decision routing benchmark](../guides/decision-benchmark.md).

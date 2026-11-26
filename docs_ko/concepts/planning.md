@@ -23,9 +23,7 @@ request = PlanRequest(
 기본 `KeywordAnalyzer`는 결정론적이며 offline으로 동작합니다. Query의 용어를 선언된 tool,
 endpoint, parameter, field에 대응시킵니다.
 
-더 풍부한 자연어 추출이 필요하면 `ModelQueryAnalyzer`를 주입할 수 있습니다. 그러나 model
-output은 어디까지나 제안입니다. 알 수 없는 tool, endpoint, parameter, field는 제거한 뒤
-결정론적 planning을 계속합니다.
+기존 카탈로그 기반 `ModelQueryAnalyzer`는 소스 체크아웃의 연구 아카이브로 이전되었습니다. 원 논문의 스키마 독립적 Understand는 별도 경로입니다. 모든 모델 출력은 실행 권한이 없는 제안이며, 로컬 검증 및 실행 정책은 계속 적용됩니다.
 
 ## Candidate scoring
 
@@ -212,7 +210,7 @@ Global source-type과 field-specific source-type constraint가 충돌하면 거�
 `ToolCall.field_evidence` map에는 명시적 field-specific requirement가 어떤 local provider
 field에 적용되었는지 기록됩니다.
 
-Field별 evidence는 caller가 통제합니다. `ModelQueryAnalyzer`는 이를 보존하지만 model에
+Field별 evidence는 caller가 통제합니다. 연구용으로 보존된 `ModelQueryAnalyzer`는 이를 보존하지만 model에
 노출하지 않으며, model output이 신뢰된 constraint를 추가·제거·확장하도록 허용하지 않습니다.
 활성 `field_evidence` key는 등록된 canonical semantic field ID 또는 semantic ID가 없을 때
 field name으로 해석되어야 합니다. 알 수 없는 활성 key는 조용히 무시하지 않고 fail-closed됩니다.

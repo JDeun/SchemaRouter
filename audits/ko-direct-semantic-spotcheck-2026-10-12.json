@@ -26,9 +26,9 @@
     },
     {
       "path": "architecture.md",
-      "en_blob": "8a19191da0a6608c76e8bddb0d90f14b70428088",
-      "ko_blob": "a5215571f333f9d408d8d626cb8f1b42cc3e8f2f",
-      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
+      "en_blob": "dd94e575c550b244de6cf0643119c4861125ade7",
+      "ko_blob": "c1dcf22a41b07916828c9eeae9d51c2fc595b037",
+      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "assets/brand/README.md",
@@ -62,9 +62,9 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "en_blob": "36e98b3d7933fa3d115c1493359c4e4e1f60dcef",
-      "ko_blob": "93b4ec158b15b97d42e92694b2eae57b5a80372c",
-      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
+      "en_blob": "e9765b73f793c53a0d9cd752cb19a0a2f3d99d58",
+      "ko_blob": "b00f0f098435bc81b58cf30757e71f35cb9cfa9a",
+      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of retired DecisionPolicy callbacks, research-only examples and inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of checkout-only semantic recall, capability/operation fit and endpoint disambiguation examples and removed inspection fields; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "concepts/design-principles.md",
@@ -87,9 +87,9 @@
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "299044c8b307ee58b7a6dd72fea2273dac9e1a81",
-      "ko_blob": "864ff708e6b156d1cd2805632520ced9cabb0a61",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "982890c0e47393ccd92fcf7ced29fe3974a15446",
+      "ko_blob": "761fa1ae70394147f7d08b547a82c3eb8a4ead05",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -267,9 +267,9 @@
     },
     {
       "path": "guides/decision-benchmark.md",
-      "en_blob": "06dc2b9a46a473265aa7aa31b808b9cf566d8b51",
-      "ko_blob": "fcd8dbc772ba2c65577f677a09856af91f428445",
-      "notes": "Compared all English/Korean benchmark protocol, 144/v2-v11 corpus sizes/splits, consumed-holdout restrictions and contamination, controls for Laya/Jev/Ollama, confidence/abstention and reproducibility. Checked v7 0.45, v9/v10 0.40 and v11 BGE negative-result numeric measures/intervals; preserved no-generalization and non-tuning boundaries. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification."
+      "en_blob": "3ee835caf76c42f6334b348d6bd500311db1de29",
+      "ko_blob": "3f85823ac2633bce4e91ca843efc9f4412f6d927",
+      "notes": "Compared all English/Korean benchmark protocol, 144/v2-v11 corpus sizes/splits, consumed-holdout restrictions and contamination, controls for Laya/Jev/Ollama, confidence/abstention and reproducibility. Checked v7 0.45, v9/v10 0.40 and v11 BGE negative-result numeric measures/intervals; preserved no-generalization and non-tuning boundaries. 2026-11-26: paired AI-assisted migration review: retired extras removed, research SDK installation made explicit or archive notice updated; historical comparison and authority limits retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "guides/enterprise-data-onboarding.md",
@@ -339,9 +339,9 @@
     },
     {
       "path": "guides/model-analyzer.md",
-      "en_blob": "5e83fd08637a42a9b50d7864ba17ecea0767ad4d",
-      "ko_blob": "41b56adf52ee578d3bd64d57f65b6b1104a8d7fa",
-      "notes": "Matched model analyzer versus bounded decision backend, no model execution authority, prompt-injection data boundary and async misuse failure. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification."
+      "en_blob": "914c76b76334ab7b718896ef6a0384dd4173e57f",
+      "ko_blob": "74163b9e3387961ce51da98248eb8bf689832a0a",
+      "notes": "Matched model analyzer versus bounded decision backend, no model execution authority, prompt-injection data boundary and async misuse failure. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "guides/multi-provider-evidence.md",
@@ -363,9 +363,9 @@
     },
     {
       "path": "guides/openapi.md",
-      "en_blob": "9541abb9de15d1c3073fa1ab755de57ca397e064",
-      "ko_blob": "f8e8c5abc2313d4b1587a3083e6d75ca20e90cbc",
-      "notes": "Direct English/Korean side-by-side check of input body variant isolation, nullable semantics, origin/ref confinement, id/anchor resolving, 16MiB streamed cap, 5MiB docs and YAML parser limits, record-preserving arrays and trusted-only enrichment."
+      "en_blob": "2beae42ac638dabb527f9324b541f1a60fab58d8",
+      "ko_blob": "a33b5fe11c5103954968f4473c25d6c980c7638f",
+      "notes": "Direct English/Korean side-by-side check of input body variant isolation, nullable semantics, origin/ref confinement, id/anchor resolving, 16MiB streamed cap, 5MiB docs and YAML parser limits, record-preserving arrays and trusted-only enrichment. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "guides/openrpc.md",
@@ -627,9 +627,9 @@
     },
     {
       "path": "recipes/openapi-agent.md",
-      "en_blob": "ba590adcb7eec9ad0ee276235a054258f8108dff",
-      "ko_blob": "35fd53aeb847e7455549b747a6498ab55f12b4ac",
-      "notes": "Matched top-level conversational-agent autonomy and retained local schema, caller argument, policy and input/output validation constraints."
+      "en_blob": "ac17fff14fcdcf9aad636e03520e490cf0bbe912",
+      "ko_blob": "a988ab4f660089e8cd70eb577a7c67e308ad7427",
+      "notes": "Matched top-level conversational-agent autonomy and retained local schema, caller argument, policy and input/output validation constraints. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "reference/api.md",
@@ -645,9 +645,9 @@
     },
     {
       "path": "reference/planning.md",
-      "en_blob": "ce443870f4c78a5859bbfd5fb43c77b09105e96a",
-      "ko_blob": "5573121d5cc3e124bbd7b63d3978e2713235f98d",
-      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "833da4de203f6371e82030ecb6c1262b9cc7cb21",
+      "ko_blob": "db7a10d605a2b0de3310f8fe1683806e4d9eb2e7",
+      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
     },
     {
       "path": "reference/runtime.md",

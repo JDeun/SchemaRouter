@@ -22,10 +22,10 @@ from typing import Any
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
-from schemarouter import (  # noqa: E402
-    E5CachedEmbedder,
-)
+from schemarouter import E5CachedEmbedder  # noqa: E402
 from scripts.research_legacy_decisions import (  # noqa: E402
     DecisionOption,
     DecisionRequest,

@@ -18,16 +18,11 @@ import time
 from pathlib import Path
 from typing import Any
 
-from schemarouter import (
-    E5CachedEmbedder,
-)
+from schemarouter import E5CachedEmbedder
 from scripts.research_bounded_authorized_semantic_diagnostic import (
     propose_bounded_semantic_shortlist,
 )
-from scripts.research_legacy_decisions import (
-    EmbeddingDecisionBackend,
-)
-from scripts.research_legacy_decisions import DecisionBackend
+from scripts.research_legacy_decisions import DecisionBackend, EmbeddingDecisionBackend
 from scripts.research_open_meteo_real_openapi_dev import (
     LANGUAGES,
     QUERIES,

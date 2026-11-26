@@ -7,13 +7,13 @@ from schemarouter import (
     EvidenceRequirements,
     FieldSpec,
     ModelAnalysisError,
-    ModelQueryAnalyzer,
     ParameterSpec,
     PlanningError,
     PlanRequest,
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
 
 
 def make_router(model) -> SchemaRouter:

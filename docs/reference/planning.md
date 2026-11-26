@@ -38,7 +38,7 @@
 
 ## ModelQueryAnalyzer
 
-::: schemarouter.ModelQueryAnalyzer
+Retired from the development package. Reproduce the historical schema-catalog analyzer from `scripts.research_legacy_model_analyzer` in a source checkout. See the [research analyzer guide](../guides/model-analyzer.md).
 
 
 ## SchemaDiffReport

@@ -98,6 +98,8 @@ history renderer는 각 run의 timestamp, SchemaRouter version, exact source rev
 
 ## ModelQueryAnalyzer
 
+이 카탈로그 기반 분석기는 소스 체크아웃의 연구 아카이브에서만 사용합니다.
+
 `module:function` syntax로 provider callable을 전달합니다:
 
 ```bash

@@ -60,7 +60,6 @@ schemarouter.capability_decision_trace  privacy-safe aggregation of existing dec
 schemarouter.provider_profiles     provider identity -> declared protocol/SDK access methods
 schemarouter.registry      versioned namespaced catalog + optional SQLite persistence
 schemarouter.planner       exact-recall candidate indexing + deterministic scoring + recall-first projection
-schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect + approval authority
 schemarouter.runs          run configuration, retry policy, budgets, typed lifecycle events
@@ -109,7 +108,7 @@ SchemaRouter는 단순한 tool-first가 아니라 field-first입니다. Planner�
 
 ### 6. Model analysis는 신뢰하지 않는다
 
-`ModelQueryAnalyzer`는 executable command가 아니라 structured proposal을 반환합니다. 알 수 없는 tool, endpoint, parameter, field 및 추가 JSON key는 거부하거나 제거합니다. Caller가 명시한 argument는 model이 만든 값보다 우선합니다.
+연구 아카이브의 `ModelQueryAnalyzer`는 executable command가 아니라 structured proposal을 반환합니다. 알 수 없는 tool, endpoint, parameter, field 및 추가 JSON key는 거부하거나 제거합니다. Caller가 명시한 argument는 model이 만든 값보다 우선합니다.
 
 Remote schema의 description은 신뢰하지 않는 데이터로만 model에 전달되며 registry나 execution authority를 확장할 수 없습니다.
 

@@ -15,6 +15,9 @@ RETIRED = {
     "DecisionRequest",
     "DecisionResult",
     "DecisionSelection",
+    "ModelCallable",
+    "ModelIntent",
+    "ModelQueryAnalyzer",
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "FirstOptionDecisionBackend",
@@ -30,12 +33,17 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
             if isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 assert module not in {"schemarouter.decisions", "decisions"}, path
+                assert module not in {"schemarouter.analyzers", "analyzers"}, path
+                assert not module.startswith("schemarouter.analyzers."), path
                 assert not module.startswith("scripts.research_legacy_decisions"), path
+                assert not module.startswith("scripts.research_legacy_model_analyzer"), path
                 if module == "schemarouter":
                     assert RETIRED.isdisjoint(alias.name for alias in node.names), path
             elif isinstance(node, ast.Import):
                 assert not any(
-                    alias.name in {"schemarouter.decisions", "scripts.research_legacy_decisions"}
+                    alias.name.startswith(("schemarouter.decisions", "schemarouter.analyzers",
+                                           "scripts.research_legacy_decisions",
+                                           "scripts.research_legacy_model_analyzer"))
                     for alias in node.names
                 ), path
 
@@ -49,7 +57,11 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
             for node in ast.walk(tree):
                 if isinstance(node, ast.ImportFrom):
                     assert node.module != "schemarouter.decisions", path
+                    assert not (node.module or "").startswith("schemarouter.analyzers"), path
                     if node.module == "schemarouter":
                         assert RETIRED.isdisjoint(alias.name for alias in node.names), path
                 elif isinstance(node, ast.Import):
-                    assert all(alias.name != "schemarouter.decisions" for alias in node.names), path
+                    assert all(
+                        not alias.name.startswith(("schemarouter.decisions", "schemarouter.analyzers"))
+                        for alias in node.names
+                    ), path

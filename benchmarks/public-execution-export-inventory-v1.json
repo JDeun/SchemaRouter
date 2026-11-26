@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "src/schemarouter/__init__.py",
   "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_EXECUTION_NOT_INDEPENDENT_E2",
-  "export_count": 454,
+  "export_count": 452,
   "exported_names": [
     "ADAPTER_ENTRY_POINT_GROUP",
     "AccessHealthMonitor",
@@ -182,8 +182,6 @@
     "MCPStdioConfig",
     "MilvusVectorBackend",
     "ModelAnalysisError",
-    "ModelCallable",
-    "ModelQueryAnalyzer",
     "MongoRecordBackend",
     "MutableToolRegistry",
     "NativeConceptCatalog",

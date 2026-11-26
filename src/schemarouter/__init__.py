@@ -76,7 +76,6 @@ from .aggregation import (
     aggregate_records,
     canonical_identity,
 )
-from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .authorization import (
     AuthorizationDecision,
     AuthorizationEffect,
@@ -822,10 +821,8 @@ __all__ = [
     "NativeDiscoveryLimits",
     "MCPStdioConfig",
     "ModelAnalysisError",
-    "ModelCallable",
     "NetworkPolicy",
     "NetworkPolicyError",
-    "ModelQueryAnalyzer",
     "MutableToolRegistry",
     "NonRetryableInvocationError",
     "PostInvocationHookError",

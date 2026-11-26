@@ -34,7 +34,6 @@ from schemarouter import (  # noqa: E402
     SchemaPlanner,
     ToolSpec,
 )
-from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
 from scripts.research_legacy_decision_adapters import (  # noqa: E402
     JevDecisionBackend,
     LayaDecisionBackend,
@@ -53,6 +52,7 @@ from scripts.research_legacy_decisions import (  # noqa: E402
     CallableDecisionBackend,
     EmbeddingDecisionBackend,
 )
+from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer  # noqa: E402
 from scripts.research_legacy_pairwise import PairwiseDecisionBackend  # noqa: E402
 
 

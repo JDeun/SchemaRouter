@@ -49,6 +49,9 @@ def run_smoke() -> dict[str, object]:
             "FirstOptionDecisionBackend",
             "choose_async",
             "choose_sync",
+            "ModelCallable",
+            "ModelIntent",
+            "ModelQueryAnalyzer",
             "DecisionBackendPluginInfo",
             "discover_decision_backend_plugins",
             "load_decision_backend_plugin",
@@ -65,6 +68,7 @@ def run_smoke() -> dict[str, object]:
         for module in (
             "schemarouter.decision_plugins",
             "schemarouter.decisions",
+            "schemarouter.analyzers",
             "schemarouter.integrations.jev",
             "schemarouter.integrations.laya",
             "schemarouter.integrations.ollama",
@@ -81,7 +85,7 @@ def run_smoke() -> dict[str, object]:
         assert files is not None
         assert not any(
             "research_legacy_decision_adapters" in path.parts
-            or path.name == "research_legacy_decisions.py"
+            or path.name in {"research_legacy_decisions.py", "research_legacy_model_analyzer.py"}
             for path in files
         )
 

@@ -112,6 +112,8 @@ equivalent.
 
 ## ModelQueryAnalyzer
 
+This catalog-based analyzer is now source-checkout research only.
+
 Pass a provider callable using `module:function` syntax:
 
 ```bash

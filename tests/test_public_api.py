@@ -194,8 +194,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "NativeDiscoveryLimits",
         "MCPStdioConfig",
         "ModelAnalysisError",
-        "ModelCallable",
-        "ModelQueryAnalyzer",
         "NetworkPolicy",
         "NetworkPolicyError",
         "MutableToolRegistry",
@@ -530,3 +528,13 @@ def test_retired_decision_contract_is_not_installed() -> None:
     ):
         assert not hasattr(schemarouter, symbol), symbol
     assert callable(schemarouter.E5CachedEmbedder)
+
+
+def test_retired_catalog_model_analyzer_is_not_installed() -> None:
+    from importlib.util import find_spec
+
+    assert find_spec("schemarouter.analyzers") is None
+    for symbol in ("ModelCallable", "ModelIntent", "ModelQueryAnalyzer"):
+        assert not hasattr(schemarouter, symbol), symbol
+    assert callable(schemarouter.KeywordAnalyzer)
+    assert callable(schemarouter.PaperQueryUnderstanding)

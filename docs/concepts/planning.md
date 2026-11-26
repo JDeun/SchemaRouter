@@ -23,9 +23,7 @@ A `PlanRequest` can also carry preferred tools, explicit concepts, and evidence 
 The default `KeywordAnalyzer` is deterministic and offline. It maps terms in the query onto declared
 tools, endpoints, parameters, and fields.
 
-For richer natural-language extraction, `ModelQueryAnalyzer` can be injected. Model output is still
-only a proposal: unknown tools, endpoints, parameters, and fields are removed before deterministic
-planning continues.
+The historical catalog-based `ModelQueryAnalyzer` is now source-checkout research only. The paper's schema-independent Understand stage is a distinct path. Model output remains an unauthorized proposal subject to local validation and execution policy.
 
 ## Candidate scoring
 
@@ -214,7 +212,7 @@ field-specific evidence adds stricter requirements for that semantic field. Conf
 field-specific source-type constraints are rejected. The compiled `ToolCall.field_evidence` map
 records which local provider field received each explicit field-specific requirement.
 
-Per-field evidence is caller-controlled. `ModelQueryAnalyzer` preserves it but does not expose it to
+Per-field evidence is caller-controlled. The archived `ModelQueryAnalyzer` preserves it but does not expose it to
 the model or let model output introduce, remove, or broaden those trusted constraints. Active
 `field_evidence` keys must resolve to a registered canonical semantic field ID (or field name when no
 semantic ID is declared); unknown active keys fail closed instead of being silently ignored.

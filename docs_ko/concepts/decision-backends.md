@@ -389,6 +389,6 @@ backend = OllamaDecisionBackend(
 
 ## 벤치마크
 
-동일한 사례에서 결정론적 기준선, `ModelQueryAnalyzer`, 로컬 임베딩 백엔드, Jev, Laya 및 명시적으로 선택한 로컬 Ollama 모델을 비교하려면 `scripts/benchmark_decision_routing.py`를 사용합니다.
+동일한 사례에서 결정론적 기준선, 연구용 `ModelQueryAnalyzer`, 로컬 임베딩 백엔드, Jev, Laya 및 명시적으로 선택한 로컬 Ollama 모델을 비교하려면 `scripts/benchmark_decision_routing.py`를 사용합니다.
 
 [결정 라우팅 벤치마크](../guides/decision-benchmark.md)를 참고하세요.

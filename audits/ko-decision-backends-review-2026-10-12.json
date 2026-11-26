@@ -5,8 +5,8 @@
   "scope": "Targeted bilingual review of decision-backend deployment tradeoffs and non-code English prose remnants; not a corpus semantic certificate.",
   "reviewer_status": "AI-assisted targeted review; independent human sentence-level sign-off not established.",
   "path": "concepts/decision-backends.md",
-  "en_blob": "36e98b3d7933fa3d115c1493359c4e4e1f60dcef",
-  "ko_blob": "93b4ec158b15b97d42e92694b2eae57b5a80372c",
+  "en_blob": "e9765b73f793c53a0d9cd752cb19a0a2f3d99d58",
+  "ko_blob": "b00f0f098435bc81b58cf30757e71f35cb9cfa9a",
   "findings": [
     {
       "section": "Bounded field selection",
@@ -21,7 +21,7 @@
     {
       "section": "Choosing a decision backend",
       "decision": "mixed-language-comparison-fixed",
-      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency. 2026-11-26: Both language tables now mark the pairwise row as historical research only; all six rows retain their comparative tradeoffs. 2026-11-26: Both language pages explicitly limit the historical model-ranking comparisons to LegacyDecisionPlanner; six comparative rows retained. 2026-11-26: Paired pages mark the archived decision adapters as checkout-only; historical comparative rows retained. 2026-11-26: paired archive update explicitly relocates shared decision contracts to the source checkout; all six historical comparison rows, tradeoffs, and privacy/authority limits retained."
+      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency. 2026-11-26: Both language tables now mark the pairwise row as historical research only; all six rows retain their comparative tradeoffs. 2026-11-26: Both language pages explicitly limit the historical model-ranking comparisons to LegacyDecisionPlanner; six comparative rows retained. 2026-11-26: Paired pages mark the archived decision adapters as checkout-only; historical comparative rows retained. 2026-11-26: paired archive update explicitly relocates shared decision contracts to the source checkout; all six historical comparison rows, tradeoffs, and privacy/authority limits retained. 2026-11-26: paired AI-assisted review marks the catalog analyzer benchmark as archived research; comparison tradeoffs are unchanged."
     },
     {
       "section": "Local Laya decision model",

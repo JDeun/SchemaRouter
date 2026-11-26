@@ -1,3 +1,5 @@
+"""Historical schema-catalog model analyzer; source-checkout research only."""
+
 from __future__ import annotations
 
 import inspect
@@ -7,9 +9,9 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from ..errors import ModelAnalysisError
-from ..models import EvidenceRequirements, PlanRequest, QueryIntent, ToolSpec
-from ..registry import ToolRegistry
+from schemarouter.errors import ModelAnalysisError
+from schemarouter.models import EvidenceRequirements, PlanRequest, QueryIntent, ToolSpec
+from schemarouter.registry import ToolRegistry
 
 ModelCallable = Callable[[dict[str, Any]], dict[str, Any] | Awaitable[dict[str, Any]]]
 

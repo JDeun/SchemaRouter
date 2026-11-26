@@ -120,9 +120,7 @@ metadata. The body remains a single object through planning and validation. Sche
 object against the original composed JSON Schema, then the OpenAPI invoker sends that object as the
 JSON request root. It never rewrites the payload as `{"body": ...}`.
 
-This also works with a provider-neutral `ModelQueryAnalyzer`: an application-owned GPT, Gemini,
-Claude, or other structured-output client may propose the complete `body` object, but unknown
-arguments and schema-invalid variants are rejected locally before execution.
+An application-owned structured-output client may propose the complete `body` object; unknown arguments and schema-invalid variants are rejected locally before execution. The historical catalog-based `ModelQueryAnalyzer` is preserved for research only.
 
 A discriminator mapping by itself is not sufficient. SchemaRouter requires the branch schemas to
 prove their own unique tags so a stale or incorrect mapping cannot weaken the local contract.

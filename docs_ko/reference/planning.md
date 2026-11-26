@@ -38,7 +38,7 @@
 
 ## ModelQueryAnalyzer
 
-::: schemarouter.ModelQueryAnalyzer
+개발 배포 API에서 제거된 과거 스키마 카탈로그 기반 분석기입니다. 비교 실험은 소스 체크아웃의 `scripts.research_legacy_model_analyzer`에서 재현할 수 있습니다. [연구용 모델 분석기](../guides/model-analyzer.md)를 참고하세요.
 
 ## SchemaDiffReport
 

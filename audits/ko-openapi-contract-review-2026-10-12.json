@@ -5,8 +5,8 @@
   "scope": "Targeted OpenAPI EN/KO technical-contract editorial comparison, not independent all-sentence certification",
   "reviewer_status": "AI-assisted, not independent human sign-off",
   "paired_page": "guides/openapi.md",
-  "en_blob": "9541abb9de15d1c3073fa1ab755de57ca397e064",
-  "ko_blob": "f8e8c5abc2313d4b1587a3083e6d75ca20e90cbc",
+  "en_blob": "2beae42ac638dabb527f9324b541f1a60fab58d8",
+  "ko_blob": "a33b5fe11c5103954968f4473c25d6c980c7638f",
   "reviewed_claims": [
     {
       "section": "Import",
@@ -26,7 +26,7 @@
     {
       "section": "Other OpenAPI sections",
       "decision": "targeted-review-no-additional-confirmed-omission",
-      "evidence": "Compared credential partitioning, same-origin policy, JSON root/null and oneOf bodies, reference-resolution bounds and fail-closed restrictions, nested fields, YAML resource limits, and amendment scope; existing Korean prose carries the observed critical qualifiers."
+      "evidence": "Compared credential partitioning, same-origin policy, JSON root/null and oneOf bodies, reference-resolution bounds and fail-closed restrictions, nested fields, YAML resource limits, and amendment scope; existing Korean prose carries the observed critical qualifiers. 2026-11-26: paired delta review distinguishes the archived catalog analyzer from caller-owned proposed body values; unknown arguments and schema-invalid variants still fail before execution."
     }
   ],
   "independent_sentence_review_complete": false,

@@ -37,10 +37,10 @@
     {
       "path": "guides/decision-benchmark.md",
       "section": 10,
-      "en_blob": "06dc2b9a46a473265aa7aa31b808b9cf566d8b51",
-      "ko_blob": "fcd8dbc772ba2c65577f677a09856af91f428445",
+      "en_blob": "3ee835caf76c42f6334b348d6bd500311db1de29",
+      "ko_blob": "3f85823ac2633bce4e91ca843efc9f4412f6d927",
       "decision": "meaning-preserved",
-      "evidence": "Korean excludes optional embedding package from SchemaRouter core requirements 2026-11-26: paired review confirms the optional embedding package is still outside core requirements; archive notice and research SDK installation commands are consistent."
+      "evidence": "Korean excludes optional embedding package from SchemaRouter core requirements 2026-11-26: paired review confirms the optional embedding package is still outside core requirements; archive notice and research SDK installation commands are consistent. 2026-11-26: paired review marks ModelQueryAnalyzer as source-checkout research only; optional embedding dependency boundary preserved."
     },
     {
       "path": "guides/enterprise-data-onboarding.md",

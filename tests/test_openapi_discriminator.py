@@ -5,7 +5,6 @@ import pytest
 
 from schemarouter import (
     InMemoryRegistry,
-    ModelQueryAnalyzer,
     PlanRequest,
     RegistryExecutor,
     SchemaRouter,
@@ -14,6 +13,7 @@ from schemarouter import (
 )
 from schemarouter.adapters.openapi import OpenAPIRemoteInvoker, tool_from_openapi
 from schemarouter.validation import validate_json_schema_value
+from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
 
 
 def discriminated_document() -> dict:

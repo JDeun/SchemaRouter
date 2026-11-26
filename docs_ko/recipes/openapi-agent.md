@@ -1,25 +1,18 @@
 # OpenAPI 에이전트 실행 경계
 
-상위 에이전트가 대화와 추론은 자유롭게 수행하되 도구 실행은 스키마 계약 안에 제한해야 할 때 사용하는 패턴입니다.
+상위 에이전트가 대화와 추론은 자유롭게 수행하되 도구 실행은 스키마 계약 안에 제한해야 할 때 사용하는 패턴입니다. 상위 에이전트가 요청과 인자를 명시적으로 전달하며, 제품 라우터는 별도의 카탈로그 기반 모델 분석기를 호출하지 않습니다.
 
 ```python
 from schemarouter import (
     ExecutionPolicy,
-    ModelQueryAnalyzer,
     PlanRequest,
     SchemaRouter,
 )
 
 
-async def structured_model(payload: dict) -> dict:
-    # Bridge to your model provider.
-    ...
-
-
 router = await SchemaRouter.from_url(
     "https://docs.example.com/openapi.json",
     kind="openapi",
-    analyzer=ModelQueryAnalyzer(structured_model),
     base_url="https://api.example.com/",
     trusted_headers={"Authorization": "Bearer ..."},
     policy=ExecutionPolicy(

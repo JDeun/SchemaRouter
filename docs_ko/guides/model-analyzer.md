@@ -1,13 +1,14 @@
 # 모델 보조 분석
 
-기본 플래너는 `KeywordAnalyzer`를 통해 오프라인에서 동작할 수 있습니다. 자연어 요청에서 도구·엔드포인트·인자·필드·증거 요구사항을 더 풍부하게 추출해야 한다면 `ModelQueryAnalyzer`를 사용하십시오.
+**연구 아카이브:** `ModelQueryAnalyzer`, `ModelCallable`, `ModelIntent`는 소스 체크아웃의 `scripts/research_legacy_model_analyzer.py`로 이전되었습니다. 개발 배포 패키지는 이 분석기를 제공하지 않습니다. 아래 내용은 과거 스키마 카탈로그 기반 비교 실험을 재현하기 위한 설명입니다. 현재 기본 플래너의 `KeywordAnalyzer` 및 원 논문의 스키마 독립적 `PaperQueryUnderstanding`은 별개의 경로이며, 이번 제거로 기본 경로가 전환되지는 않습니다.
 
 ## 공급자에 종속되지 않는 callable
 
 SchemaRouter는 특정 LLM SDK를 요구하지 않습니다.
 
 ```python
-from schemarouter import ModelQueryAnalyzer, SchemaRouter
+from schemarouter import SchemaRouter
+from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
 
 async def model(payload: dict) -> dict:
     # Bridge to your provider's structured-output API.

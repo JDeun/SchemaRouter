@@ -72,7 +72,6 @@ schemarouter.capability_decision_trace  privacy-safe aggregation of existing dec
 schemarouter.provider_profiles     provider identity -> declared protocol/SDK access methods
 schemarouter.registry      versioned namespaced catalog + optional SQLite persistence
 schemarouter.planner       exact-recall candidate indexing + deterministic scoring + recall-first projection
-schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect + approval authority
 schemarouter.runs          run configuration, retry policy, budgets, typed lifecycle events
@@ -136,7 +135,7 @@ registry changes.
 
 ### 6. Model analysis is untrusted
 
-`ModelQueryAnalyzer` returns a structured proposal, not an executable command. Unknown tools,
+The archived `ModelQueryAnalyzer` returns a structured proposal, not an executable command. Unknown tools,
 endpoints, parameters, fields, and extra JSON keys are rejected or removed. Explicit caller
 arguments override model-produced values.
 

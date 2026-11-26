@@ -1,14 +1,14 @@
 # Model-assisted analysis
 
-The default planner can work offline with `KeywordAnalyzer`. Use `ModelQueryAnalyzer` when natural
-language needs richer extraction of tools, endpoints, arguments, fields, or evidence requirements.
+**Research archive:** `ModelQueryAnalyzer`, `ModelCallable`, and `ModelIntent` now live in `scripts/research_legacy_model_analyzer.py` in a source checkout. The development distribution no longer exposes this analyzer. The guide below preserves historical schema-catalog comparison semantics. The current default `KeywordAnalyzer` and the paper's schema-independent `PaperQueryUnderstanding` are distinct paths; this removal does not switch the default.
 
 ## Provider-neutral callable
 
 SchemaRouter does not require a specific LLM SDK.
 
 ```python
-from schemarouter import ModelQueryAnalyzer, SchemaRouter
+from schemarouter import SchemaRouter
+from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
 
 async def model(payload: dict) -> dict:
     # Bridge to your provider's structured-output API.
