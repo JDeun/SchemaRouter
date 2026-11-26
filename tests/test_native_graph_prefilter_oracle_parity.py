@@ -115,7 +115,7 @@ def test_prefilter_equal_to_unfiltered_graph_for_randomized_authority(seed):
                 roles_any=("reader",), hidden_fields=("customer_id",),
             ),) if hidden else (),
         )
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             lambda tool, ep, blocked=unavailable: tool.key not in blocked
         )
         _assert_same(router, fast, exhaustive)
@@ -136,7 +136,7 @@ def test_exact_k_boundary_and_rejection_match_unfiltered_graph():
                 roles_any=("reader",),
             ) for name in ("contact_directory", *all_consumers[:limit])),
         )
-        router.planner.availability_predicate = None
+        router._source_availability.predicate = None
         _assert_same(router, fast, exhaustive)
         result = fast.lookup(
             router, QUERY, group=GROUP, principal=PRINCIPAL,

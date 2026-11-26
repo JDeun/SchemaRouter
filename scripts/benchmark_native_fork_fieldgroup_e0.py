@@ -289,7 +289,7 @@ def benchmark(
         ):
             raise AssertionError("indexed shared-root field evidence deviates from oracle")
     # A dynamic health revocation must invalidate the same cached index.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: tool.key != "fork_owner"
     )
     unavailable = index.lookup_shared_root_forks(
@@ -297,7 +297,7 @@ def benchmark(
     )
     if unavailable.status != "no_proven_hit" or unavailable.candidates:
         raise AssertionError("revoked original consumer was disclosed")
-    router.planner.availability_predicate = None
+    router._source_availability.predicate = None
 
     times: list[float] = []
     cpu: list[float] = []

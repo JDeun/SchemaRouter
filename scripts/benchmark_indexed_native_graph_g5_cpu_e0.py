@@ -41,12 +41,16 @@ GROUP = NativeDeclaredFieldGroup(
 
 
 def _synthetic_router(noise_routes: int) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
     ))
+    return _populate_synthetic_router(router, noise_routes)
+
+
+def _populate_synthetic_router(router: SchemaRouter, noise_routes: int) -> SchemaRouter:
     router.add_tool(ToolSpec(
         name="contact_directory", source_type="crm",
         license="host-reviewed-synthetic",

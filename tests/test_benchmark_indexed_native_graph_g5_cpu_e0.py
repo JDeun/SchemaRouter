@@ -7,6 +7,7 @@ import pytest
 
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import (
     EVIDENCE,
+    _synthetic_router,
     benchmark,
 )
 
@@ -42,3 +43,9 @@ def test_small_g5_benchmark_returns_only_bounded_aggregate_telemetry():
 def test_benchmark_rejects_out_of_budget_or_noninteger_calls(bad_noise, bad_runs):
     with pytest.raises(ValueError, match="bounded synthetic"):
         benchmark(noise_routes=bad_noise, iterations=bad_runs)
+
+
+def test_native_fixture_does_not_construct_legacy_planner():
+    router = _synthetic_router(2)
+    assert router.planner is None
+    assert router.registry.version == 4

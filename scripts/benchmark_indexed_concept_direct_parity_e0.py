@@ -32,10 +32,10 @@ from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_gra
 from schemarouter.field_group_retrieval import _complete_fields, _root_envelope_empty
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
-from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
 from scripts.research_legacy_concept_graph import (
     retrieve_authorized_concept_graph as legacy_concept_graph,
 )
+from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
 EVIDENCE_TIER = "E0_SYNTHETIC_INDEXED_CONCEPT_PARITY_NOT_E2"
 ALIASES = ("case status", "문의 상태", "問い合わせ状態")
@@ -57,7 +57,7 @@ def build_fixture(registered_routes: int):
     """Keep 500/5000 source-native route counts fixed across every arm."""
     if type(registered_routes) is not int or registered_routes not in (500, 5000):
         raise ValueError("only preregistered 500/5000 source catalogues allowed")
-    router = _synthetic_router(registered_routes - 8)
+    router = legacy_synthetic_router(registered_routes - 8)
     for i in range(6):
         router.add_tool(ToolSpec(
             name=f"direct_case_{i}", source_type="crm",
