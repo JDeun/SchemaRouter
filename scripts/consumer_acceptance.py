@@ -8,12 +8,16 @@ import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 
 from pydantic import BaseModel
 
 from schemarouter import (
     ApprovalDeniedError,
+    AuthorizationPolicy,
+    AuthorizationRule,
     BindingDriftError,
+    CapabilityFieldContract,
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
@@ -21,13 +25,20 @@ from schemarouter import (
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperNativeRankPolicy,
+    PaperPlanRequest,
     ParameterSpec,
-    PlanRequest,
     PolicyRule,
     PolicyViolationError,
+    PrincipalContext,
     RetryPolicy,
     RunConfig,
     SchemaDriftError,
+    SchemaFieldRoutingSession,
     SchemaRouter,
     SchemaValidationError,
     SQLiteRegistry,
@@ -113,86 +124,180 @@ def _host_plan(
     )
 
 
-async def scenario_happy_path() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
-    key = router.add_callable(current_weather)
+_WEATHER_PRINCIPAL = PrincipalContext(subject="consumer-acceptance", roles=("reader",))
+_WEATHER_ROUTE = "current_weather.call"
 
-    request = PlanRequest(
-        query="city temperature",
-        preferred_tools=[key],
-        arguments={"city": "Seoul"},
+
+def _weather_invoker(callback: Callable[[str], Weather]) -> Callable[[str, dict[str, Any]], Any]:
+    def invoke(endpoint: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        assert endpoint == "call"
+        return callback(arguments["city"]).model_dump(mode="json")
+
+    return invoke
+
+
+def _paper_weather(
+    router: SchemaRouter,
+    callback: Callable[[str], Weather] = current_weather,
+    *,
+    bound: bool = True,
+) -> SchemaFieldRoutingSession:
+    """Register owner-reviewed weather metadata and a local Understand fixture."""
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation=_WEATHER_ROUTE, roles_any=("reader",),
+        ),),
     )
-    plan = await router.aplan(request)
-    assert plan.calls[0].explanation is not None
-    assert plan.calls[0].explanation.candidate_selection == "deterministic"
-    assert plan.calls[0].explanation.score_components
-    assert plan.calls[0].tool_fingerprint == router.registry.get(key).fingerprint
+    tool = ToolSpec(
+        name="current_weather", source_type="calculated", license="CC0-1.0",
+        endpoints=[EndpointSpec(
+            name="call", read_only=True,
+            parameters=[ParameterSpec(
+                name="city", required=True, json_schema={"type": "string"},
+            )],
+            input_schema={
+                "type": "object", "properties": {"city": {"type": "string"}},
+                "required": ["city"], "additionalProperties": False,
+            },
+            output_fields=[
+                FieldSpec(name="city", semantic_id="weather.city", identifier=True,
+                          json_schema={"type": "string"}),
+                FieldSpec(name="temperature", semantic_id="weather.temperature",
+                          json_schema={"type": "number"}),
+            ],
+            output_schema={
+                "type": "object", "properties": {
+                    "city": {"type": "string"}, "temperature": {"type": "number"},
+                }, "required": ["city", "temperature"], "additionalProperties": False,
+            },
+        )],
+    )
+    if bound:
+        router.add_bound_tool(tool, _weather_invoker(callback))
+    else:
+        router.add_tool(tool)
 
-    results = await router.execute(plan)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="weather.temperature", aliases=("city temperature",),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="weather.temperature", json_schema={"type": "number"},
+        ),), source_type="calculated", license="CC0-1.0",
+    ),))
+    session = router.prepare_field_routing(
+        catalog=catalog, approved_host_roots=frozenset({_WEATHER_ROUTE}),
+    )
+    intents = PaperIntentRegistry(
+        intents=(PaperIntentDeclaration(
+            intent_id="weather.read", required_concept_ids=("weather.temperature",),
+            recall_group_ids=("weather",),
+        ),),
+        projection_snapshot_id=session.snapshot_id,
+        route_field_groups={_WEATHER_ROUTE: {"weather": ("temperature",)}},
+        approved_direct_parameter_routes=(_WEATHER_ROUTE,),
+    )
 
+    def understand(payload: dict[str, Any]) -> dict[str, Any]:
+        # This deterministic owner callback is not model-quality evidence.
+        assert "schema_catalog" not in payload
+        return {
+            "intent_id": "weather.read",
+            "needs": [{
+                "concept": "city temperature", "unit": None,
+                "source_type": "calculated", "qualifiers": {},
+            }],
+            "needs_truncated": False,
+            "excluded_concepts": [],
+            "named_tools": ["current_weather"],
+            "parameter_hints": {},
+            "source_type": "calculated",
+        }
+
+    router.configure_field_routing(
+        session, model=understand, intent_registry=intents,
+        rank_policy=PaperNativeRankPolicy(
+            snapshot_id=session.snapshot_id, direct_score_mode="paper_v1", focus_direct=True,
+        ),
+        model_visible_intent_ids=("weather.read",),
+    )
+    return session
+
+
+def _weather_request() -> PaperPlanRequest:
+    return PaperPlanRequest(
+        query="city temperature from current_weather",
+        host_source_arguments={_WEATHER_ROUTE: {"city": "Seoul"}},
+    )
+
+
+async def scenario_happy_path() -> dict[str, object]:
+    router = SchemaRouter()
+    _paper_weather(router)
+    plan = await router.aplan_authorized(
+        _weather_request(), principal=_WEATHER_PRINCIPAL,
+    )
+    assert plan.planning_status == "ready"
+    assert plan.executable
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool_fingerprint == router.registry.get("current_weather").fingerprint
+    assert set(plan.calls[0].fields) == {"city", "temperature"}
+
+    results = await router.execute(plan, config=RunConfig(principal=_WEATHER_PRINCIPAL))
     assert len(results) == 1
-    assert results[0].tool == key
+    assert results[0].tool == "current_weather"
     assert results[0].endpoint == "call"
     assert results[0].data == {"city": "Seoul", "temperature": 20.5}
-    assert router.inspect().execution.bound_tools == [key]
-    return {"tool": key, "result": results[0].data}
+    assert router.inspect().execution.bound_tools == ["current_weather"]
+    return {"tool": "current_weather", "result": results[0].data}
 
 
 async def scenario_capability_retrieval() -> dict[str, object]:
     calls = 0
 
-    @schema_tool(read_only=True)
     def retrieval_probe(city: str) -> Weather:
-        """Return weather for capability-retrieval acceptance validation."""
         nonlocal calls
         calls += 1
         return Weather(city=city, temperature=21.0)
 
-    router = SchemaRouter(_legacy_routing=True)
-    key = router.add_callable(retrieval_probe)
-    request = PlanRequest(
-        query="current weather city",
-        preferred_tools=[key],
-        arguments={"city": "Seoul"},
+    router = SchemaRouter()
+    session = _paper_weather(router, retrieval_probe)
+    receipt = session.discover("city temperature", principal=_WEATHER_PRINCIPAL)
+    assert receipt.status == "complete"
+    assert receipt.requested_k == 5
+    assert receipt.executable_authority is False
+    assert len(receipt.alternatives) == 1
+    assert len(receipt.alternatives[0].routes) == 1
+    route = receipt.alternatives[0].routes[0]
+    assert route.route_id == _WEATHER_ROUTE
+    assert "temperature" in route.output_fields
+    tool = router.registry.get("current_weather")
+    endpoint = tool.endpoint("call")
+    assert route.tool_fingerprint == tool.fingerprint
+    assert route.endpoint_fingerprint == endpoint.fingerprint
+    assert endpoint.input_schema["type"] == "object"
+    assert "city" in endpoint.input_schema["properties"]
+    assert endpoint.output_schema
+
+    plan = await router.aplan_executable_authorized(
+        _weather_request(), principal=_WEATHER_PRINCIPAL,
     )
-
-    sync_result = router.retrieve(request, k=1)
-    async_result = await router.aretrieve(request, k=1)
-    executable = router.retrieve_executable(request, k=1)
-    async_executable = await router.aretrieve_executable(request, k=1)
-
+    assert plan.executable
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "current_weather"
+    assert plan.calls[0].endpoint == "call"
     assert calls == 0
-    assert sync_result.requested_k == 1
-    assert sync_result.executable_only is False
-    assert executable.executable_only is True
-    assert async_executable.executable_only is True
-    assert len(sync_result.candidates) == 1
-
-    candidate = sync_result.candidates[0]
-    assert candidate.route_id == f"{key}.call"
-    assert candidate.route_id == async_result.candidates[0].route_id
-    assert candidate.route_id == executable.candidates[0].route_id
-    assert candidate.route_id == async_executable.candidates[0].route_id
-    assert candidate.input_schema["type"] == "object"
-    assert "city" in candidate.input_schema["properties"]
-    assert candidate.output_schema
-    assert candidate.tool_fingerprint == router.registry.get(key).fingerprint
-    assert (
-        candidate.endpoint_fingerprint
-        == router.registry.endpoint(key, "call").fingerprint
+    results = await router.ainvoke(
+        _weather_request(), config=RunConfig(principal=_WEATHER_PRINCIPAL),
     )
-
-    invoked = await router.ainvoke(request)
     assert calls == 1
-    assert invoked[0].tool == key
-    assert invoked[0].endpoint == "call"
+    assert results[0].data == {"city": "Seoul", "temperature": 21.0}
 
     return {
-        "route_id": candidate.route_id,
+        "route_id": route.route_id,
         "retrieval_side_effects": calls - 1,
-        "full_input_schema": bool(candidate.input_schema),
-        "full_output_schema": bool(candidate.output_schema),
-        "executable_filter": executable.executable_only,
+        "full_input_schema": bool(endpoint.input_schema),
+        "full_output_schema": bool(endpoint.output_schema),
+        "discovery_executable_authority": receipt.executable_authority,
     }
 
 
@@ -498,72 +603,28 @@ async def scenario_scientific_unit_contract() -> dict[str, object]:
     }
 
 
-async def scenario_parameter_alias_routing() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
-    provider_a = ToolSpec(
-        name="provider_a",
-        provider="a",
-        access_mode="openapi",
-        endpoints=[
-            EndpointSpec(
-                name="search",
-                read_only=True,
-                parameters=[ParameterSpec(name="formula", required=True)],
-                output_fields=[
-                    FieldSpec(
-                        name="value",
-                        semantic_id="material_value",
-                        json_schema={"type": "number"},
-                    )
-                ],
-            )
-        ],
-    )
-    provider_b = ToolSpec(
-        name="provider_b",
-        provider="b",
-        access_mode="optimade",
-        endpoints=[
-            EndpointSpec(
-                name="search",
-                read_only=True,
-                parameters=[
-                    ParameterSpec(
-                        name="chemical_formula",
-                        aliases=["formula"],
-                        required=True,
-                    )
-                ],
-                output_fields=[
-                    FieldSpec(
-                        name="alternate_value",
-                        semantic_id="material_value",
-                        json_schema={"type": "number"},
-                    )
-                ],
-            )
-        ],
-    )
-    router.add_tool(provider_a)
-    router.add_tool(provider_b)
-
-    plan = router.plan(
-        PlanRequest(
-            query="material value",
-            preferred_tools=["provider_a"],
-            arguments={"formula": "Si"},
-            fallback_scope="cross_provider",
-        )
+async def scenario_source_local_arguments() -> dict[str, object]:
+    router = SchemaRouter()
+    _paper_weather(router)
+    missing = PaperPlanRequest(query="city temperature from current_weather")
+    incomplete = await router.aplan_authorized(missing, principal=_WEATHER_PRINCIPAL)
+    assert not incomplete.executable
+    await _expect(
+        PolicyViolationError,
+        router.aplan_executable_authorized(missing, principal=_WEATHER_PRINCIPAL),
     )
 
-    route = plan.fallback_route(0)
-    assert plan.calls[0].arguments == {"formula": "Si"}
-    assert route is not None
-    assert route.alternatives[0].tool == "provider_b"
-    assert route.alternatives[0].arguments == {"chemical_formula": "Si"}
+    plan = await router.aplan_authorized(
+        _weather_request(), principal=_WEATHER_PRINCIPAL,
+    )
+    assert plan.planning_status == "ready"
+    assert len(plan.calls) == 1
+    assert plan.calls[0].arguments == {"city": "Seoul"}
+    assert plan.calls[0].missing_required_arguments == []
+    assert not plan.fallback_routes
     return {
-        "primary_arguments": plan.calls[0].arguments,
-        "fallback_arguments": route.alternatives[0].arguments,
+        "missing_arguments_status": incomplete.planning_status,
+        "source_local_arguments": plan.calls[0].arguments,
     }
 
 
@@ -608,53 +669,32 @@ async def scenario_scientific_field_qualifiers() -> dict[str, object]:
 
 
 async def scenario_execution_ready_planning() -> dict[str, object]:
-    router = SchemaRouter(_legacy_routing=True)
-    unbound = ToolSpec(
-        name="preferred_unbound",
-        provider="provider_a",
-        access_mode="openapi",
-        endpoints=[
-            EndpointSpec(
-                name="read",
-                read_only=True,
-                output_fields=[FieldSpec(name="value")],
-            )
-        ],
+    router = SchemaRouter()
+    _paper_weather(router, bound=False)
+    request = _weather_request()
+    plan = await router.aplan_authorized(request, principal=_WEATHER_PRINCIPAL)
+    assert plan.planning_status == "ready"
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "current_weather"
+    await _expect(
+        PolicyViolationError,
+        router.aplan_executable_authorized(request, principal=_WEATHER_PRINCIPAL),
     )
-    bound = ToolSpec(
-        name="bound_route",
-        provider="provider_b",
-        access_mode="python",
-        endpoints=[
-            EndpointSpec(
-                name="read",
-                read_only=True,
-                output_fields=[FieldSpec(name="value")],
-            )
-        ],
+    router.executor.bind("current_weather", _weather_invoker(current_weather))
+    # A new binding cannot authorize the previous plan.
+    await _expect(
+        PolicyViolationError,
+        router.execute(plan, config=RunConfig(principal=_WEATHER_PRINCIPAL)),
     )
-    router.add_tool(unbound)
-    router.add_tool(bound)
-    router.executor.bind(
-        "bound_route",
-        lambda endpoint, arguments: {"value": "bound"},
+    fresh = await router.aplan_executable_authorized(
+        request, principal=_WEATHER_PRINCIPAL,
     )
-
-    request = PlanRequest(
-        query="value",
-        preferred_tools=["preferred_unbound"],
-    )
-    schema_plan = router.plan(request)
-    executable_plan = router.plan_executable(request)
-    result = await router.ainvoke(request)
-
-    assert schema_plan.calls[0].tool == "preferred_unbound"
-    assert executable_plan.calls[0].tool == "bound_route"
-    assert result[0].tool == "bound_route"
-    assert result[0].data == {"value": "bound"}
+    result = await router.execute(fresh, config=RunConfig(principal=_WEATHER_PRINCIPAL))
+    assert result[0].tool == "current_weather"
+    assert result[0].data == {"city": "Seoul", "temperature": 20.5}
     return {
-        "schema_plan": schema_plan.calls[0].tool,
-        "execution_plan": executable_plan.calls[0].tool,
+        "unbound_plan_denied": True,
+        "stale_plan_denied": True,
         "executed": result[0].tool,
     }
 
@@ -771,19 +811,18 @@ async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
         dashboard_path = root / "dashboard.html"
 
         with SQLiteRegistry(registry_path) as registry:
-            router = SchemaRouter(_legacy_routing=True, registry=registry)
-            key = router.add_callable(current_weather)
+            router = SchemaRouter(registry=registry)
+            _paper_weather(router)
+            key = "current_weather"
 
             with SQLiteRunTraceStore(trace_path) as traces:
                 events = [
                     event
                     async for event in router.astream_events(
-                        PlanRequest(
-                            query="city temperature",
-                            preferred_tools=[key],
-                            arguments={"city": "Seoul"},
+                        _weather_request(),
+                        config=RunConfig(
+                            tags=["consumer-acceptance"], principal=_WEATHER_PRINCIPAL,
                         ),
-                        config=RunConfig(tags=["consumer-acceptance"]),
                         trace_store=traces,
                     )
                 ]
@@ -838,7 +877,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("parallel_read_only", scenario_parallel_read_only),
     ("scientific_unit_contract", scenario_scientific_unit_contract),
     ("scientific_field_qualifiers", scenario_scientific_field_qualifiers),
-    ("parameter_alias_routing", scenario_parameter_alias_routing),
+    ("source_local_arguments", scenario_source_local_arguments),
     ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
     ("inspection_redaction", scenario_inspection_redaction),
@@ -848,7 +887,8 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
 
 async def run_all() -> dict[str, object]:
     report: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "routing_contract": "paper_first",
         "schemarouter_version": __version__,
         "python_version": platform.python_version(),
         "platform": platform.platform(),
