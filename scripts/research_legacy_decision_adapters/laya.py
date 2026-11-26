@@ -126,7 +126,7 @@ class LayaDecisionBackend:
                 laya = import_module("laya")
             except ImportError as exc:
                 raise ImportError(
-                    'Laya integration requires: pip install "schemarouter[laya]"'
+                    'Archived Laya adapter requires: pip install "laya>=0.3.6,<1"'
                 ) from exc
 
             router_type = vars(laya).get("Router")

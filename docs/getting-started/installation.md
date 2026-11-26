@@ -50,18 +50,6 @@ Install only the integrations you use.
     pip install "schemarouter[llamaindex]"
     ```
 
-=== "Jev / TypeSafe"
-
-    ```bash
-    pip install "schemarouter[jev]"
-    ```
-
-=== "Laya"
-
-    ```bash
-    pip install "schemarouter[laya]"
-    ```
-
 === "OpenTelemetry"
 
     ```bash
@@ -74,6 +62,10 @@ Install only the integrations you use.
     pip install -e ".[docs]"
     mkdocs serve
     ```
+
+## Reproducing historical decision research
+
+The development package no longer provides the `jev`, `systemone`, or `laya` extras or their decision adapters. To reproduce historical comparisons, use a source checkout and install the SDKs explicitly as described in [the research backend guide](../concepts/decision-backends.md). The existing published v0.17.0 extras are unchanged.
 
 ## Verify the installation
 

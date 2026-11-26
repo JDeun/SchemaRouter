@@ -142,7 +142,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
     assert "mongodb-compatibility.json" in workflow
     assert "chroma-compatibility.json" in workflow
     assert "clickhouse-compatibility.json" in workflow
-    assert '"schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"' in workflow
+    assert '"schemarouter[mcp,langchain,langgraph,llamaindex,otel]"' in workflow
     assert "--framework-integrations" in workflow
     assert "--lightweight-extras" in workflow
     assert (

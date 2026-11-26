@@ -57,12 +57,13 @@ python examples/quickstart.py
 For the complete typed surface and ordinary optional integrations:
 
 ```bash
-pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel]"
+pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
 
-Laya has a separate CPU-only CI environment because its PyTorch dependency is intentionally not
+Archived Jev/System One contract tests explicitly install `typesafe-sdk>=0.7,<1`.
+Archived Laya tests explicitly install `laya>=0.3.6,<1` in a separate CPU-only CI environment because its PyTorch dependency is intentionally not
 installed into the ordinary development environment.
 
 ## Pick the smallest relevant test surface

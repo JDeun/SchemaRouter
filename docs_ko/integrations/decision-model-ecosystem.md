@@ -1,6 +1,6 @@
 # Decision-model ecosystem intake
 
-**연구 아카이브(개발 브랜치):** Jev, Laya, Ollama, System One, Microsoft Decision-1 및 의사결정 백엔드 플러그인 로더는 이제 `scripts/research_legacy_decision_adapters/`에서만 유지합니다. 과거 비교 실험은 소스 체크아웃이 필요하며 배포 라우터에 포함되지 않습니다. 기존 설치 옵션은 호환성 검증을 위해 잠시 유지합니다.
+**연구 아카이브(개발 브랜치):** Jev, Laya, Ollama, System One, Microsoft Decision-1 및 의사결정 백엔드 플러그인 로더는 이제 `scripts/research_legacy_decision_adapters/`에서만 유지합니다. 과거 비교 실험은 소스 체크아웃이 필요하며 배포 라우터에 포함되지 않습니다. 개발 패키지에서 `jev`, `systemone`, `laya` 설치 옵션도 제거했습니다. 연구 SDK는 소스 체크아웃에서 명시적으로 설치합니다.
 
 이 페이지는 model quality가 아니라 **integration shape**를 추적합니다. 목록에 있다는 이유만으로 project를 endorse/promote하지 않습니다.
 

@@ -5,8 +5,8 @@
   "scope": "Targeted bilingual review of decision-backend deployment tradeoffs and non-code English prose remnants; not a corpus semantic certificate.",
   "reviewer_status": "AI-assisted targeted review; independent human sentence-level sign-off not established.",
   "path": "concepts/decision-backends.md",
-  "en_blob": "f18b1e3817de99343dcc9ed5f5b25636dc1c5305",
-  "ko_blob": "212c03fd70cccc26bdbaad2e9c1b87114bd3358d",
+  "en_blob": "8db66a3da75a435df0929b324730b15eec56d204",
+  "ko_blob": "02c1e9e97ea78d72397e50bca816a2c0a908c9a4",
   "findings": [
     {
       "section": "Bounded field selection",
@@ -26,7 +26,7 @@
     {
       "section": "Local Laya decision model",
       "decision": "untranslated-install-note-fixed",
-      "reason": "The package-extra explanation is now Korean while preserving the literal schemarouter[laya] identifier."
+      "reason": "The package-extra explanation is now Korean while preserving the literal schemarouter[laya] identifier. 2026-11-26: both pages now explicitly install the research SDK and state that the development package no longer provides the laya extra; the historical instruction is superseded, not reintroduced."
     }
   ],
   "reviewed_sections": 4,

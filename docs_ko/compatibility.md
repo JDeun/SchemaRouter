@@ -12,9 +12,9 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 | LangChain | `langchain-core>=1.6,<2` | contract + runnable example | optional extra |
 | LangGraph | `langgraph>=1.2,<2` | real StateGraph sync/async + example | optional |
 | LlamaIndex | `llama-index-core>=0.14,<1` | contract + example | optional |
-| Jev/TypeSafe | `typesafe-sdk>=0.7,<1` | adversarial contract | no live API required |
-| Laya | `laya>=0.3.6,<1` | adversarial adapter + extra install | model weight download 없음 |
-| Ollama | structured-output HTTP API | mock transport adversarial | SDK dependency 없음 |
+| Jev/TypeSafe (연구 아카이브) | `typesafe-sdk>=0.7,<1` | adversarial contract | 연구 SDK 명시 설치; 제품 extra 및 live API 호출 없음 |
+| Laya (연구 아카이브) | `laya>=0.3.6,<1` | adversarial adapter + CPU SDK 명시 설치 | 제품 extra 및 모델 가중치 다운로드 없음 |
+| Ollama (연구 아카이브) | structured-output HTTP API | mock transport adversarial | SDK dependency 없음 |
 | MCP | `mcp>=2,<3` | real HTTP + local stdio + boundary + scheduled evidence | public Internet availability 가정 안 함 |
 | OpenTelemetry | >=1.44,<2 | in-memory hierarchy/error/privacy | core dependency 없음 |
 | OpenAPI | built-in | deterministic + scheduled public smoke | SDK 없음 |
@@ -24,16 +24,16 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 | OPTIMADE | built-in | deterministic + public smoke | client dependency 없음 |
 | Provider profiles | built-in/local/plugin | deterministic + MP/Crossref/Tavily evidence | credential process-local, SDK auto-install 없음 |
 | PyPI stable | wheel+sdist | scheduled/manual external smoke | fresh runner + pip check + checkout 밖 scenario |
-| Lightweight extras | mcp+jev+otel | scheduled/manual | framework transitive dependency 없이 검증 |
-| Integration extras | mcp+langchain+langgraph+llamaindex+jev+otel | scheduled/manual | installed package bridge 검증 |
+| Lightweight extras | mcp+otel | scheduled/manual | 프레임워크 전이 의존성 없이 검증; 공개 v0.17.0에 한해 Jev 추가 검증 |
+| Integration extras | mcp+langchain+langgraph+llamaindex+otel | scheduled/manual | 실제 설치된 브리지 검증; v0.17.0에 한해 Jev 추가 검증 |
 
 각 통합 기능의 선언된 의존성 범위와 실제 선택 설치 패키지는 다음과 같습니다. Python 3.10 이상이 필수이며, CI는 현재 해결된 의존성 버전을 시험하는 것이지 범위에 포함된 모든 과거 버전을 전수 시험하는 것이 아닙니다.
 
 - LangChain: `langchain-core>=1.6,<2`, `schemarouter[langchain]`
 - LangGraph: `langgraph>=1.2,<2`, `schemarouter[langgraph]`; 실제 `StateGraph` 동기·비동기 계약을 검증
 - LlamaIndex: `llama-index-core>=0.14,<1`, `schemarouter[llamaindex]`
-- Jev/TypeSafe: `typesafe-sdk>=0.7,<1`, `schemarouter[jev]`; 필수 CI에서는 외부 API를 호출하지 않음
-- Laya: `laya>=0.3.6,<1`, `schemarouter[laya]`; 필수 CI는 모델 가중치를 다운로드하지 않음
+- Jev/TypeSafe(연구 전용): `typesafe-sdk>=0.7,<1` 명시 설치; 필수 CI에서는 외부 API를 호출하지 않음
+- Laya(연구 전용): `laya>=0.3.6,<1` 명시 설치; 필수 CI는 모델 가중치를 다운로드하지 않음
 - MCP: `mcp>=2,<3`, `schemarouter[mcp]`; 실제 로컬 stdio subprocess 및 Streamable HTTP 계약을 검증
 - OpenTelemetry: `opentelemetry-api/sdk>=1.44,<2`, `schemarouter[otel]`; 코어의 필수 의존성은 아님
 
@@ -70,9 +70,9 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 
 별도 `Python Preview` 워크플로는 Python 3.15 RC를 제한된 실행시간 안에서 시험합니다. 실패는 전방 호환성 신호로 표시하지만 릴리스의 차단 조건은 아닙니다.
 
-PyPI 공개 패키지의 경량 통합은 정확히 `schemarouter[mcp,jev,otel]`로, 통합 프레임워크까지 포함한 전체 조합은 `schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]`로 검증합니다. 선택적 extra는 실제 설치된 wheel에서 확인해야 하며 소스 체크아웃의 우연한 전이 의존성에 기대서는 안 됩니다.
+PyPI 공개 패키지의 경량 통합은 `schemarouter[mcp,otel]`로, 통합 프레임워크까지 포함한 조합은 `schemarouter[mcp,langchain,langgraph,llamaindex,otel]`로 검증합니다. 공개 안정판이 정확히 v0.17.0인 경우에만 두 작업에서 과거 `jev` extra를 추가로 설치하고 검증합니다. 선택적 extra는 실제 설치된 wheel에서 확인해야 하며 소스 체크아웃의 우연한 전이 의존성에 기대서는 안 됩니다.
 
-Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/jev/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
+Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
 
 ## 통합 기능 유지보수 정책
 
@@ -89,7 +89,7 @@ SchemaRouter 코어는 LangChain, LangGraph, LlamaIndex, Jev/TypeSafe, Laya, MCP
 3. 업스트림 유지관리자가 검색 가능성이나 인증을 위해 독립 배포를 요구할 때
 4. 통합 기능이 얇은 변환 계층을 넘어 크게 확장될 때
 
-Jev와 Laya도 각각 `schemarouter[jev]`, `schemarouter[laya]` 선택적 extras이며 제공자 런타임을 코어의 필수 의존성으로 만들지 않습니다. OpenTelemetry 역시 `schemarouter[otel]` 선택적 exporter 통합으로 유지합니다.
+Jev, System One, Laya는 소스 체크아웃의 연구 전용 어댑터입니다. 개발 패키지는 이들의 설치 옵션과 SDK 의존성을 선언하지 않습니다. OpenTelemetry는 `schemarouter[otel]` 선택적 exporter 통합으로 유지합니다.
 
 ## 네이티브 데이터베이스 실사용 검증 등급
 
@@ -117,7 +117,7 @@ Native DB adapter 변경 release는 affected representative family의 recent gre
 
 ## External compatibility checks
 
-Weekly/manual `Compatibility Smoke`는 OpenAPI/OPTIMADE/GraphQL/OData/OpenRPC/MCP, Materials Project/Crossref/Tavily, latest stable PyPI package를 검증합니다. PyPI smoke는 forced wheel/sdist, pip check, checkout 밖 public scenario를 실행합니다. Isolated mcp/jev/otel과 combined extras smoke도 source checkout이 아닌 stable package로 bridge를 실행합니다.
+Weekly/manual `Compatibility Smoke`는 OpenAPI/OPTIMADE/GraphQL/OData/OpenRPC/MCP, Materials Project/Crossref/Tavily, latest stable PyPI package를 검증합니다. PyPI smoke는 forced wheel/sdist, pip check, checkout 밖 public scenario를 실행합니다. Isolated mcp/otel과 combined extras smoke도 source checkout이 아닌 stable package로 bridge를 실행합니다.
 
 External-service failure는 third-party availability 때문에 PR blocker가 아닌 compatibility signal입니다. Live decision model은 required CI에서 제외합니다. Jev는 `TYPESAFE_API_KEY`와 `--jev`로 명시적으로 실행하고, 로컬 Laya는 `--laya`, 신뢰하는 로컬 Ollama 모델은 `--ollama-model <installed-model>`로 따로 벤치마킹합니다.
 

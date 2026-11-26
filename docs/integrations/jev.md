@@ -1,6 +1,6 @@
 # Jev / TypeSafe System One
 
-**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The existing optional installation extras are temporarily retained for compatibility qualification; they do not restore the removed product integration. Do not use this path as the paper-first router.
+**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The development package also removes the `jev`, `systemone`, and `laya` extras; install research SDKs explicitly from a source checkout. Do not use this path as the paper-first router.
 
 **Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
@@ -13,13 +13,13 @@ memory, or an agent loop. SchemaRouter validates the result before the planner c
 
 ## Install
 
-For consumers, install the published optional extra:
+For historical comparison, install the research SDK from a source checkout:
 
 ```bash
-pip install "schemarouter[jev]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 ```
 
-The bridge ships in the current SchemaRouter distribution behind the optional `jev` extra.
+The archived bridge is not shipped in the development distribution. The published v0.17.0 wheel retains its original `jev` extra.
 
 The integration currently supports `typesafe-sdk>=0.7,<1`.
 

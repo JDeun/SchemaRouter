@@ -1,5 +1,7 @@
 # 의사결정 라우팅 벤치마크
 
+**연구 아카이브:** 아래 의사결정 백엔드 비교 실험은 소스 체크아웃에서만 실행합니다. 개발 패키지에는 `jev`, `systemone`, `laya` 설치 옵션이 없습니다.
+
 SchemaRouter는 재현 가능한 라우팅 벤치마크 실행 도구와 저장소에 포함된 v1 코퍼스를 제공합니다.
 
 이 벤치마크는 성능을 측정하기 위한 도구이며, 특정 제공자가 모든 상황에서 우수하다는 주장은 아닙니다.
@@ -170,7 +172,7 @@ hosted/self-hosted runtime이 Jev-compatible `/v1/systemone` contract를 제공�
 neutral extra를 설치합니다:
 
 ```bash
-pip install -e ".[systemone]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 ```
 
 local Kev-style server 예제:
@@ -203,7 +205,7 @@ wire compatibility 자체는 품질 주장이 아닙니다. model/checkpoint/run
 optional integration을 설치하고 TypeSafe를 로컬에서 설정합니다:
 
 ```bash
-pip install -e ".[jev]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 export TYPESAFE_API_KEY="..."
 python scripts/benchmark_decision_routing.py \
   --corpus benchmarks/decision-routing-v1.json \
@@ -219,7 +221,7 @@ provider pricing은 SchemaRouter와 무관하게 변경될 수 있으므로 hard
 optional local decision runtime을 설치합니다:
 
 ```bash
-pip install -e ".[laya]"
+pip install -e . "laya>=0.3.6,<1"
 ```
 
 동일한 checked-in corpus에서 Laya를 실행합니다:

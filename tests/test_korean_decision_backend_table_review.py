@@ -54,4 +54,4 @@ def test_non_code_english_remnants_are_translated() -> None:
     assert "The packaged extra is " not in ko
     assert "필드 선택은 다음과 같이 명시적으로 활성화합니다" in ko
     assert "의사결정 백엔드는 다음 계약을 준수해야 합니다" in ko
-    assert "배포된 패키지의 선택적 추가 의존성 이름은 `schemarouter[laya]`" in ko
+    assert "개발 패키지는 `laya` 설치 옵션을 제공하지 않습니다" in ko

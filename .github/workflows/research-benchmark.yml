@@ -79,7 +79,7 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install -e ".[dev,laya]"
+      - run: pip install -e ".[dev]" "laya>=0.3.6,<1"
       - name: Run Laya CPU lexical versus recall-on-empty benchmark
         env:
           # Keep both language checkpoints resident. Preloading happens before the
@@ -169,7 +169,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "sentence-transformers>=3,<6"
-      - run: pip install -e ".[dev,laya]"
+      - run: pip install -e ".[dev]" "laya>=0.3.6,<1"
       - name: Run v2 calibration split with bounded multilingual semantic recall
         env:
           SCHEMAROUTER_LAYA_RESIDENT_CHECKPOINTS: "2"
@@ -220,7 +220,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "sentence-transformers>=3,<6"
-      - run: pip install -e ".[dev,laya]"
+      - run: pip install -e ".[dev]" "laya>=0.3.6,<1"
       - name: Run frozen v2 held-out semantic recall evaluation
         env:
           SCHEMAROUTER_LAYA_RESIDENT_CHECKPOINTS: "2"

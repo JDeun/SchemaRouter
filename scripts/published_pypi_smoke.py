@@ -137,7 +137,7 @@ def main() -> None:
     parser.add_argument(
         "--lightweight-extras",
         action="store_true",
-        help="Also validate the published MCP, Jev, and OpenTelemetry extras.",
+        help="Validate MCP and OpenTelemetry; also Jev for the historical v0.17.0 wheel.",
     )
     parser.add_argument(
         "--database-integration",

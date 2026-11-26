@@ -21,7 +21,7 @@
     },
     {
       "path": "compatibility.md",
-      "source_blob": "fe9599192126239aaf429eebeb8c6922ef998a50"
+      "source_blob": "ebdd0e16d2f2a921909ecc9f3515683a300856ac"
     },
     {
       "path": "concepts/adapters.md",
@@ -33,7 +33,7 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "source_blob": "f18b1e3817de99343dcc9ed5f5b25636dc1c5305"
+      "source_blob": "8db66a3da75a435df0929b324730b15eec56d204"
     },
     {
       "path": "concepts/design-principles.md",
@@ -85,7 +85,7 @@
     },
     {
       "path": "getting-started/installation.md",
-      "source_blob": "89757a5e5b4c5704a3e905b340238dceabedc67b"
+      "source_blob": "5949d77649fb5def812f22ca4ef028e1fa938402"
     },
     {
       "path": "getting-started/quickstart.md",
@@ -169,7 +169,7 @@
     },
     {
       "path": "guides/decision-benchmark.md",
-      "source_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4"
+      "source_blob": "06dc2b9a46a473265aa7aa31b808b9cf566d8b51"
     },
     {
       "path": "guides/enterprise-data-onboarding.md",
@@ -297,15 +297,15 @@
     },
     {
       "path": "integrations/decision-backend-plugins.md",
-      "source_blob": "0ec39978fe635a1fb771642628d706568fbd5f24"
+      "source_blob": "c12e986c4761fc0fe9cf584b81a84807f302a16a"
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "source_blob": "969403e3c798d0075bb7653f3b669a93a05da600"
+      "source_blob": "0fcfd07c9ef58c848e5545d348fc895379f051a2"
     },
     {
       "path": "integrations/jev.md",
-      "source_blob": "373b04b0c5d76f51270dfe9a1d23d8bd6870d99c"
+      "source_blob": "ced0bd3f612bbc2f1113d3c60ab2757a3d14b7ad"
     },
     {
       "path": "integrations/langchain.md",
@@ -317,7 +317,7 @@
     },
     {
       "path": "integrations/laya.md",
-      "source_blob": "9a3a0e1749d08f575468c048f72ccec133b76053"
+      "source_blob": "92e5e17c52d5de99fc8cd127cac276fd4d067e0d"
     },
     {
       "path": "integrations/llamaindex.md",
@@ -329,11 +329,11 @@
     },
     {
       "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "85e872e779ed95290f43855df7443425c7871cb0"
+      "source_blob": "6978f7961e23eb3fb01ff5c4192dca6359278c4d"
     },
     {
       "path": "integrations/ollama.md",
-      "source_blob": "ae13de78417c0836f76223950e0ec69d41cabc4c"
+      "source_blob": "f2c89441101856156bd6958c24bda47d521875b3"
     },
     {
       "path": "integrations/opentelemetry.md",
@@ -341,7 +341,7 @@
     },
     {
       "path": "integrations/system-one.md",
-      "source_blob": "d93c648d23d653453baf825c2c6a551a22fbdb95"
+      "source_blob": "bfa373c5aea17227821cb2dd8d7ce30d92322c74"
     },
     {
       "path": "license.md",

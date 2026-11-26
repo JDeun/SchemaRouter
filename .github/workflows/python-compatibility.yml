@@ -32,7 +32,7 @@ jobs:
       - name: Install full compatibility dependencies
         run: |
           if [ "${{ matrix.python-version }}" = "3.12" ]; then
-            pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+            pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,otel,database]"
           else
             pip install -e ".[dev]"
           fi

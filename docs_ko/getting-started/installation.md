@@ -52,18 +52,6 @@ pip install -e ".[dev]"
     pip install "schemarouter[llamaindex]"
     ```
 
-=== "Jev / TypeSafe"
-
-    ```bash
-    pip install "schemarouter[jev]"
-    ```
-
-=== "Laya"
-
-    ```bash
-    pip install "schemarouter[laya]"
-    ```
-
 === "OpenTelemetry"
 
     ```bash
@@ -76,6 +64,10 @@ pip install -e ".[dev]"
     pip install -e ".[docs]"
     mkdocs serve
     ```
+
+## 과거 의사결정 연구 재현
+
+개발 패키지는 `jev`, `systemone`, `laya` 설치 옵션이나 해당 의사결정 어댑터를 제공하지 않습니다. 과거 비교 실험은 소스 체크아웃에서 [연구용 백엔드](../concepts/decision-backends.md)의 SDK를 명시적으로 설치하여 실행합니다. 이미 공개된 v0.17.0의 설치 옵션은 변경되지 않습니다.
 
 ## 설치 확인
 

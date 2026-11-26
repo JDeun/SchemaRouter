@@ -660,7 +660,11 @@ jobs:
       - run: python -m pip install --upgrade pip
       - name: Install latest stable SchemaRouter lightweight extras from PyPI
         run: |
-          python -m pip install --no-cache-dir "schemarouter[mcp,jev,otel]"
+          python -m pip install --no-cache-dir "schemarouter[mcp,otel]"
+          # Preserve historical Jev validation without requesting a retired extra on new releases.
+          if python -c 'from importlib.metadata import version; raise SystemExit(version("schemarouter") != "0.17.0")'; then
+            python -m pip install --no-cache-dir "schemarouter[jev]==0.17.0"
+          fi
           python -m pip check
       - name: Run isolated published lightweight-extras smoke outside the checkout
         run: |
@@ -696,7 +700,10 @@ jobs:
       - name: Install latest stable SchemaRouter integration extras from PyPI
         run: |
           python -m pip install --no-cache-dir \
-            "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
+            "schemarouter[mcp,langchain,langgraph,llamaindex,otel]"
+          if python -c 'from importlib.metadata import version; raise SystemExit(version("schemarouter") != "0.17.0")'; then
+            python -m pip install --no-cache-dir "schemarouter[jev]==0.17.0"
+          fi
           python -m pip check
       - name: Run published integration smoke outside the checkout
         run: |

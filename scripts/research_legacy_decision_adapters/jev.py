@@ -11,6 +11,5 @@ class JevDecisionBackend(SystemOneDecisionBackend):
     """
 
     provider_display_name = "Jev"
-    install_extra = "jev"
     default_provider_name = "typesafe-system-one"
     default_model_name = "jev-latest"

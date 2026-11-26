@@ -1,6 +1,6 @@
 # Laya
 
-**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The existing optional installation extras are temporarily retained for compatibility qualification; they do not restore the removed product integration. Do not use this path as the paper-first router.
+**Research archive (development branch):** This decision adapter or plugin loader is no longer part of the installed SchemaRouter API. The following contracts and examples are retained for historical comparison in a source checkout under `scripts/research_legacy_decision_adapters/`. The development package also removes the `jev`, `systemone`, and `laya` extras; install research SDKs explicitly from a source checkout. Do not use this path as the paper-first router.
 
 SchemaRouter can use [Laya](https://github.com/NandhaKishorM/laya) as an optional local
 `DecisionBackend`.
@@ -13,21 +13,15 @@ loop.
 
 ## Install
 
-Laya support ships in the current SchemaRouter distribution behind the optional `laya` extra.
+The development distribution contains neither the Laya adapter nor the `laya` extra.
 
 Development checkout:
 
 ```bash
-pip install -e ".[laya]"
+pip install -e . "laya>=0.3.6,<1"
 ```
 
-After the next release containing this integration, the packaged form will be:
-
-```bash
-pip install "schemarouter[laya]"
-```
-
-The extra installs the Laya runtime and its local model dependencies. Model weights are downloaded
+This command installs the research Laya runtime and its local model dependencies. Model weights are downloaded
 by Laya/Hugging Face only when a checkpoint is first loaded unless they are already cached.
 
 ## Automatic local routing

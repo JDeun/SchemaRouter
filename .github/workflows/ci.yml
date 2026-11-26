@@ -104,7 +104,7 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Install Python 3.12 coverage test dependencies
         if: matrix.python-version == '3.12'
-        run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+        run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,otel,database]"
       - name: Run compatibility smoke suite
         if: matrix.python-version != '3.12'
         run: pytest -q tests/test_public_api.py tests/test_registry.py
@@ -202,7 +202,7 @@ jobs:
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,otel,database]"
       - run: ruff check .
       - run: pyright
 
@@ -223,7 +223,7 @@ jobs:
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,otel,database]"
       - run: >-
           pytest -q
           tests/test_graph_native_adapters.py
@@ -646,7 +646,7 @@ jobs:
       - name: Install wheel with isolated lightweight extras
         run: |
           WHEEL="$(pwd)/$(ls dist/*.whl)"
-          /tmp/schemarouter-wheel-lightweight/bin/pip install "schemarouter[mcp,jev,otel] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-lightweight/bin/pip install "schemarouter[mcp,otel] @ file://${WHEEL}"
           /tmp/schemarouter-wheel-lightweight/bin/pip check
       - run: /tmp/schemarouter-wheel-lightweight/bin/python scripts/installed_extras_smoke.py
 
@@ -675,7 +675,7 @@ jobs:
       - name: Install wheel with combined integration extras
         run: |
           WHEEL="$(pwd)/$(ls dist/*.whl)"
-          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,otel,database] @ file://${WHEEL}"
           /tmp/schemarouter-wheel-integrations/bin/pip check
       - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_extras_smoke.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_database_smoke.py
@@ -847,7 +847,7 @@ jobs:
             examples/external_validation/mcp_agent_catalog/requirements.txt
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.jev == 'true' }}
-      - run: pip install -e ".[dev,jev]"
+      - run: pip install -e ".[dev]" "typesafe-sdk>=0.7,<1"
         if: ${{ needs.changes.outputs.jev == 'true' }}
       - run: pytest -q tests/test_jev_integration.py
         if: ${{ needs.changes.outputs.jev == 'true' }}
@@ -872,7 +872,7 @@ jobs:
       # Contract tests do not need CUDA. Satisfy Laya's torch dependency from the
       # official CPU wheel index so CI does not download multi-gigabyte CUDA wheels.
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install -e ".[dev,laya]"
+      - run: pip install -e ".[dev]" "laya>=0.3.6,<1"
       - run: pytest -q tests/test_laya_integration.py
 
   otel-integration:

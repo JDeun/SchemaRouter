@@ -26,7 +26,6 @@ class SystemOneDecisionBackend:
     """
 
     provider_display_name = "System One"
-    install_extra = "systemone"
     default_provider_name = "system-one-compatible"
     default_model_name = "system-one"
 
@@ -132,7 +131,7 @@ class SystemOneDecisionBackend:
         except ImportError as exc:
             raise ImportError(
                 f'{self.provider_display_name} integration requires: '
-                f'pip install "schemarouter[{self.install_extra}]"'
+                'pip install "typesafe-sdk>=0.7,<1" from a source checkout'
             ) from exc
 
         payload = self._question_payload(request)["selection"]
@@ -253,7 +252,7 @@ class SystemOneDecisionBackend:
         except ImportError as exc:
             raise ImportError(
                 f'{self.provider_display_name} integration requires: '
-                f'pip install "schemarouter[{self.install_extra}]"'
+                'pip install "typesafe-sdk>=0.7,<1" from a source checkout'
             ) from exc
 
         with TypeSafeClient(**self._client_kwargs()) as client:
@@ -280,7 +279,7 @@ class SystemOneDecisionBackend:
         except ImportError as exc:
             raise ImportError(
                 f'{self.provider_display_name} integration requires: '
-                f'pip install "schemarouter[{self.install_extra}]"'
+                'pip install "typesafe-sdk>=0.7,<1" from a source checkout'
             ) from exc
 
         async with AsyncTypeSafeClient(**self._client_kwargs()) as client:

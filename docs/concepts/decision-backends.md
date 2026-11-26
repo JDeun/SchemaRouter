@@ -1,6 +1,6 @@
 # Decision backends
 
-**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. Existing installation extras are temporarily retained for compatibility qualification.
+**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. The development package also removes the `jev`, `systemone`, and `laya` extras. Install research SDKs explicitly from a source checkout.
 
 **Development migration:** The former `DecisionPolicy` and final candidate, field, and evidence decision callbacks have been removed from the installed planner. Examples using `LegacyDecisionPlanner` are historical comparisons that require a source checkout; they are not installed product APIs. The remaining semantic candidate recall, capability/operation fit and endpoint disambiguation callbacks have also moved into the research-only comparison planner. The paper-first path uses the existing deterministic field and evidence contracts, not a second model decision.
 
@@ -435,10 +435,10 @@ remain in `tests/test_pairwise_decision_backend.py`. Existing applications must 
 SchemaRouter includes an optional `JevDecisionBackend` on current unreleased `main`:
 
 ```bash
-pip install -e ".[jev]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 ```
 
-The normal packaged extra name will be `schemarouter[jev]` in the next release.
+The development package does not provide a `jev` extra.
 
 ```python
 from scripts.research_legacy_decision_adapters import JevDecisionBackend
@@ -463,10 +463,10 @@ SchemaRouter includes an optional `LayaDecisionBackend` for local non-autoregres
 decisions:
 
 ```bash
-pip install -e ".[laya]"
+pip install -e . "laya>=0.3.6,<1"
 ```
 
-The packaged extra is `schemarouter[laya]`.
+The development package does not provide a `laya` extra.
 
 ```python
 from scripts.research_legacy_decision_adapters import LayaDecisionBackend

@@ -37,10 +37,10 @@
     {
       "path": "guides/decision-benchmark.md",
       "section": 10,
-      "en_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4",
-      "ko_blob": "ca65ff1339e8e8689153e5085fdf99a251c8e2de",
+      "en_blob": "06dc2b9a46a473265aa7aa31b808b9cf566d8b51",
+      "ko_blob": "fcd8dbc772ba2c65577f677a09856af91f428445",
       "decision": "meaning-preserved",
-      "evidence": "Korean excludes optional embedding package from SchemaRouter core requirements"
+      "evidence": "Korean excludes optional embedding package from SchemaRouter core requirements 2026-11-26: paired review confirms the optional embedding package is still outside core requirements; archive notice and research SDK installation commands are consistent."
     },
     {
       "path": "guides/enterprise-data-onboarding.md",
@@ -77,26 +77,26 @@
     {
       "path": "integrations/decision-backend-plugins.md",
       "section": 8,
-      "en_blob": "0ec39978fe635a1fb771642628d706568fbd5f24",
-      "ko_blob": "bf9814b5007a8a1c4e6960ae9a2824723bfc23ba",
+      "en_blob": "c12e986c4761fc0fe9cf584b81a84807f302a16a",
+      "ko_blob": "2e614bf4af48fd9d75396bef465dcbb9518fb3ca",
       "decision": "meaning-preserved",
-      "evidence": "Korean says installed plugin does not imply production recommendation 2026-11-26 AI-assisted review: Paired section review: an installed plugin alone does not recommend a production router, the frozen workload and error/authority metrics remain required, and registered local schema retains execution authority. The new archive notice excludes the loader from the installed API in both languages."
+      "evidence": "Korean says installed plugin does not imply production recommendation 2026-11-26 AI-assisted review: Paired section review: an installed plugin alone does not recommend a production router, the frozen workload and error/authority metrics remain required, and registered local schema retains execution authority. The new archive notice excludes the loader from the installed API in both languages. 2026-11-26: paired review confirms the same recommendation/authority or credential/negative-evidence limits; both archive notices now state that provider extras are removed."
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
       "section": 5,
-      "en_blob": "969403e3c798d0075bb7653f3b669a93a05da600",
-      "ko_blob": "15f07b2c538bfb2e5ec5ccc6e5649c300f51d278",
+      "en_blob": "0fcfd07c9ef58c848e5545d348fc895379f051a2",
+      "ko_blob": "114650e98857a8633adf61d9b9fe21d3d31128df",
       "decision": "meaning-preserved",
-      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one. 2026-11-26 AI-assisted review: Paired review of Jev and Laya sections: credentialed comparison is not a CI requirement; the rejected full-catalog choice and winner-only noul evidence is not generalized to other checkpoints/runtimes/primitives. The new archive notice marks these adapters source-only in both languages."
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one. 2026-11-26 AI-assisted review: Paired review of Jev and Laya sections: credentialed comparison is not a CI requirement; the rejected full-catalog choice and winner-only noul evidence is not generalized to other checkpoints/runtimes/primitives. The new archive notice marks these adapters source-only in both languages. 2026-11-26: paired review confirms the same recommendation/authority or credential/negative-evidence limits; both archive notices now state that provider extras are removed."
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
       "section": 6,
-      "en_blob": "969403e3c798d0075bb7653f3b669a93a05da600",
-      "ko_blob": "15f07b2c538bfb2e5ec5ccc6e5649c300f51d278",
+      "en_blob": "0fcfd07c9ef58c848e5545d348fc895379f051a2",
+      "ko_blob": "114650e98857a8633adf61d9b9fe21d3d31128df",
       "decision": "meaning-preserved",
-      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one. 2026-11-26 AI-assisted review: Paired review of Jev and Laya sections: credentialed comparison is not a CI requirement; the rejected full-catalog choice and winner-only noul evidence is not generalized to other checkpoints/runtimes/primitives. The new archive notice marks these adapters source-only in both languages."
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one. 2026-11-26 AI-assisted review: Paired review of Jev and Laya sections: credentialed comparison is not a CI requirement; the rejected full-catalog choice and winner-only noul evidence is not generalized to other checkpoints/runtimes/primitives. The new archive notice marks these adapters source-only in both languages. 2026-11-26: paired review confirms the same recommendation/authority or credential/negative-evidence limits; both archive notices now state that provider extras are removed."
     },
     {
       "path": "integrations/langgraph.md",
@@ -309,6 +309,11 @@
         "section": 6
       }
     ],
+    "independent_sentence_review_complete": false
+  },
+  "amendment_2026_11_26_decision_extra_removal": {
+    "review_date": "2026-11-26",
+    "scope": "Repin four affected flagged sections after paired review of the explicit source-only dependency migration; no independent certification or changed historical evidence.",
     "independent_sentence_review_complete": false
   }
 }

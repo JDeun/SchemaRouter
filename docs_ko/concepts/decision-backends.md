@@ -1,6 +1,6 @@
 # 결정 백엔드
 
-**연구 아카이브(개발 브랜치):** Jev, Laya, Ollama, System One, Microsoft Decision-1 및 의사결정 백엔드 플러그인 로더는 이제 `scripts/research_legacy_decision_adapters/`에서만 유지합니다. 과거 비교 실험은 소스 체크아웃이 필요하며 배포 라우터에 포함되지 않습니다. 기존 설치 옵션은 호환성 검증을 위해 잠시 유지합니다.
+**연구 아카이브(개발 브랜치):** Jev, Laya, Ollama, System One, Microsoft Decision-1 및 의사결정 백엔드 플러그인 로더는 이제 `scripts/research_legacy_decision_adapters/`에서만 유지합니다. 과거 비교 실험은 소스 체크아웃이 필요하며 배포 라우터에 포함되지 않습니다. 개발 패키지에서 `jev`, `systemone`, `laya` 설치 옵션도 제거했습니다. 연구 SDK는 소스 체크아웃에서 명시적으로 설치합니다.
 
 **개발 버전 마이그레이션:** 기존 `DecisionPolicy`와 최종 후보·필드·근거 판단 콜백은 배포 Planner에서 제거되었습니다. `LegacyDecisionPlanner`를 사용하는 예제는 소스 체크아웃에서만 실행하는 과거 비교 실험이며 배포 API가 아닙니다. 나머지 의미 기반 후보 검색, 기능·작업 적합성 및 엔드포인트 구분 콜백도 연구 전용 비교 Planner로 이전되었습니다. 원 논문 경로는 별도의 모델 판단 대신 결정적 필드·근거 계약을 사용합니다.
 
@@ -318,13 +318,13 @@ Algorithm 1의 기본 순위 결정에는 사용하지 않습니다. 점수 범�
 
 ## Jev / TypeSafe System One
 
-현재 아직 릴리스되지 않은 `main` 브랜치에서는 선택적으로 `JevDecisionBackend`를 사용할 수 있습니다:
+과거 비교 실험용 소스 체크아웃에서 `JevDecisionBackend`를 사용합니다:
 
 ```bash
-pip install -e ".[jev]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 ```
 
-다음 릴리스에서 사용하는 선택적 설치 이름은 `schemarouter[jev]`입니다.
+개발 패키지는 `jev` 설치 옵션을 제공하지 않습니다.
 
 ```python
 from scripts.research_legacy_decision_adapters import JevDecisionBackend
@@ -342,13 +342,13 @@ backend = JevDecisionBackend(
 
 ## 로컬 Laya 결정 모델
 
-SchemaRouter는 로컬에서 자기회귀 생성을 사용하지 않고 제한된 결정을 수행하는 선택적 `LayaDecisionBackend`를 제공합니다:
+연구 아카이브의 `LayaDecisionBackend`는 로컬에서 자기회귀 생성을 사용하지 않고 제한된 결정을 수행합니다:
 
 ```bash
-pip install -e ".[laya]"
+pip install -e . "laya>=0.3.6,<1"
 ```
 
-배포된 패키지의 선택적 추가 의존성 이름은 `schemarouter[laya]`입니다.
+개발 패키지는 `laya` 설치 옵션을 제공하지 않습니다.
 
 ```python
 from scripts.research_legacy_decision_adapters import LayaDecisionBackend

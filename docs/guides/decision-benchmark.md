@@ -1,5 +1,7 @@
 # Decision routing benchmark
 
+**Research archive:** Run the decision-backend comparisons below from a source checkout. The development package does not provide `jev`, `systemone`, or `laya` extras.
+
 SchemaRouter includes a reproducible routing benchmark harness and a checked-in v1 corpus.
 
 The benchmark is a measurement tool, not a claim that one provider is universally better.
@@ -202,7 +204,7 @@ compatible decision models without adding another backend implementation.
 Install the neutral extra:
 
 ```bash
-pip install -e ".[systemone]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 ```
 
 For a local Kev-style server:
@@ -239,7 +241,7 @@ untouched holdout.
 Install the optional integration and configure TypeSafe locally:
 
 ```bash
-pip install -e ".[jev]"
+pip install -e . "typesafe-sdk>=0.7,<1"
 export TYPESAFE_API_KEY="..."
 python scripts/benchmark_decision_routing.py \
   --corpus benchmarks/decision-routing-v1.json \
@@ -256,7 +258,7 @@ Provider pricing is never hard-coded because it can change independently of Sche
 Install the optional local decision runtime:
 
 ```bash
-pip install -e ".[laya]"
+pip install -e . "laya>=0.3.6,<1"
 ```
 
 Run Laya against the same checked-in corpus:

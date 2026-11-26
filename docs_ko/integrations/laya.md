@@ -1,6 +1,6 @@
 # Laya
 
-**연구 아카이브(개발 브랜치):** 이 의사결정 어댑터 또는 플러그인 로더는 더 이상 SchemaRouter 배포 API에 포함되지 않습니다. 아래 계약과 예제는 소스 체크아웃의 `scripts/research_legacy_decision_adapters/`에서 과거 비교 실험용으로 보존합니다. 기존 선택적 설치 옵션은 호환성 검증을 위해 잠시 유지하지만 삭제된 제품 연동을 복원하지 않습니다. 원 논문 중심 라우터 경로로 사용하지 마세요.
+**연구 아카이브(개발 브랜치):** 이 의사결정 어댑터 또는 플러그인 로더는 더 이상 SchemaRouter 배포 API에 포함되지 않습니다. 아래 계약과 예제는 소스 체크아웃의 `scripts/research_legacy_decision_adapters/`에서 과거 비교 실험용으로 보존합니다. 개발 패키지에서는 `jev`, `systemone`, `laya` 설치 옵션도 제거했습니다. 필요한 연구 SDK는 소스 체크아웃에서 명시적으로 설치합니다. 원 논문 중심 라우터 경로로 사용하지 마세요.
 
 SchemaRouter는 [Laya](https://github.com/NandhaKishorM/laya)를 optional local `DecisionBackend`로 사용할 수 있습니다.
 
@@ -8,21 +8,15 @@ Laya는 general text-generation model이 아니라 non-autoregressive decision m
 
 ## 설치
 
-현재 SchemaRouter 배포판은 선택적 `laya` extra를 통해 Laya를 지원합니다.
+개발 패키지에 Laya 어댑터와 `laya` extra가 포함되지 않습니다.
 
 개발 소스 체크아웃에서는 다음과 같이 설치합니다.
 
 ```bash
-pip install -e ".[laya]"
+pip install -e . "laya>=0.3.6,<1"
 ```
 
-이 통합이 포함된 다음 릴리스가 배포된 뒤에는 아래와 같이 패키지 형태로 설치할 수 있습니다.
-
-```bash
-pip install "schemarouter[laya]"
-```
-
-Extra는 Laya runtime/local model dependency를 설치합니다. Model weight는 cache에 없을 때 checkpoint 최초 load 시 Laya/Hugging Face가 download합니다.
+이 명령은 연구용 Laya 런타임과 로컬 모델 의존성을 설치합니다. Model weight는 cache에 없을 때 checkpoint 최초 load 시 Laya/Hugging Face가 download합니다.
 
 ## Automatic local routing
 

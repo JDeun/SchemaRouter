@@ -14,9 +14,9 @@ claim that every historical version inside the range is exhaustively tested.
 | LangChain | `langchain-core>=1.6,<2` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[langchain]` extra |
 | LangGraph | `langgraph>=1.2,<2` | Real `StateGraph` sync/async contract tests + runnable example on Python 3.12 | Optional `schemarouter[langgraph]` extra |
 | LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
-| Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
-| Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
-| Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
+| Jev / TypeSafe (research archive) | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Explicit research SDK install; no product extra or live API call in required CI |
+| Laya (research archive) | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests with explicit CPU SDK install on Python 3.12 | No product extra; required CI does not download model weights |
+| Ollama decision backend (research archive) | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests + scheduled pinned-reference evidence | Optional `schemarouter[mcp]` extra; public Internet MCP availability is not assumed |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
@@ -26,8 +26,8 @@ claim that every historical version inside the range is exhaustively tested.
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Provider profiles | Built-in/local/plugin registry | Deterministic profile tests + live Materials Project/Crossref evidence + Tavily auth/live evidence | Profiles declare access methods; credentials remain process-local and SDK installation is never automatic |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
-| Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
-| Published integration extras | Latest stable `mcp` + `langchain` + `langgraph` + `llamaindex` + `jev` + `otel` extras | Scheduled/manual external smoke | Resolves the combined published extras from PyPI, validates MCP/Jev/OpenTelemetry SDK integration imports, and executes the three framework bridges outside the checkout |
+| Published lightweight extras | Latest stable `mcp` + `otel` extras | Scheduled/manual external smoke | Isolated SDK integration smoke; Jev is additionally verified only for the published v0.17.0 wheel |
+| Published integration extras | Latest stable `mcp` + `langchain` + `langgraph` + `llamaindex` + `otel` extras | Scheduled/manual external smoke | Validates MCP/OpenTelemetry and the three framework bridges outside the checkout; Jev is additionally verified for v0.17.0 only |
 
 Before widening an upper bound or lowering a minimum supported version, the relevant integration
 tests must pass against that target and the change must be documented in release notes.
@@ -53,8 +53,8 @@ Every pull request runs the blocking `CI` workflow with:
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
 - bounded candidate and field-selection planner tests, including identifier preservation,
   malformed/unknown IDs, abstention, sync/async paths, and deterministic fallback;
-- Jev adapter adversarial tests with the official SDK installed but no external API dependency;
-- Laya adapter adversarial tests with the official package installed but no model-weight download;
+- archived Jev adapter adversarial tests with the official SDK explicitly installed but no external API dependency;
+- archived Laya adapter adversarial tests with the official package explicitly installed but no model-weight download;
 - Ollama bounded-decision adversarial tests using a local mock HTTP transport;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
 - real MCP stdio subprocess discovery/execution plus transport-neutral client-factory contract tests;
@@ -73,7 +73,7 @@ The top-level Release workflow consumes a successful current-`main` `CI` result 
 resolves the release tag and builds artifacts. This keeps publication coupled to deterministic
 release blockers without waiting on preview-only interpreter experiments. After GitHub Release and
 PyPI publication both succeed, the workflow re-installs that exact release version from PyPI as a
-wheel, forced sdist, isolated `mcp,jev,otel` environment, and combined integration-extras
+wheel, forced sdist, isolated `mcp,otel` environment, and combined integration-extras
 environment, then executes the published-package smoke outside the checkout. PyPI index propagation is handled by a bounded retry window rather than by
 accepting a different version.
 
@@ -105,10 +105,7 @@ these becomes true:
 3. upstream maintainers require a dedicated distribution for discoverability or certification;
 4. the integration grows beyond a thin translation layer.
 
-The Jev and Laya providers follow the same principle: they remain optional `schemarouter[jev]` and
-`schemarouter[laya]` extras and do not make either provider runtime a core dependency. OpenTelemetry
-likewise remains an optional
-`schemarouter[otel]` exporter integration.
+Jev, System One, and Laya are source-only research adapters: the development package no longer declares their extras or SDK dependencies. OpenTelemetry remains an optional `schemarouter[otel]` exporter integration.
 
 ## Native database live-acceptance tiers
 
@@ -158,10 +155,10 @@ Materials Project/Crossref/Tavily evidence, plus the latest stable SchemaRouter 
 PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
 scenario from outside the repository checkout. A dedicated isolated smoke installs only
-`schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
+`schemarouter[mcp,otel]` so those integrations cannot accidentally rely on framework
 transitive dependencies. A companion combined published-extras smoke resolves
-`schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]` from PyPI and executes each framework
-bridge through the installed stable package rather than the source checkout.
+`schemarouter[mcp,langchain,langgraph,llamaindex,otel]` from PyPI and executes each framework
+bridge through the installed stable package rather than the source checkout. When the stable version is exactly v0.17.0, both jobs additionally install and verify its historical `jev` extra; newer releases do not request the retired extra.
 
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.

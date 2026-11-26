@@ -1,6 +1,6 @@
 # Decision-model ecosystem intake
 
-**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. Existing installation extras are temporarily retained for compatibility qualification.
+**Research archive (development branch):** Jev, Laya, Ollama, System One, Microsoft Decision-1 and the decision backend plugin loader now live only in `scripts/research_legacy_decision_adapters/`. Their historical comparisons require a source checkout and are not part of the installed router. The development package also removes the `jev`, `systemone`, and `laya` extras. Install research SDKs explicitly from a source checkout.
 
 This page tracks **integration shape**, not model quality. A listed project is not endorsed or
 promoted merely because SchemaRouter can connect to it.

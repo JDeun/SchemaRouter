@@ -59,15 +59,6 @@ langgraph = [
 llamaindex = [
   "llama-index-core>=0.14,<1",
 ]
-jev = [
-  "typesafe-sdk>=0.7,<1",
-]
-systemone = [
-  "typesafe-sdk>=0.7,<1",
-]
-laya = [
-  "laya>=0.3.6,<1",
-]
 otel = [
   "opentelemetry-api>=1.44,<2",
   "opentelemetry-sdk>=1.44,<2",

@@ -374,9 +374,9 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
         in workflow
     )
     assert 'package="schemarouter==$RELEASE_VERSION"' in workflow
-    assert 'package="schemarouter[mcp,jev,otel]==$RELEASE_VERSION"' in workflow
+    assert 'package="schemarouter[mcp,otel]==$RELEASE_VERSION"' in workflow
     assert (
-        'package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database]==$RELEASE_VERSION"'
+        'package="schemarouter[mcp,langchain,langgraph,llamaindex,otel,database]==$RELEASE_VERSION"'
         in workflow
     )
     assert "--lightweight-extras" in workflow
@@ -407,13 +407,15 @@ def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
         ROOT / "scripts" / "published_pypi_smoke.py"
     ).read_text(encoding="utf-8")
 
-    lightweight_extras = "schemarouter[mcp,jev,otel]"
-    compatibility_combined_extras = "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
+    lightweight_extras = "schemarouter[mcp,otel]"
+    compatibility_combined_extras = "schemarouter[mcp,langchain,langgraph,llamaindex,otel]"
     release_combined_extras = (
-        "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+        "schemarouter[mcp,langchain,langgraph,llamaindex,otel,database]"
     )
     assert "published-pypi-lightweight:" in compatibility
     assert lightweight_extras in compatibility
+    assert 'schemarouter[jev]==0.17.0' in compatibility
+    assert '!= "0.17.0"' in compatibility
     assert lightweight_extras in release
     assert compatibility_combined_extras in compatibility
     assert release_combined_extras in release
@@ -472,7 +474,9 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     ) in workflow
     assert "schemarouter dashboard --registry /tmp/inspection-registry.sqlite3" in workflow
     assert 'dist/*.tar.gz' in workflow
-    assert "schemarouter[mcp,jev,otel] @ file://" in workflow
+    assert "schemarouter[mcp,otel] @ file://" in workflow
+    assert 'pip install -e ".[dev]" "typesafe-sdk>=0.7,<1"' in workflow
+    assert 'pip install -e ".[dev]" "laya>=0.3.6,<1"' in workflow
 
 
 def test_pr_ci_uses_path_aware_tiers_without_renaming_required_gates() -> None:
