@@ -3,9 +3,8 @@
 The copied compatibility methods preserve the pre-cutover authorization,
 data-scope, source-witness and binding checks. This class is not part of
 the wheel or the public product API. It must never be a fallback for the
-configured Algorithm 1 product. The product's temporary compatibility
-methods remain until all direct callers migrate; this module is the target
-of that migration, not a second product engine.
+configured Algorithm 1 product. Historical lexical dispatch is implemented here and no longer in the
+installed runtime.
 """
 
 from __future__ import annotations
@@ -38,6 +37,7 @@ from schemarouter.state_retrieval import (
 )
 
 if TYPE_CHECKING:
+    from schemarouter.field_routing_session import SchemaFieldRoutingSession
     from schemarouter.paper_planning import _PreparedPaperPlanning
 
 
@@ -57,6 +57,21 @@ class LegacySchemaRouter(SchemaRouter):
         )
         self.planner._source_availability = self._source_availability
         self._legacy_routing = True
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        request_type = (
+            PlanRequest if self._legacy_routing and self._paper_planning is None
+            else PaperPlanRequest
+        )
+        return request_type.model_json_schema()
+
+    def configure_field_routing(self, session: SchemaFieldRoutingSession, **kwargs: Any) -> None:
+        super().configure_field_routing(session, **kwargs)
+        # In-flight historical requests must not publish after paper cutover.
+        self._legacy_routing = False
+        self.planner = None
+        self._source_availability.snapshot = None
 
     def _source_availability_predicate(
         self,

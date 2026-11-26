@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+
 import pytest
 
 from schemarouter import PlanRequest, PolicyViolationError, SchemaRouter, schema_tool
@@ -20,7 +22,11 @@ def test_research_router_constructs_without_product_legacy_mode(monkeypatch):
         pytest.fail("research used installed legacy dispatch")
 
     monkeypatch.setattr(SchemaRouter, "__init__", forbid_legacy_constructor)
-    for name in ("_legacy_plan", "_alegacy_plan", "retrieve", "aretrieve"):
+    assert "_legacy_routing" not in inspect.signature(original).parameters
+    for name in ("_legacy_plan", "_alegacy_plan", "_require_legacy_planning_mode",
+                 "_require_legacy_retrieval_mode"):
+        assert not hasattr(SchemaRouter, name)
+    for name in ("retrieve", "aretrieve"):
         monkeypatch.setattr(SchemaRouter, name, forbidden)
 
     @schema_tool(read_only=True)
@@ -38,5 +44,6 @@ def test_research_router_constructs_without_product_legacy_mode(monkeypatch):
 def test_default_router_remains_fail_closed():
     router = SchemaRouter()
     assert router.planner is None
+    assert not hasattr(router, "_legacy_routing")
     with pytest.raises(PolicyViolationError, match="lexical planning is unavailable"):
         router.plan("lookup")
