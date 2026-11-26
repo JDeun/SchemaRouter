@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import sys
 
-from schemarouter import PlanRequest, SchemaRouter, discover_adapter_plugins
+from schemarouter import ExecutionPlan, SchemaRouter, ToolCall, discover_adapter_plugins
 
 PLUGIN_ENTRY_POINT = "demo_static"
 PLUGIN_MODULE = "schemarouter_demo_adapter"
@@ -26,7 +26,7 @@ async def main() -> None:
     # Metadata-only discovery must not import third-party code.
     assert PLUGIN_MODULE not in sys.modules
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     loaded_kinds = router.load_adapter_plugins(allowlist={PLUGIN_ENTRY_POINT})
     assert loaded_kinds == ("demo_static",)
     assert PLUGIN_MODULE in sys.modules
@@ -36,12 +36,21 @@ async def main() -> None:
         kind="demo_static",
         name="demo_catalog",
     )
-    plan = router.plan(
-        PlanRequest(
-            query="demo value",
-            preferred_tools=[tool.key],
-            arguments={"item_id": "alpha"},
-        )
+    # The host knows the plugin's registered route and supplies its own inputs.
+    endpoint = tool.endpoint("lookup")
+    plan = ExecutionPlan(
+        query="demo value",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                arguments={"item_id": "alpha"},
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
     )
     result = (await router.execute(plan))[0]
     assert result.data == {"value": 5}

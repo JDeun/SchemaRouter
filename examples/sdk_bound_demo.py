@@ -6,10 +6,11 @@ import asyncio
 
 from schemarouter import (
     EndpointSpec,
+    ExecutionPlan,
     FieldSpec,
     ParameterSpec,
-    PlanRequest,
     SchemaRouter,
+    ToolCall,
     ToolSpec,
 )
 
@@ -35,7 +36,7 @@ class MarketInvoker:
 
 
 async def main() -> None:
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     tool = ToolSpec(
         name="market_lookup",
         provider="example-finance",
@@ -87,13 +88,24 @@ async def main() -> None:
     )
     router.add_bound_tool(tool, MarketInvoker(MarketSDK()))
 
-    results = await router.ainvoke(
-        PlanRequest(
-            query="stock quote price",
-            preferred_tools=[tool.key],
-            arguments={"symbol": "AAPL"},
-        )
+    # Explicit host-owned selection: use the actual registered contract.
+    registered = router.registry.get(tool.key)
+    endpoint = registered.endpoint("quote")
+    plan = ExecutionPlan(
+        query="stock quote price",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool=registered.key,
+                endpoint=endpoint.name,
+                arguments={"symbol": "AAPL"},
+                fields=["symbol", "price"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=registered.fingerprint,
+            )
+        ],
     )
+    results = await router.execute(plan)
 
     assert results[0].data["price"] == 123.45
     print(results[0].data)

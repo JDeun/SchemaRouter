@@ -26,7 +26,7 @@ async def main() -> None:
     )
     connection.commit()
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     try:
         keys = router.add_sqlite_database(
             connection,

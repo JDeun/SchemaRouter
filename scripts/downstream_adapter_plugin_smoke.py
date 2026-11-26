@@ -13,12 +13,13 @@ from pathlib import Path
 
 import schemarouter
 from schemarouter import (
+    ExecutionPlan,
     ExecutionPolicy,
-    PlanRequest,
     PolicyRule,
     PolicyViolationError,
     SchemaRouter,
     SchemaValidationError,
+    ToolCall,
     discover_adapter_plugins,
 )
 
@@ -39,13 +40,23 @@ def _assert_installed_wheel_import() -> None:
     assert "site-packages" in package_file.parts, package_file
 
 
-def _plan(router: SchemaRouter, tool_key: str, item_id: str):
-    return router.plan(
-        PlanRequest(
-            query="demo value",
-            preferred_tools=[tool_key],
-            arguments={"item_id": item_id},
-        )
+def _plan(router: SchemaRouter, tool_key: str, item_id: str) -> ExecutionPlan:
+    """Bind the exact host-selected registered route; test the real executor."""
+    tool = router.registry.get(tool_key)
+    endpoint = tool.endpoint("lookup")
+    return ExecutionPlan(
+        query="demo value",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                arguments={"item_id": item_id},
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
     )
 
 
@@ -62,7 +73,7 @@ async def main() -> None:
     # Entry-point metadata discovery must not execute installed plugin code.
     assert PLUGIN_MODULE not in sys.modules
 
-    router = SchemaRouter(_legacy_routing=True)
+    router = SchemaRouter()
     loaded = router.load_adapter_plugins(allowlist={PLUGIN_ENTRY_POINT})
     assert loaded == ("demo_static",)
     assert PLUGIN_MODULE in sys.modules
@@ -88,7 +99,6 @@ async def main() -> None:
         )
 
     denied_router = SchemaRouter(
-        _legacy_routing=True,
         policy=ExecutionPolicy(
             rules=(
                 PolicyRule(
