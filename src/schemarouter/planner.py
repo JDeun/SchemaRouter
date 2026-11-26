@@ -56,6 +56,7 @@ from .validation import (
     json_schemas_compatible,
 )
 
+
 def _semantic_trigrams(value: str) -> frozenset[str]:
     """Return unique 3-grams used to shortlist semantic-containment candidates."""
 
