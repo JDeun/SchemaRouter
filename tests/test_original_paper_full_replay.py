@@ -1,0 +1,470 @@
+"""Reproduce the frozen paper's 110 plans and compare the actual library.
+
+Conditional archived understanding, not independent model or end-task quality.
+The historical tool/field/parameter outputs never enter the current router.
+All 19 frozen sources are registered together; no provider or model is invoked.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from schemarouter import PrincipalContext
+from scripts.research_original_paper_inventory import build_original_paper_inventory
+
+FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "original_paper_full_replay.json").read_text(
+        encoding="utf-8",
+    )
+)
+APIS = {a["name"]: a for a in FIXTURE["inventory"]["apis"]}
+INTENTS = {i["name"]: i for i in FIXTURE["inventory"]["intents"]}
+CASES = FIXTURE["cases"]
+ACTOR = PrincipalContext(subject="original-paper-conditional-replay")
+
+def _literal_hints(case):
+    query = case["query"]
+    named = []
+    for api in APIS.values():
+        for label in dict.fromkeys((api["name"], api["display_name"])):
+            match = re.search(
+                r"(?<![A-Za-z0-9_])" + re.escape(label) + r"(?![A-Za-z0-9_])",
+                query, flags=re.IGNORECASE,
+            )
+            if match:
+                named.append((match.start(), api["name"], match.group()))
+                break
+    source = (
+        "experimental" if "실험으로 측정된" in query else
+        "calculated" if "DFT로 계산된" in query else None
+    )
+    hints = {}
+    if case["category"] == "literature_search":
+        match = re.match(r"^(.+?) 관련 최신 arXiv 논문을 찾아줘\.$", query)
+        if match:
+            hints = {"search topic": match[1], "sort order": "latest"}
+    elif case["category"] == "chemical_lookup":
+        match = re.match(r"^(.+?)의 ", query)
+        if match:
+            hints = {"identifier": match[1]}
+    elif case["intent"] is not None:
+        match = re.match(
+            r"^(?:실험으로 측정된 |DFT로 계산된 )?([A-Za-z0-9]+)(?:의| 안정성)", query,
+        )
+        if match:
+            hints = {"formula": match[1]}
+    return sorted(named), source, hints
+
+
+def _norm(value):
+    return value.strip().lower().replace("_", "").replace(" ", "").replace("-", "")
+
+
+def _reference_plan(case, named, source):
+    """Test-only transcription of the pinned original deterministic algorithm."""
+    concepts = case["concepts"]
+    intent = INTENTS.get(case["intent"])
+    if named:
+        candidates = [APIS[key] for _, key, _ in named]
+    else:
+        candidates = [
+            api for api in APIS.values() if intent is not None
+            and (not intent["target_api_names"] or api["name"] in intent["target_api_names"])
+            and (not intent["applicable_domains"] or api["domain"] in intent["applicable_domains"])
+            and (not intent["required_groups"] or set(intent["required_groups"]) & {
+                group["name"] for group in api["field_groups"]
+            })
+        ]
+        if not candidates:
+            candidates = [api for api in APIS.values() if any(
+                label.lower() in field["name"].lower() or field["name"].lower() in label.lower()
+                for label in concepts for field in api["fields"]
+            )]
+        # Historical permissive fallback is reproduced ONLY in this reference.
+        if source:
+            candidates = [api for api in candidates if api["source_type"] == source] or candidates
+        if not (intent and intent["target_api_names"]) and len(candidates) > 1:
+            def rank(api):
+                names = {field["name"].lower() for field in api["fields"]}
+                score = sum(2 if label.strip().lower() in names else
+                            int(any(label.strip().lower() in name or name in label.strip().lower()
+                                    for name in names)) for label in concepts)
+                return (-score, api["domain"] == "web", -api.get("priority", 1),
+                        len(api["fields"]), api["name"])
+            candidates = sorted(candidates, key=rank)[:1]
+    result = {}
+    for api in candidates:
+        names = {f["name"] for f in api["fields"]}
+        groups = {g["name"]: set(g["field_names"]) & names for g in api["field_groups"]}
+        synonyms = {_norm(alias): f["name"] for f in api["fields"] for alias in f["aliases"]}
+        equivalent = {eq["field_name"].lower(): f["name"]
+                      for f in api["fields"] for eq in f["equivalent_to"]}
+        selected = {f["name"] for f in api["fields"] if f["is_identifier"]}
+        for label in concepts:
+            key = _norm(label)
+            matches = {name for name in names if key in _norm(name) or _norm(name) in key}
+            if key in synonyms:
+                matches.add(synonyms[key])
+            if label.strip().lower() in equivalent:
+                matches.add(equivalent[label.strip().lower()])
+            selected.update(matches)
+            for members in groups.values():
+                if matches & members:
+                    selected.update(members)
+            selected.update(groups.get(label.strip().lower(), ()))
+        for group in intent["required_groups"] if intent else ():
+            selected.update(groups.get(group, ()))
+        if selected:
+            result[api["name"]] = selected
+    return result
+
+
+def test_frozen_original_reference_matches_all_archived_plans():
+    assert len(APIS) == 19 and len(INTENTS) == 13 and len(CASES) == 110
+    assert sum(len(api["fields"]) for api in APIS.values()) == 166
+    assert len({case["query_id"] for case in CASES}) == 110
+    missing_required = 0
+    call_count = 0
+    for case in CASES:
+        named, source, _ = _literal_hints(case)
+        expected = {call["tool"]: set(call["fields"]) for call in case["archived_calls"]}
+        assert _reference_plan(case, named, source) == expected, case["query_id"]
+        for call in case["archived_calls"]:
+            api = APIS[call["tool"]]
+            assert call["evidence_requirements"]["source_type"] == api["source_type"]
+            assert call["evidence_requirements"]["license"] == api["license"]
+            assert set(call["parameters"]) <= {p["name"] for p in api["parameters"]}
+            missing_required += int(any(
+                p["required"] and p["name"] not in call["parameters"] for p in api["parameters"]
+            ))
+            call_count += 1
+    assert call_count == 110 and missing_required == 24
+
+
+def test_stability_meaning_is_grounded_in_frozen_source_contracts():
+    mp = {field["name"]: field for field in APIS["materials_project"]["fields"]}
+    oqmd = {field["name"]: field for field in APIS["oqmd"]["fields"]}
+    jarvis = {field["name"]: field for field in APIS["jarvis"]["fields"]}
+    indicators = (mp["energy_above_hull"], oqmd["stability"], jarvis["ehull"])
+    assert all(
+        field["type"] == "float" and field["unit"] == "eV/atom"
+        and field["source_type"] == "calculated" for field in indicators
+    )
+    assert any(
+        equivalent["api_name"] == "materials_project"
+        and equivalent["field_name"] == "energy_above_hull"
+        for equivalent in oqmd["stability"]["equivalent_to"]
+    )
+    assert mp["is_stable"]["type"] == "boolean" and mp["is_stable"]["unit"] is None
+    # Source aliases describe source-specific meanings, not global equivalence.
+    assert "stability" in mp["is_stable"]["aliases"]
+    assert "stability" in oqmd["stability"]["aliases"]
+
+
+@pytest.fixture(scope="module")
+def stability_session():
+    return build_original_paper_inventory(FIXTURE["inventory"])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool,display,concept,unit,source,expected_field,expected_sid", [
+    ("materials_project", "Materials Project", "stability", "eV/atom", "calculated",
+     "energy_above_hull", "mat.hull_energy"),
+    ("oqmd", "OQMD", "stability", "eV/atom", "calculated",
+     "stability", "mat.hull_energy"),
+    ("jarvis", "JARVIS", "stability", "eV/atom", "calculated",
+     "ehull", "mat.hull_energy"),
+    ("materials_project", "Materials Project", "is_stable", None, "calculated",
+     "is_stable", "mat.stability_flag"),
+    ("materials_project", "Materials Project", "stable", None, "calculated",
+     "is_stable", "mat.stability_flag"),
+    ("oqmd", "OQMD", "is_stable", None, "calculated", None, None),
+    ("oqmd", "OQMD", "thermodynamic_stability", None, "calculated", None, None),
+    ("materials_project", "Materials Project", "stability", "GPa", "calculated", None, None),
+    ("materials_project", "Materials Project", "is_stable", "eV/atom",
+     "calculated", None, None),
+    ("materials_project", "Materials Project", "stability", "eV/atom",
+     "experimental", None, None),
+    ("materials_project", "Materials Project", "decomposition_energy", "eV/atom",
+     "calculated", None, None),
+])
+async def test_stability_indicator_and_boolean_are_distinct_native_proofs(
+    stability_session, tool, display, concept, unit, source, expected_field, expected_sid,
+):
+    session, intents, rank = stability_session
+    need = {"concept": concept}
+    if unit is not None:
+        need["unit"] = unit
+    raw = {
+        "intent_id": "check_stability", "needs": [need],
+        "named_tools": [display], "source_type": source,
+    }
+    plan = await session.acompile_query(
+        f"Find {concept} for a material using {display}.",
+        principal=ACTOR, intent_registry=intents, rank_policy=rank,
+        model=lambda _: raw, model_visible_intent_ids=("check_stability",),
+    )
+    assert not plan.executable_authority and not plan.bindings
+    assert plan.coverage is not None
+    if expected_field is None:
+        assert not plan.coverage.complete
+        assert not plan.calls
+        assert any(item.semantic_id == concept for item in plan.coverage.uncovered)
+        return
+    assert plan.coverage.complete
+    assert [call.call.tool for call in plan.calls] == [tool]
+    call = plan.calls[0]
+    assert call.call.arguments == {}
+    metas = {meta.name: meta for meta in call.fields_meta}
+    meta = metas[expected_field]
+    assert meta.semantic_id == expected_sid
+    assert meta.unit == unit
+    assert meta.json_schema["type"] == ("number" if unit else "boolean")
+    if tool == "materials_project":
+        # Recall expansion may return both quantities, but their typed
+        # contracts remain distinct. No bool<->number conversion is inferred.
+        assert metas["energy_above_hull"].semantic_id == "mat.hull_energy"
+        assert metas["energy_above_hull"].unit == "eV/atom"
+        assert metas["is_stable"].semantic_id == "mat.stability_flag"
+        assert metas["is_stable"].json_schema["type"] == "boolean"
+        assert metas["is_stable"].unit is None
+
+
+def _fixed_understanding(case, *, role_aware=False, topic_only=False):
+    named, source, hints = _literal_hints(case)
+    labels = case["concepts"]
+    if case["category"] == "literature_search":
+        if topic_only:
+            # Correct only a literal lookup subject; retain EVERY other
+            # archived output label, including unsupported keywords.
+            topic = hints.get("search topic")
+            if topic:
+                labels = [label for label in labels if _norm(label) != _norm(topic)]
+                if not labels:
+                    labels = ["research papers"]
+        elif role_aware:
+            labels = ["research papers"]
+    needs = [{"concept": label} for label in labels[:8]]
+    # Preserve explicit units when the original labels identify the quantity.
+    unit_labels = {
+        "GPa": {"elastic_modulus", "bulk_modulus", "shear_modulus", "youngs_modulus"},
+        "g/cm³": {"density"},
+        "eV/atom": {"formation_energy"},
+    }
+    for unit, names in unit_labels.items():
+        if unit in case["query"]:
+            for need in needs:
+                if need["concept"] in names:
+                    need["unit"] = unit
+    return {
+        "intent_id": case["intent"], "needs": needs,
+        "needs_truncated": len(labels) > 8,
+        "named_tools": [label for _, _, label in named],
+        "source_type": source, "parameter_hints": hints,
+    }
+
+
+async def _replay(session, intents, rank, case, *, role_aware=False, topic_only=False):
+    raw = _fixed_understanding(case, role_aware=role_aware, topic_only=topic_only)
+    observed = []
+
+    def model(payload):
+        observed.append(payload)
+        return raw
+
+    plan = await session.acompile_query(
+        case["query"], principal=ACTOR, intent_registry=intents, rank_policy=rank,
+        model=model, model_visible_intent_ids=tuple(INTENTS),
+    )
+    assert len(observed) == 1
+    assert "schema_catalog" not in observed[0] and "offered_concepts" not in observed[0]
+    assert not plan.executable_authority and not plan.bindings
+    assert plan.coverage is not None
+    assert len(plan.calls) <= 5
+    current = {}
+    proposals = {}
+    missing = {}
+    for call in plan.calls:
+        key = call.call.tool
+        api = APIS[key]
+        assert call.route_id == f"{key}.search"
+        assert call.call.arguments == {}
+        assert call.source_type == api["source_type"] and call.license == api["license"]
+        source_fields = {field["name"]: field for field in api["fields"]}
+        assert set(call.call.fields) <= source_fields.keys()
+        assert len(call.call.fields) == len(set(call.call.fields))
+        assert {m.name for m in call.fields_meta} == set(call.call.fields)
+        for meta in call.fields_meta:
+            assert meta.unit == source_fields[meta.name]["unit"]
+        assert {name for name, _ in call.parameter_proposals} <= {
+            p["name"] for p in api["parameters"]
+        }
+        current[key] = sorted(call.call.fields)
+        proposals[key] = dict(call.parameter_proposals)
+        missing[key] = list(call.call.missing_required_arguments)
+    expected = {c["tool"]: sorted(c["fields"]) for c in case["archived_calls"]}
+    tool_exact = set(current) == set(expected)
+    if case["intent"] is None:
+        assert not plan.calls and plan.status == "no_proven_hit"
+    if len(case["concepts"]) > 8 and not role_aware:
+        assert not plan.calls and plan.status == "budget_unsatisfied"
+    return {
+        "query_id": case["query_id"], "category": case["category"],
+        "status": plan.status, "coverage_complete": plan.coverage.complete,
+        "tool_exact": tool_exact, "field_exact": tool_exact and current == expected,
+        "selected": current, "historical": expected, "proposals": proposals,
+        "missing_required": missing,
+        "uncovered": [item.semantic_id for item in plan.coverage.uncovered],
+        # Persist exact input proof classifications for failure attribution;
+        # values remain in the bounded detached proposal/Understanding data.
+        "uncovered_requirements": [
+            item.model_dump(mode="json") for item in plan.coverage.uncovered
+        ],
+        "raw_needs": raw["needs"], "raw_needs_truncated": raw["needs_truncated"],
+    }
+
+
+@pytest.mark.asyncio
+async def test_full_original_inventory_conditional_library_replay():
+    session, intents, rank = build_original_paper_inventory(FIXTURE["inventory"])
+    assert session._index.field_index.indexed_route_count == 19
+    rows: list[dict[str, Any]] = []
+    errors = []
+    for case in CASES:
+        try:
+            rows.append(await _replay(session, intents, rank, case))
+        except Exception as exc:
+            errors.append({"query_id": case["query_id"], "error": type(exc).__name__,
+                           "detail": str(exc)[:500]})
+    role_aware = []
+    topic_only = []
+    for case in CASES:
+        if case["category"] == "literature_search":
+            try:
+                role_aware.append(await _replay(session, intents, rank, case, role_aware=True))
+                topic_only.append(await _replay(session, intents, rank, case, topic_only=True))
+            except Exception as exc:
+                errors.append({"query_id": case["query_id"], "arm": "literature_role_control",
+                               "error": type(exc).__name__, "detail": str(exc)[:500]})
+    positive = [row for row in rows if row["historical"]]
+    categories = {}
+    for row in rows:
+        category = categories.setdefault(row["category"], Counter())
+        category["n"] += 1
+        category["tool_exact"] += row["tool_exact"]
+        category["field_exact"] += row["field_exact"]
+        category["coverage_complete"] += row["coverage_complete"]
+    summary = {
+        "scope": "fixed archived labels + reconstructed literal hints, no model/provider IO",
+        "query_count": len(CASES), "completed": len(rows), "errors": errors,
+        "tool_exact": sum(row["tool_exact"] for row in rows),
+        "field_exact": sum(row["field_exact"] for row in rows),
+        "supported_rows_with_calls": sum(bool(row["selected"]) for row in positive),
+        "supported_coverage_complete": sum(row["coverage_complete"] for row in positive),
+        "statuses": dict(Counter(row["status"] for row in rows)),
+        "categories": {key: dict(value) for key, value in categories.items()},
+        "topic_only_literature": {
+            "n": len(topic_only),
+            "coverage_complete": sum(row["coverage_complete"] for row in topic_only),
+            "field_exact": sum(row["field_exact"] for row in topic_only),
+            "statuses": dict(Counter(row["status"] for row in topic_only)),
+        },
+        "role_aware_literature": {
+            "n": len(role_aware), "tool_exact": sum(row["tool_exact"] for row in role_aware),
+            "field_exact": sum(row["field_exact"] for row in role_aware),
+            "coverage_complete": sum(row["coverage_complete"] for row in role_aware),
+            "statuses": dict(Counter(row["status"] for row in role_aware)),
+        },
+    }
+    print("PAPER_110_REPLAY_SUMMARY " + json.dumps(summary, ensure_ascii=False, sort_keys=True))
+    report = os.environ.get("SCHEMAROUTER_PAPER_REPLAY_REPORT")
+    if report:
+        Path(report).write_text(json.dumps(
+            {"provenance": FIXTURE["provenance"], "summary": summary, "rows": rows,
+             "role_aware_literature": role_aware, "topic_only_literature": topic_only},
+            ensure_ascii=False, indent=2,
+        ) + "\n", encoding="utf-8")
+    # Fail engineering errors, not scientifically informative mismatches.
+    assert not errors, errors
+    assert len(rows) == 110 and len(role_aware) == len(topic_only) == 10
+    assert sum(row["coverage_complete"] for row in topic_only) == 9
+    assert "keywords" in next(row for row in topic_only if row["query_id"] == "g068")["uncovered"]
+    assert next(row for row in rows if row["query_id"] == "g039")["coverage_complete"]
+    # No expected historical labels enter the planner. Verify the specific
+    # union-input seam on the full cohort after execution, not a tuned route
+    # selection or overall task-quality target.
+    for row in rows:
+        raw_case = next(case for case in CASES if case["query_id"] == row["query_id"])
+        _, _, hints = _literal_hints(raw_case)
+        if set(row["selected"]) == {"materials_project"} and "formula" in hints:
+            assert row["proposals"]["materials_project"].get("formula") == hints["formula"]
+            assert "formula" not in row["uncovered"]
+        if set(row["selected"]) == {"pubchem"} and "identifier" in hints:
+            assert row["proposals"]["pubchem"].get("identifier") == hints["identifier"]
+            assert "identifier" not in row["uncovered"]
+        # A broad stability request in this frozen host vocabulary uses
+        # quantitative hull energy. Do not select an expected provider by
+        # case ID or archived output. Check unchanged historical results only
+        # after the native router has selected its sources.
+        if (
+            raw_case["intent"] == "check_stability"
+            and set(raw_case["concepts"]) == {"formation_energy", "stability"}
+        ):
+            assert row["coverage_complete"], row["query_id"]
+            assert row["tool_exact"] and row["field_exact"], row["query_id"]
+            assert row["status"] == "requires_arguments"
+        if "decomposition_energy" in raw_case["concepts"]:
+            assert "decomposition_energy" in row["uncovered"]
+            assert not row["coverage_complete"]
+        if row["category"] == "cross_source_comparison":
+            assert set(row["selected"]) == {"materials_project", "oqmd"}
+            assert row["coverage_complete"]
+            assert row["proposals"]["materials_project"]["formula"] == hints["formula"]
+            assert row["proposals"]["oqmd"]["composition"] == hints["formula"]
+            assert row["status"] == "requires_arguments"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("label,tool,source,expected,complete", [
+    ("magnetic properties", "materials_project", "calculated",
+     {"total_magnetization", "magnetic_ordering"}, True),
+    ("elastic moduli", "materials_project", "calculated", {"k_vrh", "g_vrh"}, True),
+    ("youngs_modulus", "materials_project", "calculated", set(), False),
+    ("elastic_modulus", "materials_project", "calculated", set(), False),
+    ("lattice_lengths", "cod", "experimental", {"_cod_a", "_cod_b", "_cod_c"}, True),
+    ("lattice_parameters", "cod", "experimental", set(), False),
+    ("crystal_structure", "cod", "experimental", set(), False),
+    ("boiling_point", "pubchem", "experimental", set(), False),
+    ("keywords", "arxiv", "literature", set(), False),
+])
+async def test_residual_source_meanings_do_not_invent_unavailable_properties(
+    stability_session, label, tool, source, expected, complete,
+):
+    session, intents, rank = stability_session
+    intent = {
+        "materials_project": "find_structure", "cod": "find_structure",
+        "pubchem": "find_compound", "arxiv": "find_paper",
+    }[tool]
+    raw = {
+        "intent_id": intent, "needs": [{"concept": label}],
+        "named_tools": [tool], "source_type": source,
+    }
+    plan = await session.acompile_query(
+        f"Return {label} from {tool}.", principal=ACTOR, intent_registry=intents,
+        rank_policy=rank, model=lambda _: raw, model_visible_intent_ids=(intent,),
+    )
+    assert not plan.executable_authority and not plan.bindings
+    assert plan.coverage.complete is complete
+    if complete:
+        assert len(plan.calls) == 1
+        assert expected <= set(plan.calls[0].call.fields)
+        assert plan.calls[0].call.arguments == {}
+    else:
+        assert not plan.calls
+        assert any(item.semantic_id == label for item in plan.coverage.uncovered)

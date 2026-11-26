@@ -1,0 +1,496 @@
+{
+  "schema_version": 1,
+  "scope": "Historical arXiv projection with separately authored conditional Understand callbacks. The topic is copied literally from each query; 'latest' remains an unresolved native sort value until a host-approved mapping exists. Archived concepts/parameters/fields are observations, not gold or model inputs. No actual model, provider call or task evaluation.",
+  "provenance": {
+    "repository": "JDeun/paper_SchemaRouter",
+    "commit": "368116746170d6dd0d95a91352daba8abc42ca13",
+    "blobs": {
+      "experiments/schema/inventory.json": "71713203dd7145898201868bf1c2435229cdb709",
+      "experiments/runs/run_schema_router.jsonl": "858ded8f3fd873e0927b13bc154aa0e923abf96d",
+      "experiments/dataset/queries.jsonl": "ae4c25155b90bb5b7c7f775e8a9bf23fbefe6f95"
+    }
+  },
+  "api": {
+    "name": "arxiv",
+    "domain": "papers",
+    "source_type": "literature",
+    "license": "metadata: CC0 / 원문: 논문별 상이",
+    "priority": 2,
+    "fields": [
+      {
+        "name": "entry_id",
+        "type": "string",
+        "unit": null,
+        "is_identifier": true,
+        "description": "arXiv 논문 URL (entry_id)",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "unit": null,
+        "is_identifier": true,
+        "description": "논문 제목",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "summary",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "description": "초록 전문",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "authors",
+        "type": "list[str]",
+        "unit": null,
+        "is_identifier": false,
+        "description": "저자 목록",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "published",
+        "type": "datetime",
+        "unit": null,
+        "is_identifier": false,
+        "description": "최초 등록 일시",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "updated",
+        "type": "datetime",
+        "unit": null,
+        "is_identifier": false,
+        "description": "최신 업데이트 일시",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "primary_category",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "description": "주요 arXiv 분류 (예: cond-mat.mtrl-sci)",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "doi",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "description": "DOI (있는 경우)",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "pdf_url",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "description": "PDF URL",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      },
+      {
+        "name": "journal_ref",
+        "type": "string",
+        "unit": null,
+        "is_identifier": false,
+        "description": "게재 저널 참조",
+        "source_type": "literature",
+        "equivalent_to": [],
+        "aliases": []
+      }
+    ],
+    "parameters": [
+      {
+        "name": "search_query",
+        "type": "str",
+        "required": true,
+        "filters_field": null,
+        "description": "검색 쿼리. 필드 접두사: ti:(제목), abs:(초록), cat:(분류)"
+      },
+      {
+        "name": "id_list",
+        "type": "list[str]",
+        "required": false,
+        "filters_field": null,
+        "description": "arXiv ID 목록으로 특정 논문 직접 조회"
+      },
+      {
+        "name": "max_results",
+        "type": "int",
+        "required": false,
+        "filters_field": null,
+        "description": "반환 결과 수 (기본: 10, 권장 최대: 2000)"
+      },
+      {
+        "name": "sortBy",
+        "type": "str",
+        "required": false,
+        "filters_field": null,
+        "description": "정렬 기준: relevance, lastUpdatedDate, submittedDate"
+      }
+    ],
+    "field_groups": [
+      {
+        "name": "identifier",
+        "field_names": [
+          "entry_id",
+          "title"
+        ],
+        "always_include": true
+      },
+      {
+        "name": "content",
+        "field_names": [
+          "summary",
+          "primary_category"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "metadata",
+        "field_names": [
+          "authors",
+          "published",
+          "doi",
+          "journal_ref"
+        ],
+        "always_include": false
+      },
+      {
+        "name": "access",
+        "field_names": [
+          "pdf_url"
+        ],
+        "always_include": false
+      }
+    ]
+  },
+  "intent": {
+    "name": "find_paper",
+    "description": "관련 논문 검색",
+    "required_groups": [
+      "content",
+      "metadata"
+    ],
+    "applicable_domains": [
+      "papers"
+    ],
+    "target_api_names": []
+  },
+  "cases": [
+    {
+      "query_id": "g059",
+      "query": "sodium-ion battery 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "sodium-ion battery",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "publication_date",
+        "authors",
+        "sodium_ion_battery"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g060",
+      "query": "solid electrolyte 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "solid electrolyte",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "solid_electrolyte"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g061",
+      "query": "perovskite solar cell 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "perovskite solar cell",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "perovskite_solar_cell"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g062",
+      "query": "lithium metal anode 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "lithium metal anode",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "publication_date",
+        "authors",
+        "abstract"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g063",
+      "query": "graphene 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "graphene",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "authors",
+        "publication_date"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g064",
+      "query": "MXene 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "MXene",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "publication_date",
+        "authors"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g065",
+      "query": "quantum dot 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "quantum dot",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "quantum_dot"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g066",
+      "query": "thermoelectric material 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "thermoelectric material",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "thermoelectric_material",
+        "title",
+        "summary"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g067",
+      "query": "photocatalysis 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "photocatalysis",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "photocatalysis"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    },
+    {
+      "query_id": "g068",
+      "query": "supercapacitor 관련 최신 arXiv 논문을 찾아줘.",
+      "topic": "supercapacitor",
+      "historical_intent": "find_paper",
+      "historical_concepts": [
+        "title",
+        "summary",
+        "keywords",
+        "publication_date"
+      ],
+      "historical_parameters": {},
+      "historical_fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "primary_category",
+        "authors",
+        "published",
+        "doi",
+        "journal_ref"
+      ],
+      "evidence_requirements": {
+        "unit_required": false,
+        "provenance_required": true,
+        "source_type": "literature",
+        "license_required": true,
+        "license": "metadata: CC0 / 원문: 논문별 상이"
+      }
+    }
+  ]
+}

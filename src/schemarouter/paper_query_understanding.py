@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from pydantic import BaseModel
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_text
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import (
     MAX_QUERY_BYTES,
@@ -62,6 +63,7 @@ def _decode_bounded_response(raw: dict[str, Any] | str, limit: int) -> PaperUnde
 
 def _decode_model_response(
     raw: dict[str, Any] | str, limit: int, response_type: type[_Response],
+    *, direct_parameters: bool = False,
 ) -> _Response:
     """Reject duplicate keys, nonfinite numbers, excess bytes and type coercion."""
 
@@ -95,7 +97,10 @@ def _decode_model_response(
         )
         if len(encoded.encode("utf-8")) > limit:
             raise ModelAnalysisError("paper model output exceeds byte budget")
-        return response_type.model_validate_json(encoded, strict=True)
+        return response_type.model_validate_json(
+            encoded, strict=True,
+            context={"paper_direct_parameters": direct_parameters},
+        )
     except ModelAnalysisError:
         raise
     except (ValueError, TypeError, OverflowError, RecursionError):
@@ -105,6 +110,7 @@ def _decode_model_response(
 async def _understand_query(
     model: PaperFieldModel, payload: dict[str, Any], *, response_type: type[_Response],
     max_input_bytes: int, max_output_bytes: int, verify: Callable[[], None],
+    direct_parameters: bool = False,
 ) -> _Response:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":"), allow_nan=False)
@@ -119,7 +125,9 @@ async def _understand_query(
         verify()
         raise ModelAnalysisError("paper model understanding failed") from None
     verify()
-    return _decode_model_response(response, max_output_bytes, response_type)
+    return _decode_model_response(
+        response, max_output_bytes, response_type, direct_parameters=direct_parameters,
+    )
 
 
 def _may_be_excluded(meta: PaperPlanFieldMeta, requirement: CapabilityFieldContract) -> bool:
@@ -185,7 +193,8 @@ def _compile_query_needs(
                            PaperTypedToolPlan],
     abstain: Callable[[], PaperTypedToolPlan], resolve_tool: Callable[[str], str | None],
     router: SchemaRouter, principal: PrincipalContext, verify: Callable[[], None],
-) -> PaperTypedToolPlan:
+    retain_raw_rank_concepts: bool = False,
+) -> tuple[PaperTypedToolPlan, frozenset[str]]:
     if raw.intent_id is not None and raw.intent_id not in intent_ids:
         raise ModelAnalysisError("model selected an unoffered paper intent")
     resolved = [_resolve_query_need_candidate(need, catalog, raw.source_type) for need in raw.needs]
@@ -208,6 +217,9 @@ def _compile_query_needs(
         plan = compile_hint(PaperUnderstanding(
             intent_id=raw.intent_id, concept_ids=known, source_type=raw.source_type,
             named_tools=tuple(dict.fromkeys(named_tools)),
+            raw_rank_concepts=(
+                tuple(need.concept for need in raw.needs) if retain_raw_rank_concepts else None
+            ),
             unresolved_concepts=tuple(dict.fromkeys(
                 need.concept for need, (cid, _) in zip(raw.needs, resolved, strict=True)
                 if cid is None
@@ -303,7 +315,7 @@ def _compile_query_needs(
         coverage=PlanCoverage(required=required, covered=covered, uncovered=uncovered,
                               complete=not uncovered),
         understanding_hints=raw.model_dump(mode="json"),
-    )
+    ), frozenset(named_tools)
 
 
 async def compile_model_query(
@@ -349,6 +361,11 @@ async def compile_model_query(
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
     if (
+        not independent and rank_policy is not None
+        and rank_policy.direct_score_mode == "paper_v1"
+    ):
+        raise ValueError("paper v1 Rank requires schema-independent Understand labels")
+    if (
         type(allow_unnamed_graph_discovery) is not bool
         or allow_unnamed_graph_discovery and rank_policy is None
     ):
@@ -380,6 +397,7 @@ async def compile_model_query(
         )
         before = (catalog.model_dump_json(), intent_registry.model_dump_json(),
                   principal.model_dump_json(), deepcopy(host_source_arguments),
+                  canonical_json_text(host_source_arguments),
                   rank_policy.model_dump_json() if rank_policy else None)
     except (ValueError, TypeError, AttributeError, OverflowError):
         raise PolicyViolationError("paper query owner declarations invalid") from None
@@ -403,6 +421,13 @@ async def compile_model_query(
             # Fail before any external model disclosure; diagnostics must
             # never serialize provider/owner policy internals into errors.
             raise PolicyViolationError("paper query rank source preflight failed") from None
+
+    annotated = intents.annotated_routes()
+    if intents.projection_snapshot_id is not None and (
+        intents.projection_snapshot_id != session.snapshot_id
+        or not annotated <= session._index.field_index.route_locations.keys()
+    ):
+        raise PolicyViolationError("paper query intent source preflight failed")
 
     approved_concepts = {c.concept_id: c for c in reviewed.concepts}
     approved_intents = {i.intent_id: i for i in intents.intents}
@@ -445,6 +470,7 @@ async def compile_model_query(
             current_owner = (
                 catalog.model_dump_json(), intent_registry.model_dump_json(),
                 principal.model_dump_json(), host_source_arguments,
+                canonical_json_text(host_source_arguments),
                 rank_policy.model_dump_json() if rank_policy else None,
             )
             owner_changed = current_owner != before
@@ -470,9 +496,32 @@ async def compile_model_query(
 
     def finalize(
         plan: PaperTypedToolPlan, parameter_hints: dict[str, Any],
+        *,
+        intent_id: str | None = None,
+        verified_named_tools: frozenset[str] = frozenset(),
     ) -> PaperTypedToolPlan:
+        resolve = (
+            independent and not plan.bindings and rank_policy is not None
+            and rank_policy.direct_score_mode == "paper_v1"
+        )
+        # A multi-route result is not, by itself, permission to copy one
+        # value to every route. Only the complete set of explicitly mentioned,
+        # source-resolved and output-proved tools can use owner shared semantics.
+        shared = (
+            approved_intents[intent_id].shared_parameter_semantics
+            if (
+                resolve and intent_id is not None
+                and plan.coverage is not None and plan.coverage.complete
+                and plan.status in ("ready", "requires_arguments")
+                and 2 <= len(verified_named_tools) == len(plan.calls)
+                and {call.call.tool for call in plan.calls} == verified_named_tools
+            ) else None
+        )
         plan = _apply_query_input_conditions(
             router, plan, principal=principal, parameter_hints=parameter_hints,
+            resolve_proposals=resolve,
+            value_aliases=intents.route_parameter_value_aliases if resolve else None,
+            shared_parameter_semantics=shared,
         )
         # The condition helper also calls host callbacks. Recheck the caller's
         # complete catalog/intent/Rank/host-input witness after both protocols.
@@ -547,9 +596,9 @@ async def compile_model_query(
         scoped_proofs = []
         for cid, source in groups:
             scoped = narrow_scope(((cid, source),))
-            single_intent = PaperIntentRegistry(intents=(PaperIntentDeclaration(
-                intent_id=intent.intent_id, required_concept_ids=(cid,), domains=intent.domains,
-            ),))
+            single_intent = intents.model_copy(update={"intents": (
+                intent.model_copy(update={"required_concept_ids": (cid,)}),
+            )})
             single = understood.model_copy(update={
                 "concept_ids": (cid,), "unresolved_concepts": (),
             })
@@ -591,10 +640,19 @@ async def compile_model_query(
             router, principal=principal, index=session._index, k=k,
             host_source_arguments=host_source_arguments,
             prove_groups=prove_groups, verify_current=verify, coverage=coverage,
+            approved_direct_parameter_routes=frozenset(
+                intents.approved_direct_parameter_routes,
+            ),
         )
 
     if independent:
+        direct_parameters = rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
         response_schema = PaperQueryUnderstanding.model_json_schema()
+        if direct_parameters:
+            response_schema["properties"]["parameter_hints"]["description"] = (
+                "Explicit bounded JSON scalar, list or object literals; "
+                "never invent provider-specific shapes or host arguments."
+            )
         # Require explicit model channels without changing legacy DTO decode defaults.
         response_schema["required"] = list(response_schema["properties"])
         need_schema = response_schema["$defs"]["PaperQueryNeed"]
@@ -614,6 +672,17 @@ async def compile_model_query(
                 "retain the requested action and object even when intent_id is null.",
                 "If more than eight needs are requested, set needs_truncated=true.",
                 "Use short English need names, preserving semantic roles and requested actions.",
+                "Distinguish the requested result or retrieval goal from a lookup subject. "
+                "For a search about a topic, keep the requested records or search goal in "
+                "needs and copy the topic as a scalar in parameter_hints. Use the explicit "
+                "parameter label, or a short semantic role such as search topic. "
+                "A search subject is not itself a requested output field.",
+                "Keep explicitly requested output properties in needs, even when unsupported. "
+                "Do not move them to parameter_hints to avoid an unknown output requirement.",
+                "Preserve ordering and filtering requests as input conditions when they "
+                "constrain the search. For example, latest is an ordering condition, not "
+                "merely a request for a date field. Keep literal values and do not invent "
+                "provider-specific sort tokens, parameter names or query syntax.",
                 "Keep explicit time, role and other positive conditions in needs.qualifiers.",
                 "Put explicit source/result paths in qualifiers.source_path or "
                 "qualifiers.result_path respectively; "
@@ -624,17 +693,19 @@ async def compile_model_query(
                 "Put every negated concept or goal only in excluded_concepts, "
                 "not in needs or qualifiers.",
                 "Copy named_tools only from source names explicitly stated in the question.",
-                "Keep explicit scalar values in parameter_hints with explicit parameter labels; "
-                "otherwise use short English semantic role names, not generic substitutes. "
-                "Retain these values even when intent_id is null; "
-                "they are not permissions or tool calls.",
+                (
+                    "Keep explicit scalar and structured JSON input values in parameter_hints; "
+                    "preserve literal list members and object keys without guessing wire shapes. "
+                    if direct_parameters else "Keep explicit scalar values in parameter_hints. "
+                ) + "Use explicit parameter labels or short semantic role names, not substitutes. "
+                "Retain values even when intent_id is null; they are not permissions or calls.",
                 "Do not guess schema fields, registered IDs, providers or execution authority.",
             ],
         }
         raw = await _understand_query(
             model, payload, response_type=PaperQueryUnderstanding,
             max_input_bytes=max_model_input_bytes, max_output_bytes=max_model_output_bytes,
-            verify=verify,
+            verify=verify, direct_parameters=direct_parameters,
         )
 
         def resolve_tool(name: str) -> str | None:
@@ -664,12 +735,18 @@ async def compile_model_query(
             verify()
             return matches[0] if len(matches) == 1 else None
 
-        plan = _compile_query_needs(
+        plan, verified_named_tools = _compile_query_needs(
             raw, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
             compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
             router=router, principal=principal, verify=verify,
+            retain_raw_rank_concepts=(
+                rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
+            ),
         )
-        return finalize(plan, raw.parameter_hints)
+        return finalize(
+            plan, raw.parameter_hints, intent_id=raw.intent_id,
+            verified_named_tools=verified_named_tools,
+        )
 
     # These are owner-reviewed concepts that still have a current, accessible,
     # field-complete proof. Never disclose unreachable concepts to the model.

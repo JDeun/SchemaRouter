@@ -1,0 +1,957 @@
+{
+  "schema_version": 1,
+  "scope": "Counterfactual historical comparator-only replay: archived intent/concept labels; no named-tool or source constraint; only intents without owner targets and with at least two domain+group eligible tools. Reference winners recomputed from pinned original raw-name score and tie breaks, never archived selected tools or gold. Not current product eligibility or task accuracy.",
+  "provenance": {
+    "repository": "JDeun/paper_SchemaRouter",
+    "commit": "368116746170d6dd0d95a91352daba8abc42ca13",
+    "blobs": {
+      "experiments/schema/inventory.json": "71713203dd7145898201868bf1c2435229cdb709",
+      "experiments/runs/run_schema_router.jsonl": "858ded8f3fd873e0927b13bc154aa0e923abf96d",
+      "experiments/routers/schema_router.py": "09d84bda0f7354ce2e46016b74ff12c3ee0fba5c"
+    }
+  },
+  "original_query_count": 110,
+  "apis": {
+    "arxiv": {
+      "name": "arxiv",
+      "domain": "papers",
+      "priority": 2,
+      "fields": [
+        "entry_id",
+        "title",
+        "summary",
+        "authors",
+        "published",
+        "updated",
+        "primary_category",
+        "doi",
+        "pdf_url",
+        "journal_ref"
+      ]
+    },
+    "cod": {
+      "name": "cod",
+      "domain": "materials",
+      "priority": 2,
+      "fields": [
+        "_cod_file",
+        "chemical_formula_hill",
+        "elements",
+        "_cod_sg",
+        "_cod_a",
+        "_cod_b",
+        "_cod_c",
+        "_cod_vol",
+        "_cod_doi",
+        "_cod_journal",
+        "_cod_year",
+        "_cod_authors",
+        "_cod_title"
+      ]
+    },
+    "crossref": {
+      "name": "crossref",
+      "domain": "papers",
+      "priority": 2,
+      "fields": [
+        "DOI",
+        "title",
+        "type",
+        "publisher",
+        "abstract",
+        "author",
+        "published",
+        "container-title",
+        "is-referenced-by-count",
+        "reference-count",
+        "ISSN",
+        "subject",
+        "license"
+      ]
+    },
+    "dart": {
+      "name": "dart",
+      "domain": "finance",
+      "priority": 3,
+      "fields": [
+        "corp_code",
+        "revenue",
+        "operating_profit",
+        "net_income",
+        "rd_expense"
+      ]
+    },
+    "europe_pmc": {
+      "name": "europe_pmc",
+      "domain": "papers",
+      "priority": 3,
+      "fields": [
+        "pmid",
+        "title",
+        "abstract",
+        "doi",
+        "year",
+        "journal",
+        "authors"
+      ]
+    },
+    "jarvis": {
+      "name": "jarvis",
+      "domain": "materials",
+      "priority": 2,
+      "fields": [
+        "jid",
+        "formula",
+        "spg_number",
+        "density",
+        "optb88vdw_bandgap",
+        "mbj_bandgap",
+        "hse_gap",
+        "formation_energy_peratom",
+        "ehull",
+        "bulk_modulus_kv",
+        "shear_modulus_gv",
+        "magmom_outcar",
+        "slme",
+        "n_Seebeck",
+        "p_Seebeck"
+      ]
+    },
+    "materials_project": {
+      "name": "materials_project",
+      "domain": "materials",
+      "priority": 3,
+      "fields": [
+        "material_id",
+        "formula_pretty",
+        "crystal_system",
+        "spacegroup_number",
+        "density",
+        "volume",
+        "nsites",
+        "band_gap",
+        "is_gap_direct",
+        "is_metal",
+        "efermi",
+        "formation_energy_per_atom",
+        "energy_above_hull",
+        "is_stable",
+        "total_magnetization",
+        "magnetic_ordering",
+        "k_vrh",
+        "g_vrh",
+        "poisson_ratio",
+        "e_total",
+        "e_ionic",
+        "e_electronic"
+      ]
+    },
+    "nomad": {
+      "name": "nomad",
+      "domain": "materials",
+      "priority": 2,
+      "fields": [
+        "entry_id",
+        "results.material.chemical_formula_hill",
+        "results.material.elements",
+        "results.material.symmetry.crystal_system",
+        "results.material.symmetry.space_group_number",
+        "results.method.simulation.program_name",
+        "results.method.simulation.dft.xc_functional_type",
+        "results.properties.electronic_band_gap_value",
+        "license",
+        "authors"
+      ]
+    },
+    "omdb": {
+      "name": "omdb",
+      "domain": "materials",
+      "priority": 1,
+      "fields": [
+        "id",
+        "chemical_formula_hill",
+        "elements",
+        "nelements",
+        "nsites",
+        "lattice_vectors"
+      ]
+    },
+    "openalex": {
+      "name": "openalex",
+      "domain": "papers",
+      "priority": 2,
+      "fields": [
+        "id",
+        "title",
+        "abstract",
+        "doi",
+        "publication_year",
+        "authors",
+        "journal"
+      ]
+    },
+    "oqmd": {
+      "name": "oqmd",
+      "domain": "materials",
+      "priority": 2,
+      "fields": [
+        "entry_id",
+        "name",
+        "spacegroup",
+        "ntypes",
+        "natoms",
+        "volume",
+        "delta_e",
+        "stability",
+        "band_gap"
+      ]
+    },
+    "pubchem": {
+      "name": "pubchem",
+      "domain": "chemistry",
+      "priority": 3,
+      "fields": [
+        "cid",
+        "iupac_name",
+        "molecular_formula",
+        "molecular_weight",
+        "canonical_smiles",
+        "isomeric_smiles",
+        "inchi",
+        "inchikey",
+        "xlogp",
+        "tpsa",
+        "h_bond_donor_count",
+        "h_bond_acceptor_count",
+        "rotatable_bond_count",
+        "heavy_atom_count"
+      ]
+    },
+    "pubmed": {
+      "name": "pubmed",
+      "domain": "papers",
+      "priority": 2,
+      "fields": [
+        "pmid",
+        "title",
+        "abstract",
+        "authors",
+        "year",
+        "journal"
+      ]
+    },
+    "stack_exchange": {
+      "name": "stack_exchange",
+      "domain": "web",
+      "priority": 3,
+      "fields": [
+        "question_id",
+        "title",
+        "body",
+        "score",
+        "answer_count",
+        "link",
+        "tags"
+      ]
+    },
+    "tavily": {
+      "name": "tavily",
+      "domain": "web",
+      "priority": 3,
+      "fields": [
+        "title",
+        "url",
+        "content",
+        "score"
+      ]
+    },
+    "tcod": {
+      "name": "tcod",
+      "domain": "materials",
+      "priority": 1,
+      "fields": [
+        "_tcod_file",
+        "chemical_formula_hill",
+        "elements",
+        "_tcod_sg",
+        "_tcod_a",
+        "_tcod_vol",
+        "_tcod_doi",
+        "_tcod_title"
+      ]
+    },
+    "web_search": {
+      "name": "web_search",
+      "domain": "web",
+      "priority": 3,
+      "fields": [
+        "title",
+        "snippet",
+        "url"
+      ]
+    },
+    "wikinews": {
+      "name": "wikinews",
+      "domain": "web",
+      "priority": 3,
+      "fields": [
+        "title",
+        "url",
+        "snippet"
+      ]
+    },
+    "wikipedia": {
+      "name": "wikipedia",
+      "domain": "web",
+      "priority": 1,
+      "fields": [
+        "title",
+        "pageid",
+        "summary",
+        "url"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g001",
+        "g004",
+        "g007",
+        "g010",
+        "g013",
+        "g016",
+        "g019",
+        "g022",
+        "g025",
+        "g028",
+        "g031",
+        "g034"
+      ]
+    },
+    {
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g002",
+        "g005",
+        "g008",
+        "g011",
+        "g014",
+        "g017",
+        "g020",
+        "g023",
+        "g026",
+        "g029",
+        "g032",
+        "g035",
+        "g083",
+        "g084",
+        "g085",
+        "g086",
+        "g087",
+        "g088",
+        "g091",
+        "g094"
+      ]
+    },
+    {
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "energy_above_hull"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g003",
+        "g009",
+        "g012",
+        "g015",
+        "g018",
+        "g021",
+        "g024",
+        "g027",
+        "g036"
+      ]
+    },
+    {
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "stability"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "oqmd"
+      ],
+      "reference_winner": "oqmd",
+      "query_ids": [
+        "g006",
+        "g030",
+        "g033",
+        "g098",
+        "g099",
+        "g100",
+        "g101",
+        "g102"
+      ]
+    },
+    {
+      "intent": "find_band_gap",
+      "concepts": [
+        "band_gap",
+        "crystal_structure"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g037"
+      ]
+    },
+    {
+      "intent": "find_elastic",
+      "concepts": [
+        "elastic_modulus",
+        "crystal_structure"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g038"
+      ]
+    },
+    {
+      "intent": "cross_validate",
+      "concepts": [
+        "magnetic_property",
+        "band_gap"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g039"
+      ]
+    },
+    {
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "crystal_structure"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g040"
+      ]
+    },
+    {
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap",
+        "formation_energy"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g041",
+        "g046"
+      ]
+    },
+    {
+      "intent": "find_structure",
+      "concepts": [
+        "band_gap",
+        "crystal_structure"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g042"
+      ]
+    },
+    {
+      "intent": "find_structure",
+      "concepts": [
+        "elastic_modulus",
+        "crystal_structure"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g043"
+      ]
+    },
+    {
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap",
+        "magnetic_moment",
+        "magnetic_ordering"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g044"
+      ]
+    },
+    {
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "crystal_structure",
+        "space_group",
+        "lattice_parameters"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g045"
+      ]
+    },
+    {
+      "intent": "general_info",
+      "concepts": [
+        "molecular_formula",
+        "molecular_weight",
+        "boiling_point",
+        "melting_point",
+        "density",
+        "solubility",
+        "vapor_pressure",
+        "logP",
+        "hazard_statements",
+        "synthesis_methods"
+      ],
+      "eligible_tools": [
+        "stack_exchange",
+        "tavily",
+        "web_search",
+        "wikinews",
+        "wikipedia"
+      ],
+      "reference_winner": "web_search",
+      "query_ids": [
+        "g051"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "publication_date",
+        "authors",
+        "sodium_ion_battery"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g059"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "solid_electrolyte"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g060"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "perovskite_solar_cell"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g061"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "publication_date",
+        "authors",
+        "abstract"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "europe_pmc",
+      "query_ids": [
+        "g062"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "authors",
+        "publication_date"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g063"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "publication_date",
+        "authors"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g064"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "quantum_dot"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g065"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "thermoelectric_material",
+        "title",
+        "summary"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g066"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "photocatalysis"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "europe_pmc",
+      "query_ids": [
+        "g067"
+      ]
+    },
+    {
+      "intent": "find_paper",
+      "concepts": [
+        "title",
+        "summary",
+        "keywords",
+        "publication_date"
+      ],
+      "eligible_tools": [
+        "arxiv",
+        "crossref",
+        "europe_pmc",
+        "openalex",
+        "pubmed"
+      ],
+      "reference_winner": "arxiv",
+      "query_ids": [
+        "g068"
+      ]
+    },
+    {
+      "intent": "cross_validate",
+      "concepts": [
+        "band_gap"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g069",
+        "g070",
+        "g071",
+        "g072",
+        "g073",
+        "g074",
+        "g075",
+        "g076"
+      ]
+    },
+    {
+      "intent": "find_structure",
+      "concepts": [
+        "crystal_structure",
+        "space_group",
+        "lattice_parameters"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "nomad",
+      "query_ids": [
+        "g077"
+      ]
+    },
+    {
+      "intent": "find_structure",
+      "concepts": [
+        "crystal_structure",
+        "lattice_parameters",
+        "space_group"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "nomad",
+      "query_ids": [
+        "g078",
+        "g079",
+        "g080",
+        "g081",
+        "g082"
+      ]
+    },
+    {
+      "intent": "find_elastic",
+      "concepts": [
+        "elastic_modulus",
+        "bulk_modulus",
+        "shear_modulus",
+        "youngs_modulus"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project"
+      ],
+      "reference_winner": "jarvis",
+      "query_ids": [
+        "g089",
+        "g095"
+      ]
+    },
+    {
+      "intent": "find_structure",
+      "concepts": [
+        "crystal_structure",
+        "density"
+      ],
+      "eligible_tools": [
+        "cod",
+        "jarvis",
+        "materials_project",
+        "nomad",
+        "omdb",
+        "oqmd",
+        "tcod"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g090",
+        "g093",
+        "g096"
+      ]
+    },
+    {
+      "intent": "find_elastic",
+      "concepts": [
+        "elastic_modulus"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g092"
+      ]
+    },
+    {
+      "intent": "check_stability",
+      "concepts": [
+        "formation_energy",
+        "decomposition_energy",
+        "thermodynamic_stability"
+      ],
+      "eligible_tools": [
+        "jarvis",
+        "materials_project",
+        "oqmd"
+      ],
+      "reference_winner": "materials_project",
+      "query_ids": [
+        "g097"
+      ]
+    }
+  ]
+}

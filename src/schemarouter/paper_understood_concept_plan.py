@@ -7,6 +7,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_text
 from .concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
@@ -72,6 +73,7 @@ def _compile_understood_concept_plan(
             or tuple(obj.model_dump_json() if obj is not None else None
                      for obj in owner_objects) != owner_witness
             or (host_source_arguments or {}) != host_inputs
+            or canonical_json_text(host_source_arguments or {}) != canonical_json_text(host_inputs)
         ):
             raise PolicyViolationError("paper concept owner or source authority changed")
 
@@ -79,9 +81,9 @@ def _compile_understood_concept_plan(
         plans = []
         for concept in concepts:
             # Narrow only the internal proof. The outer receipt retains EVERY owner demand.
-            single_intent = PaperIntentRegistry(intents=(intent.model_copy(update={
-                "required_concept_ids": (concept.concept_id,),
-            }),))
+            single_intent = intent_registry.model_copy(update={"intents": (
+                intent.model_copy(update={"required_concept_ids": (concept.concept_id,)}),
+            )})
             single = approved.model_copy(update={
                 "concept_ids": (concept.concept_id,), "unresolved_concepts": (),
             })
@@ -164,6 +166,9 @@ def _compile_understood_concept_plan(
         host_source_arguments=host_source_arguments, prove_groups=prove_groups,
         verify_current=verify_current,
         coverage=lambda covered: coverage({concepts[position].concept_id for position in covered}),
+        approved_direct_parameter_routes=frozenset(
+            intent_registry.approved_direct_parameter_routes,
+        ),
     )
 
 
@@ -177,6 +182,7 @@ def _merge_understood_plans(
     prove_groups: Callable[[], tuple[PaperTypedToolPlan, ...]],
     verify_current: Callable[[], None],
     coverage: Callable[[set[int]], PlanCoverage],
+    approved_direct_parameter_routes: frozenset[str] = frozenset(),
 ) -> PaperTypedToolPlan:
     """Union bounded source proofs, retaining each independent requirement position."""
     witness = router._retrieval_authority_witness()
@@ -279,6 +285,10 @@ def _merge_understood_plans(
         calls = tuple(_compile_one_route(
             router, principal, index, receipts[route], position, positions, receipts,
             edges, permitted, host_inputs.get(route),
+            allow_direct_host_inputs=(
+                route in approved_direct_parameter_routes
+                and not any(receipt.input_bindings for receipt in receipts.values())
+            ),
         ) for position, route in enumerate(ordered))
         _check_current_call_scopes(router, principal, list(calls))
         return calls, tuple(edges)

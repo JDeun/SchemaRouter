@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, ValidationInfo, model_validator
 
 from .concept_retrieval import NativeConceptCatalog
 from .models import StrictModel
+from .paper_typed_tool_plan import _bounded_parameter_value
 from .paper_understood_direct_plan import PaperUnderstanding, _bounded_name
 from .planner import _normalize
 
@@ -18,8 +19,10 @@ class PaperQueryNeed(StrictModel):
 
     concept: str = Field(
         max_length=160,
-        description=("Short English name of one requested positive data item, action or goal, "
-                     "including unsupported requests and its semantic role."),
+        description=("Short English name of one requested returned data item, action or "
+                     "retrieval goal, including unsupported output requirements. A lookup "
+                     "subject or scalar input value belongs in parameter_hints unless "
+                     "it is itself requested as output."),
     )
     unit: str | None = Field(
         default=None, max_length=160,
@@ -112,13 +115,20 @@ class PaperQueryUnderstanding(StrictModel):
     )
 
     @model_validator(mode="after")
-    def validate_understanding(self) -> PaperQueryUnderstanding:
-        # Reuse the existing scalar/value bounds and shared identity validation;
-        # this does not resolve any hint into a source-owned concept or route.
+    def validate_understanding(self, info: ValidationInfo) -> PaperQueryUnderstanding:
+        # Only the already opted-in independent paper_v1 protocol accepts
+        # structured literals. Legacy DTO construction remains scalar-only.
+        structured = bool(info.context and info.context.get("paper_direct_parameters"))
         PaperUnderstanding(
             intent_id=self.intent_id, source_type=self.source_type,
-            named_tools=self.named_tools, parameter_hints=self.parameter_hints,
+            named_tools=self.named_tools,
+            parameter_hints={} if structured else self.parameter_hints,
         )
+        if structured and any(
+            not _bounded_name(key) or not _bounded_parameter_value(value, string_limit=512)
+            for key, value in self.parameter_hints.items()
+        ):
+            raise ValueError("invalid bounded direct parameter hints")
         if (
             len(set(self.excluded_concepts)) != len(self.excluded_concepts)
             or any(not _bounded_name(value) for value in self.excluded_concepts)

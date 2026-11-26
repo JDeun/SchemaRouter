@@ -7,13 +7,16 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 from .authorization import PrincipalContext
+from .canonical_json import canonical_json_bytes
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
+from .field_group_retrieval import _response_contract, _scalar_contract
 from .host_field_contract import _policy_contents_digest
 from .models import EndpointSpec, PlanCoverage, ToolCall, ToolSpec
 from .native_graph_index import (
@@ -78,6 +81,10 @@ class PaperPlanCall:
     license: str | None
     fields_meta: tuple[PaperPlanFieldMeta, ...]
     parameters_meta: tuple[PaperPlanParameterMeta, ...] = ()
+    # Validated model proposals, NOT ToolCall.arguments or permission.
+    parameter_proposals: tuple[tuple[str, Any], ...] = field(
+        default=(), repr=False,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -293,6 +300,179 @@ def _paper_public_parameters(
     return tuple(projected)
 
 
+def _bounded_parameter_value(value: Any, *, string_limit: int = 4096) -> bool:
+    """Small strict JSON values, never a transport or execution permission."""
+    nodes = 0
+
+    def walk(item: Any, depth: int) -> bool:
+        nonlocal nodes
+        nodes += 1
+        if nodes > 128 or depth > 4:
+            return False
+        if type(item) is str:
+            return len(item.encode("utf-8")) <= string_limit
+        if type(item) is bool:
+            return True
+        if type(item) is int:
+            return -(2**63) <= item < 2**63
+        if type(item) is float:
+            return math.isfinite(item)
+        if type(item) is list:
+            return len(item) <= 32 and all(walk(child, depth + 1) for child in item)
+        if type(item) is dict:
+            return len(item) <= 32 and all(
+                type(key) is str and 1 <= len(key) <= 160
+                and not any(ord(char) < 32 or ord(char) == 127 for char in key)
+                and walk(child, depth + 1) for key, child in item.items()
+            )
+        # No arbitrary Python objects, coercion, null or recursive structures.
+        return False
+
+    try:
+        return walk(value, 0) and len(canonical_json_bytes(value)) <= 16_384
+    except (ValueError, TypeError, OverflowError, RecursionError):
+        return False
+
+
+def _direct_input_shape(schema: Any, depth: int = 0) -> bool:
+    """Prove explicit scalar/array/closed-object alternatives, not open JSON."""
+    if depth > 4 or type(schema) is not dict:
+        return False
+    if _scalar_contract(schema):
+        return True
+    if set(schema) in ({"anyOf"}, {"oneOf"}):
+        options = schema.get("anyOf", schema.get("oneOf"))
+        return (
+            type(options) is list and 2 <= len(options) <= 8
+            and all(_direct_input_shape(option, depth + 1) for option in options)
+        )
+    kind = schema.get("type")
+    if type(kind) is list:
+        return (
+            set(schema) == {"type"} and 2 <= len(kind) <= 4
+            and all(type(part) is str and part in {"string", "integer", "number", "boolean"}
+                    for part in kind)
+            and len(kind) == len(set(kind))
+        )
+    if kind == "array":
+        return (
+            schema.keys() <= {"type", "items", "minItems", "maxItems", "uniqueItems"}
+            and _direct_input_shape(schema.get("items"), depth + 1)
+        )
+    if kind == "object":
+        properties = schema.get("properties")
+        required = schema.get("required", [])
+        return (
+            schema.keys() <= {
+                "type", "properties", "required", "additionalProperties",
+                "minProperties", "maxProperties",
+            }
+            and schema.get("additionalProperties") is False
+            and type(properties) is dict and len(properties) <= 32
+            and type(required) is list and all(type(key) is str for key in required)
+            and len(set(required)) == len(required) and set(required) <= properties.keys()
+            and all(_direct_input_shape(child, depth + 1) for child in properties.values())
+        )
+    return False
+
+
+def _bounded_direct_parameter_fit(schema: dict[str, Any], value: Any) -> bool:
+    """Validate a literal direct input against the entire source-native contract.
+
+    Every alternative must declare its shape. Require an actual compatible
+    branch, exact primitive types, homogeneous arrays or closed objects, and
+    full validation (including union exclusivity). No G5 root/edge expansion.
+    """
+    if (
+        not _bounded_parameter_value(value)
+        or not _direct_input_shape(schema)
+        or not _response_contract(schema)
+    ):
+        return False
+
+    def fits(node: dict[str, Any], item: Any) -> bool:
+        if "anyOf" in node or "oneOf" in node:
+            options = node.get("anyOf", node.get("oneOf"))
+            if type(options) is not list:
+                return False
+            matches = sum(fits(option, item) for option in options)
+            return matches == 1 if "oneOf" in node else matches > 0
+        kinds = {
+            str: ("string",), bool: ("boolean",),
+            int: ("integer", "number"), float: ("number",),
+            list: ("array",), dict: ("object",),
+        }
+        kind = node["type"]
+        declared = kind if type(kind) is list else [kind]
+        if not set(kinds.get(type(item), ())) & set(declared):
+            return False
+        if kind == "array" and not all(fits(node["items"], child) for child in item):
+            return False
+        if kind == "object" and (
+            not item.keys() <= node["properties"].keys()
+            or any(not fits(node["properties"][key], child) for key, child in item.items())
+        ):
+            return False
+        try:
+            validate_json_schema_value(item, node, context="direct parameter native branch")
+        except Exception:
+            return False
+        return True
+
+    try:
+        if not fits(schema, value):
+            return False
+        validate_json_schema_value(value, schema, context="direct parameter native contract")
+        return True
+    except Exception:
+        # Never expose private schema contents or validation diagnostics.
+        return False
+
+
+def _approved_direct_input_names(
+    endpoint: EndpointSpec,
+    visible: EndpointSpec,
+    host_values: dict[str, Any],
+    required_names: set[str],
+) -> tuple[str, ...] | None:
+    """Closed direct-only envelope with explicit bounded native host values.
+
+    Unused optional undeclared shapes may remain in the source schema.
+    No inference, partial required arguments, credential/header/body-root input,
+    open envelope, dependency binding or conversion is authorized here.
+    """
+    parameters = {param.name: param for param in endpoint.parameters}
+    scoped = {param.name: param for param in visible.parameters}
+    schema = endpoint.input_schema
+    if (
+        endpoint.auth_requirements
+        or not 1 <= len(parameters) <= 32
+        or not 1 <= len(host_values) <= 4
+        or len(parameters) != len(endpoint.parameters)
+        or set(schema) != {"type", "properties", "required", "additionalProperties"}
+        or schema.get("type") != "object"
+        or schema.get("additionalProperties") is not False
+        or schema.get("properties") != {
+            name: param.json_schema for name, param in parameters.items()
+        }
+        or type(schema.get("required")) is not list
+        or len(schema["required"]) != len(required_names)
+        or set(schema["required"]) != required_names
+        or not required_names <= host_values.keys() <= parameters.keys()
+        or not host_values.keys() <= scoped.keys()
+    ):
+        return None
+    for name in host_values:
+        parameter = parameters[name]
+        if (
+            parameter.location in {"header", "body_root"}
+            or scoped[name].json_schema != parameter.json_schema
+            or not _bounded_direct_parameter_fit(parameter.json_schema, host_values[name])
+        ):
+            return None
+    return tuple(host_values)
+
+
 def _compile_one_route(
     router: SchemaRouter,
     principal: PrincipalContext,
@@ -304,6 +484,8 @@ def _compile_one_route(
     edges: list[PaperPlanBinding],
     permitted: Callable[[ToolSpec, EndpointSpec], bool],
     host_values: dict[str, Any] | None,
+    *,
+    allow_direct_host_inputs: bool = False,
 ) -> PaperPlanCall:
     location = index.field_index.route_locations.get(route.route_id)
     if location is None:
@@ -385,39 +567,46 @@ def _compile_one_route(
     else:
         bindings = {}
 
-    # Host input values may be supplied ONLY for a previously explicit
-    # original G5 host root. No query inference, partial values, default
-    # filling or dependency-consumer prebinding occurs here.
+    # Only the original G5 root approval or a separate, snapshot-pinned
+    # direct planning declaration may admit explicitly HOST supplied values.
+    # Model proposals never flow into arguments.
     arguments: dict[str, Any] = {}
     if host_values is not None:
-        names = _host_source_input_names(endpoint)
+        if allow_direct_host_inputs:
+            names = _approved_direct_input_names(
+                endpoint, visible, host_values, required_names,
+            )
+        else:
+            names = _host_source_input_names(endpoint)
         if (
             route.input_bindings
-            or route.route_id not in index.approved_host_roots
+            or not allow_direct_host_inputs and route.route_id not in index.approved_host_roots
             or names is None
             or set(host_values) != set(names)
         ):
             raise PolicyViolationError("unapproved original source arguments")
-        by_name = {param.name: param for param in endpoint.parameters}
-        for name, value in host_values.items():
-            expected = by_name[name].json_schema["type"]
-            if (
-                type(value) not in (str, int, float, bool)
-                or expected not in ("string", "integer", "number", "boolean")
-                or type(value) is bool and expected != "boolean"
-                or type(value) is str and expected != "string"
-                or type(value) is int and expected not in ("integer", "number")
-                or type(value) is float and expected != "number"
-                or type(value) is float and not math.isfinite(value)
-                or type(value) is int and not -(2**63) <= value < 2**63
-                or type(value) is str and len(value.encode("utf-8")) > 4096
-            ):
-                raise PolicyViolationError("invalid bounded host input scalar")
+        if not allow_direct_host_inputs:
+            # Preserve the original G5/legacy host scalar type contract.
+            by_name = {param.name: param for param in endpoint.parameters}
+            for name, value in host_values.items():
+                expected = by_name[name].json_schema["type"]
+                if (
+                    type(value) not in (str, int, float, bool)
+                    or expected not in ("string", "integer", "number", "boolean")
+                    or type(value) is bool and expected != "boolean"
+                    or type(value) is str and expected != "string"
+                    or type(value) is int and expected not in ("integer", "number")
+                    or type(value) is float and expected != "number"
+                    or type(value) is float and not math.isfinite(value)
+                    or type(value) is int and not -(2**63) <= value < 2**63
+                    or type(value) is str and len(value.encode("utf-8")) > 4096
+                ):
+                    raise PolicyViolationError("invalid bounded host input scalar")
         validate_json_schema_value(
             host_values, endpoint.input_schema,
             context="original paper host-approved source input",
         )
-        arguments = dict(host_values)
+        arguments = deepcopy(host_values)
 
     return PaperPlanCall(
         route_id=route.route_id,

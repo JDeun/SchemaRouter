@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Any
 
@@ -20,6 +21,8 @@ from .paper_query_needs import PaperQueryNeed
 from .paper_typed_tool_plan import (
     PaperPlanFieldMeta,
     PaperTypedToolPlan,
+    _bounded_direct_parameter_fit,
+    _bounded_parameter_value,
     _check_current_call_scopes,
 )
 from .validation import canonical_unit_value_schema, validate_json_schema_value
@@ -28,8 +31,14 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 
-def _same_json_scalar(left: Any, right: Any) -> bool:
-    """Exact JSON equality without bool/number conflation or float coercion."""
+def _same_json_value(left: Any, right: Any) -> bool:
+    """Compare bounded JSON without bool/number conflation at any depth."""
+    if type(left) in (list, dict) or type(right) in (list, dict):
+        return (
+            type(left) is type(right) and _bounded_parameter_value(left)
+            and _bounded_parameter_value(right)
+            and canonical_json_text(left) == canonical_json_text(right)
+        )
     if type(left) not in (str, int, float, bool) or type(right) not in (str, int, float, bool):
         return False
     if type(left) is float and not math.isfinite(left):
@@ -169,7 +178,7 @@ def _conflicting_input_targets(
     return {
         target
         for target, values in assignments.items()
-        if any(not _same_json_scalar(value, values[0][1]) for _, value in values)
+        if any(not _same_json_value(value, values[0][1]) for _, value in values)
     }
 
 
@@ -177,16 +186,26 @@ def _input_proof(
     plan: PaperTypedToolPlan,
     matches: list[tuple[int, ParameterSpec, bool]],
     proposed: Any,
+    *,
+    allow_direct_parameters: bool = False,
 ) -> tuple[bool, bool, str]:
     if len(matches) != 1:
         return False, False, "ambiguous_source_input" if matches else "unproven_source_relation"
     position, parameter, exposed = matches[0]
     call = plan.calls[position].call
     if parameter.name in call.arguments:
-        present = _same_json_scalar(proposed, call.arguments[parameter.name])
+        if allow_direct_parameters and (
+            not exposed or not _bounded_direct_parameter_fit(parameter.json_schema, proposed)
+        ):
+            return False, False, "unproven_scoped_input_fit"
+        present = _same_json_value(proposed, call.arguments[parameter.name])
         return present, False, "matching_host_input" if present else "conflicting_host_input"
     if not exposed:
         return False, False, "unproven_scoped_input_fit"
+    if allow_direct_parameters:
+        if _bounded_direct_parameter_fit(parameter.json_schema, proposed):
+            return True, True, "pending_host_input"
+        return False, False, "invalid_proposed_input"
     try:
         if _scalar_contract(parameter.json_schema):
             validate_json_schema_value(
@@ -408,14 +427,70 @@ def _prove_query_need_conditions(
         raise PolicyViolationError("query need source eligibility changed") from None
 
 
+def _resolve_direct_parameter_value(
+    plan: PaperTypedToolPlan,
+    matches: list[tuple[int, ParameterSpec, bool]],
+    proposed: Any,
+    value_aliases: dict[str, dict[str, dict[str, str]]],
+) -> Any:
+    """Only an exact owner mapping on a current, unredacted native enum."""
+    if len(matches) != 1 or type(proposed) is not str:
+        return proposed
+    position, parameter, exposed = matches[0]
+    if not exposed or parameter.location in {"header", "body_root"}:
+        return proposed
+    aliases = value_aliases.get(plan.calls[position].route_id, {}).get(parameter.name, {})
+    if proposed not in aliases:
+        return proposed
+    native = aliases[proposed]
+    values = parameter.json_schema.get("enum")
+    if (
+        type(values) is not list
+        or not all(type(value) is str for value in values)
+        or native not in values
+        or proposed in values and proposed != native
+    ):
+        raise PolicyViolationError("invalid owner-reviewed direct parameter value")
+    return native
+
+
+def _shared_input_matches(
+    key: str,
+    semantic_id: str,
+    scopes: tuple[_ScopedQueryCall, ...],
+) -> tuple[list[tuple[int, ParameterSpec, bool]], set[tuple[int, str]]]:
+    """One visible, owner-equivalent input on every explicitly selected route."""
+    canonical = [
+        (scope.position, parameter, exposed)
+        for scope in scopes for parameter, exposed in scope.parameters
+        if parameter.semantic_id == semantic_id
+    ]
+    targets = {(position, parameter.name) for position, parameter, _ in canonical}
+    lexical = {(position, parameter.name)
+               for position, parameter, _ in _input_matches(key, scopes)}
+    touched = targets | lexical
+    if (
+        not 2 <= len(scopes) <= 5
+        or len(canonical) != len(scopes)
+        or len({position for position, _, _ in canonical}) != len(scopes)
+        or not lexical <= targets
+    ):
+        # No partial group, hidden-target names or guessed aliases.
+        return [], touched
+    return canonical, touched
+
+
 def _apply_query_input_conditions(
     router: SchemaRouter,
     plan: PaperTypedToolPlan,
     *,
     principal: PrincipalContext,
     parameter_hints: dict[str, Any],
+    resolve_proposals: bool = False,
+    value_aliases: dict[str, dict[str, dict[str, str]]] | None = None,
+    shared_parameter_semantics: dict[str, str] | None = None,
 ) -> PaperTypedToolPlan:
-    """Global hints retain their unique-target rule and never supply arguments."""
+    """Project unique or explicitly shared direct inputs without binding values."""
     if not parameter_hints:
         return plan
     if plan.coverage is None or plan.executable_authority:
@@ -430,11 +505,30 @@ def _apply_query_input_conditions(
             list(plan.coverage.uncovered),
         )
         matches_by_key = {key: _input_matches(key, scopes) for key in parameter_hints}
+        alias_contents = canonical_json_text(value_aliases or {})
+        shared = shared_parameter_semantics or {}
+        shared_contents = canonical_json_text(shared)
+        if shared and (not resolve_proposals or plan.bindings or not plan.coverage.complete):
+            raise PolicyViolationError("shared inputs require complete direct output proof")
+        shared_targets: dict[str, set[tuple[int, str]]] = {}
+        for key, semantic_id in shared.items():
+            if key in matches_by_key:
+                matches_by_key[key], shared_targets[key] = _shared_input_matches(
+                    key, semantic_id, scopes,
+                )
+        values = {
+            key: [
+                (match, _resolve_direct_parameter_value(
+                    plan, [match], proposed, value_aliases or {},
+                ) if resolve_proposals else proposed)
+                for match in matches_by_key[key]
+                if len(matches_by_key[key]) == 1 or key in shared_targets
+            ]
+            for key, proposed in parameter_hints.items()
+        }
         assignments: dict[tuple[int, str], list[tuple[int, Any]]] = {}
-        for key, proposed in parameter_hints.items():
-            matches = matches_by_key[key]
-            if len(matches) == 1:
-                position, parameter, _ = matches[0]
+        for targets in values.values():
+            for (position, parameter, _), proposed in targets:
                 assignments.setdefault((position, parameter.name), []).append((-1, proposed))
         conflicts = _conflicting_input_targets(assignments)
         # The preceding per-need proof may already have found a joint conflict.
@@ -448,17 +542,86 @@ def _apply_query_input_conditions(
                 for item in uncovered
             )
         )
+        # A need-specific condition and a global shared value may describe
+        # different subjects. Do not certify a shared group when they overlap;
+        # the existing per-need proof does not authorize cross-route copying.
+        for targets in shared_targets.values():
+            conflicts.update(
+                target for target in targets if any(
+                    "query_input_condition=true" in item.qualifiers
+                    and any(q.startswith("need_index=") for q in item.qualifiers)
+                    and f"route={plan.calls[target[0]].route_id}" in item.qualifiers
+                    and f"parameter={target[1]}" in item.qualifiers
+                    for item in required
+                )
+            )
+
+        def prove(matches, value) -> tuple[bool, bool, str]:
+            present, waits, proof = _input_proof(
+                plan, matches, value, allow_direct_parameters=resolve_proposals,
+            )
+            if resolve_proposals and len(matches) == 1 and (
+                matches[0][1].location in {"header", "body_root"} or not matches[0][2]
+            ):
+                return False, False, "unproven_scoped_input_fit"
+            return present, waits, proof
+
+        checks = {
+            key: [prove([match], proposed) for match, proposed in targets]
+            for key, targets in values.items()
+        }
+        # Atomic shared groups: one missing, private, conflicting or invalid
+        # member prevents every proposal in that group, including aliases in
+        # other hints. Propagate overlapping blocked targets to a fixed point.
+        blocked = set(conflicts)
+        failed_shared: set[str] = set()
+        while True:
+            failed = {
+                key for key, targets in shared_targets.items()
+                if not checks[key] or not all(present for present, _, _ in checks[key])
+                or bool(targets & blocked)
+            }
+            if failed == failed_shared:
+                break
+            failed_shared = failed
+            for key in failed_shared:
+                blocked.update(shared_targets[key])
+
         pending = False
-        for key, proposed in parameter_hints.items():
-            matches = matches_by_key[key]
-            present, waits, proof = _input_proof(plan, matches, proposed)
-            if len(matches) == 1 and (matches[0][0], matches[0][1].name) in conflicts:
+        proposals: dict[int, dict[str, Any]] = {}
+
+        def record(key, matches, proposed, result, *, shared_input=False) -> None:
+            nonlocal pending
+            present, waits, proof = result
+            if len(matches) == 1 and (matches[0][0], matches[0][1].name) in blocked:
                 present, waits, proof = False, False, "conflicting_query_input"
             pending |= waits
+            if resolve_proposals and present and waits and len(matches) == 1:
+                position, parameter, _ = matches[0]
+                # Detached diagnostic values; host approval is still separate.
+                proposals.setdefault(position, {})[parameter.name] = deepcopy(proposed)
             requirement = _input_requirement(plan, key, matches, proof)
+            if shared_input:
+                requirement.qualifiers.append("shared_input=true")
             required.append(requirement)
             (covered if present else uncovered).append(requirement)
-        if collect() != scopes or canonical_json_text(parameter_hints) != hint_contents:
+
+        for key, proposed in parameter_hints.items():
+            if key in failed_shared:
+                record(key, [], proposed, (False, False, "unproven_shared_input"),
+                       shared_input=True)
+            elif not values[key]:
+                matches = matches_by_key[key]
+                record(key, matches, proposed, prove(matches, proposed))
+            else:
+                for (match, value), result in zip(values[key], checks[key], strict=True):
+                    record(key, [match], value, result, shared_input=key in shared_targets)
+        if (
+            collect() != scopes
+            or canonical_json_text(parameter_hints) != hint_contents
+            or canonical_json_text(value_aliases or {}) != alias_contents
+            or canonical_json_text(shared_parameter_semantics or {}) != shared_contents
+        ):
             raise PolicyViolationError("query input source eligibility changed")
         verify()
     except Exception:
@@ -470,6 +633,10 @@ def _apply_query_input_conditions(
     return replace(
         plan,
         status=status,
+        calls=tuple(
+            replace(call, parameter_proposals=tuple(sorted(proposals.get(pos, {}).items())))
+            for pos, call in enumerate(plan.calls)
+        ) if resolve_proposals else plan.calls,
         coverage=PlanCoverage(
             required=required, covered=covered, uncovered=uncovered, complete=complete
         ),

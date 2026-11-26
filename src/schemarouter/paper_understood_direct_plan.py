@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import Field, model_validator
 
 from .authorization import PrincipalContext
-from .canonical_json import canonical_json_sha256
+from .canonical_json import canonical_json_sha256, canonical_json_text
 from .concept_retrieval import (
     _ID_PATTERN,
     NativeConceptCatalog,
@@ -54,6 +54,14 @@ class PaperIntentDeclaration(StrictModel):
     intent_id: str
     required_concept_ids: tuple[str, ...]
     domains: tuple[str, ...] = ()
+    # Source-local group names constrain unnamed discovery and expand recall;
+    # they are distinct from mandatory semantic field contracts.
+    recall_group_ids: tuple[str, ...] = ()
+    # Owner-selected intent targets are distinct from user-named overrides.
+    target_tool_keys: tuple[str, ...] = ()
+    # Explicit query-input label -> shared source-owned parameter semantic ID.
+    # Only complete, explicitly named direct comparisons may use this map.
+    shared_parameter_semantics: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_declaration(self) -> PaperIntentDeclaration:
@@ -66,6 +74,18 @@ class PaperIntentDeclaration(StrictModel):
                 for cid in self.required_concept_ids
             )
             or len(set(self.required_concept_ids)) != len(self.required_concept_ids)
+            or len(self.recall_group_ids) > 16
+            or len(set(self.recall_group_ids)) != len(self.recall_group_ids)
+            or any(type(group) is not str or not _ID_PATTERN.fullmatch(group)
+                   for group in self.recall_group_ids)
+            or len(self.target_tool_keys) > 16
+            or len(set(self.target_tool_keys)) != len(self.target_tool_keys)
+            or any(not _bounded_name(key) for key in self.target_tool_keys)
+            or len(self.shared_parameter_semantics) > 8
+            or any(
+                not _bounded_name(key) or not _ID_PATTERN.fullmatch(sid)
+                for key, sid in self.shared_parameter_semantics.items()
+            )
             or len(self.domains) > 8
             or len(set(self.domains)) != len(self.domains)
             or any(type(domain) is not str or not _ID_PATTERN.fullmatch(domain)
@@ -77,16 +97,70 @@ class PaperIntentDeclaration(StrictModel):
 
 class PaperIntentRegistry(StrictModel):
     intents: tuple[PaperIntentDeclaration, ...]
+    # Owner-reviewed memberships in the exact native source snapshot. These
+    # are not model suggestions, permissions or executable field contracts.
+    projection_snapshot_id: str | None = None
+    route_field_groups: dict[str, dict[str, tuple[str, ...]]] = Field(default_factory=dict)
+    # Explicit owner semantics for scalar enum values, never model authority.
+    route_parameter_value_aliases: dict[str, dict[str, dict[str, str]]] = Field(
+        default_factory=dict,
+    )
+    # Direct planning only: independent of the G5 approved host-root contract.
+    approved_direct_parameter_routes: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def validate_registry(self) -> PaperIntentRegistry:
         if (
             not 1 <= len(self.intents) <= 16
             or len({intent.intent_id for intent in self.intents}) != len(self.intents)
+            or len(self.route_field_groups) > 64
+            or len(self.route_parameter_value_aliases) > 64
+            or len(self.approved_direct_parameter_routes) > 64
+            or len(set(self.approved_direct_parameter_routes))
+            != len(self.approved_direct_parameter_routes)
+            or any(not _bounded_name(route) for route in self.approved_direct_parameter_routes)
+            or bool(
+                self.route_field_groups or self.route_parameter_value_aliases
+                or self.approved_direct_parameter_routes
+                or any(intent.shared_parameter_semantics for intent in self.intents)
+            ) != (self.projection_snapshot_id is not None)
+            or self.projection_snapshot_id is not None and (
+                len(self.projection_snapshot_id) != 64
+                or any(char not in "0123456789abcdef" for char in self.projection_snapshot_id)
+            )
             or len(self.model_dump_json().encode("utf-8")) > 8192
         ):
             raise ValueError("invalid bounded paper intent registry")
+        for route, groups in self.route_field_groups.items():
+            if not _bounded_name(route) or not 1 <= len(groups) <= 16:
+                raise ValueError("invalid owner-reviewed route field groups")
+            for group, names in groups.items():
+                if (
+                    not _ID_PATTERN.fullmatch(group)
+                    or not 1 <= len(names) <= 64
+                    or len(set(names)) != len(names)
+                    or any(not _bounded_name(name) for name in names)
+                ):
+                    raise ValueError("invalid owner-reviewed route field groups")
+        for route, parameters in self.route_parameter_value_aliases.items():
+            if not _bounded_name(route) or not 1 <= len(parameters) <= 16:
+                raise ValueError("invalid owner-reviewed parameter value aliases")
+            for name, aliases in parameters.items():
+                if (
+                    not _bounded_name(name)
+                    or not 1 <= len(aliases) <= 16
+                    or any(not _bounded_name(raw) or not _bounded_name(native)
+                           for raw, native in aliases.items())
+                ):
+                    raise ValueError("invalid owner-reviewed parameter value aliases")
         return self
+
+    def annotated_routes(self) -> set[str]:
+        """Route identities of owner declarations, not a retrieval or ACL grant."""
+        return (
+            set(self.route_field_groups) | set(self.route_parameter_value_aliases)
+            | set(self.approved_direct_parameter_routes)
+        )
 
 
 class PaperUnderstanding(StrictModel):
@@ -98,6 +172,9 @@ class PaperUnderstanding(StrictModel):
     source_type: str | None = None
     named_tools: tuple[str, ...] = ()
     parameter_hints: dict[str, Any] = Field(default_factory=dict)
+    # Raw positive Understand labels used only by the opt-in v1 comparator.
+    # These labels cannot create concepts, routes, permissions or fields.
+    raw_rank_concepts: tuple[str, ...] | None = None
 
     @model_validator(mode="after")
     def validate_understanding(self) -> PaperUnderstanding:
@@ -119,6 +196,10 @@ class PaperUnderstanding(StrictModel):
             or len(self.named_tools) > 5
             or any(not _bounded_name(tool) for tool in self.named_tools)
             or len(set(self.named_tools)) != len(self.named_tools)
+            or self.raw_rank_concepts is not None and (
+                len(self.raw_rank_concepts) > 8
+                or any(not _bounded_name(label) for label in self.raw_rank_concepts)
+            )
             or len(self.parameter_hints) > 8
             or any(
                 not _bounded_name(key)
@@ -278,6 +359,16 @@ def _compile_paper_understood_direct_plan(
     approved_hints, approved_intent, concepts = _source_owned_understood_concepts(
         understanding, catalog, intent_registry,
     )
+    projection_groups = deepcopy(intent_registry.route_field_groups)
+    annotated = intent_registry.annotated_routes()
+    approved_direct_parameter_routes = frozenset(
+        intent_registry.approved_direct_parameter_routes,
+    )
+    if intent_registry.projection_snapshot_id is not None and (
+        intent_registry.projection_snapshot_id != index.field_index.snapshot_id
+        or not annotated <= index.field_index.route_locations.keys()
+    ):
+        raise PolicyViolationError("paper intent source snapshot mismatch")
     if _compose_concepts and (len(concepts) > 1 or approved_hints.unresolved_concepts):
         from .paper_understood_concept_plan import _compile_understood_concept_plan
 
@@ -321,8 +412,10 @@ def _compile_paper_understood_direct_plan(
             or intent_registry.model_dump_json() != original_intents
             or understanding.model_dump_json() != original_hints
             or current_rank_policy != original_rank_policy
-            or host_source_arguments is not None
-            and host_source_arguments != host_inputs
+            or host_source_arguments is not None and (
+                host_source_arguments != host_inputs
+                or canonical_json_text(host_source_arguments) != canonical_json_text(host_inputs)
+            )
         ):
             raise PolicyViolationError("paper understood owner or authority changed")
 
@@ -343,11 +436,27 @@ def _compile_paper_understood_direct_plan(
         return empty("no_proven_hit")
 
     keys = approved_hints.named_tools or None
+    # The original unnamed Filter uses any overlap with required group IDs,
+    # not an intersection of all groups' fields. The typed mandatory proof
+    # remains a separate gate. An empty overlap must not become unrestricted.
+    candidate_groups = None
+    if intent.recall_group_ids and keys is None:
+        candidate_groups = {
+            route: frozenset(
+                name for group_id, members in groups.items()
+                if group_id in intent.recall_group_ids for name in members
+            )
+            for route, groups in projection_groups.items()
+            if any(group_id in groups for group_id in intent.recall_group_ids)
+        }
     first = index.field_index.lookup(
         router, group.aliases[0], principal=principal, group=group,
         k=k, allowed_tool_keys=keys,
         _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
         _paper_rank_domains=intent.domains,
+        _paper_group_members=candidate_groups,
+        _paper_target_tools=intent.target_tool_keys,
+        _paper_raw_rank_concepts=approved_hints.raw_rank_concepts,
     )
     ranked = first.status == "ranked_unverified" and first.deterministic_paper_ranked
     if first.status != "complete" and not ranked:
@@ -374,8 +483,20 @@ def _compile_paper_understood_direct_plan(
             if visible is None:
                 raise PolicyViolationError("paper understood route no longer visible")
             required_names = set(candidate.required_output_fields)
+            # Algorithm 1 recall safety net: a matched concept activates its
+            # source-local groups; the intent may activate other local groups.
+            # Only visible registered fields are returned. A hidden adjunct
+            # cannot grant coverage or disclose its name. Do not recursively
+            # expand groups via adjunct fields, or share groups across routes.
+            selected_names = set(required_names)
+            original_names = {field.name for field in endpoint.output_fields}
+            for group_id, members in projection_groups.get(candidate.route_id, {}).items():
+                if not set(members) <= original_names:
+                    raise PolicyViolationError("paper recall group source fields changed")
+                if group_id in intent.recall_group_ids or required_names.intersection(members):
+                    selected_names.update(members)
             names = tuple(field.name for field in visible.output_fields if (
-                field.name in required_names or field.identifier
+                field.name in selected_names or field.identifier
             ))
             if not required_names.issubset(names):
                 raise PolicyViolationError("paper understood required fields hidden")
@@ -395,6 +516,7 @@ def _compile_paper_understood_direct_plan(
             _compile_one_route(
                 router, principal, index, route, i, positions, originals,
                 edges, permitted, host_inputs.get(route.route_id),
+                allow_direct_host_inputs=route.route_id in approved_direct_parameter_routes,
             ) for i, route in enumerate(routes)
         ]
         if edges:
@@ -409,6 +531,9 @@ def _compile_paper_understood_direct_plan(
             k=k, allowed_tool_keys=keys,
             _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
             _paper_rank_domains=intent.domains,
+            _paper_group_members=candidate_groups,
+            _paper_target_tools=intent.target_tool_keys,
+            _paper_raw_rank_concepts=approved_hints.raw_rank_concepts,
         )
         if first != second or materialize(second.candidates) != initial_calls:
             raise PolicyViolationError("paper understood source proof changed")

@@ -198,6 +198,30 @@ def test_invalid_json_shapes_and_bounds_are_rejected(updates):
         )
 
 
+@pytest.mark.parametrize("value", [
+    ["GaN", "LiFePO4"], {"formula": ["GaN"], "limit": 2},
+])
+def test_direct_protocol_admits_bounded_structured_literals_only_in_explicit_context(value):
+    payload = json.dumps({"intent_id": "lookup", "parameter_hints": {"input": value}})
+    with pytest.raises(ValidationError):
+        PaperQueryUnderstanding.model_validate_json(payload, strict=True)
+    actual = PaperQueryUnderstanding.model_validate_json(
+        payload, strict=True, context={"paper_direct_parameters": True},
+    )
+    assert actual.parameter_hints == {"input": value}
+
+
+@pytest.mark.parametrize("value", [
+    [1] * 33, [[[[[1]]]]], {"x": None}, {"x": 2**63}, {"x": "x" * 513},
+])
+def test_direct_protocol_structured_literals_preserve_strict_budget(value):
+    with pytest.raises(ValidationError):
+        PaperQueryUnderstanding.model_validate_json(
+            json.dumps({"intent_id": "lookup", "parameter_hints": {"input": value}}),
+            strict=True, context={"paper_direct_parameters": True},
+        )
+
+
 def test_total_query_understanding_byte_bound_includes_raw_constraints_and_hints():
     payload = {
         "intent_id": "lookup", "needs": [{"concept": "x" * 160}] * 8,
