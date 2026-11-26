@@ -11,6 +11,7 @@ from typing import Any
 import schemarouter as schemarouter_package
 from schemarouter import SchemaRouter
 from schemarouter.models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 try:
     from scripts.external_validation_provenance import implementation_provenance
@@ -69,7 +70,7 @@ def _output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
 
 
 def build_router(catalog: dict[str, Any]) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     for raw_tool in catalog["tools"]:
         input_schema = raw_tool["input_schema"]
         fields = _field_specs(raw_tool.get("output_fields", []))

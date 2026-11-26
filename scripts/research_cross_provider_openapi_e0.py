@@ -121,7 +121,6 @@ def audit_cross_provider_source() -> dict[str, Any]:
         Path(str(pirate) + "-LICENSE.txt").read_bytes(),
     )
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     router.add_tool(first)
     router.add_tool(second)
@@ -178,7 +177,6 @@ def audit_cross_provider_churn_e0() -> dict[str, Any]:
         Path(str(pirate) + "-LICENSE.txt").read_bytes(),
     )
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     router.add_tool(first)
     router.add_tool(second)

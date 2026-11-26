@@ -27,7 +27,6 @@ from schemarouter import (
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     PrincipalContext,
-    SchemaRouter,
     inspect_deepwiki_paper_source,
     register_reviewed_deepwiki_paper_source,
 )
@@ -48,6 +47,7 @@ from schemarouter.paper_understood_direct_plan import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_paper_scoped_native_direct_e1 import (
     run_paper_scoped_native_direct_e1,
 )
@@ -110,8 +110,7 @@ async def run_deepwiki_paper_a5(
 ) -> DeepWikiPaperA5E1:
     """Host-pin one reviewed repository through original P2/A5 native E1."""
     validated_repo = validate_host_deepwiki_repo(host_repo)
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         network_policy=network_policy or NetworkPolicy.public_only(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(

@@ -31,6 +31,7 @@ from schemarouter import AuthorizationPolicy, PlanRequest, SchemaRouter
 from schemarouter.planner import SchemaPlanner
 from scripts.research_authorized_retrieval_phase_profile import QUERIES
 from scripts.research_current_main_multilingual_dev import encoded
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 MODES = ("scoped", "route_policy_only")
@@ -168,8 +169,7 @@ def study(
     rows: list[dict[str, Any]] = []
     for size in sizes:
         current, original_policy = build_fixture(size)
-        no_scope = SchemaRouter(
-            _legacy_routing=True,
+        no_scope = legacy_router(
             registry=current.registry,
             authorization_policy=AuthorizationPolicy(
                 rules=original_policy.rules,

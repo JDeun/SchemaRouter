@@ -85,7 +85,7 @@ def build_parameterized_router(
             effect="allow", operation="*.*", roles_any=("reader",),
         ),),
     )
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+    router = SchemaRouter(authorization_policy=policy)
     source = ToolSpec(
         name="demo_posts", provider="jsonplaceholder",
         access_mode="host-pinned-public-https", source_type="demo_rest",

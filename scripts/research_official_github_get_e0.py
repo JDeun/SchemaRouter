@@ -195,7 +195,6 @@ def audit_official_github_get_churn_e0() -> dict[str, Any]:
     github = compile_official_github_get_bundle_e0(document)
     other = _previous_two_providers()
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     for tool in (github, *other):
         router.add_tool(tool)

@@ -25,6 +25,7 @@ from schemarouter.capability_contracts import SemanticEquivalence
 from scripts.research_declared_concept_graph_bridge_e0 import (
     DeclaredConceptGraphAnalyzer,
 )
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 K = 1
@@ -80,8 +81,7 @@ def build_router(mode: str) -> SchemaRouter:
             ),
         ),
     )
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=policy,
         analyzer=(
             DeclaredConceptGraphAnalyzer(CONCEPTS, match_mode=mode)

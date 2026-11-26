@@ -24,9 +24,9 @@ from schemarouter import (
     InMemoryRegistry,
     PlanRequest,
     PrincipalContext,
-    SchemaRouter,
 )
 from schemarouter.adapters.openapi import tool_from_openapi
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_NAMES = (
@@ -202,7 +202,7 @@ def evaluate(
         ),
         default_effect="deny",
     )
-    router = SchemaRouter(_legacy_routing=True, registry=registry, authorization_policy=policy)
+    router = legacy_router(registry=registry, authorization_policy=policy)
     principal = PrincipalContext(subject="synthetic-public-provider-dev", roles=("viewer",))
     by_source = {
         n: evidence[n].get("route_ids", [])

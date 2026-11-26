@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+from scripts.research_legacy_router import legacy_router
 from scripts.research_public_heterogeneous_live_e1 import (
     COD_URL,
     DEEPWIKI_URL,
@@ -336,8 +337,7 @@ def evaluate_selection(
 
 async def run_live_selection_e1() -> dict[str, Any]:
     """Discover original remote schemas; no selected endpoint is executed."""
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True))
     try:
         registration = await router.add_provider(

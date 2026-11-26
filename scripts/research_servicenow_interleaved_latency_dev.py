@@ -17,10 +17,10 @@ from statistics import mean, median
 from typing import Any
 
 import schemarouter as schemarouter_package
-from schemarouter import SchemaRouter
 from schemarouter.adapters.mcp import tool_from_mcp
 from scripts.external_validation_provenance import implementation_provenance
 from scripts.external_validation_servicenow_platform_mcp import validate_package
+from scripts.research_legacy_router import legacy_router
 
 ARMS = ("static_readonly", "schemarouter_k3", "schemarouter_k5")
 SAMPLE_KEYS = frozenset({
@@ -233,7 +233,7 @@ def run(
     )
     tools = snapshot["tools"]
     tool_map = {tool["name"]: tool for tool in tools}
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     started = time.perf_counter_ns()
     router.add_tool(tool_from_mcp(
         "servicenow-platform-mcp", {"tools": tools},

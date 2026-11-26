@@ -25,6 +25,7 @@ from schemarouter import (
     ToolCall,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
@@ -384,9 +385,9 @@ def build_live_router(
                 roles_any=("reader",),
             ),
         ))
-        router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
+        router = legacy_router(authorization_policy=policy)
     else:
-        router = SchemaRouter(_legacy_routing=True)
+        router = legacy_router()
     geo_invoker = OpenMeteoBoundInvoker(
         client, source="geocode", transport_retry_budget=transport_retry_budget,
     )

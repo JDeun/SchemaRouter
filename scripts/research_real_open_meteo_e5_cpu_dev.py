@@ -33,6 +33,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_open_meteo_real_openapi_dev import (
     LANGUAGES,
     QUERIES,
@@ -56,8 +57,7 @@ def catalog(
         raise ValueError(f"real publisher source/parser failures: {failures!r}")
     registry = InMemoryRegistry()
     registry.update_many(tools)
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         registry=registry,
         authorization_policy=AuthorizationPolicy(
             rules=(AuthorizationRule(

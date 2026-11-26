@@ -33,6 +33,7 @@ from schemarouter.executor import RegistryExecutor
 from schemarouter.planner import SchemaPlanner
 from scripts.research_authorized_retrieval_phase_profile import QUERIES
 from scripts.research_current_main_multilingual_dev import encoded
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("en", "ko", "ja")
@@ -194,8 +195,7 @@ def evaluate(
     rows: list[dict[str, Any]] = []
     for size in sizes:
         scoped, policy = build_fixture(size)
-        router_no_scope = SchemaRouter(
-            _legacy_routing=True,
+        router_no_scope = legacy_router(
             registry=scoped.registry,
             authorization_policy=AuthorizationPolicy(
                 rules=policy.rules, default_effect=policy.default_effect,

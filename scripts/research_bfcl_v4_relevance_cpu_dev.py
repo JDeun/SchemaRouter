@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from schemarouter import EndpointSpec, InMemoryRegistry, SchemaRouter, ToolSpec
+from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
 from schemarouter.embedding_e5 import E5CachedEmbedder
 from scripts.research_legacy_decisions import (
     DecisionOption,
@@ -23,6 +23,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_router import legacy_router
 
 UPSTREAM_REPO = "ShishirPatil/gorilla"
 UPSTREAM_COMMIT = "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
@@ -179,7 +180,7 @@ def default_lexical_one(row: dict[str, Any]) -> tuple[str, float]:
             name=f"bfcl_{idx}", description=option_text(function),
             endpoints=[EndpointSpec(name="call", read_only=True)],
         ))
-    router = SchemaRouter(_legacy_routing=True, registry=registry)
+    router = legacy_router(registry=registry)
     result = router.retrieve(row["query"], k=1)
     if len(result.candidates) != 1:
         raise ValueError("real lexical retrieval omitted source candidate")

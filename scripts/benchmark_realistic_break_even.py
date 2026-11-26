@@ -32,6 +32,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_router import legacy_router
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+")
 SIZES = (20, 50, 100, 250, 500)
@@ -206,7 +207,7 @@ def build_cases(size: int, ambiguity: Ambiguity) -> list[Case]:
 def build_router(tools: list[ToolSpec], *, candidate_index: bool) -> SchemaRouter:
     registry = InMemoryRegistry()
     registry.update_many(tools)
-    router = SchemaRouter(_legacy_routing=True, registry=registry)
+    router = legacy_router(registry=registry)
     router.planner.candidate_index = candidate_index
     return router
 

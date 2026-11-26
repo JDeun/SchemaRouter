@@ -40,6 +40,7 @@ from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Sele
 from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
 )
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks/multilingual-embedding-cpu-dev-20261015.json"
@@ -73,8 +74,7 @@ def build_source_router(corpus: dict[str, Any]) -> SchemaRouter:
         grouped[tool].append(EndpointSpec(
             name=endpoint, description=desc, read_only=True,
         ))
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
             rules=(AuthorizationRule(

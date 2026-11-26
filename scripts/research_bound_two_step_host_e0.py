@@ -26,6 +26,7 @@ from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 from scripts.research_trusted_host_intent_preflight_e0 import (
     preflight_trusted_host_intent_e0,
@@ -45,7 +46,7 @@ def build_bound_two_step_source(
     seen: list[tuple[str, dict[str, Any]]],
 ) -> SchemaRouter:
     """Register read-only tools and independently bind each host provider."""
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(

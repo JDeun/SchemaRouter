@@ -14,8 +14,8 @@ except ModuleNotFoundError:  # direct python scripts/... invocation
     from external_validation_servicenow_platform_mcp import validate_package
 
 import schemarouter as schemarouter_package
-from schemarouter import SchemaRouter
 from schemarouter.adapters.mcp import tool_from_mcp
+from scripts.research_legacy_router import legacy_router
 
 try:
     from scripts.external_validation_provenance import implementation_provenance
@@ -70,7 +70,7 @@ def run(
     tool_map = {tool["name"]: tool for tool in tools}
 
     build_start = time.perf_counter()
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(
         tool_from_mcp(
             "servicenow-platform-mcp",

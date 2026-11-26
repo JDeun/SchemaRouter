@@ -135,7 +135,6 @@ def audit_official_ollama_snapshot(
     raw_license = (license_path or Path(str(original) + "-LICENSE.txt")).read_bytes()
     tool = compile_official_ollama_snapshot(raw_spec, raw_license)
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     router.add_tool(tool)
     graph = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))

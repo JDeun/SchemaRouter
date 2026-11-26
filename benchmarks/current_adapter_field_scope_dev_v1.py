@@ -21,6 +21,7 @@ from schemarouter import (
 )
 from schemarouter.adapters.mcp import tool_from_mcp
 from schemarouter.adapters.openapi import tool_from_openapi
+from scripts.research_legacy_router import legacy_router
 
 LANGUAGES = ("en", "ko", "ja")
 SOURCE_CLASS = "newly_authored_local_protocol_shaped_development_only"
@@ -187,8 +188,7 @@ def registry_and_policy() -> tuple[InMemoryRegistry, AuthorizationPolicy]:
 
 def router_and_policy() -> tuple[SchemaRouter, AuthorizationPolicy]:
     registry, policy = registry_and_policy()
-    return SchemaRouter(
-        _legacy_routing=True,
+    return legacy_router(
         registry=registry, authorization_policy=policy), policy
 
 

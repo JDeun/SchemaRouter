@@ -207,7 +207,6 @@ def audit_official_openai_get_catalog_e0() -> dict[str, Any]:
     if unsupported != UNSUPPORTED_GET_PATHS:
         raise ValueError("original unsupported native GET path inventory drift")
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     start = time.perf_counter_ns()
     parameterized = protected = 0

@@ -138,7 +138,6 @@ def audit_official_openai_operations_churn_e0() -> dict[str, Any]:
         raise ValueError("original unsupported HTTP media-type inventory drift")
 
     router = SchemaRouter(
-        _legacy_routing=True,
         authorization_policy=AuthorizationPolicy(default_effect="deny"))
     native_counts: Counter[str] = Counter()
     expected_openai_routes: set[tuple[str, str]] = set()

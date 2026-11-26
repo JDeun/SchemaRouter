@@ -85,7 +85,7 @@ ACTOR = PrincipalContext(subject="g5-local-synthetic-dev", roles=("reader",))
 
 
 def _source() -> tuple[SchemaRouter, NativeSchemaGraphIndex, NativeDeclaredFieldGroup]:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

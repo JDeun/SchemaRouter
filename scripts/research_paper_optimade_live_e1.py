@@ -27,7 +27,6 @@ from schemarouter import (
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     PrincipalContext,
-    SchemaRouter,
     ToolCall,
 )
 from schemarouter.errors import SchemaSourceError
@@ -43,6 +42,7 @@ from schemarouter.paper_understood_direct_plan import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_paper_scoped_native_direct_e1 import (
     run_paper_scoped_native_direct_e1,
 )
@@ -120,8 +120,7 @@ async def run_cod_optimade_paper_a5(
     Search is a distinct *host-selected* preflight request, not an A5 call.
     ``expected_source_fingerprint`` must come from a prior probe/review.
     """
-    router = SchemaRouter(
-        _legacy_routing=True,
+    router = legacy_router(
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(
             AuthorizationRule(effect="allow", operation=COD_ROUTE, roles_any=("reader",)),

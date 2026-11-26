@@ -30,6 +30,7 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
 from schemarouter import AuthorizationPolicy, PlanRequest, SchemaRouter
 from schemarouter.planner import SchemaPlanner
 from scripts.research_current_main_multilingual_dev import encoded
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 WIDTHS = (24, 56)
@@ -220,8 +221,7 @@ def profile(
             rules=original.rules,
             default_effect=original.default_effect,
         )
-        route_only_router = SchemaRouter(
-            _legacy_routing=True,
+        route_only_router = legacy_router(
             registry=scoped_router.registry,
             authorization_policy=route_only_policy,
         )

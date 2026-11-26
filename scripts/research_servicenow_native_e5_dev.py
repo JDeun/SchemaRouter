@@ -19,7 +19,6 @@ from typing import Any
 
 from schemarouter import (
     E5CachedEmbedder,
-    SchemaRouter,
 )
 from schemarouter.adapters.mcp import tool_from_mcp
 from scripts.external_validation_servicenow_platform_mcp import (
@@ -32,6 +31,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_router import legacy_router
 
 # Match the independently pinned real Open-Meteo E5 CPU study, but do not
 # import that study's optional YAML/source-harness runtime into this MCP job.
@@ -164,7 +164,7 @@ def evaluate(
 
     tool_map = {tool["name"]: tool for tool in snapshot["tools"]}
     allowed = set(tool_map)
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     router.add_tool(tool_from_mcp(
         "servicenow-platform-mcp", {"tools": snapshot["tools"]},
         namespace="external-validation-servicenow-platform-mcp",

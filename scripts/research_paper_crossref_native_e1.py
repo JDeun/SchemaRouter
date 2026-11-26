@@ -29,7 +29,6 @@ from schemarouter import (
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     PrincipalContext,
-    SchemaRouter,
     inspect_crossref_paper_source,
     register_reviewed_crossref_paper_source,
 )
@@ -46,6 +45,7 @@ from schemarouter.paper_understood_direct_plan import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 from scripts.research_paper_scoped_native_direct_e1 import (
     run_paper_scoped_native_direct_e1,
 )
@@ -105,8 +105,7 @@ async def run_crossref_paper_a5(
     never treats the contemporaneous local probe as owner approval.
     """
     validated_doi = validate_host_crossref_doi(host_doi)
-    router = SchemaRouter(
-        _legacy_routing=True,  # historical A5 agent-surface capture
+    router = legacy_router(
         http_client=http_client,
         network_policy=network_policy or NetworkPolicy.public_only(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),

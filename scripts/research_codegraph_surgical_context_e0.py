@@ -37,6 +37,7 @@ from scripts.research_authorized_concept_fixed5_agent_bridge import (
     _catalog_content_digest,
 )
 from scripts.research_legacy_concept_graph import retrieve_authorized_concept_graph
+from scripts.research_legacy_router import legacy_router
 
 
 def _json_bytes(value: dict[str, Any]) -> bytes:
@@ -200,7 +201,7 @@ def _synthetic_control(
     """
     aliases = ("case status", "문의 상태", "問い合わせ状態")
     text = " ".join(aliases)
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

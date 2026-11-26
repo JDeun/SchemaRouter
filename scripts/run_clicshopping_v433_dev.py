@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec
+from scripts.research_legacy_router import legacy_router
 
 try:
     from scripts.validate_clicshopping_v433_inventory import validate_inventory
@@ -136,7 +137,7 @@ def validate_cases(cases: dict[str, Any], inventory: dict[str, Any]) -> None:
 
 def build_router(catalog: list[dict[str, Any]]) -> SchemaRouter:
     """Do not inject case labels or manually enriched field annotations."""
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     grouped: dict[str, list[dict[str, Any]]] = {}
     for item in catalog:
         grouped.setdefault(item["endpoint"], []).append(item)

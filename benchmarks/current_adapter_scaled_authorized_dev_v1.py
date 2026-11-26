@@ -25,6 +25,7 @@ from schemarouter import (
 )
 from schemarouter.adapters.mcp import tool_from_mcp
 from schemarouter.adapters.openapi import tool_from_openapi
+from scripts.research_legacy_router import legacy_router
 
 SIZES = (100, 250, 500)
 WIDTHS = (24, 32, 40, 48, 56, 64)
@@ -261,6 +262,5 @@ def build_fixture(size: int) -> tuple[SchemaRouter, AuthorizationPolicy]:
             ),
         ),
     )
-    return SchemaRouter(
-        _legacy_routing=True,
+    return legacy_router(
         registry=registry, authorization_policy=policy), policy

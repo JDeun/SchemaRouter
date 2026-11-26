@@ -25,7 +25,6 @@ from schemarouter import (
     E5CachedEmbedder,
     EndpointSpec,
     FieldSpec,
-    SchemaRouter,
     ToolSpec,
 )
 from scripts.research_legacy_decisions import (
@@ -34,6 +33,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_router import legacy_router
 
 BFCL_COMMIT = "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
 ROOT = (
@@ -117,7 +117,7 @@ def host_visible_lexical_choice(
     query: str, functions: list[dict[str, Any]],
 ) -> str | None:
     """Actual library lexical retrieval, not a stand-in scorer."""
-    router = SchemaRouter(_legacy_routing=True)
+    router = legacy_router()
     lookup: dict[str, str] = {}
     for index, fn in enumerate(functions):
         tool_name = f"bfcl_func_{index:02d}"

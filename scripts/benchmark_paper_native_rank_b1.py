@@ -52,7 +52,7 @@ def build_rank_fixture(routes: int) -> tuple[
     if type(routes) is not int or routes not in (500, 5000):
         raise ValueError("only 500 or 5000 declared synthetic routes")
     denied = "native_00000.read"
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(
             AuthorizationRule(effect="deny", operation=denied,
