@@ -121,7 +121,7 @@ snapshot = router.inspect()
 print(snapshot.model_dump_json(indent=2))
 ```
 
-Live view에는 활성 이해 경로(설정된 router는 고정된 `PaperQueryUnderstanding` 표시, 미설정 router는 기존 analyzer class), execution policy, actual bound tool key, availability cooldown 안의 access path, registered health-probe status/background monitor 상태가 추가됩니다.
+Live view에는 활성 이해 경로(설정된 router는 `PaperQueryUnderstanding`, 미설정 기본 router는 `PaperConfigurationRequired`, 명시적 과거 연구 호환 모드에서만 analyzer class 표시), execution policy, actual bound tool key, availability cooldown 안의 access path, registered health-probe status/background monitor 상태가 추가됩니다.
 
 Invoker object, credential, arbitrary metadata value, argument/result/payload value는 포함하지 않습니다.
 
@@ -138,7 +138,7 @@ Invoker object, credential, arbitrary metadata value, argument/result/payload va
     "unclassified_endpoints": 0
   },
   "planner": {
-    "analyzer": "KeywordAnalyzer"
+    "analyzer": "PaperConfigurationRequired"
   },
   "execution": {
     "policy": {

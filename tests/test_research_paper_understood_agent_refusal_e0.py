@@ -108,7 +108,7 @@ def _router(*, hidden=False):
             hidden_fields=("priority",),
         ),) if hidden else (),
     )
-    router = SchemaRouter(authorization_policy=policy)
+    router = SchemaRouter(_legacy_routing=True, authorization_policy=policy)
     router.add_tool(_complete_tool("complete"))
     router.add_tool(ToolSpec(
         name="partial", description="Case status only",

@@ -121,6 +121,7 @@ async def run_cod_optimade_paper_a5(
     ``expected_source_fingerprint`` must come from a prior probe/review.
     """
     router = SchemaRouter(
+        _legacy_routing=True,
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(
             AuthorizationRule(effect="allow", operation=COD_ROUTE, roles_any=("reader",)),

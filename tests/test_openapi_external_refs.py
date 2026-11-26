@@ -118,12 +118,12 @@ async def test_opt_in_resolves_same_origin_nested_external_refs_and_preserves_va
         raise AssertionError(f"unexpected URL: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = await SchemaRouter.from_url(
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        await router.add_url(
             "https://docs.example.com/spec/openapi.json",
             kind="openapi",
             schema_headers={"X-Doc-Token": "schema-secret"},
             openapi_external_refs=True,
-            http_client=client,
         )
 
     tool = router.registry.get("external_refs_api")
@@ -401,11 +401,11 @@ async def test_external_ref_supports_same_origin_schema_id_rebasing() -> None:
         raise AssertionError(f"unexpected URL: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = await SchemaRouter.from_url(
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        await router.add_url(
             "https://docs.example.com/openapi.json",
             kind="openapi",
             openapi_external_refs=True,
-            http_client=client,
         )
 
     tool = router.registry.get("external_refs_api")

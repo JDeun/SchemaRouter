@@ -653,9 +653,13 @@ async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(me
     assert ctx.router.planner is None
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
     with pytest.raises(PolicyViolationError, match="lexical (planning|retrieval) is unavailable"):
-        result = getattr(ctx.router, method)(ctx.request.query)
-        if asyncio.iscoroutine(result):
-            await result
+        api = getattr(ctx.router, method)
+        if asyncio.iscoroutinefunction(api):
+            await api(ctx.request.query)
+        else:
+            # Sync invoke has a separate event-loop guard. Exercise its real
+            # missing-configuration boundary outside the active async loop.
+            await asyncio.to_thread(api, ctx.request.query)
     assert ctx.model.payloads == [] and ctx.seen == []
 
 

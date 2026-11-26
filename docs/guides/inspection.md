@@ -135,7 +135,7 @@ print(snapshot.model_dump_json(indent=2))
 
 The live view adds:
 
-- active understanding path (`PaperQueryUnderstanding` for configured routing, legacy analyzer class otherwise);
+- active understanding path (`PaperQueryUnderstanding` for configured routing, `PaperConfigurationRequired` for an unconfigured default router; an analyzer class is shown only for the explicit historical research compatibility mode);
 - execution policy;
 - actual bound tool keys from the current executor;
 - access paths currently inside an availability cooldown;
@@ -157,7 +157,7 @@ Representative `router.inspect()` JSON:
     "unclassified_endpoints": 0
   },
   "planner": {
-    "analyzer": "KeywordAnalyzer"
+    "analyzer": "PaperConfigurationRequired"
   },
   "execution": {
     "policy": {

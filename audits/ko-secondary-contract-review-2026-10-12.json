@@ -21,10 +21,10 @@
     },
     {
       "path": "guides/inspection.md",
-      "en_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c",
-      "ko_blob": "261900e61a04049ad4b108a07d0ea61ed1b0bc93",
+      "en_blob": "1ba1affd07e3356cbe6fb0f65603c87380eea194",
+      "ko_blob": "81816b09208c9578509b6d2880ce279fc3134427",
       "reviewed_topic": "Run trace CLI commands",
-      "evidence": "All-run listing, --complete/--incomplete filtering and a single run event stream each retain corresponding CLI examples and Korean intent captions."
+      "evidence": "All-run listing, --complete/--incomplete filtering and a single run event stream each retain corresponding CLI examples and Korean intent captions. The 2026-11-26 targeted recheck also confirms the active paper configuration states, not the retired decision policy."
     }
   ],
   "limitations": "These three targeted pair repairs do not establish independent sentence-by-sentence editorial certification for the full 147-page bilingual corpus."

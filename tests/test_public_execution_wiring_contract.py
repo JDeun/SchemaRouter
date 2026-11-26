@@ -86,7 +86,16 @@ def test_public_execution_wiring_manifest_is_source_and_test_attested():
                 assert "session.aexecute_direct(" in body
                 assert "monkeypatch" not in body
                 assert "invoked == []" in body
-            assert "_fixture(" in registered_text
+                assert "_native_router(" in body
+            # Audit the real fixture, not the retired lexical tool-surface wrapper.
+            helper_path = ROOT / "tests/test_research_paper_scoped_native_direct_e1.py"
+            helper = _functions(helper_path)["_native_router"]
+            helper_body = ast.get_source_segment(
+                helper_path.read_text(encoding="utf-8"), helper,
+            ) or ""
+            assert "router.add_bound_tool(" in helper_body
+            assert "NativeSchemaPostingIndex.build(router.registry)" in helper_body
+            assert "legacy=False" in helper_body
             assert "mark_access_unavailable(" in registered_text
             assert "mark_access_available(" in registered_text
         for name in row["real_invoker_tests"]:

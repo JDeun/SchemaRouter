@@ -66,9 +66,9 @@ async def test_cross_origin_openapi_is_ingested_but_not_auto_bound() -> None:
         )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = await SchemaRouter.from_url(
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        await router.add_url(
             "https://docs.example.com/openapi.json",
-            http_client=client,
         )
 
     assert router.registry.keys() == ("users_api",)

@@ -125,11 +125,11 @@ async def test_optimade_runtime_headers_are_not_model_parameters() -> None:
         raise AssertionError(f"unexpected request: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = await SchemaRouter.from_url(
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        await router.add_url(
             "https://materials.example",
             kind="optimade",
             trusted_headers={"Authorization": "Bearer runtime-secret"},
-            http_client=client,
         )
         endpoint = router.registry.endpoint("materials.example", "search_structures")
         parameter_names = {

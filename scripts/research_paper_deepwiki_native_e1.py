@@ -111,6 +111,7 @@ async def run_deepwiki_paper_a5(
     """Host-pin one reviewed repository through original P2/A5 native E1."""
     validated_repo = validate_host_deepwiki_repo(host_repo)
     router = SchemaRouter(
+        _legacy_routing=True,
         network_policy=network_policy or NetworkPolicy.public_only(),
         policy=ExecutionPolicy(allow_unclassified_remote=True),
         authorization_policy=AuthorizationPolicy(default_effect="deny", rules=(

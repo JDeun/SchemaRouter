@@ -186,10 +186,10 @@ async def test_optimade_discovery_planning_and_execution_use_response_fields() -
         raise AssertionError(f"unexpected request: {request.method} {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = await SchemaRouter.from_url(
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        await router.add_url(
             "https://materials.example/optimade",
             kind="optimade",
-            http_client=client,
         )
 
         assert router.adapter_registry.kinds() == (
@@ -277,10 +277,10 @@ async def test_optimade_single_entry_uses_encoded_id_and_field_projection() -> N
         raise AssertionError(f"unexpected request: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router = await SchemaRouter.from_url(
+        router = SchemaRouter(_legacy_routing=True, http_client=client)
+        await router.add_url(
             "https://materials.example/v1",
             kind="optimade",
-            http_client=client,
         )
         plan = router.plan(
             PlanRequest(

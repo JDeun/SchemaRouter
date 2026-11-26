@@ -540,8 +540,9 @@ def test_the_amendment_path_is_not_reachable_from_model_facing_code():
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
+    assert not (root / "src/schemarouter/decisions.py").exists()
     for name in (
-        "src/schemarouter/decisions.py",
+        "scripts/research_legacy_decisions.py",
         "src/schemarouter/planner.py",
         "src/schemarouter/paper_query_understanding.py",
         "scripts/research_legacy_decision_policy.py",
