@@ -19,7 +19,9 @@ from schemarouter.concept_retrieval import (
     NativeDeclaredConcept,
     resolve_native_concepts,
 )
+from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_field_group import retrieve_authorized_concepts
+from scripts.research_legacy_router import legacy_router
 
 ANALYST = PrincipalContext(subject="analyst", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -58,8 +60,8 @@ def _field(sid: str, name: str | None = None, *, kind: str = "string") -> FieldS
     )
 
 
-def _router(*, extra_noise: int = 0) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+def _router(*, extra_noise: int = 0, router_factory=SchemaRouter) -> SchemaRouter:
+    router = router_factory(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("analyst", "viewer"),
@@ -94,9 +96,13 @@ def _router(*, extra_noise: int = 0) -> SchemaRouter:
     return router
 
 
+def _legacy_router(*, extra_noise: int = 0) -> SchemaRouter:
+    return _router(extra_noise=extra_noise, router_factory=legacy_router)
+
+
 @pytest.mark.parametrize("query", QUERIES)
 def test_declared_mentions_combine_into_complete_authorized_topk(query):
-    router = _router()
+    router = _legacy_router()
     original = router.retrieve_authorized(query, principal=ANALYST, k=5)
     resolved = resolve_native_concepts(query, catalog=CATALOG)
     assert resolved.concept_ids == ("support.priority", "support.status")
@@ -116,7 +122,7 @@ def test_declared_mentions_combine_into_complete_authorized_topk(query):
 
 
 def test_existing_pre_k_gate_survives_many_lexically_matching_partial_routes():
-    router = _router(extra_noise=120)
+    router = _legacy_router(extra_noise=120)
     result = retrieve_authorized_concepts(
         router, QUERIES[0], principal=ANALYST, catalog=CATALOG,
     )
@@ -126,7 +132,7 @@ def test_existing_pre_k_gate_survives_many_lexically_matching_partial_routes():
 
 def test_data_scope_does_not_reconstruct_a_hidden_required_field():
     result = retrieve_authorized_concepts(
-        _router(), QUERIES[1], principal=VIEWER, catalog=CATALOG,
+        _legacy_router(), QUERIES[1], principal=VIEWER, catalog=CATALOG,
     )
     assert result.candidates == []
     assert result.total_ranked == 0
@@ -205,7 +211,7 @@ def test_source_schema_mismatch_and_extra_required_units_cannot_grant_a_result()
             source_type="science", license="reviewed",
         ),
     ))
-    router = _router()
+    router = _legacy_router()
     assert retrieve_authorized_concepts(
         router, "show vapor pressure", principal=ANALYST, catalog=support,
     ).candidates == []
@@ -220,7 +226,7 @@ def test_modified_approved_declaration_is_revalidated_before_lookup():
 
 
 def test_deny_invalid_k_and_no_agent_execution(monkeypatch):
-    router = _router()
+    router = _legacy_router()
     monkeypatch.setattr(
         router, "plan", lambda *_a, **_kw: pytest.fail("no planning"),
     )
@@ -255,3 +261,15 @@ def test_blank_owner_source_or_license_constraints_cannot_enter_catalog(constrai
             required_fields=(_contract("unreviewed.field"),),
             **constraints,
         )
+
+
+@pytest.mark.parametrize("query", QUERIES)
+def test_native_concept_lookup_uses_default_router(query):
+    router = _router(extra_noise=120)
+    assert router.planner is None
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup_concepts(router, query, principal=ANALYST, catalog=CATALOG)
+    assert result.status == "complete" and result.qualified_count == 1
+    assert [candidate.route_id for candidate in result.candidates] == ["complete.read"]
+    denied = index.lookup_concepts(router, query, principal=VIEWER, catalog=CATALOG)
+    assert denied.status == "no_proven_hit" and denied.candidates == ()

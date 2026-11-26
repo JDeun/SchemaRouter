@@ -21,6 +21,7 @@ from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_field_group import retrieve_authorized_field_group
+from scripts.research_legacy_router import legacy_router
 
 ANALYST = PrincipalContext(subject="analyst", roles=("analyst",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -42,8 +43,8 @@ def _field(name: str, semantic: str, *, kind: str = "string") -> FieldSpec:
     return FieldSpec(name=name, semantic_id=semantic, json_schema={"type": kind})
 
 
-def _router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+def _router(*, router_factory=SchemaRouter) -> SchemaRouter:
+    router = router_factory(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(
             AuthorizationRule(effect="deny", operation="private.read",
                               roles_any=("analyst", "viewer")),
@@ -90,9 +91,13 @@ def _router() -> SchemaRouter:
     return router
 
 
+def _legacy_router() -> SchemaRouter:
+    return _router(router_factory=legacy_router)
+
+
 @pytest.mark.parametrize("query", GROUP.aliases)
 def test_native_topk_requires_complete_authorized_fieldgroup_before_k(query):
-    router = _router()
+    router = _legacy_router()
     baseline = router.retrieve_authorized(query, principal=ANALYST, k=5)
     assert any(c.route_id != "complete.read" for c in baseline.candidates)
     result = retrieve_authorized_field_group(
@@ -113,7 +118,7 @@ def test_native_topk_requires_complete_authorized_fieldgroup_before_k(query):
 
 
 def test_principal_field_scope_prevents_a_partial_public_schema():
-    router = _router()
+    router = _legacy_router()
     result = retrieve_authorized_field_group(
         router, GROUP.aliases[0], principal=VIEWER, group=GROUP,
     )
@@ -129,7 +134,7 @@ def test_unknown_json_schema_and_unit_mismatch_do_not_prove_fieldgroup():
     group.required_fields[0].json_schema = {"type": "string", "unknownAssertion": "X"}
     with pytest.raises(ValueError, match="invalid current native FieldGroup"):
         retrieve_authorized_field_group(
-            _router(), GROUP.aliases[0], principal=ANALYST, group=group,
+            _legacy_router(), GROUP.aliases[0], principal=ANALYST, group=group,
         )
 
     different_unit = NativeDeclaredFieldGroup(
@@ -144,12 +149,12 @@ def test_unknown_json_schema_and_unit_mismatch_do_not_prove_fieldgroup():
         source_type=GROUP.source_type, license=GROUP.license,
     )
     assert retrieve_authorized_field_group(
-        _router(), GROUP.aliases[0], principal=ANALYST, group=different_unit,
+        _legacy_router(), GROUP.aliases[0], principal=ANALYST, group=different_unit,
     ).candidates == []
 
 
 def test_rejected_query_or_k_does_not_fallback_to_default_retrieval():
-    router = _router()
+    router = _legacy_router()
     with pytest.raises(ValueError, match="host-declared"):
         retrieve_authorized_field_group(
             router, "any support records", principal=ANALYST, group=GROUP,
@@ -170,7 +175,7 @@ def test_rejected_query_or_k_does_not_fallback_to_default_retrieval():
 
 
 def test_drift_and_execution_never_become_a_fieldgroup_selection(monkeypatch):
-    router = _router()
+    router = _legacy_router()
     def forbidden(*_args, **_kwargs):
         raise AssertionError("FieldGroup lookup cannot plan/execute")
     monkeypatch.setattr(router, "plan", forbidden)
@@ -226,7 +231,7 @@ def test_actual_mcp_and_openapi_converters_share_native_fieldgroup_boundary():
                 field.semantic_id = "support." + field.name
     # An explicit locally reviewed read-only amendment is mandatory for MCP.
     mcp.endpoint("read_status").read_only = True
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(
             AuthorizationRule(effect="allow", operation="*.read_status",
                               roles_any=("analyst",)),
@@ -245,7 +250,7 @@ def test_actual_mcp_and_openapi_converters_share_native_fieldgroup_boundary():
 
 def test_fieldgroup_pre_k_keeps_five_complete_routes_after_many_partial_matches():
     """Full required fields must be gated BEFORE lexical Top-K, not filtered after."""
-    router = _router()
+    router = _legacy_router()
     for index in range(120):
         router.add_tool(ToolSpec(
             name=f"noise_{index}", source_type="support_records",
@@ -281,15 +286,10 @@ def test_fieldgroup_pre_k_keeps_five_complete_routes_after_many_partial_matches(
 
 
 @pytest.mark.parametrize("query", GROUP.aliases)
-def test_canonical_fieldgroup_lookup_never_enters_lexical_planner(monkeypatch, query):
+def test_canonical_fieldgroup_lookup_never_enters_lexical_planner(query):
     router = _router()
+    assert router.planner is None
     index = NativeSchemaPostingIndex.build(router.registry)
-
-    def forbidden(*args, **kwargs):
-        pytest.fail("canonical field search entered the lexical planner")
-
-    monkeypatch.setattr(router.planner, "retrieve_with_scoped_schema", forbidden)
-    monkeypatch.setattr(router.planner, "_analyze_sync", forbidden)
     result = index.lookup(router, query, principal=ANALYST, group=GROUP)
     assert result.status == "complete" and result.qualified_count == 1
     assert [c.route_id for c in result.candidates] == ["complete.read"]

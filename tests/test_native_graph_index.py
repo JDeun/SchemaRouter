@@ -113,7 +113,7 @@ def _tools(*, n_targets=1, incompatible=False):
 
 
 def _router(*, n_targets=1, hidden=False, denied=False, incompatible=False, noise=0):
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=AuthorizationPolicy(
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(() if denied else (AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader", "viewer"),
@@ -196,7 +196,7 @@ def test_hidden_root_identifier_or_denied_policy_yields_no_graph_evidence():
 def test_unavailable_endpoint_revocation_is_live():
     router = _router()
     idx = _index(router)
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, ep: tool.key != "contacts"
     )
     assert idx.lookup(
@@ -296,7 +296,7 @@ def test_in_place_policy_rules_change_during_lookup_fails_closed():
             object.__setattr__(original_policy, "default_effect", "allow")
         return True
 
-    router.planner.availability_predicate = availability
+    router._source_availability.predicate = availability
     with pytest.raises(PolicyViolationError, match="rules changed"):
         idx.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
 
@@ -310,10 +310,10 @@ def test_replacing_availability_predicate_mid_graph_lookup_fails_closed():
         nonlocal consulted
         if not consulted:
             consulted = True
-            router.planner.availability_predicate = lambda _tool, _ep: False
+            router._source_availability.predicate = lambda _tool, _ep: False
         return True
 
-    router.planner.availability_predicate = replace_during_check
+    router._source_availability.predicate = replace_during_check
     with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
     assert consulted
@@ -427,7 +427,7 @@ def test_research_ranker_never_sees_denied_hidden_or_unavailable_paths():
         assert outcome.candidates == ()
     router = _router(n_targets=7)
     idx = _index(router)
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _endpoint: tool.key not in {"cases_4", "cases_5", "cases_6"}
     )
     outcome = idx.lookup(
@@ -500,7 +500,7 @@ def test_research_ranker_policy_or_source_mutation_fails_closed():
                     endpoints=[EndpointSpec(name="read")],
                 ))
             else:
-                router.planner.availability_predicate = lambda *_: False
+                router._source_availability.predicate = lambda *_: False
             return (0, 1, 2, 3, 4)
 
         with pytest.raises(PolicyViolationError):
@@ -702,13 +702,13 @@ def test_research_ranker_same_callable_availability_revocation_is_fail_closed(
     def live_availability(tool, _endpoint):
         return tool.key not in disabled
 
-    router.planner.availability_predicate = live_availability
+    router._source_availability.predicate = live_availability
 
     def revoke_after_exposure(_query, offered, k):
         assert len(offered) == 7
         assert k == 5
         disabled.add(revoked_tool)
-        assert router.planner.availability_predicate is live_availability
+        assert router._source_availability.predicate is live_availability
         return (0, 1, 2, 3, 4)
 
     with pytest.raises(
@@ -723,7 +723,7 @@ def test_research_ranker_same_callable_availability_revocation_is_fail_closed(
 def test_research_ranker_stable_availability_still_returns_original_k5():
     router = _router(n_targets=7)
     index = _index(router)
-    router.planner.availability_predicate = lambda _tool, _endpoint: True
+    router._source_availability.predicate = lambda _tool, _endpoint: True
     actual = index.lookup(
         router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda _q, _offered, _k: (0, 1, 2, 3, 4),
@@ -1018,20 +1018,20 @@ def test_default_native_g5_same_callable_health_revocation_is_fail_closed(
             disabled.add("cases_0")
         return tool.key not in disabled
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError, match="G5 candidate eligibility changed during lookup",
     ):
         index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
     assert saw_later
-    assert router.planner.availability_predicate is health
+    assert router._source_availability.predicate is health
     assert router.registry.version == index.field_index.registry_version
 
 
 def test_default_native_g5_stable_live_health_returns_exact_evidence():
     router = _router(n_targets=2)
     index = _index(router)
-    router.planner.availability_predicate = lambda _tool, _ep: True
+    router._source_availability.predicate = lambda _tool, _ep: True
     result = index.lookup(
         router, ALIASES[0], group=GROUP, principal=ANALYST,
     )
@@ -1062,7 +1062,7 @@ def test_native_g5_first_availability_failure_redacts_private_error(
             raise RuntimeError(private_marker)
         return BadAvailability()
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     with pytest.raises(
         PolicyViolationError,
         match="G5 availability check failed during lookup",
@@ -1110,7 +1110,7 @@ def test_default_native_g5_rechecks_typed_bindings_after_scope_changes(
             return visible.model_copy(update={"parameters": []})
         return visible
 
-    router.planner.availability_predicate = health
+    router._source_availability.predicate = health
     monkeypatch.setattr(router, "_data_scope_endpoint_view", live_scoped_view)
     with pytest.raises(
         PolicyViolationError, match="G5 candidate eligibility changed during lookup",
@@ -1118,7 +1118,7 @@ def test_default_native_g5_rechecks_typed_bindings_after_scope_changes(
         index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
     assert changed
     assert router.registry.version == index.field_index.registry_version
-    assert router.planner.availability_predicate is health
+    assert router._source_availability.predicate is health
 
 
 @pytest.mark.parametrize("n_targets", [500, 5000])
@@ -1185,7 +1185,7 @@ def test_owner_ranked_g5_policy_mutation_during_health_check_fails_closed():
             policy.route_priorities["cases_5.read_case"] = 50
         return True
 
-    router.planner.availability_predicate = mutate_on_candidate
+    router._source_availability.predicate = mutate_on_candidate
     with pytest.raises(PolicyViolationError, match="Rank owner declaration changed"):
         idx.lookup(
             router, ALIASES[0], group=GROUP, principal=ANALYST,

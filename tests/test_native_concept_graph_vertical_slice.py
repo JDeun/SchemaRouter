@@ -25,6 +25,7 @@ from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_concept_graph import (
     retrieve_authorized_concept_graph as legacy_concept_graph,
 )
+from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="analyst", roles=("reader",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -58,8 +59,8 @@ def _index(router: SchemaRouter) -> NativeSchemaGraphIndex:
     return NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
 
 
-def _direct_router() -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy(hidden=True))
+def _direct_router(*, router_factory=SchemaRouter) -> SchemaRouter:
+    router = router_factory(authorization_policy=_policy(hidden=True))
     for name, fields in (
         ("status_only", ("status",)),
         ("priority_only", ("priority",)),
@@ -75,8 +76,10 @@ def _direct_router() -> SchemaRouter:
     return router
 
 
-def _joined_router(*, incomplete: bool = False, extra_consumers: int = 0) -> SchemaRouter:
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy())
+def _joined_router(
+    *, incomplete: bool = False, extra_consumers: int = 0, router_factory=SchemaRouter,
+) -> SchemaRouter:
+    router = router_factory(authorization_policy=_policy())
     producer_fields = (("contact_id", "crm.contact_id"), ("region_id", "crm.region_id"))
     if incomplete:
         producer_fields = producer_fields[:1]
@@ -235,7 +238,7 @@ def test_direct_candidate_revoked_by_live_availability_during_graph_lookup(
     def eligible(tool, endpoint):
         return available.get(f"{tool.key}.{endpoint.name}", True)
 
-    router.planner.availability_predicate = eligible
+    router._source_availability.predicate = eligible
     original = NativeSchemaGraphIndex.lookup
 
     def revoke(*args, **kwargs):
@@ -266,7 +269,7 @@ def test_supported_prelookup_owner_contract_change_still_requires_source_match(
     # The standalone API revalidates the current owner declaration on entry.
     # Scalar and object changes are valid contracts, but neither matches the
     # actual string source; entry validation must not become source evidence.
-    router = _joined_router()
+    router = _joined_router(router_factory=SchemaRouter if indexed_direct else legacy_router)
     catalog = _catalog()
     catalog.concepts[0].required_fields[0].json_schema["type"] = declared_type
     select = retrieve_authorized_concept_graph if indexed_direct else legacy_concept_graph
@@ -282,7 +285,7 @@ def test_supported_prelookup_owner_contract_change_still_requires_source_match(
 def test_supported_inflight_owner_contract_change_is_refused(
     monkeypatch, declared_type: str, indexed_direct: bool,
 ) -> None:
-    router = _joined_router()
+    router = _joined_router(router_factory=SchemaRouter if indexed_direct else legacy_router)
     catalog = _catalog()
     index = _index(router)
     original = NativeSchemaGraphIndex.lookup
@@ -319,18 +322,20 @@ def test_graph_k_must_equal_five(k: object) -> None:
 @pytest.mark.parametrize("query", ("case status", "문의 상태", "問い合わせ状態"))
 def test_optin_indexed_concept_direct_matches_current_one_step_and_join(query):
     """Source-pinned posting lookup reuses existing typed G5 and strict K5."""
-    for router, catalog in (
-        (_direct_router(), _catalog(two_fields=True)),
-        (_joined_router(), _catalog()),
-        (_joined_router(incomplete=True), _catalog()),
-        (_joined_router(extra_consumers=5), _catalog()),
+    for factory, options, catalog in (
+        (_direct_router, {}, _catalog(two_fields=True)),
+        (_joined_router, {}, _catalog()),
+        (_joined_router, {"incomplete": True}, _catalog()),
+        (_joined_router, {"extra_consumers": 5}, _catalog()),
     ):
-        index = _index(router)
+        historical = factory(router_factory=legacy_router, **options)
+        router = factory(**options)
+        assert router.planner is None
         baseline = legacy_concept_graph(
-            router, query, principal=ACTOR, catalog=catalog, index=index,
+            historical, query, principal=ACTOR, catalog=catalog, index=_index(historical),
         )
         indexed = retrieve_authorized_concept_graph(
-            router, query, principal=ACTOR, catalog=catalog, index=index,
+            router, query, principal=ACTOR, catalog=catalog, index=_index(router),
         )
         assert indexed == baseline
         assert not indexed.executable_authority
@@ -367,7 +372,7 @@ def test_optin_indexed_direct_hides_scoped_output_before_disclosure():
 
 
 def test_optin_indexed_direct_with_six_real_alternatives_abstains_without_top5():
-    router = SchemaRouter(_legacy_routing=True, authorization_policy=_policy())
+    router = SchemaRouter(authorization_policy=_policy())
     for n in range(6):
         router.add_tool(ToolSpec(
             name=f"complete_{n}", source_type="crm", license="owner-reviewed",
@@ -389,7 +394,7 @@ def test_optin_indexed_direct_rechecks_revoked_health_before_publication(monkeyp
     router = _direct_router()
     index = _index(router)
     available = {"complete.read": True}
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, endpoint: available.get(f"{tool.key}.{endpoint.name}", True)
     )
     original = NativeSchemaGraphIndex.lookup
@@ -409,7 +414,7 @@ def test_optin_indexed_direct_rechecks_revoked_health_before_publication(monkeyp
 
 @pytest.mark.parametrize("mode", (0, 1, "true", None))
 def test_optin_indexed_mode_requires_actual_boolean(mode):
-    router = _direct_router()
+    router = _direct_router(router_factory=legacy_router)
     with pytest.raises(ValueError, match="indexed concept direct mode"):
         legacy_concept_graph(
             router, "case status", principal=ACTOR, catalog=_catalog(),
@@ -417,13 +422,9 @@ def test_optin_indexed_mode_requires_actual_boolean(mode):
         )
 
 
-def test_product_concept_graph_has_no_lexical_mode(monkeypatch):
+def test_product_concept_graph_has_no_lexical_mode():
     router = _direct_router()
-
-    def forbidden(*args, **kwargs):
-        pytest.fail("product graph called a lexical planner")
-
-    monkeypatch.setattr(router.planner, "retrieve_with_scoped_schema", forbidden)
+    assert router.planner is None
     result = _select(router, catalog=_catalog(two_fields=True))
     assert result.route_ids == ("complete.read",)
     with pytest.raises(TypeError):
