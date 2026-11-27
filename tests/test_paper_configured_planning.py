@@ -117,12 +117,13 @@ SURFACES = ("execute", "ainvoke", "astream", "astream_events", "parallel", "conf
 def test_configured_plan_and_aplan_share_algorithm1_without_lexical_analysis(monkeypatch):
     ctx = _configured(needs_input=True)
     _forbid_lexical(ctx, monkeypatch)
-    from schemarouter import paper_query_understanding
+    from schemarouter import paper_field_retrieval, paper_query_understanding
 
     def forbidden(*_args, **_kwargs):
         pytest.fail("configured Algorithm 1 entered the older field-union discovery path")
 
-    monkeypatch.setattr(paper_query_understanding, "retrieve_paper_field_coverage", forbidden)
+    assert not hasattr(paper_query_understanding, "retrieve_paper_field_coverage")
+    monkeypatch.setattr(paper_field_retrieval, "retrieve_paper_field_coverage", forbidden)
     sync = ctx.router.plan_authorized(ctx.request, principal=ctx.principal)
     asynchronous = asyncio.run(ctx.router.aplan_authorized(ctx.request, principal=ctx.principal))
     assert sync.model_dump() == asynchronous.model_dump()
@@ -663,3 +664,19 @@ def test_explicit_research_router_loses_legacy_path_on_configuration():
     assert ctx.router.planner is None and not ctx.router._legacy_routing
     assert ctx.router._source_availability.snapshot is None
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
+
+
+@pytest.mark.asyncio
+async def test_product_understand_rejects_legacy_concept_disclosure_before_model():
+    from inspect import signature
+
+    from schemarouter.paper_query_understanding import compile_model_query
+
+    ctx = _configured(count=1)
+    assert "model_visible_concept_ids" not in signature(ctx.session.acompile_query).parameters
+    assert "model_visible_concept_ids" not in signature(compile_model_query).parameters
+    with pytest.raises(TypeError, match="model_visible_concept_ids"):
+        await ctx.session.acompile_query(
+            ctx.request.query, **ctx.owner, model_visible_concept_ids=("measurement.value",),
+        )
+    assert ctx.model.payloads == [] and ctx.seen == []

@@ -26,6 +26,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentDeclaration,
     PaperIntentRegistry,
 )
+from scripts.research_legacy_offered_query import compile_offered_model_query
 
 SNAPSHOT = "a" * 64
 
@@ -292,7 +293,7 @@ async def test_public_model_query_wires_rank_policy_and_refuses_owner_mutation()
         model_visible_concept_ids=("crm.status", "crm.priority"),
         rank_policy=policy,
     )
-    plan = await session.acompile_query("show case status", **kwargs)
+    plan = await compile_offered_model_query(session, "show case status", **kwargs)
     assert plan.status == "ready"
     assert plan.ranked_unverified is True
     assert plan.calls[0].route_id == "full_5.read"
@@ -303,7 +304,8 @@ async def test_public_model_query_wires_rank_policy_and_refuses_owner_mutation()
                 "named_tools": []}
 
     with pytest.raises(PolicyViolationError):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "show case status", **{**kwargs, "model": mutate_policy},
         )
 
@@ -319,7 +321,8 @@ async def test_public_model_callback_cannot_emit_private_rank_serialization_erro
         return {"intent_id": "case.lookup", "concept_ids": ["crm.status"]}
 
     with pytest.raises(PolicyViolationError, match="owner authority changed"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "show case status", principal=ANALYST,
             model=forge_unserializable_owner_rank,
             intent_registry=_paper_intents(),
@@ -339,7 +342,8 @@ async def test_invalid_rank_snapshot_refuses_before_any_model_disclosure():
         pytest.fail("untrusted model ran before owner rank preflight")
 
     with pytest.raises(PolicyViolationError):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "show case status", principal=ANALYST, model=must_not_run,
             intent_registry=_paper_intents(),
             model_visible_intent_ids=("case.lookup",),

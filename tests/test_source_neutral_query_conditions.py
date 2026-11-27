@@ -22,6 +22,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
+from scripts.research_legacy_offered_query import compile_offered_model_query
 from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="reader", roles=("reader",))
@@ -106,8 +107,8 @@ async def test_neutral_concept_keeps_the_existing_explicit_id_model_protocol():
         return {"intent_id": "weather.lookup", "concept_ids": ["weather.observation"],
                 "source_type": "source_1"}
 
-    plan = await session.acompile_query(
-        "temperature from source_1", principal=ACTOR, model=model, intent_registry=intents,
+    plan = await compile_offered_model_query(
+        session, "temperature from source_1", principal=ACTOR, model=model, intent_registry=intents,
         model_visible_intent_ids=("weather.lookup",),
         model_visible_concept_ids=("weather.observation",),
     )

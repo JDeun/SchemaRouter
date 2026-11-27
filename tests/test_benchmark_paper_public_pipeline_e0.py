@@ -1,4 +1,4 @@
-"""Public Algorithm 1 planning profile is an E0 source-owned benchmark only."""
+"""Mixed public/historical planning profile is an E0 source-owned benchmark only."""
 from __future__ import annotations
 
 import json
@@ -10,6 +10,7 @@ import pytest
 
 from schemarouter.field_routing_session import SchemaFieldRoutingSession
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from scripts import benchmark_paper_public_pipeline_e0 as profile_module
 from scripts.benchmark_paper_public_pipeline_e0 import (
     EVIDENCE_TIER,
     benchmark,
@@ -116,7 +117,7 @@ def test_load_profile_calls_real_public_paths_with_bounded_closed_loop(monkeypat
     sync_calls = []
     async_calls = []
     original_sync = SchemaFieldRoutingSession.compile_understood
-    original_async = SchemaFieldRoutingSession.acompile_query
+    original_async = profile_module.compile_offered_model_query
 
     def compile_sync(self, *args, **kwargs):
         if current_thread() is not main_thread():
@@ -128,7 +129,7 @@ def test_load_profile_calls_real_public_paths_with_bounded_closed_loop(monkeypat
         return await original_async(self, *args, **kwargs)
 
     monkeypatch.setattr(SchemaFieldRoutingSession, "compile_understood", compile_sync)
-    monkeypatch.setattr(SchemaFieldRoutingSession, "acompile_query", compile_async)
+    monkeypatch.setattr(profile_module, "compile_offered_model_query", compile_async)
     report = benchmark_load_profile(100, requests=5, warmup=2, concurrency=concurrency)
     assert len(sync_calls) == len(async_calls) == 7
     assert report["registered_routes"] == 100
@@ -169,13 +170,13 @@ def test_load_profile_reuses_exact_source_catalog_sizes(routes):
 
 
 def test_load_profile_includes_event_loop_cpu_queue_before_api_entry(monkeypatch):
-    original = SchemaFieldRoutingSession.acompile_query
+    original = profile_module.compile_offered_model_query
 
     async def blocking_compile(self, *args, **kwargs):
         sleep(0.015)  # Deliberately block the loop; later clients must report this wait.
         return await original(self, *args, **kwargs)
 
-    monkeypatch.setattr(SchemaFieldRoutingSession, "acompile_query", blocking_compile)
+    monkeypatch.setattr(profile_module, "compile_offered_model_query", blocking_compile)
     report = benchmark_load_profile(100, requests=4, warmup=0, concurrency=4, thresholds=(1,))
     result = report["prepared_async_model_stub"]
     assert result["samples"][1]["queue_ms"] >= 10
@@ -188,7 +189,7 @@ def test_load_profile_includes_event_loop_cpu_queue_before_api_entry(monkeypatch
 def test_load_profile_callback_failure_propagates_without_a_success_report(monkeypatch):
     from schemarouter import ModelAnalysisError
 
-    original = SchemaFieldRoutingSession.acompile_query
+    original = profile_module.compile_offered_model_query
 
     async def failed_model(payload):
         raise RuntimeError("callback failed")
@@ -197,7 +198,7 @@ def test_load_profile_callback_failure_propagates_without_a_success_report(monke
         kwargs["model"] = failed_model
         return await original(self, *args, **kwargs)
 
-    monkeypatch.setattr(SchemaFieldRoutingSession, "acompile_query", failed_compile)
+    monkeypatch.setattr(profile_module, "compile_offered_model_query", failed_compile)
     with pytest.raises(ModelAnalysisError, match="model"):
         benchmark_load_profile(100, requests=5, warmup=0, concurrency=4)
 

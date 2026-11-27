@@ -60,7 +60,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
             if isinstance(node, ast.arg):
-                assert node.arg != "_research_ranker", path
+                assert node.arg not in {"_research_ranker", "model_visible_concept_ids"}, path
             if isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 assert module not in {"schemarouter.decisions", "decisions"}, path
@@ -73,6 +73,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_capability_graph_analysis"), path
                 assert not module.startswith("scripts.research_legacy_posting_rank"), path
                 assert not module.startswith("scripts.research_legacy_field_session"), path
+                assert not module.startswith("scripts.research_legacy_offered_query"), path
                 assert not module.startswith("scripts.research_legacy_paper_observed_binding"), path
                 assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
@@ -100,6 +101,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_capability_graph_analysis",
                                            "scripts.research_legacy_posting_rank",
                                            "scripts.research_legacy_field_session",
+                                           "scripts.research_legacy_offered_query",
                                            "scripts.research_legacy_paper_observed_binding",
                                            "scripts.research_legacy_paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",

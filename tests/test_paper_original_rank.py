@@ -29,6 +29,7 @@ from schemarouter import (
 )
 from schemarouter.native_semantic_index import IndexedNativeFieldCandidate
 from schemarouter.paper_native_rank import rank_authorized_paper_direct
+from scripts.research_legacy_offered_query import compile_offered_model_query
 
 SNAPSHOT = "a" * 64
 ACTOR = PrincipalContext(subject="original-rank-regression")
@@ -238,8 +239,8 @@ async def test_original_rank_schema_independent_query_carries_raw_labels_to_comp
 async def test_original_rank_refuses_legacy_offered_id_protocol_before_model_disclosure():
     session, policy = _session()
     with pytest.raises(ValueError, match="schema-independent"):
-        await session.acompile_query(
-            "show case status", principal=ACTOR, intent_registry=INTENTS,
+        await compile_offered_model_query(
+            session, "show case status", principal=ACTOR, intent_registry=INTENTS,
             model=lambda _: pytest.fail("model invoked before Rank protocol preflight"),
             model_visible_intent_ids=("case.lookup",), model_visible_concept_ids=(CONCEPT,),
             rank_policy=policy,

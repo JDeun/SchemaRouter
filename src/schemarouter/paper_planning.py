@@ -18,7 +18,7 @@ from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_needs import PaperQueryUnderstanding
 from .paper_query_understanding import PaperFieldModel, _prepare_model_query, _PreparedModelQuery
 from .paper_typed_tool_plan import PaperTypedToolPlan
-from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
+from .paper_understood_direct_plan import PaperIntentRegistry
 
 if TYPE_CHECKING:
     from ._source_availability import _SourceAvailability
@@ -252,7 +252,7 @@ class _PreparedPaperPlanning:
 class _PaperPlanWitness:
     configuration: _PreparedPaperPlanning
     prepared: _PreparedModelQuery
-    decoded: PaperQueryUnderstanding | PaperUnderstanding
+    decoded: PaperQueryUnderstanding
     decoded_json: str
     receipt: PaperTypedToolPlan
     principal_json: str

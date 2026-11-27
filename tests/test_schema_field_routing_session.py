@@ -30,7 +30,6 @@ from schemarouter import (
     retrieve_paper_field_coverage,
 )
 from schemarouter.errors import PolicyViolationError
-from schemarouter.paper_query_understanding import compile_model_query
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -44,6 +43,7 @@ from scripts.research_legacy_field_session import (
     research_compile_fields,
     research_discover_fields,
 )
+from scripts.research_legacy_offered_query import compile_offered_model_query
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
@@ -317,7 +317,8 @@ async def test_review_only_session_rejects_model_calls_before_owner_approval():
         pytest.fail("unapproved review session cannot call a model")
 
     with pytest.raises(PolicyViolationError, match="catalog|review"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "customer owner", principal=ACTOR,
             model=forbidden_model,
             intent_registry=PaperIntentRegistry(intents=(
@@ -341,7 +342,7 @@ async def test_direct_model_compiler_requires_approved_catalog_before_model():
         pytest.fail("unapproved session must never expose a model menu")
 
     with pytest.raises(PolicyViolationError, match="catalog"):
-        await compile_model_query(
+        await compile_offered_model_query(
             review_only, "customer owner", principal=ACTOR,
             model=forbidden_model,
             intent_registry=PaperIntentRegistry(intents=(

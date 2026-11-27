@@ -24,6 +24,7 @@ from schemarouter import (
     UnitNormalizationSpec,
 )
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
+from scripts.research_legacy_offered_query import compile_offered_model_query
 from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="p2-probe", roles=("reader",))
@@ -122,7 +123,8 @@ async def test_public_model_query_keeps_typed_direct_mapping_without_trusting_mo
         return {"intent_id": "weather.lookup", "named_tools": ["weather"],
                 "parameter_hints": {"city": "MODEL_FORGED"}}
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "temperature in Busan", principal=ACTOR, model=model, intent_registry=intents,
         model_visible_intent_ids=("weather.lookup",),
         model_visible_concept_ids=("weather.temperature",),

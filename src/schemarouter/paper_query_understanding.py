@@ -1,7 +1,7 @@
 """Bounded, host-owned Understand(q) callback for schema-only field routing.
 
-Model output proposes query needs, or explicitly disclosed IDs in legacy mode;
-only current authorized source contracts can produce a field plan. No tool
+Model output proposes schema-independent query needs; only current authorized
+source contracts can produce a field plan. No tool
 call, data read, or answer synthesis occurs.
 """
 from __future__ import annotations
@@ -21,17 +21,12 @@ from .authorization import PrincipalContext
 from .canonical_json import canonical_json_text
 from .capability_contracts import CapabilityFieldContract
 from .concept_retrieval import (
-    MAX_QUERY_BYTES,
-    MAX_QUERY_CHARS,
     NativeConceptCatalog,
-    NativeDeclaredConcept,
     _alias_mentions,
     _normalized,
 )
 from .errors import ModelAnalysisError, PolicyViolationError
-from .field_group_retrieval import NativeDeclaredFieldGroup
 from .models import PlanCoverage, SemanticFieldRequirement
-from .paper_field_retrieval import retrieve_paper_field_coverage
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_conditions import _apply_query_input_conditions, _prove_query_need_conditions
 from .paper_query_needs import (
@@ -42,7 +37,6 @@ from .paper_query_needs import (
 )
 from .paper_typed_tool_plan import PaperPlanFieldMeta, PaperTypedToolPlan
 from .paper_understood_direct_plan import (
-    PaperIntentDeclaration,
     PaperIntentRegistry,
     PaperUnderstanding,
     _bounded_name,
@@ -57,10 +51,6 @@ PaperFieldModel = Callable[
     [dict[str, Any]], dict[str, Any] | str | Awaitable[dict[str, Any] | str],
 ]
 _Response = TypeVar("_Response", bound=BaseModel)
-
-
-def _decode_bounded_response(raw: dict[str, Any] | str, limit: int) -> PaperUnderstanding:
-    return _decode_model_response(raw, limit, PaperUnderstanding)
 
 
 def _decode_model_response(
@@ -139,53 +129,6 @@ def _may_be_excluded(meta: PaperPlanFieldMeta, requirement: CapabilityFieldContr
     # A different declared role proves disjointness; a missing role does not.
     return not any(key in actual and actual[key] != value
                    for key, value in requirement.qualifiers.items())
-
-
-def _owner_query_field_coverage(
-    understood: PaperUnderstanding,
-    *,
-    concepts: dict[str, NativeDeclaredConcept],
-    intents: dict[str, PaperIntentDeclaration],
-    source_proven: bool,
-) -> PlanCoverage:
-    """Owner field ledger for query receipts whose core proof has no ledger.
-
-    Query input conditions cannot stand in for the intent/concept output
-    requirements. Only an already source-proven core receipt covers them.
-    """
-    concept_ids = list(understood.concept_ids)
-    if understood.intent_id is not None:
-        concept_ids = sorted(set(concept_ids) | set(
-            intents[understood.intent_id].required_concept_ids,
-        ))
-    fields = [
-        SemanticFieldRequirement(
-            semantic_id=field.semantic_id,
-            qualifiers=[
-                f"concept_id={concept_id}",
-                *([f"source_type={concept.source_type}"] if concept.source_type else []),
-                *([f"license={concept.license}"] if concept.license else []),
-                *(f"{key}={value}" for key, value in sorted(field.qualifiers.items())),
-            ],
-        )
-        for concept_id in concept_ids
-        for concept in [concepts[concept_id]]
-        for field in concept.required_fields
-    ]
-    if not source_proven:
-        # A failed current proof does not disclose owner field/source/license
-        # metadata. These meaning IDs were already offered in the query payload.
-        fields = [SemanticFieldRequirement(semantic_id=concept_id,
-            qualifiers=[f"concept_id={concept_id}"],
-        ) for concept_id in concept_ids]
-    unresolved = [SemanticFieldRequirement(
-        semantic_id="unresolved", qualifiers=[f"query_concept={proposal}"],
-    ) for proposal in understood.unresolved_concepts]
-    uncovered = [*([] if source_proven else fields), *unresolved]
-    return PlanCoverage(
-        required=[*fields, *unresolved], covered=fields if source_proven else [],
-        uncovered=uncovered, complete=bool(fields) and not uncovered,
-    )
 
 
 def _compile_query_needs(
@@ -324,9 +267,9 @@ def _compile_query_needs(
 class _PreparedModelQuery:
     """Pinned model disclosure and repeatable source compilation, never authority."""
 
-    _payload: dict[str, Any] | None = field(repr=False)
-    _response_type: type[PaperQueryUnderstanding] | type[PaperUnderstanding] = field(repr=False)
-    _compile: Callable[[PaperQueryUnderstanding | PaperUnderstanding], PaperTypedToolPlan] = field(
+    _payload: dict[str, Any] = field(repr=False)
+    _response_type: type[PaperQueryUnderstanding] = field(repr=False)
+    _compile: Callable[[PaperQueryUnderstanding], PaperTypedToolPlan] = field(
         repr=False,
     )
     _verify: Callable[[], None] = field(repr=False)
@@ -340,20 +283,18 @@ class _PreparedModelQuery:
 
     async def understand(
         self, model: PaperFieldModel,
-    ) -> PaperQueryUnderstanding | PaperUnderstanding:
-        """Call the host model once, or abstain without disclosure when none is allowed."""
+    ) -> PaperQueryUnderstanding:
+        """Call the host model once with the schema-independent request."""
         if not callable(model):
             raise ValueError("explicit model callback required")
         self.verify()
-        if self._payload is None:
-            return PaperUnderstanding(intent_id=None)
         return await _understand_query(
             model, self._payload, response_type=self._response_type,
             max_input_bytes=self._max_input_bytes, max_output_bytes=self._max_output_bytes,
             verify=self.verify, direct_parameters=self._direct_parameters,
         )
 
-    def compile(self, decoded: PaperQueryUnderstanding | PaperUnderstanding) -> PaperTypedToolPlan:
+    def compile(self, decoded: PaperQueryUnderstanding) -> PaperTypedToolPlan:
         """Re-prove all decoded query conditions without another model call or event loop."""
         self.verify()
         if type(decoded) is not self._response_type:
@@ -383,7 +324,6 @@ async def compile_model_query(
     model: PaperFieldModel,
     intent_registry: PaperIntentRegistry,
     model_visible_intent_ids: tuple[str, ...],
-    model_visible_concept_ids: tuple[str, ...] | None = None,
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
@@ -393,18 +333,12 @@ async def compile_model_query(
     rank_policy: PaperNativeRankPolicy | None = None,
     allow_unnamed_graph_discovery: bool = False,
 ) -> PaperTypedToolPlan:
-    """Understand before source resolution, or use the earlier scoped-ID protocol.
-
-    By default, only fixed intent names accompany the query and response
-    contract. Explicit concept IDs select the earlier disclosure protocol.
-    Live source checks constrain both; model hints never become host arguments.
-    """
+    """Understand independently of the source catalog, then prove current fields."""
     if not callable(model):
         raise ValueError("explicit model callback required")
     prepared = _prepare_model_query(
         session, query, principal=principal, intent_registry=intent_registry,
         model_visible_intent_ids=model_visible_intent_ids,
-        model_visible_concept_ids=model_visible_concept_ids,
         model_visible_tool_keys=model_visible_tool_keys,
         host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
         max_model_input_bytes=max_model_input_bytes,
@@ -422,7 +356,6 @@ def _prepare_model_query(
     principal: PrincipalContext,
     intent_registry: PaperIntentRegistry,
     model_visible_intent_ids: tuple[str, ...],
-    model_visible_concept_ids: tuple[str, ...] | None = None,
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
@@ -432,14 +365,13 @@ def _prepare_model_query(
     rank_policy: PaperNativeRankPolicy | None = None,
     allow_unnamed_graph_discovery: bool = False,
 ) -> _PreparedModelQuery:
-    """Prepare one schema-scoped protocol and its repeatable deterministic compiler."""
-    independent = model_visible_concept_ids is None
+    """Prepare schema-independent Understand and its repeatable deterministic compiler."""
     if (
         type(query) is not str
-        or not 2 <= len(query) <= (4096 if independent else MAX_QUERY_CHARS)
-        or len(query.encode("utf-8")) > (16384 if independent else MAX_QUERY_BYTES)
+        or not 2 <= len(query) <= 4096
+        or len(query.encode("utf-8")) > 16384
         or query != query.strip()
-        or any((ord(char) < 32 and not (independent and char in "\n\r\t"))
+        or any((ord(char) < 32 and char not in "\n\r\t")
                or ord(char) == 127 for char in query)
     ):
         raise ValueError("invalid bounded paper query")
@@ -449,11 +381,6 @@ def _prepare_model_query(
         raise ValueError("host-approved intent registry required")
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
-    if (
-        not independent and rank_policy is not None
-        and rank_policy.direct_score_mode == "paper_v1"
-    ):
-        raise ValueError("paper v1 Rank requires schema-independent Understand labels")
     if (
         type(allow_unnamed_graph_discovery) is not bool
         or allow_unnamed_graph_discovery and rank_policy is None
@@ -526,20 +453,13 @@ def _prepare_model_query(
     approved_concepts = {c.concept_id: c for c in reviewed.concepts}
     approved_intents = {i.intent_id: i for i in intents.intents}
     if (
-        not independent and (
-            type(model_visible_concept_ids) is not tuple
-            or not 1 <= len(model_visible_concept_ids) <= 8
-            or any(type(cid) is not str for cid in model_visible_concept_ids)
-            or len(set(model_visible_concept_ids)) != len(model_visible_concept_ids)
-            or not set(model_visible_concept_ids) <= approved_concepts.keys()
-        )
-        or type(model_visible_intent_ids) is not tuple
+        type(model_visible_intent_ids) is not tuple
         or not 1 <= len(model_visible_intent_ids) <= 16
         or any(type(iid) is not str for iid in model_visible_intent_ids)
         or len(set(model_visible_intent_ids)) != len(model_visible_intent_ids)
         or not set(model_visible_intent_ids) <= approved_intents.keys()
         or any(not set(approved_intents[iid].required_concept_ids) <= (
-            approved_concepts.keys() if independent else set(model_visible_concept_ids or ())
+            approved_concepts.keys()
         ) for iid in model_visible_intent_ids)
         or type(model_visible_tool_keys) is not tuple
         or len(model_visible_tool_keys) > 5
@@ -595,7 +515,7 @@ def _prepare_model_query(
         verified_named_tools: frozenset[str] = frozenset(),
     ) -> PaperTypedToolPlan:
         resolve = (
-            independent and not plan.bindings and rank_policy is not None
+            not plan.bindings and rank_policy is not None
             and rank_policy.direct_score_mode == "paper_v1"
         )
         # A multi-route result is not, by itself, permission to copy one
@@ -618,7 +538,7 @@ def _prepare_model_query(
             shared_parameter_semantics=shared,
         )
         # The condition helper also calls host callbacks. Recheck the caller's
-        # complete catalog/intent/Rank/host-input witness after both protocols.
+        # complete catalog/intent/Rank/host-input witness after finalization.
         verify()
         return plan
 
@@ -739,273 +659,103 @@ def _prepare_model_query(
             ),
         )
 
-    if independent:
-        direct_parameters = rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
-        response_schema = PaperQueryUnderstanding.model_json_schema()
-        if direct_parameters:
-            response_schema["properties"]["parameter_hints"]["description"] = (
-                "Explicit bounded JSON scalar, list or object literals; "
-                "never invent provider-specific shapes or host arguments."
-            )
-        # Require explicit model channels without changing legacy DTO decode defaults.
-        response_schema["required"] = list(response_schema["properties"])
-        need_schema = response_schema["$defs"]["PaperQueryNeed"]
-        need_schema["required"] = list(need_schema["properties"])
-        payload = {
-            "task": "Understand the question before looking up any tool or schema.",
-            "query": query,
-            "intents": list(model_visible_intent_ids),
-            "response_schema": response_schema,
-            "rules": [
-                "Return one JSON object with every response_schema channel, "
-                "even when empty or null.",
-                "Use the narrowest applicable listed intent_id and preserve additional needs; "
-                "do not choose an unrelated broad intent. Use null if no listed intent applies.",
-                "Extract EVERY requested positive data, action or goal, "
-                "including unsupported ones; "
-                "retain the requested action and object even when intent_id is null.",
-                "If more than eight needs are requested, set needs_truncated=true.",
-                "Use short English need names, preserving semantic roles and requested actions.",
-                "Distinguish the requested result or retrieval goal from a lookup subject. "
-                "For a search about a topic, keep the requested records or search goal in "
-                "needs and copy the topic as a scalar in parameter_hints. Use the explicit "
-                "parameter label, or a short semantic role such as search topic. "
-                "A search subject is not itself a requested output field.",
-                "Keep explicitly requested output properties in needs, even when unsupported. "
-                "Do not move them to parameter_hints to avoid an unknown output requirement.",
-                "Preserve ordering and filtering requests as input conditions when they "
-                "constrain the search. For example, latest is an ordering condition, not "
-                "merely a request for a date field. Keep literal values and do not invent "
-                "provider-specific sort tokens, parameter names or query syntax.",
-                "Keep explicit time, role and other positive conditions in needs.qualifiers.",
-                "Put explicit source/result paths in qualifiers.source_path or "
-                "qualifiers.result_path respectively; "
-                "preserve their spelling and never invent schema paths.",
-                "Keep requested units using canonical symbols; do not invent conditions.",
-                "source_type is only an explicit provenance/source-kind restriction, "
-                "not subject matter; otherwise use null.",
-                "Put every negated concept or goal only in excluded_concepts, "
-                "not in needs or qualifiers.",
-                "Copy named_tools only from source names explicitly stated in the question.",
-                (
-                    "Keep explicit scalar and structured JSON input values in parameter_hints; "
-                    "preserve literal list members and object keys without guessing wire shapes. "
-                    if direct_parameters else "Keep explicit scalar values in parameter_hints. "
-                ) + "Use explicit parameter labels or short semantic role names, not substitutes. "
-                "Retain values even when intent_id is null; they are not permissions or calls.",
-                "Do not guess schema fields, registered IDs, providers or execution authority.",
-            ],
-        }
-        def resolve_tool(name: str) -> str | None:
-            permitted = router._authorization_predicate(principal)
-            if permitted is None:
-                raise PolicyViolationError("paper query lacks source authorization")
-            matches = []
-            try:
-                for tool in router.registry.tools():
-                    if model_visible_tool_keys and tool.key not in model_visible_tool_keys:
-                        continue
-                    if _normalize(name) not in {_normalize(tool.key), _normalize(tool.name)}:
-                        continue
-                    if any(
-                        endpoint.read_only is True and endpoint.destructive is not True
-                        and permitted(tool, endpoint)
-                        and (availability is None or availability(tool, endpoint))
-                        and router._data_scope_endpoint_view(principal, tool, endpoint) is not None
-                        for endpoint in tool.endpoints
-                    ):
-                        matches.append(tool.key)
-            except Exception:
-                verify()
-                raise PolicyViolationError("paper query named source eligibility failed") from None
-            verify()
-            return matches[0] if len(matches) == 1 else None
-
-        def compile_independent(decoded: PaperQueryUnderstanding | PaperUnderstanding):
-            assert isinstance(decoded, PaperQueryUnderstanding)
-            plan, verified_named_tools = _compile_query_needs(
-                decoded, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
-                compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
-                router=router, principal=principal, verify=verify,
-                retain_raw_rank_concepts=(
-                    rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
-                ),
-            )
-            return finalize(
-                plan, decoded.parameter_hints, intent_id=decoded.intent_id,
-                verified_named_tools=verified_named_tools,
-            )
-
-        return _PreparedModelQuery(
-            payload, PaperQueryUnderstanding, compile_independent, verify,
-            max_model_input_bytes, max_model_output_bytes, direct_parameters,
+    direct_parameters = rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
+    response_schema = PaperQueryUnderstanding.model_json_schema()
+    if direct_parameters:
+        response_schema["properties"]["parameter_hints"]["description"] = (
+            "Explicit bounded JSON scalar, list or object literals; "
+            "never invent provider-specific shapes or host arguments."
         )
-
-    # These are owner-reviewed concepts that still have a current, accessible,
-    # field-complete proof. Never disclose unreachable concepts to the model.
-    offered_concepts = []
-    for concept_id in model_visible_concept_ids or ():
-        concept = approved_concepts[concept_id]
+    # Require explicit model channels without changing structured DTO decode defaults.
+    response_schema["required"] = list(response_schema["properties"])
+    need_schema = response_schema["$defs"]["PaperQueryNeed"]
+    need_schema["required"] = list(need_schema["properties"])
+    payload = {
+        "task": "Understand the question before looking up any tool or schema.",
+        "query": query,
+        "intents": list(model_visible_intent_ids),
+        "response_schema": response_schema,
+        "rules": [
+            "Return one JSON object with every response_schema channel, "
+            "even when empty or null.",
+            "Use the narrowest applicable listed intent_id and preserve additional needs; "
+            "do not choose an unrelated broad intent. Use null if no listed intent applies.",
+            "Extract EVERY requested positive data, action or goal, "
+            "including unsupported ones; "
+            "retain the requested action and object even when intent_id is null.",
+            "If more than eight needs are requested, set needs_truncated=true.",
+            "Use short English need names, preserving semantic roles and requested actions.",
+            "Distinguish the requested result or retrieval goal from a lookup subject. "
+            "For a search about a topic, keep the requested records or search goal in "
+            "needs and copy the topic as a scalar in parameter_hints. Use the explicit "
+            "parameter label, or a short semantic role such as search topic. "
+            "A search subject is not itself a requested output field.",
+            "Keep explicitly requested output properties in needs, even when unsupported. "
+            "Do not move them to parameter_hints to avoid an unknown output requirement.",
+            "Preserve ordering and filtering requests as input conditions when they "
+            "constrain the search. For example, latest is an ordering condition, not "
+            "merely a request for a date field. Keep literal values and do not invent "
+            "provider-specific sort tokens, parameter names or query syntax.",
+            "Keep explicit time, role and other positive conditions in needs.qualifiers.",
+            "Put explicit source/result paths in qualifiers.source_path or "
+            "qualifiers.result_path respectively; "
+            "preserve their spelling and never invent schema paths.",
+            "Keep requested units using canonical symbols; do not invent conditions.",
+            "source_type is only an explicit provenance/source-kind restriction, "
+            "not subject matter; otherwise use null.",
+            "Put every negated concept or goal only in excluded_concepts, "
+            "not in needs or qualifiers.",
+            "Copy named_tools only from source names explicitly stated in the question.",
+            (
+                "Keep explicit scalar and structured JSON input values in parameter_hints; "
+                "preserve literal list members and object keys without guessing wire shapes. "
+                if direct_parameters else "Keep explicit scalar values in parameter_hints. "
+            ) + "Use explicit parameter labels or short semantic role names, not substitutes. "
+            "Retain values even when intent_id is null; they are not permissions or calls.",
+            "Do not guess schema fields, registered IDs, providers or execution authority.",
+        ],
+    }
+    def resolve_tool(name: str) -> str | None:
+        permitted = router._authorization_predicate(principal)
+        if permitted is None:
+            raise PolicyViolationError("paper query lacks source authorization")
+        matches = []
         try:
-            coverage = retrieve_paper_field_coverage(
-                router, concept.aliases[0], principal=principal,
-                catalog=session._require_catalog(), index=session._index, k=k,
-            )
-        except ValueError:
-            # A catalog alias is not an independent proof of current fields.
-            continue
-        except Exception:
-            raise PolicyViolationError("paper query source eligibility check failed") from None
-        verify()
-        qualified = coverage.status == "complete"
-        if not qualified and coverage.status == "over_k_unranked" and rank_policy:
-            # A reviewed concept with >K authorized candidates is still a
-            # valid disclosure if the same current native source can rank its
-            # complete field contract. No route IDs are offered to the model.
-            group = NativeDeclaredFieldGroup(
-                aliases=(concept.aliases[0],),
-                required_fields=concept.required_fields,
-                source_type=concept.source_type, license=concept.license,
-            )
-            ranked = session._index.field_index.lookup(
-                router, concept.aliases[0], principal=principal, group=group,
-                k=k, _paper_rank_policy=rank_policy,
-                _paper_rank_aliases=(tuple(concept.aliases),),
-            )
-            qualified = ranked.status in ("complete", "ranked_unverified")
-            verify()
-        if qualified:
-            offered_concepts.append(concept)
-    offered_ids = {concept.concept_id for concept in offered_concepts}
-    if allow_unnamed_graph_discovery:
-        # The ordinary per-concept direct posting preflight deliberately
-        # excludes outputs available ONLY through typed two-hop joins. A
-        # host-approved unnamed G5 path is also a source-owned field proof,
-        # provided the ENTIRE reviewed intent FieldGroup can be satisfied.
-        # Reuse the current public plan compiler (including owner domain,
-        # source ACL, K5, typed joins and live scope reattestation); do not
-        # infer concept eligibility from model text or raw graph topology.
-        graph_offered: set[str] = set()
-        for intent_id in model_visible_intent_ids:
-            required = set(approved_intents[intent_id].required_concept_ids)
-            if required <= offered_ids:
-                continue
-            verify()
-            try:
-                proof = session.compile_understood(
-                    PaperUnderstanding(intent_id=intent_id, named_tools=()),
-                    principal=principal, intent_registry=intent_registry,
-                    host_source_arguments=host_source_arguments,
-                    k=k, max_hops=max_hops, rank_policy=rank_policy,
-                    allow_unnamed_graph_discovery=True,
-                )
-            except Exception:
-                raise PolicyViolationError(
-                    "paper query G5 intent preflight failed"
-                ) from None
-            verify()
-            if (
-                proof.status == "requires_observation"
-                and len(proof.calls) in (2, 3)
-                and len(proof.bindings) == len(proof.calls) - 1
-                and not proof.executable_authority
-            ):
-                graph_offered.update(required)
-        for concept_id in model_visible_concept_ids or ():
-            if concept_id in graph_offered and concept_id not in offered_ids:
-                offered_concepts.append(approved_concepts[concept_id])
-                offered_ids.add(concept_id)
-    offered_intents = [
-        approved_intents[iid] for iid in model_visible_intent_ids
-        if set(approved_intents[iid].required_concept_ids) <= offered_ids
-    ]
-    if not offered_intents:
-        verify()
-        return _PreparedModelQuery(
-            None, PaperUnderstanding, lambda _decoded: abstain(), verify,
-            max_model_input_bytes, max_model_output_bytes,
-        )
-
-    # Only host-approved, currently scoped, non-destructive tool identities
-    # may reach the model. Schema bodies/hidden route IDs are not disclosed.
-    permitted = router._authorization_predicate(principal)
-    if permitted is None:
-        raise PolicyViolationError("paper query lacks source authorization")
-    offered_tools: list[str] = []
-    for tool_key in model_visible_tool_keys:
-        allowed = False
-        try:
-            tool = router.registry.get(tool_key)
-            for endpoint in tool.endpoints:
-                if (
+            for tool in router.registry.tools():
+                if model_visible_tool_keys and tool.key not in model_visible_tool_keys:
+                    continue
+                if _normalize(name) not in {_normalize(tool.key), _normalize(tool.name)}:
+                    continue
+                if any(
                     endpoint.read_only is True and endpoint.destructive is not True
                     and permitted(tool, endpoint)
                     and (availability is None or availability(tool, endpoint))
-                    and router._data_scope_endpoint_view(principal, tool, endpoint)
-                    is not None
+                    and router._data_scope_endpoint_view(principal, tool, endpoint) is not None
+                    for endpoint in tool.endpoints
                 ):
-                    allowed = True
-                    break
+                    matches.append(tool.key)
         except Exception:
-            raise ValueError("invalid host-approved model disclosure") from None
+            verify()
+            raise PolicyViolationError("paper query named source eligibility failed") from None
         verify()
-        if not allowed:
-            raise ValueError("invalid host-approved model disclosure")
-        offered_tools.append(tool_key)
+        return matches[0] if len(matches) == 1 else None
 
-    payload = {
-        "task": "Extract all query information needs and constraints for schema field routing",
-        "query": query,
-        "offered_intents": [
-            {"intent_id": i.intent_id, "required_concept_ids": list(i.required_concept_ids)}
-            for i in offered_intents
-        ],
-        "offered_concepts": [
-            {"concept_id": c.concept_id, "aliases": list(c.aliases)}
-            for c in offered_concepts
-        ],
-        "offered_tool_keys": offered_tools,
-        "response_fields": [
-            "intent_id", "concept_ids", "unresolved_concepts", "source_type",
-            "named_tools", "parameter_hints",
-        ],
-        "response_schema": PaperUnderstanding.model_json_schema(),
-        "rules": [
-            "Use only offered IDs and offered tool keys; return one JSON object.",
-            "Return intent_id=null if no offered intent fits the query.",
-            "Keep unmatched needs in unresolved_concepts; never drop a required concept.",
-            "Preserve temporal and source constraints; partial matches remain incomplete.",
-            "Exclude concepts the user negates; do not add unrelated concepts.",
-            "Use named_tools only for tool names stated by the user; otherwise return [].",
-            "Set source_type only for an explicit source-type constraint; otherwise use null.",
-            "Extract parameter_hints from the query; they never authorize execution.",
-            "Never invent fields, values, credentials or permissions, or invoke providers.",
-        ],
-    }
-    def compile_offered(decoded: PaperQueryUnderstanding | PaperUnderstanding):
-        assert isinstance(decoded, PaperUnderstanding)
-        if (
-            decoded.intent_id is not None
-            and decoded.intent_id not in {i.intent_id for i in offered_intents}
-            or not set(decoded.concept_ids) <= offered_ids
-            or not set(decoded.named_tools) <= set(offered_tools)
-        ):
-            raise ModelAnalysisError("model selected unoffered paper identities")
-        if decoded.intent_id is None:
-            plan = abstain()
-        else:
-            plan = compile_hint(decoded)
-        if plan.coverage is None:
-            plan = replace(plan, coverage=_owner_query_field_coverage(
-                decoded, concepts=approved_concepts, intents=approved_intents,
-                source_proven=bool(plan.calls) and plan.status in {
-                    "ready", "requires_arguments", "requires_observation",
-                },
-            ))
-        plan = replace(plan, understanding_hints=decoded.model_dump(mode="json"))
-        return finalize(plan, decoded.parameter_hints)
+    def compile_independent(decoded: PaperQueryUnderstanding):
+        assert isinstance(decoded, PaperQueryUnderstanding)
+        plan, verified_named_tools = _compile_query_needs(
+            decoded, query=query, catalog=reviewed, intent_ids=set(model_visible_intent_ids),
+            compile_hint=compile_hint, abstain=abstain, resolve_tool=resolve_tool,
+            router=router, principal=principal, verify=verify,
+            retain_raw_rank_concepts=(
+                rank_policy is not None and rank_policy.direct_score_mode == "paper_v1"
+            ),
+        )
+        return finalize(
+            plan, decoded.parameter_hints, intent_id=decoded.intent_id,
+            verified_named_tools=verified_named_tools,
+        )
 
     return _PreparedModelQuery(
-        payload, PaperUnderstanding, compile_offered, verify,
-        max_model_input_bytes, max_model_output_bytes,
+        payload, PaperQueryUnderstanding, compile_independent, verify,
+        max_model_input_bytes, max_model_output_bytes, direct_parameters,
     )

@@ -1,7 +1,7 @@
-"""Reproducible E0 *public* Algorithm 1 planning profile at 500/5,000 routes.
+"""Reproducible E0 historical mixed-protocol planning profile at 500/5,000 routes.
 
 Measures the prepared-session and source-pinned Graph Rank route all the way
-through public sync Understand and async model-Understand APIs. A deterministic
+through public sync Understand and checkout-only offered-ID async APIs. A deterministic
 local callback stands in for the *model response*, NOT for an LLM timing
 measurement or independent semantic-quality oracle. NO provider/tool execution.
 Existing source-native graph and router indexes are reused, not reimplemented.
@@ -49,8 +49,9 @@ from schemarouter import (
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
+from scripts.research_legacy_offered_query import compile_offered_model_query
 
-EVIDENCE_TIER = "E0_SYNTHETIC_PUBLIC_PLAN_ONLY_NOT_INDEPENDENT_E2"
+EVIDENCE_TIER = "E0_SYNTHETIC_MIXED_PUBLIC_AND_HISTORICAL_OFFERED_ID_NOT_INDEPENDENT_E2"
 PLAN_SERIALIZER = TypeAdapter(PaperTypedToolPlan)
 ACTOR = PrincipalContext(subject="paper-public-e0", roles=("reader",))
 LICENSE = "host-reviewed-synthetic"
@@ -200,7 +201,8 @@ async def _measure_async(session: Any, semantic: str, intents: Any, policy: Any,
         }
 
     async def one_call() -> Any:
-        return await session.acompile_query(
+        return await compile_offered_model_query(
+            session,
             "Who handles this case?", principal=ACTOR,
             model=deterministic_model, intent_registry=intents,
             model_visible_intent_ids=("case.lookup",),
@@ -499,7 +501,8 @@ async def _measure_load(
                     await asyncio.sleep(0)
                     if asynchronous:
                         started = perf_counter_ns()
-                        plan = await session.acompile_query(
+                        plan = await compile_offered_model_query(
+                            session,
                             "Who handles this case?", principal=ACTOR,
                             model=deterministic_model, intent_registry=intents,
                             model_visible_intent_ids=("case.lookup",),
@@ -551,7 +554,7 @@ async def _measure_load(
         "queue_boundary": (
             "client submission to API entry (event-loop turn and, for sync, worker entry)"
         ),
-        "service_boundary": "public compile plus exact-route oracle and receipt serialization",
+        "service_boundary": "compile plus exact-route oracle and receipt serialization (async historical offered IDs)",
         "samples": samples, "wall_ms": _percentiles([s["wall_ms"] for s in samples]),
         "threshold_exceedances": [{
             "threshold_ms": threshold, "sample_count": len(samples),
@@ -573,7 +576,7 @@ def benchmark_load_profile(
     routes: int, *, requests: int = 1000, warmup: int = 30, concurrency: int = 1,
     thresholds: tuple[float, ...] | list[float] = (250, 500, 1000),
 ) -> dict[str, Any]:
-    """Explicit, bounded closed-loop load; each public pathway gets `requests` calls."""
+    """Explicit, bounded closed-loop load; each measured pathway gets `requests` calls."""
     if (
         type(routes) is not int or routes not in (100, 250, 500)
         or type(requests) is not int or not 1 <= requests <= 1000

@@ -15,6 +15,7 @@ from schemarouter import (
     PaperUnderstanding,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_offered_query import compile_offered_model_query
 
 
 async def offered(session, hints, *, host=None, intent_id="information.lookup",
@@ -28,7 +29,7 @@ async def offered(session, hints, *, host=None, intent_id="information.lookup",
             observe.append(payload)
         return response
 
-    return await session.acompile_query("Get air temperature in Seoul",
+    return await compile_offered_model_query(session, "Get air temperature in Seoul",
         principal=ACTOR, model=model,
         intent_registry=intents,
         model_visible_intent_ids=tuple(i.intent_id for i in intents.intents),
@@ -140,7 +141,10 @@ async def test_offered_wire_payload_decoder_and_ids_are_unchanged():
 async def test_common_final_verify_refuses_owner_mutation_during_condition_callback(
     monkeypatch, mode, owner,
 ):
-    import schemarouter.paper_query_understanding as query_module
+    if mode == "independent":
+        import schemarouter.paper_query_understanding as query_module
+    else:
+        import scripts.research_legacy_offered_query as query_module
 
     router, session = source(parameters=(city(),))
     intents = INTENTS.model_copy(deep=True)
@@ -174,12 +178,20 @@ async def test_common_final_verify_refuses_owner_mutation_during_condition_callb
     raw = ({"needs": [{"concept": "air temperature"}]} if mode == "independent"
            else {"concept_ids": ["weather.temperature"]})
     with pytest.raises(PolicyViolationError, match="owner authority changed") as caught:
-        await session.acompile_query("Get air temperature in Seoul", principal=ACTOR,
+        kwargs = dict(
+            principal=ACTOR,
             model=lambda _: {"intent_id": "information.lookup", **raw,
-                "parameter_hints": {"city": "Seoul"}}, intent_registry=intents,
-            model_visible_intent_ids=("information.lookup",),
-            model_visible_concept_ids=None if mode == "independent" else ("weather.temperature",),
-            host_source_arguments=host, rank_policy=rank)
+                             "parameter_hints": {"city": "Seoul"}},
+            intent_registry=intents, model_visible_intent_ids=("information.lookup",),
+            host_source_arguments=host, rank_policy=rank,
+        )
+        if mode == "independent":
+            await session.acompile_query("Get air temperature in Seoul", **kwargs)
+        else:
+            await compile_offered_model_query(
+                session, "Get air temperature in Seoul",
+                model_visible_concept_ids=("weather.temperature",), **kwargs,
+            )
     assert changed and "PRIVATE_CHANGED_HOST" not in str(caught.value)
 
 
@@ -211,7 +223,8 @@ async def test_failed_current_proof_does_not_restore_owner_field_metadata(intent
         available["current"] = False
         return {"intent_id": intent_id, "concept_ids": ["weather.public_meaning"]}
 
-    plan = await session.acompile_query("Get air temperature", principal=ACTOR, model=model,
+    plan = await compile_offered_model_query(
+        session, "Get air temperature", principal=ACTOR, model=model,
         intent_registry=INTENTS, model_visible_intent_ids=("information.lookup",),
         model_visible_concept_ids=("weather.public_meaning",))
     assert plan.status == "no_proven_hit" and plan.calls == () and not plan.coverage.complete

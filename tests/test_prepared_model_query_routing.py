@@ -15,12 +15,15 @@ from schemarouter import (
     PaperIntentRegistry,
 )
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
-from schemarouter.paper_query_understanding import _decode_bounded_response
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     RIGHT,
     ROOT,
     build_fixture,
+)
+from scripts.research_legacy_offered_query import (
+    _decode_bounded_response,
+    compile_offered_model_query,
 )
 
 CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
@@ -70,7 +73,8 @@ async def test_model_query_preserves_unsupported_needs_and_null_intent():
         assert properties["unresolved_concepts"]["items"]["type"] == "string"
         return {"intent_id": None, "unresolved_concepts": ["send a payment"]}
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "Send a payment", principal=ACTOR, model=model, intent_registry=INTENTS,
         model_visible_intent_ids=("crm.owner_lookup",),
         model_visible_concept_ids=("crm.owner",),
@@ -90,7 +94,8 @@ async def test_model_query_retains_detached_hints_without_binding_them():
         "intent_id": "crm.owner_lookup", "concept_ids": ["crm.owner"],
         "source_type": "crm", "parameter_hints": {"customer_id": "QUERY-12"},
     }
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "Who owns customer QUERY-12?", principal=ACTOR, model=lambda _: response,
         intent_registry=INTENTS, model_visible_intent_ids=("crm.owner_lookup",),
         model_visible_concept_ids=("crm.owner",),
@@ -119,7 +124,8 @@ async def test_model_query_routes_multilingual_paraphrase_without_data_io(query)
             "parameter_hints": {"customer_id": "MODEL_FORGED"},
         })
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+            session,
         query, principal=ACTOR, model=model, intent_registry=INTENTS,
         model_visible_intent_ids=("crm.owner_lookup",),
         model_visible_concept_ids=("crm.owner",),
@@ -147,7 +153,8 @@ async def test_model_query_uses_approved_root_arguments_only():
                 "named_tools": ["fork_owner"],
                 "parameter_hints": {"customer_id": "FORGED"}}
 
-    result = await session.acompile_query(
+    result = await compile_offered_model_query(
+        session,
         "get owner", principal=ACTOR, model=model, intent_registry=INTENTS,
         model_visible_intent_ids=("crm.owner_lookup",),
         model_visible_concept_ids=("crm.owner",),
@@ -169,7 +176,8 @@ async def test_model_query_with_no_live_proof_does_not_invoke_model():
     def model(_payload):
         pytest.fail("model must never see hidden/unproved concepts")
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "owner", principal=ACTOR, model=model, intent_registry=INTENTS,
         model_visible_intent_ids=("crm.owner_lookup",),
         model_visible_concept_ids=("crm.owner",),
@@ -183,13 +191,15 @@ async def test_model_query_rejects_unreviewed_or_non_scoped_identity():
     session = build_fixture(500).prepare_field_routing(catalog=CATALOG)
 
     with pytest.raises(ValueError, match="disclosure"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "owner", principal=ACTOR, model=lambda _: {}, intent_registry=INTENTS,
             model_visible_intent_ids=("unknown",),
             model_visible_concept_ids=("crm.owner",),
         )
     with pytest.raises(ValueError, match="disclosure"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "owner", principal=ACTOR, model=lambda _: {}, intent_registry=INTENTS,
             model_visible_intent_ids=("crm.owner_lookup",),
             model_visible_concept_ids=("crm.owner",),
@@ -205,7 +215,8 @@ async def test_model_query_rejects_unreviewed_or_non_scoped_identity():
         {"intent_id": "crm.owner_lookup", "parameter_hints": {"id": float("nan")}},
     ):
         with pytest.raises(ModelAnalysisError):
-            await session.acompile_query(
+            await compile_offered_model_query(
+                session,
                 "owner", principal=ACTOR, model=lambda _, r=raw: r,
                 intent_registry=INTENTS,
                 model_visible_intent_ids=("crm.owner_lookup",),
@@ -223,7 +234,8 @@ async def test_model_error_does_not_leak_and_callback_policy_drift_fails_closed(
         raise RuntimeError("PRIVATE_MODEL_SECRET")
 
     with pytest.raises(ModelAnalysisError) as err:
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "owner", principal=ACTOR, model=leak, intent_registry=INTENTS,
             model_visible_intent_ids=("crm.owner_lookup",),
             model_visible_concept_ids=("crm.owner",),
@@ -239,7 +251,8 @@ async def test_model_error_does_not_leak_and_callback_policy_drift_fails_closed(
         return {"intent_id": "crm.owner_lookup"}
 
     with pytest.raises(PolicyViolationError, match="changed"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "owner", principal=ACTOR, model=drift, intent_registry=INTENTS,
             model_visible_intent_ids=("crm.owner_lookup",),
             model_visible_concept_ids=("crm.owner",),
@@ -253,13 +266,15 @@ async def test_model_query_rejects_incompatible_intent_or_payload_budget():
         intent_id="other.intent", required_concept_ids=("not.offered",),
     ),))
     with pytest.raises(ValueError, match="disclosure"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "owner", principal=ACTOR, model=lambda _: {}, intent_registry=other,
             model_visible_intent_ids=("other.intent",),
             model_visible_concept_ids=("crm.owner",),
         )
     with pytest.raises(ModelAnalysisError, match="budget"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "owner", principal=ACTOR, model=lambda _: {}, intent_registry=INTENTS,
             model_visible_intent_ids=("crm.owner_lookup",),
             model_visible_concept_ids=("crm.owner",),
@@ -280,7 +295,8 @@ async def test_host_opt_in_model_query_discovers_unnamed_dependency_without_tool
         observed.append(payload)
         return {"intent_id": "crm.owner_lookup", "named_tools": []}
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "who owns the customer", principal=ACTOR,
         model=model, intent_registry=INTENTS,
         model_visible_intent_ids=("crm.owner_lookup",),
@@ -307,7 +323,8 @@ async def test_host_unnamed_graph_discovery_without_rank_is_rejected_before_mode
         pytest.fail("non-owner-approved graph discovery must never call model")
 
     with pytest.raises(ValueError, match="rank|owner|approved"):
-        await session.acompile_query(
+        await compile_offered_model_query(
+            session,
             "who owns the customer", principal=ACTOR,
             model=model, intent_registry=INTENTS,
             model_visible_intent_ids=("crm.owner_lookup",),
@@ -339,7 +356,8 @@ async def test_model_unnamed_query_preserves_host_only_intent_domain_g5_filter()
             "concept_ids": ["crm.owner"], "named_tools": [],
         }
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "Who is the customer owner?", principal=ACTOR, model=model,
         intent_registry=domain_intents,
         model_visible_intent_ids=("crm.owner_lookup",),
@@ -383,7 +401,8 @@ async def test_async_model_preflight_offers_only_source_proven_two_hop_intent_wi
             "named_tools": [],
         }
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "Find case resolution", principal=PROFILE_ACTOR, model=model,
         intent_registry=intents,
         model_visible_intent_ids=("case.lookup",),
@@ -422,7 +441,8 @@ async def test_async_model_two_hop_concept_requires_host_graph_optin_before_mode
         seen.append(payload)
         return {"intent_id": "case.lookup", "concept_ids": [], "named_tools": []}
 
-    plan = await session.acompile_query(
+    plan = await compile_offered_model_query(
+        session,
         "Find case resolution", principal=PROFILE_ACTOR, model=model,
         intent_registry=intents,
         model_visible_intent_ids=("case.lookup",),
