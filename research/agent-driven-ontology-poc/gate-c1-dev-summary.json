@@ -1,0 +1,136 @@
+{
+  "kind": "conditional_schema_exposure_DEV",
+  "fixture_blob": "fbfe0dcf5b2bfcff325bf673d5bcd3bab5b3985e",
+  "case_blob": "5b3f89358fe2bdaee8011bbb62786039e0ae19c1",
+  "code_blobs": {
+    "ontology_catalog.py": "f6f99bd17d23f25b62522c7bf6692db2640843f4",
+    "historical_inventory.py": "7a771611e8737020514589fc042fb89ec16f2b97"
+  },
+  "python": "3.13.5",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "deps": {
+    "rdflib": "7.5.0",
+    "jsonschema": "4.26.0",
+    "pyparsing": "3.3.2"
+  },
+  "setup": {
+    "rdf_build_ms": 83.168504,
+    "bm25_build_ms": 5.681294,
+    "revision": "ae604de5f0ac039fd8fc2ee3d15b3a82a564c47cde1beb75aeeb74bb2e6660e5",
+    "triples": 2227,
+    "routes": 19,
+    "fields": 166
+  },
+  "arms": {
+    "FULL": {
+      "positive": 102,
+      "negative": 8,
+      "tool_recall": {
+        "micro": 1,
+        "macro": 1
+      },
+      "field_recall": {
+        "micro": 1,
+        "macro": 1
+      },
+      "complete": 102,
+      "empty_positive": 0,
+      "nonempty_negative": 8,
+      "mean_tools": 19,
+      "mean_fields": 166,
+      "mean_context_bytes": 83257,
+      "mean_schema_bytes": 31531,
+      "p50_ms": 0.7050665,
+      "p95_ms": 0.856355,
+      "missing_from_full_cases": 0
+    },
+    "BM25-5": {
+      "positive": 102,
+      "negative": 8,
+      "tool_recall": {
+        "micro": 0.9363636363636364,
+        "macro": 0.9313725490196079
+      },
+      "field_recall": {
+        "micro": 0.9354838709677419,
+        "macro": 0.9313725490196079
+      },
+      "complete": 95,
+      "empty_positive": 1,
+      "nonempty_negative": 0,
+      "mean_tools": 3.519607843137255,
+      "mean_fields": 46.71568627450981,
+      "mean_context_bytes": 23494.333333333332,
+      "mean_schema_bytes": 8672.79411764706,
+      "p50_ms": 0.242799,
+      "p95_ms": 0.33867,
+      "missing_from_full_cases": 0
+    },
+    "RDF-5": {
+      "positive": 102,
+      "negative": 8,
+      "tool_recall": {
+        "micro": 0.21818181818181817,
+        "macro": 0.23529411764705882
+      },
+      "field_recall": {
+        "micro": 0.20046082949308755,
+        "macro": 0.16970137705431823
+      },
+      "complete": 7,
+      "empty_positive": 72,
+      "nonempty_negative": 0,
+      "mean_tools": 0.3235294117647059,
+      "mean_fields": 2.284313725490196,
+      "mean_context_bytes": 2577.264705882353,
+      "mean_schema_bytes": 839.0882352941177,
+      "p50_ms": 0.053378999999999996,
+      "p95_ms": 2.624508,
+      "missing_from_full_cases": 0
+    },
+    "BM25-all": {
+      "positive": 102,
+      "negative": 8,
+      "tool_recall": {
+        "micro": 0.990909090909091,
+        "macro": 0.9901960784313726
+      },
+      "field_recall": {
+        "micro": 0.9907834101382489,
+        "macro": 0.9901960784313726
+      },
+      "complete": 101,
+      "empty_positive": 1,
+      "nonempty_negative": 0,
+      "mean_tools": 5.450980392156863,
+      "mean_fields": 61.950980392156865,
+      "mean_context_bytes": 31098.441176470587,
+      "mean_schema_bytes": 11573.950980392157,
+      "p50_ms": 0.255192,
+      "p95_ms": 0.763318,
+      "missing_from_full_cases": 0
+    },
+    "RDF-all": {
+      "positive": 102,
+      "negative": 8,
+      "tool_recall": {
+        "micro": 0.21818181818181817,
+        "macro": 0.23529411764705882
+      },
+      "field_recall": {
+        "micro": 0.20046082949308755,
+        "macro": 0.16970137705431823
+      },
+      "complete": 7,
+      "empty_positive": 72,
+      "nonempty_negative": 0,
+      "mean_tools": 0.3235294117647059,
+      "mean_fields": 2.284313725490196,
+      "mean_context_bytes": 2580.264705882353,
+      "mean_schema_bytes": 839.0882352941177,
+      "p50_ms": 0.046203,
+      "p95_ms": 2.833036,
+      "missing_from_full_cases": 0
+    }
+  }
+}
