@@ -27,12 +27,12 @@ def _actual_methods(owner: str, path: Path) -> dict[str, int]:
     parsed = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     body = [x for x in parsed.body if isinstance(x, ast.ClassDef) and x.name == owner]
     assert len(body) == 1, "Public owner class changed without inventory review"
-    methods = {
-        x.name: x.lineno
-        for x in body[0].body
-        if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and not x.name.startswith("_")
-    }
+    methods = {}
+    for node in body[0].body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if not node.name.startswith("_"):
+                # A property's getter, rather than its setter, anchors the API.
+                methods.setdefault(node.name, node.lineno)
     return methods
 
 
