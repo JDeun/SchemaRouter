@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "src/schemarouter/__init__.py",
   "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_EXECUTION_NOT_INDEPENDENT_E2",
-  "export_count": 436,
+  "export_count": 434,
   "exported_names": [
     "ADAPTER_ENTRY_POINT_GROUP",
     "AccessHealthMonitor",
@@ -83,8 +83,6 @@
     "CapabilityRebuildMode",
     "CapabilityRetrieval",
     "CapabilityRetrievalDisposition",
-    "CapabilityRouteCandidate",
-    "CapabilityRouteRetrieval",
     "CapabilitySnapshotDiff",
     "CapabilitySnapshotDocument",
     "CapabilitySnapshotMigrationRecord",

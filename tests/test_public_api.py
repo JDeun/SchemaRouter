@@ -38,8 +38,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "CompatibilityStatus",
         "SemanticEquivalence",
         "UnitConversion",
-        "CapabilityRouteCandidate",
-        "CapabilityRouteRetrieval",
         "CapabilityExplorerDocument",
         "ExplorerAuthScheme",
         "ExplorerEndpoint",
@@ -585,3 +583,12 @@ def test_retired_lexical_state_retrieval_is_not_installed() -> None:
     assert callable(schemarouter.evaluate_state_eligibility)
     assert callable(schemarouter.evaluate_preconditions)
     assert callable(schemarouter.TypedExecutionState)
+
+
+def test_retired_lightweight_route_dtos_are_not_installed() -> None:
+    import schemarouter.models as models
+
+    for name in ("CapabilityRouteCandidate", "CapabilityRouteRetrieval"):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(models, name), name
+    assert not hasattr(schemarouter.SchemaRouter, "_project_route_retrieval_data_scope")

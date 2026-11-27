@@ -7,3 +7,5 @@ The restored paper planner lives in the product's paper planning modules. Histor
 The historical flat `PlanRequest` is defined in `requests.py` and the two retrieval facades in `../research_legacy_runtime.py`. The installed request contract is `PaperPlanRequest`; the product never imports the historical envelope or its dispatch.
 
 Fixed Top-K typed-state filtering is archived in `state_retrieval.py`, alongside the separate historical backfill comparator in `../research_legacy_state_backfill.py`. The product retains declared state and precondition evaluation in `schemarouter.execution_state`; those checks do not rank or execute capabilities.
+
+Historical lightweight route DTOs live in `route_models.py`; their field-scope projection lives on `LegacySchemaRouter` in `../research_legacy_runtime.py`. Both retain the existing alias/metadata redaction and authority checks while the installed package no longer exposes lightweight lexical route ranking.

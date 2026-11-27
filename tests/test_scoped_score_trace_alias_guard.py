@@ -8,17 +8,17 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.models import ParameterSpec, ScoreComponent
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 SECRET_ALIAS = "unreviewed_private_field_name_p614"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
 
 
-def _router() -> SchemaRouter:
+def _router() -> LegacySchemaRouter:
     router = legacy_router(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(

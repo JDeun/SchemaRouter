@@ -22,6 +22,12 @@ RETIRED = {
     "QueryAnalyzer",
     "SchemaPlanner",
     "PlanRequest",
+    "CapabilityRouteCandidate",
+    "CapabilityRouteRetrieval",
+    "StateAwareCapabilityCandidate",
+    "StateAwareCapabilityRetrieval",
+    "evaluate_candidate_state",
+    "filter_retrieval_by_state",
     "ainvoke_selective",
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
@@ -42,7 +48,10 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("schemarouter.analyzers."), path
                 assert not module.startswith("scripts.research_legacy_decisions"), path
                 assert not module.startswith("scripts.research_legacy_model_analyzer"), path
-                assert module not in {"planner", "planning_context", "planning_stages"}, path
+                assert module not in {
+                    "planner", "planning_context", "planning_stages", "state_retrieval",
+                    "schemarouter.state_retrieval",
+                }, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
                 if module in {"schemarouter", "schemarouter.models", "models"}:
@@ -55,7 +64,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_planning",
                                            "schemarouter.planner",
                                            "schemarouter.planning_context",
-                                           "schemarouter.planning_stages"))
+                                           "schemarouter.planning_stages",
+                                           "schemarouter.state_retrieval"))
                     for alias in node.names
                 ), path
 
@@ -78,6 +88,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                     assert node.module not in {
                         "schemarouter.planner", "schemarouter.planning_context",
                         "schemarouter.planning_stages",
+                        "schemarouter.state_retrieval",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
                     if node.module in {"schemarouter", "schemarouter.models"}:
@@ -88,6 +99,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.decisions", "schemarouter.analyzers",
                             "schemarouter.planner", "schemarouter.planning_context",
                             "schemarouter.planning_stages",
+                            "schemarouter.state_retrieval",
                         ))
                         for alias in node.names
                     ), path

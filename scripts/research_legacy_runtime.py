@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
+from schemarouter._schema_identity import _tokens
 from schemarouter.authorization import (
     PrincipalContext,
     _current_principal_context,
@@ -22,7 +23,6 @@ from schemarouter.errors import PolicyViolationError
 from schemarouter.execution_state import TypedExecutionState
 from schemarouter.models import (
     CapabilityRetrieval,
-    CapabilityRouteRetrieval,
     EndpointSpec,
     ExecutionPlan,
     PaperPlanRequest,
@@ -33,10 +33,12 @@ from schemarouter.runtime import (
     ConfiguredSchemaRouter,
     SchemaRouter,
     _coerce_config,
+    _scoped_public_score_components,
     _validated_explicit_retrieval_principal,
 )
 from scripts.research_legacy_planning.planner import QueryAnalyzer, SchemaPlanner
 from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.route_models import CapabilityRouteRetrieval
 from scripts.research_legacy_planning.source_availability import _LegacySourceAvailability
 from scripts.research_legacy_planning.state_retrieval import (
     StateAwareCapabilityRetrieval,
@@ -289,6 +291,78 @@ class LegacySchemaRouter(SchemaRouter):
             )
         self._source_availability_predicate()
         return planner
+
+    def _project_route_retrieval_data_scope(
+        self,
+        retrieval: CapabilityRouteRetrieval,
+        principal: PrincipalContext | None,
+    ) -> CapabilityRouteRetrieval:
+        """Remove raw source sidecars after schema-free, scoped route ranking."""
+        policy = self.authorization_policy
+        if policy is None or not policy.data_rules:
+            return retrieval
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+        projected = []
+        for candidate in retrieval.candidates:
+            tool = self.registry.get(candidate.tool)
+            endpoint = tool.endpoint(candidate.endpoint)
+            scope = policy.data_scope(principal, tool, endpoint)
+            if scope.visible_fields is None:
+                projected.append(candidate)
+                continue
+            visible_endpoint = self._data_scope_endpoint_view(
+                principal, tool, endpoint,
+            )
+            if visible_endpoint is None:
+                raise PolicyViolationError(
+                    "authorized route scope changed during projection"
+                )
+            visible_names = {
+                name.casefold()
+                for field in visible_endpoint.output_fields
+                for name in (field.name, field.semantic_id)
+                if name is not None
+            }
+            components = _scoped_public_score_components(
+                candidate.score_components,
+                visible_names=visible_names,
+                source_fields=endpoint.output_fields,
+                public_tool_identifiers={tool.key.casefold()},
+                public_endpoint_identifiers={
+                    f"{tool.key}.{endpoint.name}".casefold()
+                },
+                public_operation_names={endpoint.name.casefold()},
+                public_tool_tokens={
+                    token.casefold()
+                    for token in _tokens(f"{tool.name} {endpoint.name}")
+                },
+                public_parameter_names={
+                    parameter.name.casefold()
+                    for parameter in visible_endpoint.parameters
+                },
+            )
+            projected.append(candidate.model_copy(
+                deep=True,
+                update={
+                    "provider": None,
+                    "access_mode": None,
+                    "matched_fields": [
+                        name for name in candidate.matched_fields
+                        if name.casefold() in visible_names
+                    ],
+                    "score_components": components,
+                },
+            ))
+        if len(projected) != len(retrieval.candidates):
+            raise PolicyViolationError(
+                "authorized route scope changed during projection"
+            )
+        return retrieval.model_copy(
+            deep=True, update={"candidates": projected},
+        )
 
     def retrieve_routes(
         self,

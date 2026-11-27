@@ -53,8 +53,13 @@ jobs:
               "KeywordAnalyzer", "QueryAnalyzer", "SchemaPlanner", "PlanRequest",
               "StateAwareCapabilityCandidate", "StateAwareCapabilityRetrieval",
               "evaluate_candidate_state", "filter_retrieval_by_state",
+              "CapabilityRouteCandidate", "CapabilityRouteRetrieval",
           ):
               assert not hasattr(schemarouter, name), name
+          from schemarouter import models
+          assert not hasattr(models, "CapabilityRouteCandidate")
+          assert not hasattr(models, "CapabilityRouteRetrieval")
+          assert not hasattr(schemarouter.SchemaRouter, "_project_route_retrieval_data_scope")
           assert callable(schemarouter.SchemaRouter)
           assert callable(schemarouter.PaperQueryUnderstanding)
           assert callable(schemarouter.evaluate_state_eligibility)
