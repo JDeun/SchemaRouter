@@ -23,6 +23,7 @@ from schemarouter import (
 )
 from schemarouter.concept_retrieval import _merged_concept_constraints, resolve_native_concepts
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_field_session import research_compile_fields
 from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="neutral-test", roles=("reader",))
@@ -158,7 +159,7 @@ def test_neutral_host_approved_root_still_requires_original_inputs_and_metadata(
     session = router.prepare_field_routing(catalog=NativeConceptCatalog(concepts=(
         _concept("status"),
     )), approved_host_roots=frozenset({"a.read"}))
-    plan = session.compile("case status", principal=ACTOR,
+    plan = research_compile_fields(session, "case status", principal=ACTOR,
                            host_source_arguments={"a.read": {"key": "host"}})
     assert plan.status == "ready" and plan.calls[0].call.arguments == {"key": "host"}
 
@@ -204,7 +205,7 @@ def test_neutral_plan_rejects_original_metadata_mutation():
     changed.license = "replaced"
     router.add_tool(changed, replace=True)
     with pytest.raises(PolicyViolationError):
-        session.compile("case status", principal=ACTOR)
+        research_compile_fields(session, "case status", principal=ACTOR)
 
 
 def test_neutral_plan_rejects_inplace_policy_mutation_during_source_health_check():

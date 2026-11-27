@@ -577,62 +577,52 @@
         {
           "name": "prepare",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 202
+          "source_line": 200
         },
         {
           "name": "refresh",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 237
+          "source_line": 235
         },
         {
           "name": "revise_catalog",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 297
+          "source_line": 295
         },
         {
           "name": "snapshot_id",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 353
+          "source_line": 351
         },
         {
           "name": "catalog_revision_id",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 365
+          "source_line": 363
         },
         {
           "name": "indexed_route_count",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 376
+          "source_line": 374
         },
         {
           "name": "inspect_visible_fields",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 380
-        },
-        {
-          "name": "discover",
-          "kind": "retrieval-or-planning-no-execution",
-          "source_line": 544
-        },
-        {
-          "name": "compile",
-          "kind": "retrieval-or-planning-no-execution",
-          "source_line": 558
+          "source_line": 378
         },
         {
           "name": "compile_understood",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 579
+          "source_line": 542
         },
         {
           "name": "aexecute_direct",
           "kind": "registered-tool-execution",
-          "source_line": 607
+          "source_line": 570
         },
         {
           "name": "acompile_query",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 748
+          "source_line": 711
         }
       ]
     }

@@ -72,6 +72,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_g5_deep_paths"), path
                 assert not module.startswith("scripts.research_legacy_capability_graph_analysis"), path
                 assert not module.startswith("scripts.research_legacy_posting_rank"), path
+                assert not module.startswith("scripts.research_legacy_field_session"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
@@ -95,6 +96,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_g5_deep_paths",
                                            "scripts.research_legacy_capability_graph_analysis",
                                            "scripts.research_legacy_posting_rank",
+                                           "scripts.research_legacy_field_session",
                                            "scripts.research_legacy_g5_rank",
                                            "schemarouter.native_deep_paths",
                                            "schemarouter.native_graph_execution",

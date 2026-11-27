@@ -91,6 +91,10 @@ jobs:
           assert not hasattr(models, "CapabilityRouteRetrieval")
           assert not hasattr(schemarouter.SchemaRouter, "_project_route_retrieval_data_scope")
           assert callable(schemarouter.SchemaRouter)
+          assert not hasattr(schemarouter.SchemaFieldRoutingSession, "discover")
+          assert not hasattr(schemarouter.SchemaFieldRoutingSession, "compile")
+          assert callable(schemarouter.SchemaFieldRoutingSession.compile_understood)
+          assert callable(schemarouter.SchemaFieldRoutingSession.acompile_query)
           assert callable(schemarouter.PaperQueryUnderstanding)
           assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_bounded_paths")
           from inspect import signature

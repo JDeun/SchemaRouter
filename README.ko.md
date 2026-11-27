@@ -69,6 +69,10 @@ API, MCP, SDK, DB, framework tool이 섞여 있고 이름은 비슷하지만 실
 Understand 콜백을 `configure_field_routing(...)`으로 명시적으로 설정해야 합니다.
 `PaperPlanRequest`로 소스별 신뢰 입력을 전달하고 검증된 principal을 사용합니다.
 설정 전에는 질문 기반 계획을 거부하며, 암묵적인 어휘 검색이나 폴백은 없습니다.
+준비된 세션은 `compile_understood()` 또는 스키마 독립적인 `acompile_query()`로
+타입 기반 비실행 계획을 생성합니다. 과거 정확한 별칭 기반 `discover()`와 `compile()`은
+설치 패키지에서 제거되어 `scripts.research_legacy_field_session`의 소스 체크아웃 연구용
+함수로만 보존합니다.
 
 소스 체크아웃에서 [원 논문 중심 빠른 시작](examples/quickstart.py) 또는
 [스키마 전용 검색 예제](examples/schema_only_field_routing.py)를 실행할 수 있습니다.

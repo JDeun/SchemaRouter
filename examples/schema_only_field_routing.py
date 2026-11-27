@@ -17,6 +17,7 @@ from schemarouter import (
     PaperNativeRankPolicy,
     PaperUnderstanding,
     ParameterSpec,
+    PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
@@ -111,41 +112,58 @@ def main() -> None:
     assert active.catalog_revision_id != session.revise_catalog(
         catalog=catalog,
     ).catalog_revision_id  # root approval is part of semantic cache identity
-    fields = active.discover("고객 상태와 담당자", principal=principal)
-    print("status:", fields.status)
-    for alternative in fields.alternatives:
-        for route in alternative.routes:
-            print("route / selected schema fields:", route.route_id, route.output_fields)
-
-    # Optional metadata and argument-shape inspection, not data fetching.
-    plan = active.compile(
-        "customer overview", principal=principal,
-        host_source_arguments={
-            "directory.lookup": {"customer_id": "host-supplied-customer-1"},
-        },
+    # Compile structured Understand(q) hints against the reviewed catalog.
+    reviewed_intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+        intent_id="customer.lookup",
+        required_concept_ids=("customer.overview",),
+    ),))
+    hints = PaperUnderstanding(intent_id="customer.lookup")
+    fields = active.compile_understood(
+        hints, principal=principal, intent_registry=reviewed_intents,
     )
+    assert fields.status == "requires_arguments" and not fields.executable_authority
+    print("status:", fields.status)
+    for route in fields.calls:
+        print("route / selected schema fields:", route.route_id, route.call.fields)
+
+    # Optional host-approved arguments, never model-proposed values.
+    host_arguments = {
+        "directory.lookup": {"customer_id": "host-supplied-customer-1"},
+    }
+    plan = active.compile_understood(
+        hints, principal=principal, intent_registry=reviewed_intents,
+        host_source_arguments=host_arguments,
+    )
+    assert plan.status == "ready" and not plan.executable_authority
     print("plan status:", plan.status, "executable:", plan.executable_authority)
     for route in plan.calls:
         print("field metadata:", route.route_id, route.fields_meta)
         print("input parameter shapes:", route.route_id, route.parameters_meta)
 
-    # Revocation is equally explicit and never mutates an already-held handle.
+    # Revoking root approval removes the ability to bind host values under
+    # that approval, not the ability to describe a missing-input receipt.
     revoked = active.revise_catalog(
         catalog=catalog, approved_host_roots=frozenset(),
     )
     assert revoked.catalog_revision_id != active.catalog_revision_id
-    assert revoked.discover(
-        "customer overview", principal=principal,
-    ).status == "no_proven_hit"
-    assert active.compile(
-        "customer overview", principal=principal,
-        host_source_arguments={
-            "directory.lookup": {"customer_id": "host-supplied-customer-1"},
-        },
+    assert revoked.compile_understood(
+        hints, principal=principal, intent_registry=reviewed_intents,
+    ).status == "requires_arguments"
+    try:
+        revoked.compile_understood(
+            hints, principal=principal, intent_registry=reviewed_intents,
+            host_source_arguments=host_arguments,
+        )
+    except PolicyViolationError:
+        pass
+    else:
+        raise AssertionError("revoked source approval accepted host inputs")
+    assert active.compile_understood(
+        hints, principal=principal, intent_registry=reviewed_intents,
+        host_source_arguments=host_arguments,
     ).status == "ready"
 
-    # Owner vocabulary updates do not change the registered source schemas.
-    # Reuse the exact pinned graph while reviewing a NEW semantic catalog.
+    # Owner vocabulary updates reuse the same registered-source index.
     updated_catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id="customer.overview",
         aliases=("account status and owner", "계정 상태와 담당자"),
@@ -155,19 +173,11 @@ def main() -> None:
     reviewed_session = active.revise_catalog(catalog=updated_catalog)
     assert reviewed_session.snapshot_id == active.snapshot_id
     assert reviewed_session.catalog_revision_id != active.catalog_revision_id
-    print("reviewed fields:", reviewed_session.discover(
-        "계정 상태와 담당자", principal=principal,
+    print("reviewed fields:", reviewed_session.compile_understood(
+        hints, principal=principal, intent_registry=reviewed_intents,
     ).status)
-    # The host replaces its live handle with reviewed_session once approved;
-    # any old handle retained elsewhere still uses its original meanings.
 
-    # Optional structured Understand(q) is host/model SUPPLIED; the router
-    # verifies it against reviewed concepts and current source permissions.
-    # A model hint is not an argument. Only the explicit host value is bound.
-    reviewed_intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
-        intent_id="customer.lookup",
-        required_concept_ids=("customer.overview",),
-    ),))
+    # A model hint is not an argument; only the explicit host value is bound.
     understood = active.compile_understood(
         PaperUnderstanding(
             intent_id="customer.lookup", named_tools=("directory",),

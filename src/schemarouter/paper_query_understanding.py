@@ -31,6 +31,7 @@ from .concept_retrieval import (
 from .errors import ModelAnalysisError, PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .models import PlanCoverage, SemanticFieldRequirement
+from .paper_field_retrieval import retrieve_paper_field_coverage
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_conditions import _apply_query_input_conditions, _prove_query_need_conditions
 from .paper_query_needs import (
@@ -846,7 +847,10 @@ def _prepare_model_query(
     for concept_id in model_visible_concept_ids or ():
         concept = approved_concepts[concept_id]
         try:
-            coverage = session.discover(concept.aliases[0], principal=principal, k=k)
+            coverage = retrieve_paper_field_coverage(
+                router, concept.aliases[0], principal=principal,
+                catalog=session._require_catalog(), index=session._index, k=k,
+            )
         except ValueError:
             # A catalog alias is not an independent proof of current fields.
             continue

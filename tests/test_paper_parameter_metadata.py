@@ -28,6 +28,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_field_session import research_compile_fields
 
 
 def _catalog():
@@ -66,7 +67,7 @@ def test_paper_plan_exposes_required_typed_original_consumer_parameters():
 def test_prepared_schema_session_wires_typed_parameter_metadata():
     router = build_fixture(500)
     session = router.prepare_field_routing(catalog=_catalog())
-    plan = session.compile(ALIASES[1], principal=ACTOR)
+    plan = research_compile_fields(session, ALIASES[1], principal=ACTOR)
     assert plan.status == "requires_observation"
     assert {item.route_id: tuple(p.name for p in item.parameters_meta)
             for item in plan.calls} == {
@@ -99,7 +100,8 @@ def test_private_wire_descriptions_and_unselected_fields_never_enter_parameter_r
         ),),
     )
 
-    plan = router.prepare_field_routing(catalog=_catalog()).compile(
+    plan = research_compile_fields(
+        router.prepare_field_routing(catalog=_catalog()),
         ALIASES[0], principal=ACTOR,
     )
     assert plan.status == "requires_observation"
@@ -152,7 +154,8 @@ def test_changed_live_parameter_projection_cannot_keep_stale_public_metadata(
     monkeypatch, parameter_change,
 ):
     router: SchemaRouter = build_fixture(500)
-    plan = router.prepare_field_routing(catalog=_catalog()).compile(
+    plan = research_compile_fields(
+        router.prepare_field_routing(catalog=_catalog()),
         ALIASES[0], principal=ACTOR,
     )
     original = router._data_scope_endpoint_view

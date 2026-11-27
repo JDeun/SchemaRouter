@@ -25,6 +25,7 @@ from schemarouter import (
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import _scalar_contract
+from scripts.research_legacy_field_session import research_compile_fields
 
 ACTOR = PrincipalContext(subject="shape-review", roles=("reader",))
 SHAPES = [
@@ -96,25 +97,25 @@ async def test_public_query_maps_general_json_response_shape(schema, wildcard):
     original.endpoint("read").output_fields[0].description = "refreshed review"
     router.registry.register(original.model_copy(deep=True), replace=True)
     refreshed = session.refresh()
-    assert refreshed.compile("requested value", principal=ACTOR).status == "ready"
+    assert research_compile_fields(refreshed, "requested value", principal=ACTOR).status == "ready"
 
 
 @pytest.mark.parametrize("schema", SHAPES)
 def test_approved_general_response_is_direct_only_and_host_input_stays_scalar(schema):
     _, session, _ = source(schema, host=True)
     assert all(not item.produces for item in session._index._source_contracts)
-    plan = session.compile("requested value", principal=ACTOR,
+    plan = research_compile_fields(session, "requested value", principal=ACTOR,
         host_source_arguments={"shapes.read": {"key": "host"}})
     assert plan.status == "ready" and plan.calls[0].call.arguments == {"key": "host"}
     with pytest.raises((ValueError, PolicyViolationError)):
-        session.compile("requested value", principal=ACTOR,
+        research_compile_fields(session, "requested value", principal=ACTOR,
             host_source_arguments={"shapes.read": {"key": ["not scalar"]}})
 
 
 def test_numeric_array_units_reuse_canonical_contract_and_wildcard_paths():
     schema = {"type": ["array", "null"], "items": {"type": ["number", "null"]}}
     _, session, _ = source(schema, wildcard=True, unit=True)
-    plan = session.compile("requested value", principal=ACTOR)
+    plan = research_compile_fields(session, "requested value", principal=ACTOR)
     assert plan.status == "ready"
     meta, = plan.calls[0].fields_meta
     assert meta.unit == "cm" and meta.source_unit == "m"
@@ -169,7 +170,7 @@ async def test_hidden_source_descendant_blocks_parent_with_disjoint_result_path(
     ),))
     session = router.prepare_field_routing(catalog=catalog)
     assert session.inspect_visible_fields(principal=ACTOR).routes == ()
-    assert session.compile("requested value", principal=ACTOR).status == "no_proven_hit"
+    assert research_compile_fields(session, "requested value", principal=ACTOR).status == "no_proven_hit"
 
 
 @pytest.mark.parametrize("schema", [
@@ -227,7 +228,7 @@ def test_scoped_shape_details_are_not_recovered_from_hidden_raw_registry(schema)
     for route in page.routes:
         private_keys = {"$defs", "$ref", "properties", "items", "anyOf"}
         assert all(not (field.json_schema.keys() & private_keys) for field in route.fields)
-    plan = session.compile("requested value", principal=ACTOR)
+    plan = research_compile_fields(session, "requested value", principal=ACTOR)
     assert plan.status == ("ready" if schema == {"type": ["string", "null"]} else "no_proven_hit")
 
 
@@ -236,7 +237,7 @@ def test_review_contract_copy_cannot_mutate_source_or_plan():
     page = session.inspect_visible_fields(principal=ACTOR)
     page.routes[0].fields[0].json_schema["items"]["type"] = "integer"
     assert router.registry.get("shapes").endpoint("read").output_fields[0].json_schema == SHAPES[2]
-    plan = session.compile("requested value", principal=ACTOR)
+    plan = research_compile_fields(session, "requested value", principal=ACTOR)
     assert plan.calls[0].fields_meta[0].json_schema == SHAPES[2]
 
 

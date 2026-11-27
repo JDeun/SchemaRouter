@@ -165,10 +165,12 @@ owner explicitly approves `NativeConceptCatalog`, call
 `session = session.revise_catalog(catalog=reviewed_concepts)`; this activates
 field routing **without rebuilding the registered-source index**. Alternatively
 start with `router.prepare_field_routing(catalog=reviewed_concepts)` if your
-application already has an approved catalog. Then call
-`session.discover(query, principal=reader)` for field-complete alternatives or
-`session.compile(query, principal=reader)` for typed, non-executing call shapes
-and source/unit/license field metadata. Each compiled route also provides
+application already has an approved catalog. In the unreleased candidate, use
+`session.compile_understood(..., principal=reader, intent_registry=reviewed_intents)`
+or the schema-independent `session.acompile_query(...)` for typed, non-executing
+call shapes and source/unit/license field metadata. The former exact-alias
+`discover()` and `compile()` session methods are checkout-only historical
+comparators in `scripts.research_legacy_field_session`. Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.
 For registered sources needing an explicit host-supplied scalar (for example,
@@ -212,7 +214,7 @@ and must never be served as an authorized route listing. Measure synthetic
 ranking or E2 improvement.
 This does not auto-author a `NativeConceptCatalog`, guess aliases or fetch
 records: the host still reviews and explicitly declares concept meanings.
-On a review-only session, `discover`, `compile`, `compile_understood`,
+On a review-only session, `compile_understood`,
 `acompile_query` and `catalog_revision_id` fail closed until catalog approval.
 Recheck current authorization when using this inventory; a cursor is not
 permission and different pages are not a policy-stable snapshot. The complete
@@ -285,7 +287,7 @@ the source-only `snapshot_id` intentionally stays unchanged across a catalog
 revision. With nonempty explicit root approvals, `catalog_revision_id` also
 commits to the sorted root list; changing only that list changes the semantic
 cache key. **Do not use this pair alone to cache or replay authorized
-`discover()`/`compile()` results.** Those results depend on the live principal,
+`compile_understood()`/`acompile_query()` results.** Those results depend on the live principal,
 authorization policy, allowed scopes and availability, and require current
 source and authorization rechecks at use time. The application must atomically
 replace and retire its old handle

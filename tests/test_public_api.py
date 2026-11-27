@@ -689,3 +689,12 @@ def test_product_index_receipts_do_not_expose_research_rank_metadata() -> None:
         assert "deterministic_paper_ranked" in names
         assert "ranked_unverified" in statuses
         assert "over_k_unranked" in statuses
+
+
+def test_alternate_query_only_session_methods_are_not_installed() -> None:
+    for name in ("discover", "compile"):
+        assert not hasattr(schemarouter.SchemaFieldRoutingSession, name), name
+    assert callable(schemarouter.SchemaFieldRoutingSession.compile_understood)
+    assert callable(schemarouter.SchemaFieldRoutingSession.acompile_query)
+    assert callable(schemarouter.SchemaFieldRoutingSession.inspect_visible_fields)
+    assert callable(schemarouter.SchemaFieldRoutingSession.aexecute_direct)

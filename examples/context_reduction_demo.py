@@ -13,6 +13,9 @@ from schemarouter import (
     FieldSpec,
     NativeConceptCatalog,
     NativeDeclaredConcept,
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperUnderstanding,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
@@ -121,16 +124,25 @@ def main() -> None:
         ),),
     ),))
     session = router.prepare_field_routing(catalog=catalog)
-    receipt = session.discover("current weather temperature", principal=principal, k=3)
-    assert receipt.status == "complete" and not receipt.executable_authority
-    routes = tuple(route for alternative in receipt.alternatives for route in alternative.routes)
+    receipt = session.compile_understood(
+        PaperUnderstanding(intent_id="weather.read"), principal=principal,
+        intent_registry=PaperIntentRegistry(intents=(PaperIntentDeclaration(
+            intent_id="weather.read", required_concept_ids=("weather.value",),
+        ),)),
+    )
+    assert receipt.status == "ready" and not receipt.executable_authority
+    routes = receipt.calls
     assert [route.route_id for route in routes] == ["weather_lookup.lookup"]
 
     full_catalog_payload = [
         tool.model_dump(mode="json")
         for tool in router.registry.tools()
     ]
-    bounded_payload = [asdict(route) for route in routes]
+    bounded_payload = [
+        {"route_id": route.route_id, "call": route.call.model_dump(mode="json"),
+         "fields_meta": [asdict(field) for field in route.fields_meta]}
+        for route in routes
+    ]
 
     full_bytes = compact_json_size(full_catalog_payload)
     bounded_bytes = compact_json_size(bounded_payload)

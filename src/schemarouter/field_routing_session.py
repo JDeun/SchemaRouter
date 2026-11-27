@@ -24,14 +24,12 @@ from .native_semantic_index import (
     _indexable_semantic_field,
     _native_review_cursor,
 )
-from .paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_understanding import PaperFieldModel, compile_model_query
 from .paper_typed_tool_plan import (
     PaperPlanParameterMeta,
     PaperTypedToolPlan,
     _paper_public_parameters,
-    compile_paper_typed_tool_plan,
 )
 from .paper_understood_direct_plan import (
     PaperIntentRegistry,
@@ -539,41 +537,6 @@ class SchemaFieldRoutingSession:
                 _native_review_cursor(posting.snapshot_id, reviewed[-1].route_id)
                 if has_more else None
             ),
-        )
-
-    def discover(
-        self,
-        query: str,
-        *,
-        principal: PrincipalContext,
-        k: int = 5,
-    ) -> PaperFieldCoverage:
-        """Return field-complete route alternatives or abstain; no data I/O."""
-        catalog = self._require_catalog()
-        return retrieve_paper_field_coverage(
-            self._router, query, principal=principal,
-            catalog=catalog, index=self._index, k=k,
-        )
-
-    def compile(
-        self,
-        query: str,
-        *,
-        principal: PrincipalContext,
-        alternative_index: int = 0,
-        host_source_arguments: dict[str, dict[str, Any]] | None = None,
-        k: int = 5,
-    ) -> PaperTypedToolPlan:
-        """Describe typed call shapes, bindings and field metadata, not execution.
-
-        Even a `ready` receipt is not an executable authorization grant.
-        """
-        catalog = self._require_catalog()
-        return compile_paper_typed_tool_plan(
-            self._router, query, principal=principal,
-            catalog=catalog, index=self._index,
-            alternative_index=alternative_index,
-            host_source_arguments=host_source_arguments, k=k,
         )
 
     def compile_understood(

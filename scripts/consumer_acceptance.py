@@ -31,6 +31,7 @@ from schemarouter import (
     PaperIntentRegistry,
     PaperNativeRankPolicy,
     PaperPlanRequest,
+    PaperUnderstanding,
     ParameterSpec,
     PolicyRule,
     PolicyViolationError,
@@ -261,19 +262,24 @@ async def scenario_capability_retrieval() -> dict[str, object]:
 
     router = SchemaRouter()
     session = _paper_weather(router, retrieval_probe)
-    receipt = session.discover("city temperature", principal=_WEATHER_PRINCIPAL)
-    assert receipt.status == "complete"
+    receipt = session.compile_understood(
+        PaperUnderstanding(intent_id="weather.read", named_tools=("current_weather",)),
+        principal=_WEATHER_PRINCIPAL,
+        intent_registry=PaperIntentRegistry(intents=(PaperIntentDeclaration(
+            intent_id="weather.read", required_concept_ids=("weather.temperature",),
+        ),)),
+    )
+    assert receipt.status == "requires_arguments"
     assert receipt.requested_k == 5
     assert receipt.executable_authority is False
-    assert len(receipt.alternatives) == 1
-    assert len(receipt.alternatives[0].routes) == 1
-    route = receipt.alternatives[0].routes[0]
+    assert len(receipt.calls) == 1
+    route = receipt.calls[0]
     assert route.route_id == _WEATHER_ROUTE
-    assert "temperature" in route.output_fields
+    assert "temperature" in route.call.fields
     tool = router.registry.get("current_weather")
     endpoint = tool.endpoint("call")
-    assert route.tool_fingerprint == tool.fingerprint
-    assert route.endpoint_fingerprint == endpoint.fingerprint
+    assert route.call.tool_fingerprint == tool.fingerprint
+    assert route.call.schema_fingerprint == endpoint.fingerprint
     assert endpoint.input_schema["type"] == "object"
     assert "city" in endpoint.input_schema["properties"]
     assert endpoint.output_schema

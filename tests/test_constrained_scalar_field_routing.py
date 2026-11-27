@@ -30,6 +30,10 @@ from schemarouter.paper_understood_direct_plan import (
     PaperUnderstanding,
 )
 from scripts.research_legacy_field_group import retrieve_authorized_field_group
+from scripts.research_legacy_field_session import (
+    research_compile_fields,
+    research_discover_fields,
+)
 from scripts.research_legacy_router import legacy_router
 
 ALIASES = ("record value", "레코드 값", "レコードの値")
@@ -111,8 +115,8 @@ async def test_constrained_scalar_survives_public_field_routing_and_execution(
         router, query, principal=READER, group=group,
     ).candidates] == ["records.read"]
     session = router.prepare_field_routing(catalog=catalog)
-    assert session.discover(query, principal=READER).status == "complete"
-    plan = session.compile(query, principal=READER)
+    assert research_discover_fields(session, query, principal=READER).status == "complete"
+    plan = research_compile_fields(session, query, principal=READER)
     assert plan.status == "ready"
     assert plan.calls[0].call.fields == ["record_id", "value"]
     assert seen == []
@@ -147,7 +151,7 @@ def test_scalar_assertions_never_bypass_principal_or_hidden_field_scope(principa
         router, ALIASES[0], principal=principal, group=group,
     ).candidates
     session = router.prepare_field_routing(catalog=catalog)
-    assert session.discover(ALIASES[0], principal=principal).status == "no_proven_hit"
+    assert research_discover_fields(session, ALIASES[0], principal=principal).status == "no_proven_hit"
     assert seen == []
 
 
@@ -174,9 +178,9 @@ def test_schema_validation_rechecks_mutated_content_and_live_authorization():
     schema["enum"].append("open")
     router, _group, catalog, seen = _fixture(schema, "open")
     session = router.prepare_field_routing(catalog=catalog)
-    assert session.discover(ALIASES[0], principal=READER).status == "complete"
+    assert research_discover_fields(session, ALIASES[0], principal=READER).status == "complete"
     router.authorization_policy = AuthorizationPolicy(default_effect="deny")
-    assert session.discover(ALIASES[0], principal=READER).status == "no_proven_hit"
+    assert research_discover_fields(session, ALIASES[0], principal=READER).status == "no_proven_hit"
     assert seen == []
 
 
@@ -193,7 +197,8 @@ def test_affine_normalization_does_not_reuse_untransformed_numeric_bounds():
     assert not retrieve_authorized_field_group(
         router, ALIASES[0], principal=READER, group=group,
     ).candidates
-    assert router.prepare_field_routing(catalog=catalog).discover(
+    assert research_discover_fields(
+        router.prepare_field_routing(catalog=catalog),
         ALIASES[0], principal=READER,
     ).status == "no_proven_hit"
     assert seen == []
@@ -221,7 +226,7 @@ async def test_canonical_unit_bounds_reach_public_field_plan_and_execution():
         source_type="records", license="host-reviewed",
     ),))
     session = router.prepare_field_routing(catalog=catalog)
-    plan = session.compile(ALIASES[0], principal=READER)
+    plan = research_compile_fields(session, ALIASES[0], principal=READER)
     assert plan.status == "ready"
     value_meta = next(field for field in plan.calls[0].fields_meta if field.name == "value")
     assert value_meta.source_unit == "degC" and value_meta.unit == "K"

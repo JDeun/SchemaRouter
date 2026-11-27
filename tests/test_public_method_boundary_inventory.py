@@ -98,7 +98,8 @@ def test_retrieval_and_planning_are_not_mislabeled_as_invocation() -> None:
     assert names_by_owner["SchemaRouter"]["plan"] == (
         "retrieval-or-planning-no-execution"
     )
-    assert names_by_owner["SchemaFieldRoutingSession"]["discover"] == (
+    assert {"discover", "compile"}.isdisjoint(names_by_owner["SchemaFieldRoutingSession"])
+    assert names_by_owner["SchemaFieldRoutingSession"]["compile_understood"] == (
         "retrieval-or-planning-no-execution"
     )
     assert names_by_owner["SchemaFieldRoutingSession"]["aexecute_direct"] == (

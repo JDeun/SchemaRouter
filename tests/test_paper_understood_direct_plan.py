@@ -26,6 +26,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperUnderstanding,
     compile_paper_understood_direct_plan,
 )
+from scripts.research_legacy_field_session import research_discover_fields
 
 ANALYST = PrincipalContext(subject="source-researcher", roles=("analyst",))
 VIEWER = PrincipalContext(subject="limited-viewer", roles=("viewer",))
@@ -239,7 +240,7 @@ def test_public_field_discovery_preserves_only_visible_identifiers_of_approved_r
         catalog=_catalog(),
         approved_host_roots=frozenset({"parameterized.read"}),
     )
-    result = session.discover("case status", principal=ANALYST)
+    result = research_discover_fields(session, "case status", principal=ANALYST)
     assert result.status == "complete"
     assert [alternative.routes[0].route_id for alternative in result.alternatives] == [
         "parameterized.read"
@@ -255,10 +256,11 @@ def test_public_field_discovery_preserves_only_visible_identifiers_of_approved_r
             hidden_fields=("case_id",),
         ),),
     )
-    scoped = router.prepare_field_routing(
+    scoped_session = router.prepare_field_routing(
         catalog=_catalog(),
         approved_host_roots=frozenset({"parameterized.read"}),
-    ).discover("case status", principal=VIEWER)
+    )
+    scoped = research_discover_fields(scoped_session, "case status", principal=VIEWER)
     assert scoped.status == "complete"
     assert scoped.alternatives[0].routes[0].output_fields == ("status",)
 

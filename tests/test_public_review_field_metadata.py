@@ -16,6 +16,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_field_session import research_compile_fields
 
 ACTOR = PrincipalContext(subject="reviewer", roles=("reader",))
 
@@ -81,7 +82,7 @@ def test_review_metadata_is_detached_declared_and_not_concept_authority(monkeypa
     assert session.inspect_visible_fields(principal=ACTOR) == page
     assert not page.executable_authority
     with pytest.raises(PolicyViolationError, match="catalog"):
-        session.compile("account owner", principal=ACTOR)
+        research_compile_fields(session, "account owner", principal=ACTOR)
 
 
 def test_review_metadata_uses_scoped_redaction_without_recovering_original_paths():

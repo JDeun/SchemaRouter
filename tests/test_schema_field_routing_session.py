@@ -40,6 +40,10 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_field_session import (
+    research_compile_fields,
+    research_discover_fields,
+)
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
@@ -117,8 +121,8 @@ def test_review_only_owner_approval_can_activate_and_revoke_host_root_without_re
     review_only = router.prepare_field_routing()
     catalog = _owner_only_catalog()
     indirect = review_only.revise_catalog(catalog=catalog)
-    assert [route.route_id for route in indirect.discover(
-        "customer owner only", principal=ACTOR,
+    assert [route.route_id for route in research_discover_fields(
+        indirect, "customer owner only", principal=ACTOR,
     ).alternatives[0].routes] == [ROOT, RIGHT]
 
     def forbidden(*args, **kwargs):
@@ -134,9 +138,9 @@ def test_review_only_owner_approval_can_activate_and_revoke_host_root_without_re
         approved = review_only.revise_catalog(
             catalog=catalog, approved_host_roots=frozenset({RIGHT}),
         )
-        direct = approved.compile("customer owner only", principal=ACTOR)
-        ready = approved.compile(
-            "customer owner only", principal=ACTOR,
+        direct = research_compile_fields(approved, "customer owner only", principal=ACTOR)
+        ready = research_compile_fields(
+            approved, "customer owner only", principal=ACTOR,
             host_source_arguments={RIGHT: {"customer_id": "host-42"}},
         )
         revoked = approved.revise_catalog(
@@ -152,8 +156,8 @@ def test_review_only_owner_approval_can_activate_and_revoke_host_root_without_re
     assert ready.status == "ready"
     assert ready.calls[0].call.arguments == {"customer_id": "host-42"}
     assert not ready.executable_authority
-    assert [route.route_id for route in revoked.discover(
-        "customer owner only", principal=ACTOR,
+    assert [route.route_id for route in research_discover_fields(
+        revoked, "customer owner only", principal=ACTOR,
     ).alternatives[0].routes] == [ROOT, RIGHT]
     assert revoked.catalog_revision_id == indirect.catalog_revision_id
     assert approved.catalog_revision_id != revoked.catalog_revision_id
@@ -281,9 +285,9 @@ def test_visible_field_review_bootstraps_without_preapproved_concept_catalog(mon
         with pytest.raises(PolicyViolationError, match="catalog|review"):
             _ = session.catalog_revision_id
         with pytest.raises(PolicyViolationError, match="catalog|review"):
-            session.discover(ALIASES[0], principal=ACTOR)
+            research_discover_fields(session, ALIASES[0], principal=ACTOR)
         with pytest.raises(PolicyViolationError, match="catalog|review"):
-            session.compile(ALIASES[0], principal=ACTOR)
+            research_compile_fields(session, ALIASES[0], principal=ACTOR)
         with pytest.raises(PolicyViolationError, match="catalog|review"):
             session.compile_understood(
                 PaperUnderstanding(intent_id="crm.review"),
@@ -300,9 +304,9 @@ def test_visible_field_review_bootstraps_without_preapproved_concept_catalog(mon
         activated = session.revise_catalog(catalog=_catalog())
         assert activated.snapshot_id == session.snapshot_id
         assert activated._index is session._index
-        assert activated.discover(ALIASES[0], principal=ACTOR).status == "complete"
+        assert research_discover_fields(activated, ALIASES[0], principal=ACTOR).status == "complete"
         with pytest.raises(PolicyViolationError, match="catalog|review"):
-            session.discover(ALIASES[0], principal=ACTOR)
+            research_discover_fields(session, ALIASES[0], principal=ACTOR)
 
 
 @pytest.mark.asyncio
@@ -367,7 +371,8 @@ def test_review_only_session_can_refresh_before_owner_catalog_approval():
         principal=ACTOR, after_route="extra_", limit=32,
     )
     assert any(item.route_id == "extra_review_source.read" for item in page.routes)
-    assert refreshed.revise_catalog(catalog=_catalog()).discover(
+    assert research_discover_fields(
+        refreshed.revise_catalog(catalog=_catalog()),
         ALIASES[0], principal=ACTOR,
     ).status == "complete"
     with pytest.raises(PolicyViolationError, match="stale|changed|source"):
@@ -532,7 +537,7 @@ def test_visible_field_review_includes_typed_inputs_before_catalog_approval():
     assert routes[LEFT].parameters_meta == routes[RIGHT].parameters_meta
 
     approved = review_only.revise_catalog(catalog=_catalog())
-    planned = approved.compile(ALIASES[0], principal=ACTOR)
+    planned = research_compile_fields(approved, ALIASES[0], principal=ACTOR)
     compiled = {call.route_id: call.parameters_meta for call in planned.calls}
     assert compiled[LEFT] == routes[LEFT].parameters_meta
     assert compiled[RIGHT] == routes[RIGHT].parameters_meta
@@ -937,9 +942,9 @@ def test_revise_catalog_reuses_attested_graph_without_rebuild_or_provider_io(
         scope.setattr(router.executor, "execute_call", forbidden)
         revised = session.revise_catalog(catalog=new_catalog)
         for query in new_catalog.concepts[0].aliases:
-            assert revised.discover(query, principal=ACTOR).status == "complete"
-            assert {call.route_id for call in revised.compile(
-                query, principal=ACTOR,
+            assert research_discover_fields(revised, query, principal=ACTOR).status == "complete"
+            assert {call.route_id for call in research_compile_fields(
+                revised, query, principal=ACTOR,
             ).calls} == {ROOT, LEFT, RIGHT}
 
     assert revised is not session
@@ -950,9 +955,9 @@ def test_revise_catalog_reuses_attested_graph_without_rebuild_or_provider_io(
     assert revised.catalog_revision_id == session.revise_catalog(
         catalog=_revised_catalog(),
     ).catalog_revision_id
-    assert session.discover(ALIASES[0], principal=ACTOR).status == "complete"
+    assert research_discover_fields(session, ALIASES[0], principal=ACTOR).status == "complete"
     with pytest.raises(ValueError, match="no declared concept"):
-        revised.discover(ALIASES[0], principal=ACTOR)
+        research_discover_fields(revised, ALIASES[0], principal=ACTOR)
 
 
 def test_revise_catalog_detaches_new_caller_owned_catalog():
@@ -961,7 +966,7 @@ def test_revise_catalog_detaches_new_caller_owned_catalog():
     amended = _revised_catalog()
     revised = session.revise_catalog(catalog=amended)
     amended.concepts = _catalog().concepts
-    assert revised.discover("account owner", principal=ACTOR).status == "complete"
+    assert research_discover_fields(revised, "account owner", principal=ACTOR).status == "complete"
     assert revised.catalog_revision_id != session.catalog_revision_id
 
 
@@ -1072,7 +1077,7 @@ def test_prepared_session_discovers_complete_native_field_routes(query):
     assert session.indexed_route_count == 500
     assert "fork_origin" not in repr(session)
     assert "crm.customer_fields" not in repr(session)
-    result = session.discover(query, principal=ACTOR)
+    result = research_discover_fields(session, query, principal=ACTOR)
     assert result.status == "complete"
     assert not result.executable_authority
     assert {route.route_id for route in result.alternatives[0].routes} == {
@@ -1104,9 +1109,9 @@ def test_prepared_session_reuses_compiled_index_and_exposes_field_metadata(
     )
     session = router.prepare_field_routing(catalog=_catalog())
     assert not hasattr(router, "retrieve_authorized")
-    assert all(session.discover(q, principal=ACTOR).status == "complete"
+    assert all(research_discover_fields(session, q, principal=ACTOR).status == "complete"
                for q in ALIASES)
-    typed = session.compile(ALIASES[1], principal=ACTOR)
+    typed = research_compile_fields(session, ALIASES[1], principal=ACTOR)
     assert typed.status == "requires_observation"
     assert not typed.executable_authority
     assert {item.route_id for item in typed.calls} == {ROOT, LEFT, RIGHT}
@@ -1135,8 +1140,8 @@ def test_prepared_session_never_calls_provider_executors(monkeypatch):
 
     monkeypatch.setattr(router.executor, "execute", forbidden)
     monkeypatch.setattr(router.executor, "execute_call", forbidden)
-    assert session.discover(ALIASES[0], principal=ACTOR).status == "complete"
-    assert session.compile(ALIASES[0], principal=ACTOR).calls
+    assert research_discover_fields(session, ALIASES[0], principal=ACTOR).status == "complete"
+    assert research_compile_fields(session, ALIASES[0], principal=ACTOR).calls
 
 
 def test_prepared_session_does_not_rebuild_authorized_full_catalog_per_query(
@@ -1150,8 +1155,8 @@ def test_prepared_session_does_not_rebuild_authorized_full_catalog_per_query(
 
     monkeypatch.setattr(router, "_scoped_analysis_registry", forbidden)
     for query in ALIASES:
-        assert session.discover(query, principal=ACTOR).status == "complete"
-    assert session.compile(ALIASES[0], principal=ACTOR).calls
+        assert research_discover_fields(session, query, principal=ACTOR).status == "complete"
+    assert research_compile_fields(session, ALIASES[0], principal=ACTOR).calls
 
 
 @pytest.mark.parametrize("route_count,mixed", [(500, True), (5000, False)])
@@ -1168,7 +1173,7 @@ def test_indexed_session_matches_preexisting_field_proof_across_catalog_sizes(
         expected = retrieve_paper_field_coverage(
             router, query, principal=ACTOR, catalog=catalog, index=legacy_index,
         )
-        assert session.discover(query, principal=ACTOR) == expected
+        assert research_discover_fields(session, query, principal=ACTOR) == expected
 
 
 def test_prepared_session_is_not_affected_by_callers_mutable_catalog():
@@ -1180,7 +1185,7 @@ def test_prepared_session_is_not_affected_by_callers_mutable_catalog():
         required_fields=GROUP.required_fields, source_type=GROUP.source_type,
         license=GROUP.license,
     ),)
-    assert session.discover(ALIASES[0], principal=ACTOR).status == "complete"
+    assert research_discover_fields(session, ALIASES[0], principal=ACTOR).status == "complete"
 
 
 def test_prepared_session_fails_closed_when_registry_changes():
@@ -1192,10 +1197,11 @@ def test_prepared_session_fails_closed_when_registry_changes():
         name="new_empty_tool", endpoints=[EndpointSpec(name="noop")],
     ))
     with pytest.raises(PolicyViolationError, match="stale|changed|source"):
-        session.discover(ALIASES[0], principal=ACTOR)
+        research_discover_fields(session, ALIASES[0], principal=ACTOR)
     with pytest.raises(PolicyViolationError, match="stale|changed|source"):
-        session.compile(ALIASES[0], principal=ACTOR)
-    assert router.prepare_field_routing(catalog=_catalog()).discover(
+        research_compile_fields(session, ALIASES[0], principal=ACTOR)
+    assert research_discover_fields(
+        router.prepare_field_routing(catalog=_catalog()),
         ALIASES[0], principal=ACTOR,
     ).status == "complete"
 
@@ -1223,18 +1229,18 @@ def test_prepared_session_journal_refresh_preserves_original_and_matches_rebuild
         scope.setattr(router.executor, "execute_call", forbidden)
         refreshed = session.refresh()
         for query in ALIASES:
-            assert refreshed.discover(query, principal=ACTOR) == reference.discover(
-                query, principal=ACTOR,
+            assert research_discover_fields(refreshed, query, principal=ACTOR) == research_discover_fields(
+                reference, query, principal=ACTOR,
             )
-            assert refreshed.compile(query, principal=ACTOR) == reference.compile(
-                query, principal=ACTOR,
+            assert research_compile_fields(refreshed, query, principal=ACTOR) == research_compile_fields(
+                reference, query, principal=ACTOR,
             )
 
     assert refreshed is not session
     assert refreshed.snapshot_id == reference.snapshot_id != original_snapshot
     assert refreshed.indexed_route_count == 501
     with pytest.raises(PolicyViolationError, match="stale|changed|source"):
-        session.discover(ALIASES[0], principal=ACTOR)
+        research_discover_fields(session, ALIASES[0], principal=ACTOR)
 
 
 def test_prepared_session_verified_hint_refresh_rejects_omissions():
@@ -1253,7 +1259,7 @@ def test_prepared_session_verified_hint_refresh_rejects_omissions():
     assert refreshed.snapshot_id == router.prepare_field_routing(
         catalog=_catalog(),
     ).snapshot_id
-    assert refreshed.discover(ALIASES[0], principal=ACTOR).status == "complete"
+    assert research_discover_fields(refreshed, ALIASES[0], principal=ACTOR).status == "complete"
 
 
 def test_prepared_session_refresh_refuses_inflight_authorization_policy_swap(
@@ -1324,8 +1330,8 @@ def test_prepared_session_custom_registry_requires_verified_explicit_delta():
     new_session = session.refresh(changed_tool_keys=("new_empty_tool",))
     oracle = router.prepare_field_routing(catalog=_catalog())
     assert new_session.snapshot_id == oracle.snapshot_id
-    assert new_session.discover(ALIASES[0], principal=ACTOR) == oracle.discover(
-        ALIASES[0], principal=ACTOR,
+    assert research_discover_fields(new_session, ALIASES[0], principal=ACTOR) == research_discover_fields(
+        oracle, ALIASES[0], principal=ACTOR,
     )
 
 
@@ -1344,8 +1350,8 @@ def test_prepared_session_refresh_wires_exact_sqlite_journal():
         refreshed = original.refresh()
         oracle = router.prepare_field_routing(catalog=_catalog())
         assert refreshed.snapshot_id == oracle.snapshot_id
-        assert refreshed.discover(ALIASES[0], principal=ACTOR) == oracle.discover(
-            ALIASES[0], principal=ACTOR,
+        assert research_discover_fields(refreshed, ALIASES[0], principal=ACTOR) == research_discover_fields(
+            oracle, ALIASES[0], principal=ACTOR,
         )
         assert refreshed._index.graph.edges == oracle._index.graph.edges
         assert refreshed._index.field_index.postings == oracle._index.field_index.postings
@@ -1356,28 +1362,28 @@ def test_prepared_session_real_producer_delete_and_restore_refresh_graph():
     assert isinstance(router.registry, InMemoryRegistry)
     original_owner = router.registry.get("fork_owner")
     initial = router.prepare_field_routing(catalog=_catalog())
-    assert initial.discover(ALIASES[0], principal=ACTOR).status == "complete"
+    assert research_discover_fields(initial, ALIASES[0], principal=ACTOR).status == "complete"
 
     router.registry.unregister("fork_owner")
     removed = initial.refresh()
     missing_oracle = router.prepare_field_routing(catalog=_catalog())
     for query in ALIASES:
-        assert removed.discover(query, principal=ACTOR) == missing_oracle.discover(
-            query, principal=ACTOR,
+        assert research_discover_fields(removed, query, principal=ACTOR) == research_discover_fields(
+            missing_oracle, query, principal=ACTOR,
         )
     assert removed._index.graph.edges == missing_oracle._index.graph.edges
     assert removed._index.field_index.postings == missing_oracle._index.field_index.postings
-    assert removed.discover(ALIASES[0], principal=ACTOR).status != "complete"
+    assert research_discover_fields(removed, ALIASES[0], principal=ACTOR).status != "complete"
 
     router.add_tool(original_owner)
     restored = removed.refresh()
     restored_oracle = router.prepare_field_routing(catalog=_catalog())
     for query in ALIASES:
-        assert restored.discover(query, principal=ACTOR) == restored_oracle.discover(
-            query, principal=ACTOR,
+        assert research_discover_fields(restored, query, principal=ACTOR) == research_discover_fields(
+            restored_oracle, query, principal=ACTOR,
         )
-        assert restored.compile(query, principal=ACTOR) == restored_oracle.compile(
-            query, principal=ACTOR,
+        assert research_compile_fields(restored, query, principal=ACTOR) == research_compile_fields(
+            restored_oracle, query, principal=ACTOR,
         )
     assert restored._index.graph.edges == restored_oracle._index.graph.edges
     assert restored._index.field_index.postings == restored_oracle._index.field_index.postings
@@ -1414,7 +1420,7 @@ def test_prepared_session_honors_current_source_policy_revocation():
             effect="deny", operation="*.read", roles_any=("reader",),
         ),),
     )
-    receipt = session.discover(ALIASES[0], principal=ACTOR)
+    receipt = research_discover_fields(session, ALIASES[0], principal=ACTOR)
     assert receipt.status == "no_proven_hit"
     assert receipt.alternatives == ()
 
@@ -1422,16 +1428,16 @@ def test_prepared_session_honors_current_source_policy_revocation():
 def test_prepared_session_rejects_unknown_alias_without_guessing_fields():
     session = build_fixture(500).prepare_field_routing(catalog=_catalog())
     with pytest.raises(ValueError, match="no declared concept"):
-        session.discover("unsupported customer request", principal=ACTOR)
+        research_discover_fields(session, "unsupported customer request", principal=ACTOR)
     with pytest.raises(ValueError, match="no declared concept"):
-        session.compile("unsupported customer request", principal=ACTOR)
+        research_compile_fields(session, "unsupported customer request", principal=ACTOR)
 
 
 @pytest.mark.parametrize("bad_k", [0, 4, 6, True, 5.0])
 def test_prepared_session_preserves_original_exact_k5(bad_k):
     session = build_fixture(500).prepare_field_routing(catalog=_catalog())
     with pytest.raises(ValueError, match="K5"):
-        session.discover(ALIASES[0], principal=ACTOR, k=bad_k)
+        research_discover_fields(session, ALIASES[0], principal=ACTOR, k=bad_k)
 
 
 def test_prepared_session_rejects_unreviewed_catalog_and_root_inputs():
