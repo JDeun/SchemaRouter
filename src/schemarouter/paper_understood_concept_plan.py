@@ -18,9 +18,9 @@ from .concept_retrieval import (
 from .errors import PolicyViolationError
 from .models import PlanCoverage, SemanticFieldRequirement
 from .native_graph_index import NativeSchemaGraphIndex
-from .paper_field_retrieval import PaperFieldRoute
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
+    PaperFieldRoute,
     PaperPlanBinding,
     PaperTypedToolPlan,
     _check_current_call_scopes,

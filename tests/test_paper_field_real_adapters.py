@@ -21,11 +21,11 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    retrieve_paper_field_coverage,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.adapters.optimade import _tool_from_discovery
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 
 ACTOR = PrincipalContext(subject="analyst", roles=("analyst",))
 ALIASES = (

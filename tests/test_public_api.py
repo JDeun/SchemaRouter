@@ -57,9 +57,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "NativeConceptRouteSet",
         "retrieve_authorized_concept_graph",
         "PaperFieldRoute",
-        "PaperFieldAlternative",
-        "PaperFieldCoverage",
-        "retrieve_paper_field_coverage",
         "SchemaFieldRoutingSession",
         "SchemaFieldReviewField",
         "SchemaFieldReviewRoute",
@@ -72,7 +69,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PaperPlanParameterMeta",
         "PaperTypedToolPlan",
         "PaperNativeRankPolicy",
-        "compile_paper_typed_tool_plan",
         "PaperIntentDeclaration",
         "PaperIntentRegistry",
         "PaperUnderstanding",
@@ -710,3 +706,21 @@ def test_alternate_field_union_observation_and_execution_are_checkout_only() -> 
         assert not hasattr(paper_consumer_execution, name), name
     assert callable(schemarouter.observe_and_execute_paper_understood_graph)
     assert callable(schemarouter.SchemaRouter.execute)
+
+
+def test_historical_field_union_compiler_is_not_installed() -> None:
+    from importlib.util import find_spec
+
+    from schemarouter import paper_typed_tool_plan
+
+    assert find_spec("schemarouter.paper_field_retrieval") is None
+    for name in (
+        "PaperFieldAlternative", "PaperFieldCoverage",
+        "retrieve_paper_field_coverage", "compile_paper_typed_tool_plan",
+    ):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(paper_typed_tool_plan, name), name
+    assert schemarouter.PaperFieldRoute is paper_typed_tool_plan.PaperFieldRoute
+    assert callable(paper_typed_tool_plan._compile_one_route)
+    assert callable(paper_typed_tool_plan._check_current_call_scopes)
+    assert callable(schemarouter.SchemaFieldRoutingSession.compile_understood)

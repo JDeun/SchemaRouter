@@ -1,4 +1,4 @@
-"""Opt-in Algorithm 1 field receipts compiled into non-executing typed calls.
+"""Shared Algorithm 1 source receipts and non-executing typed call compilation.
 
 This is a *planning diagnostic*, not an ExecutionPlan or an execution grant.
 In particular, a dependent call never receives a fabricated producer ID.
@@ -11,10 +11,8 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
-from ._authorization_witness import _policy_contents_digest
 from .authorization import PrincipalContext
 from .canonical_json import canonical_json_bytes
-from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .evidence import available_evidence
 from .field_group_retrieval import _response_contract, _scalar_contract
@@ -24,11 +22,23 @@ from .native_graph_index import (
     _host_source_input_names,
     _native_required_inputs,
 )
-from .paper_field_retrieval import PaperFieldRoute, retrieve_paper_field_coverage
 from .validation import canonical_unit_value_schema, validate_json_schema_value
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
+
+
+@dataclass(frozen=True, slots=True)
+class PaperFieldRoute:
+    """Read-only discovery receipt: necessary original field names for a route."""
+
+    route_id: str
+    tool_fingerprint: str
+    endpoint_fingerprint: str
+    output_fields: tuple[str, ...]
+    covered_semantic_ids: tuple[str, ...]
+    # Each bound input has explicit original producer route and output field.
+    input_bindings: tuple[tuple[str, str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,120 +115,6 @@ class PaperTypedToolPlan:
     ranked_unverified: bool = False
     coverage: PlanCoverage | None = None
     understanding_hints: dict[str, Any] | None = field(default=None, compare=False)
-
-
-def compile_paper_typed_tool_plan(
-    router: SchemaRouter,
-    query: str,
-    *,
-    principal: PrincipalContext,
-    catalog: NativeConceptCatalog,
-    index: NativeSchemaGraphIndex,
-    alternative_index: int = 0,
-    k: int = 5,
-    host_source_arguments: dict[str, dict[str, Any]] | None = None,
-) -> PaperTypedToolPlan:
-    """Compile ONE source-proven K5 alternative without executing or binding data.
-
-    `ready` means the typed shape has no missing arguments; it is NOT an
-    authorization decision. Actual values, tool calls and evidence must still
-    pass the ordinary executor's current security and validation boundaries.
-    """
-    if type(alternative_index) is not int or alternative_index < 0:
-        raise ValueError("invalid paper alternative index")
-    if host_source_arguments is not None and (
-        type(host_source_arguments) is not dict
-        or any(
-            type(route) is not str or type(values) is not dict
-            for route, values in host_source_arguments.items()
-        )
-    ):
-        raise ValueError("invalid explicit host source argument declaration")
-    host_inputs = {
-        route: dict(values) for route, values in (host_source_arguments or {}).items()
-    }
-    proof = retrieve_paper_field_coverage(
-        router, query, principal=principal, catalog=catalog, index=index, k=k,
-    )
-    if proof.status != "complete":
-        if host_inputs:
-            raise ValueError("explicit host arguments require a proven source route")
-        if alternative_index:
-            raise ValueError("paper alternative index is out of range")
-        return PaperTypedToolPlan(
-            status=proof.status,
-            snapshot_id=proof.snapshot_id,
-            registry_version=proof.registry_version,
-            requested_k=proof.requested_k,
-        )
-    if alternative_index >= len(proof.alternatives):
-        raise ValueError("paper alternative index is out of range")
-
-    chosen = proof.alternatives[alternative_index]
-    if len(chosen.routes) > k or len({r.route_id for r in chosen.routes}) != len(chosen.routes):
-        raise PolicyViolationError("paper typed plan has invalid original routes")
-
-    policy = router.authorization_policy
-    if policy is None:
-        raise PolicyViolationError("paper typed plan requires original source policy")
-    witness = router._retrieval_authority_witness()
-    policy_digest = _policy_contents_digest(policy)
-    declared_principal = principal.model_dump_json()
-    declared_catalog = catalog.model_dump_json()
-    permitted = router._authorization_predicate(principal)
-    if permitted is None:
-        raise PolicyViolationError("paper typed plan requires original source policy")
-
-    positions = {route.route_id: i for i, route in enumerate(chosen.routes)}
-    if not host_inputs.keys() <= positions.keys():
-        raise ValueError("explicit host arguments name an unproved source route")
-    receipts_by_route = {route.route_id: route for route in chosen.routes}
-    calls: list[PaperPlanCall] = []
-    edges: list[PaperPlanBinding] = []
-    try:
-        for i, route in enumerate(chosen.routes):
-            calls.append(_compile_one_route(
-                router, principal, index, route, i, positions,
-                receipts_by_route, edges, permitted, host_inputs.get(route.route_id),
-            ))
-        _check_current_call_scopes(router, principal, calls)
-        # End-of-compilation second observation of the SAME complete proof,
-        # not a substitute for atomic provider snapshots or execution checks.
-        if retrieve_paper_field_coverage(
-            router, query, principal=principal, catalog=catalog, index=index, k=k,
-        ) != proof:
-            raise PolicyViolationError("paper field proof changed during compilation")
-        # The P1 proof rechecks visible OUTPUTS, not argument-specific scope.
-        # Re-evaluate the actual typed calls after the final source observation.
-        _check_current_call_scopes(router, principal, calls)
-    except Exception:
-        # A data scope / health / host callback may include private diagnostics.
-        raise PolicyViolationError("paper typed plan source eligibility changed") from None
-
-    index.field_index._assert_source(router)
-    router._check_retrieval_authority_witness(witness)
-    if (
-        router.authorization_policy is None
-        or _policy_contents_digest(router.authorization_policy) != policy_digest
-        or principal.model_dump_json() != declared_principal
-        or catalog.model_dump_json() != declared_catalog
-    ):
-        raise PolicyViolationError("paper typed plan source declaration changed")
-
-    status = (
-        "requires_observation" if edges else
-        "requires_arguments" if any(
-            item.call.missing_required_arguments for item in calls
-        ) else "ready"
-    )
-    return PaperTypedToolPlan(
-        status=status,
-        snapshot_id=proof.snapshot_id,
-        registry_version=proof.registry_version,
-        requested_k=k,
-        calls=tuple(calls),
-        bindings=tuple(edges),
-    )
 
 
 def _check_current_call_scopes(

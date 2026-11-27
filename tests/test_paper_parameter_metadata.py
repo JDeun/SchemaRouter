@@ -15,10 +15,7 @@ from schemarouter import (
     SchemaRouter,
 )
 from schemarouter.errors import PolicyViolationError
-from schemarouter.paper_typed_tool_plan import (
-    _check_current_call_scopes,
-    compile_paper_typed_tool_plan,
-)
+from schemarouter.paper_typed_tool_plan import _check_current_call_scopes
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -29,6 +26,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     build_fixture,
 )
 from scripts.research_legacy_field_session import research_compile_fields
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 
 def _catalog():

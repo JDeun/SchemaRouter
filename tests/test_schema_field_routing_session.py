@@ -27,7 +27,6 @@ from schemarouter import (
     SchemaRouter,
     SQLiteRegistry,
     ToolSpec,
-    retrieve_paper_field_coverage,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.paper_query_understanding import compile_model_query
@@ -45,6 +44,7 @@ from scripts.research_legacy_field_session import (
     research_discover_fields,
 )
 from scripts.research_legacy_offered_query import compile_offered_model_query
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 

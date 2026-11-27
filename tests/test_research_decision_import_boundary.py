@@ -52,6 +52,10 @@ RETIRED = {
     "dependency_cycles",
     "dependency_strongly_connected_components",
     "satisfiable_capability_ids",
+    "PaperFieldAlternative",
+    "PaperFieldCoverage",
+    "retrieve_paper_field_coverage",
+    "compile_paper_typed_tool_plan",
 }
 
 
@@ -74,6 +78,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_posting_rank"), path
                 assert not module.startswith("scripts.research_legacy_field_session"), path
                 assert not module.startswith("scripts.research_legacy_offered_query"), path
+                assert not module.startswith("scripts.research_legacy_paper_field_retrieval"), path
+                assert not module.startswith("scripts.research_legacy_paper_typed_plan"), path
                 assert not module.startswith("scripts.research_legacy_paper_observed_binding"), path
                 assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
@@ -85,10 +91,12 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                     "native_graph_execution", "schemarouter.native_graph_execution",
                     "native_deep_paths", "schemarouter.native_deep_paths",
                     "paper_observed_binding", "schemarouter.paper_observed_binding",
+                    "paper_field_retrieval", "schemarouter.paper_field_retrieval",
                 }, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
                 if module in {"schemarouter", "schemarouter.models", "models",
+                              "paper_typed_tool_plan", "schemarouter.paper_typed_tool_plan",
                               "schemarouter.capability_graph", "capability_graph"}:
                     assert RETIRED.isdisjoint(alias.name for alias in node.names), path
             elif isinstance(node, ast.Import):
@@ -102,9 +110,12 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_posting_rank",
                                            "scripts.research_legacy_field_session",
                                            "scripts.research_legacy_offered_query",
+                                           "scripts.research_legacy_paper_field_retrieval",
+                                           "scripts.research_legacy_paper_typed_plan",
                                            "scripts.research_legacy_paper_observed_binding",
                                            "scripts.research_legacy_paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",
+                                           "schemarouter.paper_field_retrieval",
                                            "scripts.research_legacy_g5_rank",
                                            "schemarouter.native_deep_paths",
                                            "schemarouter.native_graph_execution",
@@ -143,9 +154,11 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.native_graph_execution",
                         "schemarouter.native_deep_paths",
                         "schemarouter.paper_observed_binding",
+                        "schemarouter.paper_field_retrieval",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
                     if node.module in {"schemarouter", "schemarouter.models",
+                                       "schemarouter.paper_typed_tool_plan",
                                        "schemarouter.capability_graph"}:
                         assert RETIRED.isdisjoint(alias.name for alias in node.names), path
                 elif isinstance(node, ast.Import):
@@ -160,6 +173,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.native_graph_execution",
                             "schemarouter.native_deep_paths",
                             "schemarouter.paper_observed_binding",
+                            "schemarouter.paper_field_retrieval",
                         ))
                         for alias in node.names
                     ), path

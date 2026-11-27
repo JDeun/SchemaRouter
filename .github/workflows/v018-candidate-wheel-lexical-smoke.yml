@@ -38,7 +38,7 @@ jobs:
               for name in (
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
-                  "native_deep_paths", "paper_observed_binding",
+                  "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
               ):
                   assert f"schemarouter/{name}.py" not in names, name
               assert not any("research_legacy" in name for name in names)
@@ -54,7 +54,7 @@ jobs:
           for name in (
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
-                  "native_deep_paths", "paper_observed_binding",
+                  "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
               ):
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (
@@ -70,6 +70,8 @@ jobs:
               "apply_retrieval_abstention", "validate_selective_execution", "execute_selective_plan",
               "PaperObservedBinding", "PaperExecutedToolSequence",
               "observe_and_bind_paper_plan", "observe_and_execute_paper_plan",
+              "PaperFieldAlternative", "PaperFieldCoverage",
+              "retrieve_paper_field_coverage", "compile_paper_typed_tool_plan",
           ):
               assert not hasattr(schemarouter, name), name
           from schemarouter import capability_graph, models, runtime

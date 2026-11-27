@@ -117,13 +117,14 @@ SURFACES = ("execute", "ainvoke", "astream", "astream_events", "parallel", "conf
 def test_configured_plan_and_aplan_share_algorithm1_without_lexical_analysis(monkeypatch):
     ctx = _configured(needs_input=True)
     _forbid_lexical(ctx, monkeypatch)
-    from schemarouter import paper_field_retrieval, paper_query_understanding
+    from schemarouter import paper_query_understanding
+    from scripts import research_legacy_paper_field_retrieval
 
     def forbidden(*_args, **_kwargs):
         pytest.fail("configured Algorithm 1 entered the older field-union discovery path")
 
     assert not hasattr(paper_query_understanding, "retrieve_paper_field_coverage")
-    monkeypatch.setattr(paper_field_retrieval, "retrieve_paper_field_coverage", forbidden)
+    monkeypatch.setattr(research_legacy_paper_field_retrieval, "retrieve_paper_field_coverage", forbidden)
     sync = ctx.router.plan_authorized(ctx.request, principal=ctx.principal)
     asynchronous = asyncio.run(ctx.router.aplan_authorized(ctx.request, principal=ctx.principal))
     assert sync.model_dump() == asynchronous.model_dump()

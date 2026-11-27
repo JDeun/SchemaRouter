@@ -152,10 +152,12 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
         pytest.fail("Algorithm 1 direct execution entered a competing planner")
 
     from schemarouter import paper_typed_tool_plan
+    from scripts import research_legacy_paper_typed_plan
 
     assert not hasattr(type(session), "discover")
     assert not hasattr(type(session), "compile")
-    monkeypatch.setattr(paper_typed_tool_plan, "compile_paper_typed_tool_plan", forbidden)
+    assert not hasattr(paper_typed_tool_plan, "compile_paper_typed_tool_plan")
+    monkeypatch.setattr(research_legacy_paper_typed_plan, "compile_paper_typed_tool_plan", forbidden)
     monkeypatch.setattr(module, "compile_paper_understood_graph_plan", forbidden)
     from scripts.research_legacy_planning.planner import SchemaPlanner
 

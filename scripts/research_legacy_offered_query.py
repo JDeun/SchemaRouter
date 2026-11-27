@@ -22,7 +22,6 @@ from schemarouter.concept_retrieval import (
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.models import PlanCoverage, SemanticFieldRequirement
-from schemarouter.paper_field_retrieval import retrieve_paper_field_coverage
 from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_query_conditions import _apply_query_input_conditions
 from schemarouter.paper_query_needs import PaperQueryUnderstanding
@@ -38,6 +37,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperUnderstanding,
     _bounded_name,
 )
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 
 if TYPE_CHECKING:
     from schemarouter.field_routing_session import SchemaFieldRoutingSession

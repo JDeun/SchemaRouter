@@ -404,12 +404,6 @@ from .paper_europepmc_registration import (
     inspect_europepmc_paper_source,
     register_reviewed_europepmc_paper_source,
 )
-from .paper_field_retrieval import (
-    PaperFieldAlternative,
-    PaperFieldCoverage,
-    PaperFieldRoute,
-    retrieve_paper_field_coverage,
-)
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_optimade_registration import (
     discover_optimade_paper_source,
@@ -417,12 +411,12 @@ from .paper_optimade_registration import (
 )
 from .paper_query_needs import PaperQueryNeed, PaperQueryUnderstanding
 from .paper_typed_tool_plan import (
+    PaperFieldRoute,
     PaperPlanBinding,
     PaperPlanCall,
     PaperPlanFieldMeta,
     PaperPlanParameterMeta,
     PaperTypedToolPlan,
-    compile_paper_typed_tool_plan,
 )
 from .paper_understood_direct_plan import (
     PaperIntentDeclaration,
@@ -568,16 +562,12 @@ __all__ = [
     "PaperPlanParameterMeta",
     "PaperTypedToolPlan",
     "PaperNativeRankPolicy",
-    "compile_paper_typed_tool_plan",
     "PaperIntentDeclaration",
     "PaperIntentRegistry",
     "PaperUnderstanding",
     "PaperQueryNeed",
     "PaperQueryUnderstanding",
-    "PaperFieldAlternative",
-    "PaperFieldCoverage",
     "PaperFieldRoute",
-    "retrieve_paper_field_coverage",
     "SchemaFieldRoutingSession",
     "SchemaFieldReviewField",
     "SchemaFieldReviewRoute",

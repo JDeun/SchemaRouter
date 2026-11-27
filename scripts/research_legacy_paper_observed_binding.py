@@ -19,14 +19,14 @@ from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.models import ExecutionPlan, ToolResult
 from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
 from schemarouter.native_graph_observation import _materialize_original_observed_edge
-from schemarouter.paper_field_retrieval import retrieve_paper_field_coverage
 from schemarouter.paper_typed_tool_plan import (
     PaperPlanCall,
     PaperTypedToolPlan,
     _check_current_call_scopes,
-    compile_paper_typed_tool_plan,
 )
 from schemarouter.runs import ExecutionBudget, RunConfig
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

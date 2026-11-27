@@ -15,9 +15,9 @@ from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
 from .native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
-from .paper_field_retrieval import PaperFieldRoute
 from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed
 from .paper_typed_tool_plan import (
+    PaperFieldRoute,
     PaperPlanBinding,
     PaperPlanCall,
     PaperTypedToolPlan,

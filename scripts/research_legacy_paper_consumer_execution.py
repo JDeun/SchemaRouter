@@ -15,10 +15,10 @@ from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_typed_tool_plan import (
     PaperTypedToolPlan,
     _check_current_call_scopes,
-    compile_paper_typed_tool_plan,
 )
 from schemarouter.runs import ExecutionBudget, RunConfig
 from scripts.research_legacy_paper_observed_binding import observe_and_bind_paper_plan
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

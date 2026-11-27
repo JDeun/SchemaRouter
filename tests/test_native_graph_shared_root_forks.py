@@ -17,13 +17,14 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    retrieve_paper_field_coverage,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 ACTOR = PrincipalContext(subject="agent-host", roles=("reader",))
 ALIASES = ("status and owner", "상태와 담당자", "状態と担当者")
@@ -538,12 +539,6 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
     # Original-paper P1 must reuse exactly these real, host-attested
     # OpenAPI and MCP original source contracts, not a separate mock
     # catalog or inferred remote semantic/authorization declarations.
-    from schemarouter import (
-        NativeConceptCatalog,
-        NativeDeclaredConcept,
-        compile_paper_typed_tool_plan,
-        retrieve_paper_field_coverage,
-    )
 
     catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id="crm.attested_fields",

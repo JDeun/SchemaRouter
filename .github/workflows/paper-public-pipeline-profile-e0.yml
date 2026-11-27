@@ -9,6 +9,8 @@ on:
       - "src/schemarouter/paper_understood_direct_plan.py"
       - "src/schemarouter/paper_query_understanding.py"
       - "scripts/research_legacy_offered_query.py"
+      - "scripts/research_legacy_paper_field_retrieval.py"
+      - "scripts/research_legacy_paper_typed_plan.py"
       - "src/schemarouter/paper_native_rank.py"
       - "src/schemarouter/native_graph_index.py"
       - "src/schemarouter/field_routing_session.py"

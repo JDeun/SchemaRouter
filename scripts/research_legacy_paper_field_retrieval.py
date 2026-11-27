@@ -1,4 +1,4 @@
-"""Opt-in original-paper required-field *union* before bounded K5 disclosure.
+"""Checkout-only historical query-alias Field Union before bounded K5 disclosure.
 
 Composes the existing source-attested concept/field group retriever and
 existing typed shared-root graph proof. It does NOT add a new index,
@@ -9,30 +9,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from ._authorization_witness import _policy_contents_digest
-from .authorization import PrincipalContext
-from .capability_contracts import CapabilityFieldContract
-from .concept_graph_retrieval import retrieve_authorized_concept_graph
-from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
-from .errors import PolicyViolationError
-from .field_group_retrieval import _complete_fields
-from .native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
+from schemarouter._authorization_witness import _policy_contents_digest
+from schemarouter.authorization import PrincipalContext
+from schemarouter.capability_contracts import CapabilityFieldContract
+from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
+from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
+from schemarouter.errors import PolicyViolationError
+from schemarouter.field_group_retrieval import _complete_fields
+from schemarouter.native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
+from schemarouter.paper_typed_tool_plan import PaperFieldRoute
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
-
-
-@dataclass(frozen=True, slots=True)
-class PaperFieldRoute:
-    """Read-only discovery receipt: necessary original field names for a route."""
-
-    route_id: str
-    tool_fingerprint: str
-    endpoint_fingerprint: str
-    output_fields: tuple[str, ...]
-    covered_semantic_ids: tuple[str, ...]
-    # Each bound input has explicit original producer route and output field.
-    input_bindings: tuple[tuple[str, str, str], ...] = ()
+    from schemarouter.runtime import SchemaRouter
 
 
 @dataclass(frozen=True, slots=True)

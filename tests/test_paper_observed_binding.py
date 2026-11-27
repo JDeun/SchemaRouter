@@ -18,13 +18,13 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    retrieve_paper_field_coverage,
 )
 from schemarouter.errors import (
     PolicyViolationError,
     SchemaValidationError,
     TransientInvocationError,
 )
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_paper_observed_binding import observe_and_bind_paper_plan
 
 ALIASES = ("customer status and owner", "고객 상태와 담당자", "顧客状態と担当者")

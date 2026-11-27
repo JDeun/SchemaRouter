@@ -1,4 +1,4 @@
-"""Research-only Algorithm 1 understanding → original direct ToolCall receipts.
+"""Algorithm 1 understanding → original direct ToolCall receipts.
 
 `PaperUnderstanding` is an untrusted routing suggestion. The owner-reviewed
 intent/concept contracts and current source authorization are the authority.
@@ -28,9 +28,9 @@ from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .models import StrictModel
 from .native_graph_index import NativeSchemaGraphIndex
-from .paper_field_retrieval import PaperFieldRoute
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
+    PaperFieldRoute,
     PaperTypedToolPlan,
     _check_current_call_scopes,
     _compile_one_route,

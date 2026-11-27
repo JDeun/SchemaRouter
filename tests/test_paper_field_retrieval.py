@@ -18,7 +18,6 @@ from schemarouter import (
     NativeSchemaPostingIndex,
     SchemaRouter,
     ToolSpec,
-    retrieve_paper_field_coverage,
 )
 from schemarouter.errors import PolicyViolationError
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
@@ -30,6 +29,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
 

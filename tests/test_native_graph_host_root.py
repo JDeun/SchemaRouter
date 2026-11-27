@@ -18,7 +18,6 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    compile_paper_typed_tool_plan,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
@@ -26,6 +25,7 @@ from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 ACTOR = PrincipalContext(subject="host", roles=("reader",))
 GROUP = NativeDeclaredFieldGroup(
@@ -303,7 +303,7 @@ def test_paper_host_scalar_respects_live_principal_data_scope_max_hops():
 def test_paper_host_scalar_cannot_survive_scope_reduction_during_final_proof(
     monkeypatch,
 ):
-    import schemarouter.paper_typed_tool_plan as compiler
+    import scripts.research_legacy_paper_typed_plan as compiler
 
     router, seen = _setup(source_params=[ParameterSpec(
         name="max_hops", required=True, json_schema={"type": "integer"},

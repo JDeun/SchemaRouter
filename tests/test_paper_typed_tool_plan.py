@@ -18,7 +18,6 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
-from schemarouter.paper_typed_tool_plan import compile_paper_typed_tool_plan
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -28,6 +27,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 
 def _index(router):
@@ -176,7 +176,7 @@ def test_direct_required_argument_without_host_proof_abstains():
 
 
 def test_mid_compile_revocation_suppresses_stale_typed_call(monkeypatch):
-    import schemarouter.paper_typed_tool_plan as compiler
+    import scripts.research_legacy_paper_typed_plan as compiler
 
     router = build_fixture(500)
     index = _index(router)

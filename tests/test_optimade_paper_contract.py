@@ -15,12 +15,12 @@ from schemarouter import (
     PrincipalContext,
     ToolCall,
     UnitNormalizationSpec,
-    compile_paper_typed_tool_plan,
 )
 from schemarouter.adapters import OPTIMADERemoteInvoker, review_optimade_paper_tool
 from schemarouter.adapters.optimade import _tool_from_discovery
 from schemarouter.errors import NonRetryableInvocationError, SchemaSourceError
 from schemarouter.native_graph_index import NativeSchemaPostingIndex
+from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 from scripts.research_legacy_router import legacy_router
 
 BASE_URL = "https://materials.example/v1"

@@ -14,6 +14,8 @@ on:
       - "tests/test_public_export_surface_static_inventory.py"
       - "src/schemarouter/paper_consumer_execution.py"
       - "scripts/research_legacy_paper_observed_binding.py"
+      - "scripts/research_legacy_paper_field_retrieval.py"
+      - "scripts/research_legacy_paper_typed_plan.py"
       - "scripts/research_legacy_paper_consumer_execution.py"
       - "tests/test_paper_observed_binding.py"
       - "benchmarks/public-execution-export-inventory-v1.json"
