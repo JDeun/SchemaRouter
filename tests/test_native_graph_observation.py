@@ -23,8 +23,8 @@ from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
-from schemarouter.native_graph_observation import materialize_native_observed_arguments
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_graph_observation import materialize_native_observed_arguments
 
 ACTOR = PrincipalContext(subject="analyst", roles=("reader",))
 MASKED = PrincipalContext(subject="viewer", roles=("viewer",))

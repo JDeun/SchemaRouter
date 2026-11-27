@@ -61,6 +61,8 @@ RETIRED = {
     "PaperFieldCoverage",
     "retrieve_paper_field_coverage",
     "compile_paper_typed_tool_plan",
+    "NativeObservedArgumentEvidence",
+    "materialize_native_observed_arguments",
     "PaperUnderstoodExecutedGraph",
     "observe_and_execute_paper_understood_graph",
 }
@@ -100,6 +102,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_graph_execution"), path
                 assert not module.startswith("scripts.research_legacy_paper_graph_plan"), path
                 assert not module.startswith("scripts.research_legacy_graph_rank"), path
+                assert not module.startswith("scripts.research_legacy_graph_observation"), path
                 assert not module.startswith("scripts.research_legacy_direct_rank"), path
                 assert not module.startswith("scripts.research_legacy_direct_plan"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
@@ -109,6 +112,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                     "retrieval_abstention", "retrieval_execution_gate",
                     "schemarouter.retrieval_abstention", "schemarouter.retrieval_execution_gate",
                     "native_graph_execution", "schemarouter.native_graph_execution",
+                    "native_graph_observation", "schemarouter.native_graph_observation",
                     "native_deep_paths", "schemarouter.native_deep_paths",
                     "paper_observed_binding", "schemarouter.paper_observed_binding",
                     "paper_consumer_execution", "schemarouter.paper_consumer_execution",
@@ -147,6 +151,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_graph_execution",
                                            "scripts.research_legacy_paper_graph_plan",
                                            "scripts.research_legacy_graph_rank",
+                                           "scripts.research_legacy_graph_observation",
+                                           "schemarouter.native_graph_observation",
                                            "scripts.research_legacy_direct_rank",
                                            "scripts.research_legacy_direct_plan",
                                            "schemarouter.paper_understood_graph_plan",
@@ -191,6 +197,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.retrieval_abstention",
                         "schemarouter.retrieval_execution_gate",
                         "schemarouter.native_graph_execution",
+                        "schemarouter.native_graph_observation",
                         "schemarouter.native_deep_paths",
                         "schemarouter.paper_observed_binding",
                         "schemarouter.paper_consumer_execution",
@@ -215,6 +222,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.retrieval_abstention",
                             "schemarouter.retrieval_execution_gate",
                             "schemarouter.native_graph_execution",
+                            "schemarouter.native_graph_observation",
                             "schemarouter.native_deep_paths",
                             "schemarouter.paper_observed_binding",
                             "schemarouter.paper_consumer_execution",
@@ -225,3 +233,8 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         ))
                         for alias in node.names
                     ), path
+
+
+def test_native_graph_observation_is_checkout_only() -> None:
+    assert not (ROOT / "src/schemarouter/native_graph_observation.py").exists()
+    assert (ROOT / "scripts/research_legacy_graph_observation.py").is_file()

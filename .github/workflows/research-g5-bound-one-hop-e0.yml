@@ -5,6 +5,8 @@ on:
     paths:
       - "src/schemarouter/native_graph_execution.py"
       - "scripts/research_legacy_g5_execution.py"
+      - "scripts/research_legacy_graph_observation.py"
+      - "tests/test_native_graph_observation.py"
       - "tests/test_native_graph_bound_one_hop.py"
       - ".github/workflows/research-g5-bound-one-hop-e0.yml"
       - "research/autoresearch/g5-local-bound-two-call-e0.md"

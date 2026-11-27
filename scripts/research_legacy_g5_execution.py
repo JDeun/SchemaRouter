@@ -19,9 +19,9 @@ from schemarouter.native_graph_index import (
     NativeSchemaGraphIndex,
     _host_source_input_names,
 )
-from schemarouter.native_graph_observation import materialize_native_observed_arguments
 from schemarouter.runs import ExecutionBudget, RunConfig
 from schemarouter.validation import validate_json_schema_value
+from scripts.research_legacy_graph_observation import materialize_native_observed_arguments
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

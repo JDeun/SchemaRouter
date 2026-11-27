@@ -9,6 +9,8 @@ on:
       - "scripts/research_legacy_direct_plan.py"
       - "src/schemarouter/native_graph_execution.py"
       - "scripts/research_legacy_g5_execution.py"
+      - "scripts/research_legacy_graph_observation.py"
+      - "tests/test_native_graph_observation.py"
       - "tests/test_native_graph_host_root.py"
       - "research/autoresearch/g5-host-supplied-source-root-e0.md"
       - ".github/workflows/research-g5-host-supplied-root-e0.yml"

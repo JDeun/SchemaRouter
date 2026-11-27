@@ -39,6 +39,7 @@ jobs:
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
                   "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
+                  "native_graph_observation",
                   "native_fork_index", "concept_graph_retrieval", "paper_consumer_execution",
                   "paper_understood_graph_plan",
               ):
@@ -57,6 +58,7 @@ jobs:
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
                   "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
+                  "native_graph_observation",
                   "native_fork_index", "concept_graph_retrieval", "paper_consumer_execution",
                   "paper_understood_graph_plan",
               ):
@@ -72,6 +74,7 @@ jobs:
               "CapabilityRouteCandidate", "CapabilityRouteRetrieval",
               "RetrievalAbstentionPolicy", "SelectiveCapabilityRetrieval",
               "apply_retrieval_abstention", "validate_selective_execution", "execute_selective_plan",
+              "NativeObservedArgumentEvidence", "materialize_native_observed_arguments",
               "PaperObservedBinding", "PaperExecutedToolSequence",
               "observe_and_bind_paper_plan", "observe_and_execute_paper_plan",
               "PaperUnderstoodExecutedGraph", "observe_and_execute_paper_understood_graph",

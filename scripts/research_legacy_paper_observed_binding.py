@@ -15,7 +15,6 @@ from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.models import ExecutionPlan, ToolResult
 from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
-from schemarouter.native_graph_observation import _materialize_original_observed_edge
 from schemarouter.paper_typed_tool_plan import (
     PaperPlanCall,
     PaperTypedToolPlan,
@@ -24,6 +23,7 @@ from schemarouter.paper_typed_tool_plan import (
 from schemarouter.runs import ExecutionBudget, RunConfig
 from scripts import research_legacy_fork_arm
 from scripts.research_legacy_concept_retrieval import resolve_native_concepts
+from scripts.research_legacy_graph_observation import _materialize_original_observed_edge
 from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 

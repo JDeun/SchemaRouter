@@ -1,4 +1,4 @@
-"""Opt-in G5 E0 validation of observed scalar values against a current typed edge.
+"""Checkout-only historical G5 E0 validation of observed scalar values against a current typed edge.
 
 Do NOT treat caller-supplied ToolResult data as provider authenticity, executor
 authority, or independent task evidence. No invocations, policy grants or storage.
@@ -9,20 +9,20 @@ import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from .authorization import PrincipalContext
-from .errors import PolicyViolationError, SchemaValidationError
-from .field_group_retrieval import NativeDeclaredFieldGroup
-from .models import ToolResult
-from .native_graph_index import (
+from schemarouter.authorization import PrincipalContext
+from schemarouter.errors import PolicyViolationError, SchemaValidationError
+from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
+from schemarouter.models import ToolResult
+from schemarouter.native_graph_index import (
     NativeIndexedGraphCandidate,
     NativeSchemaGraphIndex,
     _flat_same_record_source_contract,
     _native_required_inputs,
 )
-from .validation import validate_json_schema_value
+from schemarouter.validation import validate_json_schema_value
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
+    from schemarouter.runtime import SchemaRouter
 
 
 @dataclass(frozen=True, slots=True)
