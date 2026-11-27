@@ -8,7 +8,6 @@ import httpx
 import pytest
 
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
-from schemarouter.native_graph_execution import execute_native_graph_one_hop
 from scripts.research_g5_jsonplaceholder_live_e1 import (
     ACTOR,
     GROUP,
@@ -18,6 +17,7 @@ from scripts.research_g5_jsonplaceholder_live_e1 import (
     build_graph_router,
     run,
 )
+from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
 
 
 def _handler(

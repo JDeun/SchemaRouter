@@ -26,9 +26,9 @@ from schemarouter import (
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
-from schemarouter.native_graph_execution import execute_native_graph_one_hop
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
 
 PROVIDER = "https://jsonplaceholder.typicode.com"
 SOURCE_PATH = "/posts/1"  # Fixed source-issued demo record, not an agent URL.

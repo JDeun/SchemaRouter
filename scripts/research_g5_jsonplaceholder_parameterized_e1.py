@@ -24,7 +24,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.native_graph_execution import execute_native_graph_one_hop
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_g5_jsonplaceholder_live_e1 import (
@@ -35,6 +34,7 @@ from scripts.research_g5_jsonplaceholder_live_e1 import (
     JSONPlaceholderBoundInvoker,
     _original_json,
 )
+from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
 
 POST_IDS = (1, 11)  # Host-chosen public DEMO source inputs; never inferred by G5.
 MAX_POST_ID = 100

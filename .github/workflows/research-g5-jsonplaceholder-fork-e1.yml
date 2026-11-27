@@ -3,6 +3,7 @@ name: Original Public Demo Native G5 Shared-Root Fork E1
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_g5_execution.py"
       - "scripts/research_g5_jsonplaceholder_fork_e1.py"
       - "tests/test_research_g5_jsonplaceholder_fork_e1.py"
       - "research/autoresearch/g5-jsonplaceholder-fork-live-e1.md"

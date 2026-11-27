@@ -63,11 +63,13 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("schemarouter.analyzers."), path
                 assert not module.startswith("scripts.research_legacy_decisions"), path
                 assert not module.startswith("scripts.research_legacy_model_analyzer"), path
+                assert not module.startswith("scripts.research_legacy_g5_execution"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
                     "schemarouter.state_retrieval",
                     "retrieval_abstention", "retrieval_execution_gate",
                     "schemarouter.retrieval_abstention", "schemarouter.retrieval_execution_gate",
+                    "native_graph_execution", "schemarouter.native_graph_execution",
                 }, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
@@ -78,6 +80,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                     alias.name.startswith(("schemarouter.decisions", "schemarouter.analyzers",
                                            "scripts.research_legacy_decisions",
                                            "scripts.research_legacy_model_analyzer",
+                                           "scripts.research_legacy_g5_execution",
+                                           "schemarouter.native_graph_execution",
                                            "scripts.research_legacy_planning",
                                            "schemarouter.planner",
                                            "schemarouter.planning_context",
@@ -110,6 +114,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.state_retrieval",
                         "schemarouter.retrieval_abstention",
                         "schemarouter.retrieval_execution_gate",
+                        "schemarouter.native_graph_execution",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
                     if node.module in {"schemarouter", "schemarouter.models"}:
@@ -123,6 +128,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.state_retrieval",
                             "schemarouter.retrieval_abstention",
                             "schemarouter.retrieval_execution_gate",
+                            "schemarouter.native_graph_execution",
                         ))
                         for alias in node.names
                     ), path

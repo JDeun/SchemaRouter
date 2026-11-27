@@ -10,21 +10,21 @@ import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from .authorization import PrincipalContext
-from .errors import PolicyViolationError, SchemaValidationError
-from .field_group_retrieval import NativeDeclaredFieldGroup
-from .models import ExecutionPlan, ToolCall, ToolResult
-from .native_graph_index import (
+from schemarouter.authorization import PrincipalContext
+from schemarouter.errors import PolicyViolationError, SchemaValidationError
+from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
+from schemarouter.models import ExecutionPlan, ToolCall, ToolResult
+from schemarouter.native_graph_index import (
     NativeIndexedGraphCandidate,
     NativeSchemaGraphIndex,
     _host_source_input_names,
 )
-from .native_graph_observation import materialize_native_observed_arguments
-from .runs import ExecutionBudget, RunConfig
-from .validation import validate_json_schema_value
+from schemarouter.native_graph_observation import materialize_native_observed_arguments
+from schemarouter.runs import ExecutionBudget, RunConfig
+from schemarouter.validation import validate_json_schema_value
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
+    from schemarouter.runtime import SchemaRouter
 
 
 @dataclass(frozen=True, slots=True)

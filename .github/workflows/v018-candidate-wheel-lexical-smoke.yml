@@ -37,7 +37,7 @@ jobs:
               names = set(archive.namelist())
               for name in (
                   "planner", "planning_context", "planning_stages", "state_retrieval",
-                  "retrieval_abstention", "retrieval_execution_gate",
+                  "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
               ):
                   assert f"schemarouter/{name}.py" not in names, name
               assert not any("research_legacy" in name for name in names)
@@ -52,7 +52,7 @@ jobs:
 
           for name in (
                   "planner", "planning_context", "planning_stages", "state_retrieval",
-                  "retrieval_abstention", "retrieval_execution_gate",
+                  "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
               ):
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (

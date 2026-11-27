@@ -17,7 +17,6 @@ import httpx
 from schemarouter import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
-from schemarouter.native_graph_execution import execute_native_graph_one_hop
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_g5_jsonplaceholder_live_e1 import (
@@ -28,6 +27,7 @@ from scripts.research_g5_jsonplaceholder_live_e1 import (
     _original_json,
     build_graph_router,
 )
+from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
 
 FORK_ALIASES = (
     "post author username and email",

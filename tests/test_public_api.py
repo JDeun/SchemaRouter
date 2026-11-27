@@ -626,3 +626,12 @@ def test_retired_lexical_plan_metadata_is_not_installed() -> None:
     assert {"score", "explanation"}.isdisjoint(schema["properties"])
     assert schema["additionalProperties"] is False
     assert callable(schemarouter.SchemaRouter.execute)
+
+
+def test_standalone_g5_execution_experiment_is_not_installed() -> None:
+    from importlib.util import find_spec
+
+    assert find_spec("schemarouter.native_graph_execution") is None
+    assert callable(schemarouter.NativeSchemaGraphIndex)
+    assert callable(schemarouter.SchemaRouter.prepare_field_routing)
+    assert callable(schemarouter.SchemaRouter.execute)

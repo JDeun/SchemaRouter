@@ -23,9 +23,9 @@ from schemarouter import (
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
-from schemarouter.native_graph_execution import execute_native_graph_one_hop
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
 
 ACTOR = PrincipalContext(subject="host", roles=("reader",))
 GROUP = NativeDeclaredFieldGroup(

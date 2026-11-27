@@ -3,6 +3,7 @@ name: Original Public DEMO Parameterized G5 HTTPS E1
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_g5_execution.py"
       - "scripts/research_g5_jsonplaceholder_parameterized_e1.py"
       - "tests/test_research_g5_jsonplaceholder_parameterized_e1.py"
       - "research/autoresearch/g5-parameterized-jsonplaceholder-live-e1.md"
