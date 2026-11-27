@@ -186,8 +186,9 @@ def run(*, pairs: int = 4) -> dict:
         or lookup.qualified_path_count != 1
         or lookup.candidates[0].producer_route_id != "tool_000.read_0"
         or lookup.candidates[0].consumer_route_id != "tool_001.read_0"
-        or lookup.executable_authority or lookup.independent_quality_evidence
-        or lookup.calibrated_no_fit
+        or lookup.executable_authority
+        or hasattr(lookup, "independent_quality_evidence")
+        or hasattr(lookup, "calibrated_no_fit")
     ):
         raise ValueError("G5 live scoped native graph evidence drift")
     git_sha = subprocess.run(

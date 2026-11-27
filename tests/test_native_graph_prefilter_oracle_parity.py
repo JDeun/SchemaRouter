@@ -79,8 +79,8 @@ def _assert_same(router, optimized, exhaustive, *, query=QUERY, group=GROUP):
     assert actual == expected
     assert actual.requested_k == 5
     assert actual.executable_authority is False
-    assert actual.calibrated_no_fit is False
-    assert actual.independent_quality_evidence is False
+    assert not hasattr(actual, "calibrated_no_fit")
+    assert not hasattr(actual, "independent_quality_evidence")
     if actual.status == "over_k_unranked":
         assert actual.qualified_path_count > 5
         assert not actual.candidates

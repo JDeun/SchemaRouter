@@ -191,7 +191,7 @@ def test_three_original_adapter_compilers_share_one_authorized_graph(query):
     assert edge.consumer_route_id == "case_service.read_case"
     assert edge.parameter_bindings == (("contact_id", "contact_id"),)
     assert edge.consumer_output_fields == ("status",)
-    assert not result.independent_quality_evidence
+    assert not hasattr(result, "independent_quality_evidence")
     assert not result.executable_authority
     # Merely registering a materials adapter never makes CRM concepts
     # resolve to an unrelated OPTIMADE route.

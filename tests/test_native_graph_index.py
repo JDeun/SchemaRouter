@@ -160,9 +160,9 @@ def test_actual_adapter_graph_discovers_target_with_source_witness_and_no_gold(q
     assert result.index_snapshot_id == graph.field_index.snapshot_id
     assert result.qualified_path_count == 1
     assert result.requested_k == 5
-    assert result.independent_quality_evidence is False
+    assert not hasattr(result, "independent_quality_evidence")
     assert result.executable_authority is False
-    assert result.calibrated_no_fit is False
+    assert not hasattr(result, "calibrated_no_fit")
     edge = result.candidates[0]
     assert edge.producer_route_id == "contacts.read_contact"
     assert edge.consumer_route_id == "cases_0.read_case"

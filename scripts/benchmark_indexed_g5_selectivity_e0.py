@@ -72,9 +72,9 @@ def _require_expected(index, router, *, query, group,
     if (
         actual.qualified_path_count != count
         or actual.requested_k != 5
-        or actual.independent_quality_evidence
+        or hasattr(actual, "independent_quality_evidence")
         or actual.executable_authority
-        or actual.calibrated_no_fit
+        or hasattr(actual, "calibrated_no_fit")
         or actual.index_snapshot_id != index.field_index.snapshot_id
     ):
         raise ValueError("paired synthetic selectivity candidate drift")

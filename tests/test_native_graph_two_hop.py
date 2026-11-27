@@ -154,8 +154,8 @@ def test_two_hop_returns_original_source_typed_bindings_and_no_execution(query):
         for route in item.route_ids
     )
     assert result.executable_authority is False
-    assert result.independent_quality_evidence is False
-    assert result.calibrated_no_fit is False
+    assert not hasattr(result, "independent_quality_evidence")
+    assert not hasattr(result, "calibrated_no_fit")
     # Existing original one-hop API never promotes the intermediary into
     # an unauthorized root merely because it now has a produced ID.
     one = index.lookup(router, query, group=GROUP, principal=ACTOR)
@@ -191,7 +191,7 @@ def test_two_hop_six_authorized_paths_abstain_without_exposing_any_candidate():
     assert result.status == "over_k_unranked"
     assert result.qualified_path_count == 6
     assert result.candidates == ()
-    assert result.calibrated_no_fit is False
+    assert not hasattr(result, "calibrated_no_fit")
 
 
 def test_two_hop_explicit_sixth_target_filters_before_k_without_granting_authority():

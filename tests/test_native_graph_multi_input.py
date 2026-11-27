@@ -140,8 +140,8 @@ def test_two_input_complete_binding_original_owned_ids(query: str) -> None:
     assert c.consumer_required_parameter is None
     assert c.consumer_output_fields == ("status",)
     assert out.executable_authority is False
-    assert out.independent_quality_evidence is False
-    assert out.calibrated_no_fit is False
+    assert not hasattr(out, "independent_quality_evidence")
+    assert not hasattr(out, "calibrated_no_fit")
 
 
 @pytest.mark.parametrize(("change", "kwargs"), [

@@ -268,8 +268,9 @@ def _assert_paths(
             or actual != full
             or actual.status != ("complete" if expected else "no_proven_hit")
             or actual.qualified_path_count != int(bool(expected))
-            or actual.executable_authority or actual.independent_quality_evidence
-            or actual.calibrated_no_fit
+            or actual.executable_authority
+            or hasattr(actual, "independent_quality_evidence")
+            or hasattr(actual, "calibrated_no_fit")
         ):
             raise AssertionError("G5 original-source oracle/index/full-rebuild path mismatch")
 

@@ -8,6 +8,7 @@ from schemarouter import IndexedNativeFieldResult, NativeIndexedGraphResult
 from schemarouter.native_graph_index import (
     NativeIndexedGraphCandidate,
     NativeIndexedTwoHopCandidate,
+    NativeIndexedTwoHopResult,
 )
 from scripts.research_legacy_fork_arm import NativeIndexedGraphResult as HistoricalForkArmResult
 from scripts.research_legacy_g5_rank import NativeIndexedGraphResult as HistoricalGraphResult
@@ -18,6 +19,7 @@ from scripts.research_legacy_graph_candidates import (
     NativeIndexedTwoHopCandidate as HistoricalTwoHopCandidate,
 )
 from scripts.research_legacy_graph_rank import NativeIndexedGraphResult as HistoricalOwnerRankResult
+from scripts.research_legacy_graph_rank import NativeIndexedTwoHopResult as HistoricalTwoHopResult
 from scripts.research_legacy_posting_rank import IndexedNativeFieldResult as HistoricalFieldResult
 
 
@@ -52,7 +54,9 @@ def test_historical_abstention_remains_a_distinct_non_product_receipt(
     assert historical(**wire) == receipt
     research_only = {"experimental_ranked"}
     if product is NativeIndexedGraphResult:
-        research_only.add("deterministic_paper_ranked")
+        research_only.update({
+            "deterministic_paper_ranked", "independent_quality_evidence", "calibrated_no_fit",
+        })
     assert tuple(field.name for field in fields(historical) if field.name not in research_only) == (
         tuple(field.name for field in fields(product))
     )
@@ -145,3 +149,42 @@ def test_historical_graph_candidate_keeps_rank_counts_outside_product(
     assert counts.keys().isdisjoint(asdict(current))
     with pytest.raises(TypeError):
         product(**asdict(research))
+
+
+@pytest.mark.parametrize(
+    ("product", "historical"),
+    [
+        (NativeIndexedGraphResult, HistoricalOwnerRankResult),
+        (NativeIndexedTwoHopResult, HistoricalTwoHopResult),
+    ],
+)
+def test_product_graph_result_contains_no_research_quality_claims(product, historical):
+    kwargs = {
+        "status": "no_proven_hit",
+        "index_snapshot_id": "snapshot",
+        "registry_version": 1,
+        "requested_k": 5,
+        "qualified_path_count": 0,
+        "candidates": (),
+    }
+    receipt = product(**kwargs)
+    assert receipt.executable_authority is False
+    assert asdict(receipt) == {**kwargs, "executable_authority": False}
+    assert product(**asdict(receipt)) == receipt
+    assert replace(receipt) == receipt
+    research = historical(**kwargs)
+    assert research.independent_quality_evidence is False
+    assert research.calibrated_no_fit is False
+    assert research.executable_authority is False
+    for name in ("independent_quality_evidence", "calibrated_no_fit"):
+        assert not hasattr(receipt, name)
+        assert name not in get_type_hints(product)
+        assert asdict(research)[name] is False
+        with pytest.raises(TypeError):
+            product(**kwargs, **{name: False})
+    assert get_args(get_type_hints(product)["executable_authority"]) == (False,)
+    for forged in (True, 1, 0, None, "false"):
+        with pytest.raises(ValueError, match="cannot grant execution authority"):
+            product(**kwargs, executable_authority=forged)
+        with pytest.raises(ValueError, match="cannot grant execution authority"):
+            replace(receipt, executable_authority=forged)

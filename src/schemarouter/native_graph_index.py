@@ -216,6 +216,8 @@ class NativeIndexedGraphCandidate:
 
 @dataclass(frozen=True, slots=True)
 class NativeIndexedGraphResult:
+    """Unranked source proof, not an execution grant or quality assessment."""
+
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
     ]
@@ -224,9 +226,11 @@ class NativeIndexedGraphResult:
     requested_k: int
     qualified_path_count: int
     candidates: tuple[NativeIndexedGraphCandidate, ...]
-    independent_quality_evidence: bool = False
-    calibrated_no_fit: bool = False
-    executable_authority: bool = False
+    executable_authority: Literal[False] = False
+
+    def __post_init__(self) -> None:
+        if self.executable_authority is not False:
+            raise ValueError("graph evidence cannot grant execution authority")
 
 
 
@@ -244,6 +248,8 @@ class NativeIndexedTwoHopCandidate:
 
 @dataclass(frozen=True, slots=True)
 class NativeIndexedTwoHopResult:
+    """Unranked two-hop source proof, not an execution grant or quality assessment."""
+
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
     ]
@@ -252,9 +258,11 @@ class NativeIndexedTwoHopResult:
     requested_k: int
     qualified_path_count: int
     candidates: tuple[NativeIndexedTwoHopCandidate, ...]
-    independent_quality_evidence: bool = False
-    calibrated_no_fit: bool = False
-    executable_authority: bool = False
+    executable_authority: Literal[False] = False
+
+    def __post_init__(self) -> None:
+        if self.executable_authority is not False:
+            raise ValueError("graph evidence cannot grant execution authority")
 
 
 def _source_native_graph_contracts(
