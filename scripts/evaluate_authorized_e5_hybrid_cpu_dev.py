@@ -23,7 +23,6 @@ from schemarouter import (
     E5CachedEmbedder,
     EndpointSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from scripts.evaluate_multilingual_embedding_cpu_dev import (
@@ -41,6 +40,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
 )
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks/multilingual-embedding-cpu-dev-20261015.json"
@@ -51,7 +51,7 @@ LANGUAGES = ("en", "ko", "ja", "es", "de", "mixed")
 PRINCIPAL = PrincipalContext(subject="cpu-dev-eval-only", roles=("dev_evaluator",))
 
 
-def build_source_router(corpus: dict[str, Any]) -> SchemaRouter:
+def build_source_router(corpus: dict[str, Any]) -> LegacySchemaRouter:
     """Native endpoint descriptions from exactly the pinned 13-route DEV input."""
     options = corpus["catalog"]
     if type(options) is not list or len(options) != 13:

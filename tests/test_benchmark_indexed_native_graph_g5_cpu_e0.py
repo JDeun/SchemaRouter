@@ -47,5 +47,5 @@ def test_benchmark_rejects_out_of_budget_or_noninteger_calls(bad_noise, bad_runs
 
 def test_native_fixture_does_not_construct_legacy_planner():
     router = _synthetic_router(2)
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     assert router.registry.version == 4

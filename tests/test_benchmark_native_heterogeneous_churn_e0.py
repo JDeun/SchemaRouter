@@ -84,7 +84,7 @@ def test_churn_refuses_common_mode_unprivileged_policy_leak(
 
     def accidentally_public_scope(router: SchemaRouter, scenario: str) -> None:
         router.authorization_policy = AuthorizationPolicy(default_effect="allow")
-        router.planner.availability_predicate = None
+        router._source_availability.predicate = None
 
     monkeypatch.setattr(churn, "configure_heterogeneous_scope", accidentally_public_scope)
     with pytest.raises(AssertionError, match="unprivileged"):

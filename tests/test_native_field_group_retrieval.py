@@ -288,7 +288,7 @@ def test_fieldgroup_pre_k_keeps_five_complete_routes_after_many_partial_matches(
 @pytest.mark.parametrize("query", GROUP.aliases)
 def test_canonical_fieldgroup_lookup_never_enters_lexical_planner(query):
     router = _router()
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     index = NativeSchemaPostingIndex.build(router.registry)
     result = index.lookup(router, query, principal=ANALYST, group=GROUP)
     assert result.status == "complete" and result.qualified_count == 1

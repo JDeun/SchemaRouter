@@ -27,6 +27,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import IndexedNativeFieldCandidate
 from schemarouter.paper_native_rank import rank_authorized_paper_direct
 from scripts.research_legacy_direct_plan import compile_research_direct

@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING, Literal
 
 from schemarouter.authorization import PrincipalContext
 from schemarouter.errors import PolicyViolationError
-from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup, _alias_key, _complete_fields
+from schemarouter.field_group_retrieval import (
+    NativeDeclaredFieldGroup,
+    _alias_key,
+    _complete_fields,
+)
 from schemarouter.models import EndpointSpec, ToolSpec
 from schemarouter.native_graph_index import (
     STRICT_K,

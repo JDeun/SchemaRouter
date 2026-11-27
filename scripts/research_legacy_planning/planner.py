@@ -29,7 +29,10 @@ from schemarouter.validation import (
     json_schema_types,
     json_schemas_compatible,
 )
-from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
+from scripts.research_legacy_planning.candidate_models import (
+    CapabilityCandidate,
+    CapabilityRetrieval,
+)
 from scripts.research_legacy_planning.plan_models import (
     CandidateSelectionSource,
     ExecutionPlan,

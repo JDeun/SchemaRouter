@@ -18,7 +18,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     PrincipalContext,
-    SchemaRouter,
     ToolSpec,
 )
 from schemarouter.capability_contracts import SemanticEquivalence
@@ -26,6 +25,7 @@ from scripts.research_declared_concept_graph_bridge_e0 import (
     DeclaredConceptGraphAnalyzer,
 )
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 ROOT = Path(__file__).resolve().parents[1]
 K = 1
@@ -68,7 +68,7 @@ CASES = (
 assert len(CASES) == 16
 
 
-def build_router(mode: str) -> SchemaRouter:
+def build_router(mode: str) -> LegacySchemaRouter:
     policy = AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(

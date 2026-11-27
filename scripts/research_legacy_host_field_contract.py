@@ -19,11 +19,14 @@ from schemarouter.models import (
     ParameterSpec,
     StrictModel,
 )
-from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
+from scripts.research_legacy_planning.candidate_models import (
+    CapabilityCandidate,
+    CapabilityRetrieval,
+)
 from scripts.research_legacy_planning.requests import PlanRequest
 
 if TYPE_CHECKING:
-    from schemarouter.runtime import SchemaRouter
+    from scripts.research_legacy_runtime import LegacySchemaRouter
 
 _ID = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
 
@@ -212,7 +215,7 @@ def _candidate_matches(
 
 
 def select_authorized_field_contract(
-    router: SchemaRouter,
+    router: LegacySchemaRouter,
     request: PlanRequest | str,
     *,
     principal: PrincipalContext,

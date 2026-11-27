@@ -123,7 +123,7 @@ def test_bounded_source_index_prefork_shards_skip_redundant_overcap_scan(
     # A live callback must STILL run for every checked shard. Scheduling
     # uses only indexed structure; current availability is never cached,
     # skipped, or inferred from the structural partition.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith("prefork_extra_status_")
     )
     changed, changed_calls = observed()
@@ -234,7 +234,7 @@ def test_prefork_exact_128_target_limit_and_129_global_probe_preserve_authority(
 
     # Test against the same pinned index after current health changes.
     # Preserve authorization and never reintroduce any revoked identity.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith(
             "prefork_boundary_status_"
         )

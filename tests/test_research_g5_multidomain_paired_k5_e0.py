@@ -93,7 +93,7 @@ def test_original_source_health_blocks_lab_consumers():
     initial = source_scan_oracle(router, domain)
     assert len(initial) == 1
     right = initial[0][-1].rsplit(".", 1)[0]
-    router.planner.availability_predicate = lambda tool, _ep: tool.key != right
+    router._source_availability.predicate = lambda tool, _ep: tool.key != right
     assert source_scan_oracle(router, domain) == ()
     ranked, budget = scoped_source_lexical_k5(
         router, query=domain.aliases[0], group=domain.group(),

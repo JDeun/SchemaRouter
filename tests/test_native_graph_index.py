@@ -1157,8 +1157,8 @@ def test_owner_ranked_g5_path_lookup_ranks_entire_qualified_cohort(n_targets):
 
 
 def test_owner_ranked_g5_path_budget_overflow_returns_no_partial_receipts(monkeypatch):
-    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts import research_legacy_graph_rank
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     monkeypatch.setattr(research_legacy_graph_rank, "MAX_OWNER_RANKABLE_PATHS", 5)
     router = _router(n_targets=6)

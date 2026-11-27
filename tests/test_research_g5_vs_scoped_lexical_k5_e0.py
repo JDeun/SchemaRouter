@@ -78,7 +78,7 @@ def test_source_health_removes_revoked_consumer_before_model_disclosure():
     before, docs = scoped_source_lexical_k5(router, query=ALIASES[0])
     assert "fork_owner.read" in docs
     assert before
-    router.planner.availability_predicate = lambda tool, _ep: (
+    router._source_availability.predicate = lambda tool, _ep: (
         tool.key != "fork_owner"
     )
     after, scoped = scoped_source_lexical_k5(router, query=ALIASES[0])

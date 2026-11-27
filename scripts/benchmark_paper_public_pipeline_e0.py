@@ -561,7 +561,8 @@ async def _measure_load(
             "client submission to API entry (event-loop turn and, for sync, worker entry)"
         ),
         "service_boundary": (
-            "compile plus exact-route oracle and receipt serialization (async historical offered IDs)"
+            "compile plus exact-route oracle and receipt serialization "
+            "(async historical offered IDs)"
         ),
         "samples": samples, "wall_ms": _percentiles([s["wall_ms"] for s in samples]),
         "threshold_exceedances": [{

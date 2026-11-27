@@ -67,7 +67,7 @@ def test_native_menu_is_sorted_current_read_only_provider_and_bytes_match():
 
 def test_model_menu_rejects_revoked_native_route_and_missing_source():
     router = build_multidomain_source(500, mixed_scope=True)
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _endpoint: tool.key != "fork_owner"
     )
     with pytest.raises(ValueError, match="unapproved"):
