@@ -143,7 +143,7 @@ async def test_revoked_original_email_consumer_never_reaches_provider():
         transport=httpx.MockTransport(deny_network),
     ) as client:
         router, graph, post, user, email = build_fork_router(client)
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             lambda tool, _ep: tool.key != "demo_user_email"
         )
         for alias in FORK_ALIASES:

@@ -61,7 +61,7 @@ needed.
 `context_reduction_demo.py` creates a 40-tool catalog, then compares two payloads:
 
 1. serializing every registered tool schema for an agent;
-2. asking SchemaRouter for a bounded Top-3 capability shortlist.
+2. asking the prepared native field session for a source-proven route receipt with K=3.
 
 Run:
 
@@ -73,14 +73,14 @@ Output has this shape:
 
 ```text
 full catalog: 40 tools / <larger byte count> bytes
-SchemaRouter shortlist: 3 capabilities / <smaller byte count> bytes
-routes: ['weather_lookup.lookup', ...]
+SchemaRouter field routes: 1 routes / <smaller byte count> bytes
+routes: ['weather_lookup.lookup']
 ```
 
 The demo intentionally reports bytes rather than pretending bytes are model tokens. Research
 benchmarks measure actual tool-schema tokens separately. The product point is the bounded contract:
-an orchestrator can expose only the retrieved candidates instead of dumping every schema into model
-context.
+the receipt describes the field-complete route without dumping every schema into model context.
+It is a non-executing discovery receipt, not a tool-call authorization grant.
 
 ## SDK-bound capability
 

@@ -103,11 +103,11 @@ python examples/context_reduction_demo.py
 The example constructs a 40-tool registry and reports the serialized size of:
 
 - the complete registered tool catalog;
-- a bounded Top-3 `CapabilityRetrieval` result.
+- the source-proven routes from a prepared native `PaperFieldCoverage` receipt with K=3.
 
-The bounded payload must be smaller, and the weather route must rank first for a weather query. This
-is a product demonstration, not a token benchmark: actual model-token measurements remain in the
-research benchmark suite.
+The bounded payload must be smaller and contain only the field-complete weather route for the
+weather query. The receipt does not grant execution authority. This is a product demonstration,
+not a token benchmark: actual model-token measurements remain in the research benchmark suite.
 
 ## Mixed-provider field-first planning
 

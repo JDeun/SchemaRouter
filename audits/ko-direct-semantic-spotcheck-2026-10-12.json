@@ -129,9 +129,9 @@
     },
     {
       "path": "getting-started/examples.md",
-      "en_blob": "b1a6b63ece4c7eedbf4801dd8cf3073831d2975a",
-      "ko_blob": "1610b8936db01b724d95ce73d6667464e860353e",
-      "notes": "Compared example 17-row matrix, real APIs.guru/Materials/Crossref/Tavily evidence, 40-tool byte-count demonstration and no token inflation."
+      "en_blob": "f98d1cb4324f8cafb427ef31bb155ce5daf27618",
+      "ko_blob": "47be83f9badef9d3b8aaa2714c91a5137ea62c34",
+      "notes": "Compared example matrix and original API/provider evidence, and rechecked the 2026-11-27 Native K=3 field-route receipt change in both languages against the source example: 40-tool byte count, complete weather route, no execution grant, and no token inflation. AI contributor review, not independent human certification."
     },
     {
       "path": "getting-started/ingestion-paths.md",

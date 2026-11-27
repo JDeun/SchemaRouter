@@ -1,17 +1,30 @@
-"""Show bounded capability retrieval versus exposing an entire tool catalog."""
+"""Compare a source-proven field route receipt with the entire tool catalog."""
 
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 
-from schemarouter import EndpointSpec, FieldSpec, ToolSpec
-from scripts.research_legacy_router import legacy_router
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    CapabilityFieldContract,
+    EndpointSpec,
+    FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    PrincipalContext,
+    SchemaRouter,
+    ToolSpec,
+)
 
 
 def tool_for_domain(domain: str, *, aliases: list[str] | None = None) -> ToolSpec:
     return ToolSpec(
         name=f"{domain}_lookup",
         provider=f"example-{domain}",
+        source_type="synthetic",
+        license="example-only",
         access_mode="api",
         description=f"Read-only {domain} lookup capability.",
         endpoints=[
@@ -44,7 +57,12 @@ def compact_json_size(value: object) -> int:
 
 
 def main() -> None:
-    router = legacy_router()
+    principal = PrincipalContext(subject="example", roles=("reader",))
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny", rules=(AuthorizationRule(
+            effect="allow", operation="*.lookup", roles_any=("reader",),
+        ),),
+    ))
     distractors = [
         "finance",
         "calendar",
@@ -95,18 +113,24 @@ def main() -> None:
         )
     )
 
-    retrieval = router.retrieve("current weather temperature", k=3)
-    assert retrieval.candidates
-    assert retrieval.candidates[0].tool == "weather_lookup"
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="weather.value", aliases=("current weather temperature",),
+        source_type="synthetic", license="example-only",
+        required_fields=(CapabilityFieldContract(
+            semantic_id="weather.value", json_schema={"type": "number"},
+        ),),
+    ),))
+    session = router.prepare_field_routing(catalog=catalog)
+    receipt = session.discover("current weather temperature", principal=principal, k=3)
+    assert receipt.status == "complete" and not receipt.executable_authority
+    routes = tuple(route for alternative in receipt.alternatives for route in alternative.routes)
+    assert [route.route_id for route in routes] == ["weather_lookup.lookup"]
 
     full_catalog_payload = [
         tool.model_dump(mode="json")
         for tool in router.registry.tools()
     ]
-    bounded_payload = [
-        candidate.model_dump(mode="json")
-        for candidate in retrieval.candidates
-    ]
+    bounded_payload = [asdict(route) for route in routes]
 
     full_bytes = compact_json_size(full_catalog_payload)
     bounded_bytes = compact_json_size(bounded_payload)
@@ -114,10 +138,10 @@ def main() -> None:
     assert bounded_bytes < full_bytes
     print(f"full catalog: {len(full_catalog_payload)} tools / {full_bytes} bytes")
     print(
-        f"SchemaRouter shortlist: {len(bounded_payload)} capabilities / "
+        f"SchemaRouter field routes: {len(bounded_payload)} routes / "
         f"{bounded_bytes} bytes"
     )
-    print("routes:", [candidate.route_id for candidate in retrieval.candidates])
+    print("routes:", [route.route_id for route in routes])
 
 
 if __name__ == "__main__":
