@@ -12,8 +12,8 @@ from schemarouter import (
     SchemaRouter,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
-from schemarouter.concept_retrieval import resolve_native_concepts
 from scripts.research_authorized_native_graph_edges_g1 import _safe_routes
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 from scripts.research_native_semantic_graph_g3 import (
     MAX_APPROVED_ROUTES,
     ApprovedNativeRouteG3,

@@ -1,4 +1,4 @@
-"""Opt-in host-declared concept to complete, authorized native route sets.
+"""Checkout-only indexed query-alias concept to authorized native route sets.
 
 The result is only a scoped *discovery* receipt. No source calls, tool
 execution rights, learned ranking, or undeclared joins originate here.
@@ -9,18 +9,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from ._authorization_witness import _policy_contents_digest
-from .authorization import PrincipalContext
-from .concept_retrieval import (
-    NativeConceptCatalog,
-    resolve_native_concepts,
-)
-from .errors import PolicyViolationError
-from .field_group_retrieval import _root_envelope_empty
-from .native_graph_index import NativeSchemaGraphIndex
+from schemarouter._authorization_witness import _policy_contents_digest
+from schemarouter.authorization import PrincipalContext
+from schemarouter.concept_retrieval import NativeConceptCatalog
+from schemarouter.errors import PolicyViolationError
+from schemarouter.field_group_retrieval import _root_envelope_empty
+from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
+    from schemarouter.runtime import SchemaRouter
 
 
 @dataclass(frozen=True, slots=True)

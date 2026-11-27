@@ -21,8 +21,9 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
-from schemarouter.concept_retrieval import _merged_concept_constraints, resolve_native_concepts
+from schemarouter.concept_retrieval import _merged_concept_constraints
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 from scripts.research_legacy_field_session import research_compile_fields
 from scripts.research_legacy_router import legacy_router
 

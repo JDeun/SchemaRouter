@@ -13,7 +13,6 @@ import resource
 import time
 from typing import Any
 
-from schemarouter.concept_retrieval import resolve_native_concepts
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_indexed_concept_direct_parity_e0 import (
     ACTOR,
@@ -28,6 +27,7 @@ from scripts.benchmark_indexed_concept_direct_parity_e0 import (
 from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_posting_rank import research_lookup_postings
 

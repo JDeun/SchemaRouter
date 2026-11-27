@@ -76,7 +76,9 @@ Understand 콜백을 `configure_field_routing(...)`으로 명시적으로 설정
 `scripts.research_legacy_offered_query`의 연구용 함수로만 유지하며, 제품 모델에는
 질문, 고정된 intent 이름과 응답 형식만 전달합니다. 기존 별칭 기반 Field Union 검색,
 대안 계획 컴파일러 및 shared-root fork 선택기도 소스 체크아웃 전용 연구 영역으로
-이전했습니다. 제품에는 공통 타입 기반 경로·필드 계약과 현재 권한 검증을 유지합니다.
+이전했습니다. 질의 별칭 기반 `resolve_native_concepts`, 인덱스 `lookup_concepts` 및
+`retrieve_authorized_concept_graph` 메뉴 역시 연구 영역에서만 유지합니다. 제품에는
+호스트가 검토한 Concept Catalog, 공통 타입 기반 경로·필드 계약과 현재 권한 검증을 유지합니다.
 
 소스 체크아웃에서 [원 논문 중심 빠른 시작](examples/quickstart.py) 또는
 [스키마 전용 검색 예제](examples/schema_only_field_routing.py)를 실행할 수 있습니다.

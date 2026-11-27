@@ -3,6 +3,8 @@ name: Original Paper Public Pipeline E0 Profile
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "scripts/research_legacy_native_fork.py"
       - "scripts/research_legacy_fork_arm.py"
       - "scripts/benchmark_paper_public_pipeline_e0.py"

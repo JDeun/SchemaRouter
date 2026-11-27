@@ -3,6 +3,8 @@ name: Paired Native Concept Agent E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "scripts/research_legacy_posting_rank.py"
       - "scripts/research_paired_native_concept_agent_e0.py"
       - "tests/test_research_paired_native_concept_agent_e0.py"

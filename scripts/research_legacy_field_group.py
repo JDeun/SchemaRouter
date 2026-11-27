@@ -6,7 +6,7 @@ CapabilityRetrieval receipts and test semantics for historical experiments.
 from __future__ import annotations
 
 from schemarouter.authorization import PrincipalContext
-from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
+from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import (
     FIXED_FIELD_GROUP_K,
@@ -17,6 +17,7 @@ from schemarouter.field_group_retrieval import (
 )
 from schemarouter.models import EndpointSpec, ToolSpec
 from schemarouter.runtime import SchemaRouter
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
 from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from scripts.research_legacy_planning.requests import PlanRequest

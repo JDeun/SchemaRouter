@@ -227,17 +227,7 @@ from .capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
-from .concept_graph_retrieval import (
-    NativeConceptGraphSelection,
-    NativeConceptRouteSet,
-    retrieve_authorized_concept_graph,
-)
-from .concept_retrieval import (
-    NativeConceptCatalog,
-    NativeDeclaredConcept,
-    ResolvedNativeConcepts,
-    resolve_native_concepts,
-)
+from .concept_retrieval import NativeConceptCatalog, NativeDeclaredConcept
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -572,9 +562,6 @@ __all__ = [
     "SchemaFieldReviewField",
     "SchemaFieldReviewRoute",
     "SchemaFieldReviewPage",
-    "NativeConceptGraphSelection",
-    "NativeConceptRouteSet",
-    "retrieve_authorized_concept_graph",
     "NativeIndexedGraphCandidate",
     "NativeIndexedGraphResult",
     "NativeSchemaGraphIndex",
@@ -595,8 +582,6 @@ __all__ = [
     "register_reviewed_europepmc_paper_source",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
-    "ResolvedNativeConcepts",
-    "resolve_native_concepts",
     "NativeDeclaredFieldGroup",
     "CapabilityOperationalMetadata",
     "HostCapabilityConstraints",

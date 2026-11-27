@@ -29,6 +29,7 @@ from schemarouter.semantic_attestations import (
 from scripts.research_g5_decision_backend_ranker_e0 import (
     ResearchAuthorizedG5DecisionRanker,
 )
+from scripts.research_legacy_concept_retrieval import lookup_graph_concepts
 from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_g5_rank import research_lookup_graph
 
@@ -175,14 +176,14 @@ def test_semantic_aliases_resolve_without_target_name():
     router = _router()
     idx = _index(router)
     for query in ALIASES:
-        result = idx.lookup_concepts(
-            router, query, catalog=CATALOG, principal=ANALYST,
+        result = lookup_graph_concepts(
+            idx, router, query, catalog=CATALOG, principal=ANALYST,
         )
         assert [c.consumer_route_id for c in result.candidates] == [
             "cases_0.read_case",
         ]
     with pytest.raises(ValueError, match="no declared concept"):
-        idx.lookup_concepts(router, "weather", catalog=CATALOG, principal=ANALYST)
+        lookup_graph_concepts(idx, router, "weather", catalog=CATALOG, principal=ANALYST)
 
 
 def test_hidden_root_identifier_or_denied_policy_yields_no_graph_evidence():

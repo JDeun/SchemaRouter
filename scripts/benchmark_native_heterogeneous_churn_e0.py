@@ -16,7 +16,6 @@ import time
 from typing import Any
 
 from schemarouter import PrincipalContext, SchemaRouter
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
@@ -30,6 +29,7 @@ from scripts.benchmark_native_heterogeneous_parity_e0 import (
     configure_heterogeneous_scope,
     original_heterogeneous_oracle,
 )
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 
 EVIDENCE = "E0_SYNTHETIC_HETEROGENEOUS_NATIVE_JOURNAL_CHURN_NOT_E2"
 _ANONYMOUS = PrincipalContext(subject="unprivileged-e0", roles=())

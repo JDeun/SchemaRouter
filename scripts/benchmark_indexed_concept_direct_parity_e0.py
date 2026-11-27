@@ -28,13 +28,13 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.field_group_retrieval import _complete_fields, _root_envelope_empty
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_concept_graph import (
     retrieve_authorized_concept_graph as legacy_concept_graph,
 )
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
 EVIDENCE_TIER = "E0_SYNTHETIC_INDEXED_CONCEPT_PARITY_NOT_E2"

@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from schemarouter import PrincipalContext
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
@@ -18,6 +17,7 @@ from scripts.benchmark_native_heterogeneous_parity_e0 import (
     configure_heterogeneous_scope,
     original_heterogeneous_oracle,
 )
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 
 
 @pytest.mark.parametrize("registered_routes", (500, 5000))

@@ -24,6 +24,7 @@ from schemarouter import (
 from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
+from scripts.research_legacy_concept_retrieval import lookup_posting_concepts
 from scripts.research_legacy_posting_rank import (
     research_lookup_posting_concepts,
     research_lookup_postings,
@@ -231,8 +232,8 @@ def test_native_postings_resolve_complete_fields_before_k_with_live_policy(query
 def test_indexed_concept_resolution_in_longer_natural_sentences(query):
     router = _router()
     index = NativeSchemaPostingIndex.build(router.registry)
-    actual = index.lookup_concepts(
-        router, query, principal=ANALYST, catalog=CATALOG,
+    actual = lookup_posting_concepts(
+        index, router, query, principal=ANALYST, catalog=CATALOG,
     )
     assert actual.status == "complete"
     assert [candidate.route_id for candidate in actual.candidates] == [
@@ -258,11 +259,11 @@ def test_indexed_concept_direct_only_excludes_unbound_required_input_before_k():
     ))
     index = NativeSchemaPostingIndex.build(router.registry)
     query = "show case status"
-    all_matches = index.lookup_concepts(
-        router, query, principal=ANALYST, catalog=CATALOG,
+    all_matches = lookup_posting_concepts(
+        index, router, query, principal=ANALYST, catalog=CATALOG,
     )
-    direct = index.lookup_concepts(
-        router, query, principal=ANALYST, catalog=CATALOG,
+    direct = lookup_posting_concepts(
+        index, router, query, principal=ANALYST, catalog=CATALOG,
         input_free_only=True,
     )
     assert "bound.read" in {c.route_id for c in all_matches.candidates}

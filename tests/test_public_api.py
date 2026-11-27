@@ -51,11 +51,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "NativeDeclaredFieldGroup",
         "NativeConceptCatalog",
         "NativeDeclaredConcept",
-        "ResolvedNativeConcepts",
-        "resolve_native_concepts",
-        "NativeConceptGraphSelection",
-        "NativeConceptRouteSet",
-        "retrieve_authorized_concept_graph",
         "PaperFieldRoute",
         "SchemaFieldRoutingSession",
         "SchemaFieldReviewField",
@@ -505,7 +500,7 @@ def test_retired_lexical_fieldgroup_helpers_are_not_installed() -> None:
     assert not hasattr(field_group_retrieval, "retrieve_authorized_field_group")
     assert not hasattr(concept_retrieval, "retrieve_authorized_concepts")
     assert callable(schemarouter.NativeSchemaPostingIndex.lookup)
-    assert callable(schemarouter.NativeSchemaPostingIndex.lookup_concepts)
+    assert not hasattr(schemarouter.NativeSchemaPostingIndex, "lookup_concepts")
 
 
 def test_retired_lexical_host_diagnostics_are_not_installed() -> None:
@@ -656,7 +651,6 @@ def test_product_indexes_have_no_research_ranking_callback() -> None:
 
     for method in (
         schemarouter.NativeSchemaPostingIndex.lookup,
-        schemarouter.NativeSchemaPostingIndex.lookup_concepts,
         schemarouter.NativeSchemaGraphIndex.lookup,
         schemarouter.NativeSchemaGraphIndex._lookup_native_paths,
     ):
@@ -735,3 +729,25 @@ def test_historical_shared_root_fork_is_not_installed() -> None:
     assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_shared_root_forks")
     assert callable(schemarouter.NativeSchemaGraphIndex.lookup)
     assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
+
+
+def test_query_alias_concept_retrieval_is_checkout_only() -> None:
+    from importlib.util import find_spec
+
+    from schemarouter import concept_retrieval
+
+    assert find_spec("schemarouter.concept_graph_retrieval") is None
+    for name in (
+        "ResolvedNativeConcepts", "resolve_native_concepts",
+        "NativeConceptGraphSelection", "NativeConceptRouteSet",
+        "retrieve_authorized_concept_graph",
+    ):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(concept_retrieval, name), name
+    for index in (schemarouter.NativeSchemaPostingIndex, schemarouter.NativeSchemaGraphIndex):
+        assert not hasattr(index, "lookup_concepts")
+        assert callable(index.lookup)
+    assert callable(schemarouter.NativeDeclaredConcept)
+    assert callable(schemarouter.NativeConceptCatalog)
+    assert callable(schemarouter.SchemaFieldRoutingSession.compile_understood)
+    assert callable(schemarouter.SchemaFieldRoutingSession.acompile_query)

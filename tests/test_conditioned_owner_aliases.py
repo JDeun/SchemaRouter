@@ -19,8 +19,8 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.concept_retrieval import resolve_native_concepts
 from schemarouter.paper_query_needs import PaperQueryNeed, _resolve_query_need
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 
 
 def _field(*, unit=None, **qualifiers):

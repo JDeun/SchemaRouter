@@ -1,7 +1,7 @@
-"""Bounded host-declared concept mentions to typed FieldGroup retrieval (opt-in).
+"""Trusted owner concept catalog, typed contract composition and alias utilities.
 
-This is an interpretable lookup of *declared* aliases, not multilingual
-translation, open-vocabulary intent extraction, or an execution capability.
+These shared contracts support schema-independent Understand and source-proven
+planning. Raw query-alias retrieval is preserved only in research checkouts.
 """
 from __future__ import annotations
 
@@ -12,17 +12,12 @@ from pydantic import model_validator
 
 from ._schema_identity import _locale_lexical_text
 from .capability_contracts import CapabilityFieldContract
-from .field_group_retrieval import (
-    NativeDeclaredFieldGroup,
-    _response_contract,
-)
+from .field_group_retrieval import _response_contract
 from .models import StrictModel
 from .validation import json_schemas_compatible
 
 MAX_CONCEPTS = 32
 MAX_ALIASES = 128
-MAX_QUERY_BYTES = 512
-MAX_QUERY_CHARS = 256
 _ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
 
 
@@ -142,11 +137,6 @@ def _merged_concept_fields(
     return tuple(unique[key] for key in sorted(unique))
 
 
-class ResolvedNativeConcepts(StrictModel):
-    concept_ids: tuple[str, ...]
-    field_group: NativeDeclaredFieldGroup
-
-
 def _alias_mentions(query: str, alias: str) -> list[tuple[int, int]]:
     """Literal phrase mentions, bounded at ASCII identifiers, not substrings.
 
@@ -177,70 +167,3 @@ def _alias_mentions(query: str, alias: str) -> list[tuple[int, int]]:
         if valid_start and valid_end:
             spans.append((index, end))
         start = index + 1
-
-
-def resolve_native_concepts(
-    query: str, *, catalog: NativeConceptCatalog,
-) -> ResolvedNativeConcepts:
-    """Resolve exact declared mentions and merge all their required fields.
-
-    Every visible matched concept participates; overlapping *different*
-    concepts and conflicting typed contracts fail closed. No semantic names
-    or provider fields are guessed from text.
-    """
-    if (
-        type(query) is not str
-        or not 2 <= len(query) <= MAX_QUERY_CHARS
-        or len(query.encode("utf-8")) > MAX_QUERY_BYTES
-        or query != query.strip()
-        or any(ord(c) < 32 or ord(c) == 127 for c in query)
-    ):
-        raise ValueError("invalid bounded concept query")
-    if not isinstance(catalog, NativeConceptCatalog):
-        raise ValueError("host-approved concept catalog required")
-    try:
-        approved = NativeConceptCatalog.model_validate(
-            catalog.model_dump(mode="python"), strict=True,
-        )
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("trusted concept catalog has changed") from exc
-
-    query_text = _normalized(query)
-    hits: list[tuple[int, int, str]] = []
-    for concept in approved.concepts:
-        for alias in concept.aliases:
-            hits.extend((begin, end, concept.concept_id)
-                        for begin, end in _alias_mentions(query_text, _normalized(alias)))
-    if not hits:
-        raise ValueError("no declared concept in query")
-
-    # Never silently choose an overlapping, different semantic concept,
-    # even if its alias happens to be shorter.
-    for i, (start, end, cid) in enumerate(hits):
-        for other_start, other_end, other_id in hits[i + 1:]:
-            if cid != other_id and start < other_end and other_start < end:
-                raise ValueError("ambiguous overlapping declared concepts")
-
-    matched = {cid for _, _, cid in hits}
-    selected = [c for c in approved.concepts if c.concept_id in matched]
-    constraints = _merged_concept_constraints(selected)
-    if constraints is None:
-        raise ValueError("incompatible source policy across concepts")
-
-    fields = _merged_concept_fields(selected)
-    if fields is None:
-        raise ValueError("conflicting typed requirements for semantic field")
-    if len(fields) > 8:
-        raise ValueError("merged FieldGroup exceeds field budget")
-
-    source_type, license_id = constraints
-    group = NativeDeclaredFieldGroup(
-        aliases=(query,),
-        required_fields=fields,
-        source_type=source_type,
-        license=license_id,
-    )
-    return ResolvedNativeConcepts(
-        concept_ids=tuple(sorted(matched)),
-        field_group=group,
-    )

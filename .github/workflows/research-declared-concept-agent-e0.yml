@@ -3,6 +3,8 @@ name: Declared Concept Agent Fixed5 E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "scripts/research_legacy_posting_rank.py"
       - "src/schemarouter/concept_retrieval.py"
       - "src/schemarouter/field_group_retrieval.py"

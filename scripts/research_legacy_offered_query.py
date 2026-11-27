@@ -14,8 +14,6 @@ from schemarouter._authorization_witness import _policy_contents_digest
 from schemarouter.authorization import PrincipalContext
 from schemarouter.canonical_json import canonical_json_text
 from schemarouter.concept_retrieval import (
-    MAX_QUERY_BYTES,
-    MAX_QUERY_CHARS,
     NativeConceptCatalog,
     NativeDeclaredConcept,
 )
@@ -37,6 +35,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperUnderstanding,
     _bounded_name,
 )
+from scripts.research_legacy_concept_retrieval import MAX_QUERY_BYTES, MAX_QUERY_CHARS
 from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 
 if TYPE_CHECKING:

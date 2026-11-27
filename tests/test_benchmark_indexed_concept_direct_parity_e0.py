@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_indexed_concept_direct_parity_e0 import (
@@ -19,6 +18,7 @@ from scripts.benchmark_indexed_concept_direct_parity_e0 import (
 from scripts.research_legacy_concept_graph import (
     retrieve_authorized_concept_graph as legacy_concept_graph,
 )
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 
 
 def test_indexed_concept_direct_same_registered_source_contract_at_500():

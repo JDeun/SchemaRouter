@@ -12,12 +12,13 @@ from typing import TYPE_CHECKING, Literal
 from schemarouter._authorization_witness import _policy_contents_digest
 from schemarouter.authorization import PrincipalContext
 from schemarouter.capability_contracts import CapabilityFieldContract
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
-from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
+from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import _complete_fields
 from schemarouter.native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
 from schemarouter.paper_typed_tool_plan import PaperFieldRoute
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 if TYPE_CHECKING:

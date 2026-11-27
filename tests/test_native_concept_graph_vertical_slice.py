@@ -18,13 +18,13 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_concept_graph import (
     retrieve_authorized_concept_graph as legacy_concept_graph,
 )
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="analyst", roles=("reader",))

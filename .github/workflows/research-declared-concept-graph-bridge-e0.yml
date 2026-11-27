@@ -3,6 +3,8 @@ name: Declared Concept Graph Field Bridge E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "scripts/research_declared_concept_graph_bridge_e0.py"
       - "tests/test_research_declared_concept_graph_bridge_e0.py"
       - "research/autoresearch/initial-paper-graph-retrieval-crosswalk-e0.md"

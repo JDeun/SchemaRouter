@@ -5,13 +5,17 @@ from typing import Literal
 
 from schemarouter._authorization_witness import _policy_contents_digest
 from schemarouter.authorization import PrincipalContext
-from schemarouter.concept_graph_retrieval import NativeConceptGraphSelection, NativeConceptRouteSet
-from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
+from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import _root_envelope_empty
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.runtime import SchemaRouter
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 from scripts.research_legacy_field_group import retrieve_authorized_field_group
+from scripts.research_legacy_indexed_concept_graph import (
+    NativeConceptGraphSelection,
+    NativeConceptRouteSet,
+)
 
 
 def retrieve_authorized_concept_graph(

@@ -52,6 +52,11 @@ RETIRED = {
     "dependency_cycles",
     "dependency_strongly_connected_components",
     "satisfiable_capability_ids",
+    "ResolvedNativeConcepts",
+    "resolve_native_concepts",
+    "NativeConceptGraphSelection",
+    "NativeConceptRouteSet",
+    "retrieve_authorized_concept_graph",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "retrieve_paper_field_coverage",
@@ -85,6 +90,9 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_typed_plan"), path
                 assert not module.startswith("scripts.research_legacy_native_fork"), path
                 assert not module.startswith("scripts.research_legacy_fork_arm"), path
+                assert not module.startswith("scripts.research_legacy_concept_retrieval"), path
+                assert not module.startswith("scripts.research_legacy_indexed_concept_graph"), path
+                assert not module.startswith("scripts.research_legacy_concept_graph"), path
                 assert not module.startswith("scripts.research_legacy_paper_observed_binding"), path
                 assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
@@ -98,11 +106,13 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                     "paper_observed_binding", "schemarouter.paper_observed_binding",
                     "paper_field_retrieval", "schemarouter.paper_field_retrieval",
                     "native_fork_index", "schemarouter.native_fork_index",
+                    "concept_graph_retrieval", "schemarouter.concept_graph_retrieval",
                 }, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
                 if module in {"schemarouter", "schemarouter.models", "models",
                               "paper_typed_tool_plan", "schemarouter.paper_typed_tool_plan",
+                              "concept_retrieval", "schemarouter.concept_retrieval",
                               "schemarouter.capability_graph", "capability_graph"}:
                     assert RETIRED.isdisjoint(alias.name for alias in node.names), path
             elif isinstance(node, ast.Import):
@@ -120,11 +130,15 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_typed_plan",
                                            "scripts.research_legacy_native_fork",
                                            "scripts.research_legacy_fork_arm",
+                                           "scripts.research_legacy_concept_retrieval",
+                                           "scripts.research_legacy_indexed_concept_graph",
+                                           "scripts.research_legacy_concept_graph",
                                            "scripts.research_legacy_paper_observed_binding",
                                            "scripts.research_legacy_paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",
                                            "schemarouter.paper_field_retrieval",
                                            "schemarouter.native_fork_index",
+                                           "schemarouter.concept_graph_retrieval",
                                            "scripts.research_legacy_g5_rank",
                                            "schemarouter.native_deep_paths",
                                            "schemarouter.native_graph_execution",
@@ -165,10 +179,12 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.paper_observed_binding",
                         "schemarouter.paper_field_retrieval",
                         "schemarouter.native_fork_index",
+                        "schemarouter.concept_graph_retrieval",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
                     if node.module in {"schemarouter", "schemarouter.models",
                                        "schemarouter.paper_typed_tool_plan",
+                                       "schemarouter.concept_retrieval",
                                        "schemarouter.capability_graph"}:
                         assert RETIRED.isdisjoint(alias.name for alias in node.names), path
                 elif isinstance(node, ast.Import):
@@ -185,6 +201,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.paper_observed_binding",
                             "schemarouter.paper_field_retrieval",
                             "schemarouter.native_fork_index",
+                            "schemarouter.concept_graph_retrieval",
                         ))
                         for alias in node.names
                     ), path

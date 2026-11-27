@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Literal
 from ._source_availability import _SourceAvailability
 from .authorization import AuthorizationPolicy, AuthorizationRule, DataScopeRule, PrincipalContext
 from .capability_contracts import CapabilityFieldContract
-from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError, RegistrationError
 from .executor import RegistryExecutor
 from .field_group_retrieval import (
@@ -877,21 +876,4 @@ class NativeSchemaPostingIndex:
                 tuple(qualified) if count <= k else ()
             ),
             deterministic_paper_ranked=use_paper_rank,
-        )
-
-    def lookup_concepts(
-        self,
-        router: SchemaRouter,
-        query: str,
-        *,
-        catalog: NativeConceptCatalog,
-        principal: PrincipalContext,
-        k: int = STRICT_K,
-        input_free_only: bool = False,
-    ) -> IndexedNativeFieldResult:
-        """Original query → declared concepts → typed field intersection."""
-        resolved = resolve_native_concepts(query, catalog=catalog)
-        return self.lookup(
-            router, query, group=resolved.field_group, principal=principal,
-            k=k, input_free_only=input_free_only,
         )

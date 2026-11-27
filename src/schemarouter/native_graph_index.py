@@ -21,7 +21,6 @@ from .capability_graph import (
     build_capability_dependency_graph,
     update_capability_dependency_graph,
 )
-from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError, RegistrationError
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
@@ -1431,18 +1430,4 @@ class NativeSchemaGraphIndex:
             k,
             count,
             tuple(qualified) if count <= k else (),
-        )
-
-    def lookup_concepts(
-        self,
-        router: SchemaRouter,
-        query: str,
-        *,
-        catalog: NativeConceptCatalog,
-        principal: PrincipalContext,
-        k: int = STRICT_K,
-    ) -> NativeIndexedGraphResult:
-        resolved = resolve_native_concepts(query, catalog=catalog)
-        return self.lookup(
-            router, query, group=resolved.field_group, principal=principal, k=k,
         )

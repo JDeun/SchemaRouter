@@ -3,6 +3,8 @@ name: Declared Concept Composition E1
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "src/schemarouter/concept_retrieval.py"
       - "src/schemarouter/field_group_retrieval.py"
       - "src/schemarouter/__init__.py"
@@ -35,5 +37,5 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
       - name: Verify declared concept semantics and public ABI
         run: |
-          ruff check src/schemarouter/concept_retrieval.py tests/test_native_concept_retrieval.py
+          ruff check scripts/research_legacy_concept_retrieval.py scripts/research_legacy_indexed_concept_graph.py src/schemarouter/concept_retrieval.py tests/test_native_concept_retrieval.py
           python -m pytest -q tests/test_native_concept_retrieval.py tests/test_native_field_group_retrieval.py tests/test_public_api.py

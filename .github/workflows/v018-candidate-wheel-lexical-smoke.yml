@@ -39,7 +39,7 @@ jobs:
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
                   "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
-                  "native_fork_index",
+                  "native_fork_index", "concept_graph_retrieval",
               ):
                   assert f"schemarouter/{name}.py" not in names, name
               assert not any("research_legacy" in name for name in names)
@@ -56,7 +56,7 @@ jobs:
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
                   "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
-                  "native_fork_index",
+                  "native_fork_index", "concept_graph_retrieval",
               ):
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (
@@ -74,6 +74,9 @@ jobs:
               "observe_and_bind_paper_plan", "observe_and_execute_paper_plan",
               "PaperFieldAlternative", "PaperFieldCoverage",
               "retrieve_paper_field_coverage", "compile_paper_typed_tool_plan",
+              "ResolvedNativeConcepts", "resolve_native_concepts",
+              "NativeConceptGraphSelection", "NativeConceptRouteSet",
+              "retrieve_authorized_concept_graph",
           ):
               assert not hasattr(schemarouter, name), name
           from schemarouter import capability_graph, models, runtime
@@ -109,7 +112,6 @@ jobs:
                            compile_model_query):
               assert "model_visible_concept_ids" not in signature(compiler).parameters
           for method in (schemarouter.NativeSchemaPostingIndex.lookup,
-                         schemarouter.NativeSchemaPostingIndex.lookup_concepts,
                          schemarouter.NativeSchemaGraphIndex.lookup,
                          schemarouter.NativeSchemaGraphIndex._lookup_native_paths):
               assert {'_research_ranker', '_fork_arm_internal', '_fork_root_filter',
@@ -123,6 +125,8 @@ jobs:
               assert 'ranked_unverified' in get_args(get_type_hints(model)['status'])
           assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
           assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_shared_root_forks")
+          assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_concepts")
+          assert not hasattr(schemarouter.NativeSchemaPostingIndex, "lookup_concepts")
           assert callable(schemarouter.evaluate_state_eligibility)
           assert callable(schemarouter.evaluate_preconditions)
           assert callable(schemarouter.validate_declared_operation_fit)

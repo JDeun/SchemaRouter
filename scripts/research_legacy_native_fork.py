@@ -19,7 +19,6 @@ from schemarouter.native_graph_index import (
     _flat_same_record_source_contract,
     _native_required_inputs,
 )
-
 from scripts import research_legacy_fork_arm
 
 if TYPE_CHECKING:

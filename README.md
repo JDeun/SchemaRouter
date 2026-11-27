@@ -174,7 +174,9 @@ comparators in `scripts.research_legacy_field_session`. The query-alias Field Un
 its alternative-plan compiler and shared-root fork selector are also checkout-only historical
 comparators (`scripts/research_legacy_paper_field_retrieval.py`,
 `scripts/research_legacy_paper_typed_plan.py`, `scripts/research_legacy_native_fork.py`).
-The product retains shared typed route/field contracts and current authorization checks.
+The old raw-query `resolve_native_concepts`, `lookup_concepts` index helpers and
+`retrieve_authorized_concept_graph` menu are also checkout-only. The product retains the
+owner-reviewed concept catalog, shared typed route/field contracts and current authorization checks.
 Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.

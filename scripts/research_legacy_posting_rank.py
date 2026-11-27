@@ -11,7 +11,7 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Literal
 
 from schemarouter.authorization import PrincipalContext
-from schemarouter.concept_retrieval import NativeConceptCatalog, resolve_native_concepts
+from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import (
     NativeDeclaredFieldGroup,
@@ -26,6 +26,7 @@ from schemarouter.native_semantic_index import (
     _NativeSourcePass,
 )
 from schemarouter.paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
+from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

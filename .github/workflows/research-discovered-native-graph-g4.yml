@@ -3,6 +3,8 @@ name: Discovered Native Graph Targets G4 DEV
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "scripts/research_discovered_native_graph_g4.py"
       - "tests/test_research_discovered_native_graph_g4.py"
       - "src/schemarouter/semantic_attestations.py"

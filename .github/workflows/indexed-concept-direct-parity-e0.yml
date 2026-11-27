@@ -3,10 +3,11 @@ name: Indexed Concept Direct Native CPU Parity E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_concept_retrieval.py"
+      - "scripts/research_legacy_indexed_concept_graph.py"
       - "src/schemarouter/native_semantic_index.py"
       - "src/schemarouter/native_graph_index.py"
       - "src/schemarouter/registry.py"
-      - "src/schemarouter/concept_graph_retrieval.py"
       - "scripts/benchmark_indexed_concept_direct_parity_e0.py"
       - "tests/test_benchmark_indexed_concept_direct_parity_e0.py"
       - "scripts/benchmark_native_heterogeneous_parity_e0.py"
@@ -39,7 +40,7 @@ jobs:
       - name: Install actual package and bounded test tools
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
       - name: Lint indexed concept CPU benchmark sources
-        run: ruff check scripts/benchmark_indexed_concept_direct_parity_e0.py tests/test_benchmark_indexed_concept_direct_parity_e0.py scripts/benchmark_native_heterogeneous_parity_e0.py tests/test_benchmark_native_heterogeneous_parity_e0.py scripts/benchmark_native_heterogeneous_churn_e0.py tests/test_benchmark_native_heterogeneous_churn_e0.py scripts/benchmark_native_heterogeneous_graph_churn_e0.py tests/test_benchmark_native_heterogeneous_graph_churn_e0.py
+        run: ruff check scripts/research_legacy_concept_retrieval.py scripts/research_legacy_indexed_concept_graph.py scripts/benchmark_indexed_concept_direct_parity_e0.py tests/test_benchmark_indexed_concept_direct_parity_e0.py scripts/benchmark_native_heterogeneous_parity_e0.py tests/test_benchmark_native_heterogeneous_parity_e0.py scripts/benchmark_native_heterogeneous_churn_e0.py tests/test_benchmark_native_heterogeneous_churn_e0.py scripts/benchmark_native_heterogeneous_graph_churn_e0.py tests/test_benchmark_native_heterogeneous_graph_churn_e0.py
       - name: Test original native source oracle, scope and opt-in parity
         run: python -m pytest -q -x tests/test_benchmark_indexed_concept_direct_parity_e0.py tests/test_benchmark_native_heterogeneous_parity_e0.py tests/test_benchmark_native_heterogeneous_churn_e0.py tests/test_benchmark_native_heterogeneous_graph_churn_e0.py tests/test_native_concept_graph_vertical_slice.py
       - name: Same source and principal, indexed-vs-existing ${{ matrix.routes }} routes

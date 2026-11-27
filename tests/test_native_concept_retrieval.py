@@ -14,12 +14,12 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.concept_retrieval import (
-    NativeConceptCatalog,
-    NativeDeclaredConcept,
+from schemarouter.concept_retrieval import NativeConceptCatalog, NativeDeclaredConcept
+from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_concept_retrieval import (
+    lookup_posting_concepts,
     resolve_native_concepts,
 )
-from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_legacy_field_group import retrieve_authorized_concepts
 from scripts.research_legacy_router import legacy_router
 
@@ -268,8 +268,8 @@ def test_native_concept_lookup_uses_default_router(query):
     router = _router(extra_noise=120)
     assert not hasattr(router, "planner")
     index = NativeSchemaPostingIndex.build(router.registry)
-    result = index.lookup_concepts(router, query, principal=ANALYST, catalog=CATALOG)
+    result = lookup_posting_concepts(index, router, query, principal=ANALYST, catalog=CATALOG)
     assert result.status == "complete" and result.qualified_count == 1
     assert [candidate.route_id for candidate in result.candidates] == ["complete.read"]
-    denied = index.lookup_concepts(router, query, principal=VIEWER, catalog=CATALOG)
+    denied = lookup_posting_concepts(index, router, query, principal=VIEWER, catalog=CATALOG)
     assert denied.status == "no_proven_hit" and denied.candidates == ()

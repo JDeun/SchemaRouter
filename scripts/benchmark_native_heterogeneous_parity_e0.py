@@ -28,10 +28,10 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.field_group_retrieval import _complete_fields, _root_envelope_empty
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_indexed_concept_graph import retrieve_authorized_concept_graph
 
 
 @dataclass(frozen=True, slots=True)
