@@ -481,7 +481,6 @@ from .retrieval_abstention import (
     apply_retrieval_abstention,
 )
 from .retrieval_execution_gate import (
-    ainvoke_selective,
     execute_selective_plan,
     validate_selective_execution,
 )
@@ -884,7 +883,6 @@ __all__ = [
     "RetrievalAbstentionPolicy",
     "SelectiveCapabilityRetrieval",
     "apply_retrieval_abstention",
-    "ainvoke_selective",
     "execute_selective_plan",
     "validate_selective_execution",
     "SchemaRouter",

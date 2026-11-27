@@ -92,9 +92,9 @@ def test_retrieval_and_planning_are_not_mislabeled_as_invocation() -> None:
         }
         for row in data["owners"]
     }
-    assert names_by_owner["SchemaRouter"]["retrieve"] == (
-        "retrieval-or-planning-no-execution"
-    )
+    for owner in ("SchemaRouter", "ConfiguredSchemaRouter"):
+        assert not any(name.startswith(("retrieve", "aretrieve"))
+                       for name in names_by_owner[owner])
     assert names_by_owner["SchemaRouter"]["plan"] == (
         "retrieval-or-planning-no-execution"
     )

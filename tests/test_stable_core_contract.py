@@ -7,6 +7,7 @@ from schemarouter import (
     ConfiguredSchemaRouter,
     SchemaRouter,
 )
+from scripts.research_legacy_runtime import LegacyConfiguredSchemaRouter, LegacySchemaRouter
 
 
 def _assert_retrieval_signature(owner: type, name: str) -> None:
@@ -21,7 +22,7 @@ def _assert_retrieval_signature(owner: type, name: str) -> None:
 
 
 def test_stable_retrieval_facade_signatures_are_aligned() -> None:
-    for owner in (SchemaRouter, ConfiguredSchemaRouter):
+    for owner in (LegacySchemaRouter, LegacyConfiguredSchemaRouter):
         for name in (
             "retrieve",
             "aretrieve",
@@ -62,5 +63,7 @@ def test_retrieval_facade_remains_separate_from_execution_verbs() -> None:
     }
 
     assert retrieval.isdisjoint(execution)
-    assert retrieval <= set(dir(SchemaRouter))
+    assert retrieval <= set(dir(LegacySchemaRouter))
+    assert retrieval.isdisjoint(dir(SchemaRouter))
+    assert retrieval.isdisjoint(dir(ConfiguredSchemaRouter))
     assert execution <= set(dir(SchemaRouter))

@@ -9,6 +9,7 @@ from test_paper_configured_planning import _configure, _configured
 
 from schemarouter import PlanRequest, RunConfig, SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_langgraph_node
+from scripts.research_legacy_planning.langgraph import to_legacy_langgraph_node
 from scripts.research_legacy_router import legacy_router
 
 
@@ -40,7 +41,7 @@ def make_graph(node):
 
 
 def test_langgraph_node_runs_inside_stategraph_sync() -> None:
-    graph = make_graph(to_langgraph_node(make_router()))
+    graph = make_graph(to_legacy_langgraph_node(make_router()))
 
     state = graph.invoke(
         {
@@ -56,7 +57,7 @@ def test_langgraph_node_runs_inside_stategraph_sync() -> None:
 
 @pytest.mark.asyncio
 async def test_langgraph_node_runs_inside_stategraph_async() -> None:
-    graph = make_graph(to_langgraph_node(make_router()))
+    graph = make_graph(to_legacy_langgraph_node(make_router()))
 
     state = await graph.ainvoke(
         {
@@ -69,7 +70,7 @@ async def test_langgraph_node_runs_inside_stategraph_async() -> None:
 
 
 def test_langgraph_node_accepts_full_plan_request_from_state() -> None:
-    node = to_langgraph_node(make_router())
+    node = to_legacy_langgraph_node(make_router())
 
     update = node.invoke(
         {
@@ -84,7 +85,7 @@ def test_langgraph_node_accepts_full_plan_request_from_state() -> None:
 
 
 def test_langgraph_node_supports_custom_request_factory_and_result_key() -> None:
-    node = to_langgraph_node(
+    node = to_legacy_langgraph_node(
         make_router(),
         request_factory=lambda state: {
             "query": "add two integers",
@@ -102,7 +103,7 @@ def test_langgraph_node_supports_custom_request_factory_and_result_key() -> None
 
 
 def test_langgraph_node_can_return_typed_tool_results() -> None:
-    node = to_langgraph_node(make_router(), serialize_results=False)
+    node = to_legacy_langgraph_node(make_router(), serialize_results=False)
 
     update = node.invoke(
         {
@@ -117,7 +118,7 @@ def test_langgraph_node_can_return_typed_tool_results() -> None:
 
 
 def test_langgraph_node_rejects_invalid_default_state_contract() -> None:
-    node = to_langgraph_node(make_router())
+    node = to_legacy_langgraph_node(make_router())
 
     with pytest.raises(TypeError, match="non-empty string"):
         node.invoke({"arguments": {"a": 1, "b": 2}})
@@ -127,7 +128,7 @@ def test_langgraph_node_rejects_invalid_default_state_contract() -> None:
 
 
 def test_langgraph_node_still_enforces_schemarouter_validation() -> None:
-    node = to_langgraph_node(make_router())
+    node = to_legacy_langgraph_node(make_router())
 
     with pytest.raises(SchemaValidationError):
         node.invoke(

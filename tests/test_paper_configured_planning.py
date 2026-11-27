@@ -19,7 +19,6 @@ from schemarouter import (
     PlanRequest,
     PrincipalContext,
     RunConfig,
-    TypedExecutionState,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.hooks import ExecutionHooks
@@ -506,15 +505,7 @@ async def test_configured_session_direct_execution_is_retired_before_compilation
 async def test_configured_router_refuses_legacy_retrieval_before_analysis(method, monkeypatch):
     ctx = _configured(count=1)
     _forbid_lexical(ctx, monkeypatch)
-    kwargs = {}
-    if method.endswith("_authorized"):
-        kwargs["principal"] = ctx.principal
-    if method.endswith("_state_aware"):
-        kwargs["execution_state"] = TypedExecutionState()
-    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
-        result = getattr(ctx.router, method)(ctx.request.query, **kwargs)
-        if asyncio.iscoroutine(result):
-            await result
+    assert not hasattr(ctx.router, method)
     assert ctx.model.payloads == [] and ctx.seen == []
 
 
@@ -527,11 +518,7 @@ async def test_configured_wrapper_cannot_reenter_legacy_retrieval(method, monkey
     ctx = _configured(count=1)
     _forbid_lexical(ctx, monkeypatch)
     wrapper = ctx.router.with_config(RunConfig(principal=ctx.principal))
-    kwargs = {"execution_state": TypedExecutionState()} if method.endswith("_state_aware") else {}
-    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
-        result = getattr(wrapper, method)(ctx.request.query, **kwargs)
-        if asyncio.iscoroutine(result):
-            await result
+    assert not hasattr(wrapper, method)
     assert ctx.model.payloads == [] and ctx.seen == []
 
 
@@ -640,8 +627,6 @@ async def test_inflight_legacy_plan_cannot_publish_after_configuration(method, m
 
 @pytest.mark.parametrize("method", [
     "plan", "aplan", "plan_executable", "aplan_executable", "invoke", "ainvoke",
-    "retrieve", "aretrieve", "retrieve_routes", "aretrieve_routes",
-    "retrieve_executable", "aretrieve_executable",
 ])
 async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(method, monkeypatch):
     from scripts.research_legacy_planning.planner import SchemaPlanner
@@ -653,7 +638,7 @@ async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(me
     ctx = _configured(configure=False)
     assert not hasattr(ctx.router, "planner")
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
-    with pytest.raises(PolicyViolationError, match="lexical (planning|retrieval) is unavailable"):
+    with pytest.raises(PolicyViolationError, match="lexical planning is unavailable"):
         api = getattr(ctx.router, method)
         if inspect.iscoroutinefunction(api):
             await api(ctx.request.query)

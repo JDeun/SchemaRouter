@@ -5,38 +5,28 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from ..models import PaperPlanRequest, PlanRequest, ToolResult
+from ..models import PaperPlanRequest, ToolResult
 from ..runs import RunConfig
 from ..runtime import SchemaRouter
 
 LangGraphState = Mapping[str, Any]
 LangGraphRequestFactory = Callable[
-    [LangGraphState], PaperPlanRequest | PlanRequest | str | Mapping[str, Any],
+    [LangGraphState], PaperPlanRequest | str | Mapping[str, Any],
 ]
 
 
-def _coerce_request(
-    value: Any, *, paper_configured: bool,
-) -> PaperPlanRequest | PlanRequest | str:
-    if paper_configured:
-        if isinstance(value, PaperPlanRequest):
-            return value
-        if type(value) is str:
-            value = {"query": value}
-        if isinstance(value, Mapping):
-            try:
-                return PaperPlanRequest.model_validate(dict(value))
-            except ValidationError:
-                # Never include nested host input values in framework errors.
-                raise ValueError("invalid LangGraph PaperPlanRequest") from None
-        raise TypeError("configured LangGraph routing requires PaperPlanRequest or query")
-    if isinstance(value, PlanRequest | str):
+def _coerce_request(value: Any) -> PaperPlanRequest:
+    if isinstance(value, PaperPlanRequest):
         return value
+    if type(value) is str:
+        value = {"query": value}
     if isinstance(value, Mapping):
-        return PlanRequest.model_validate(dict(value))
-    raise TypeError(
-        "LangGraph request must be a string, PlanRequest, or mapping compatible with PlanRequest"
-    )
+        try:
+            return PaperPlanRequest.model_validate(dict(value))
+        except ValidationError:
+            # Never include nested host input values in framework errors.
+            raise ValueError("invalid LangGraph PaperPlanRequest") from None
+    raise TypeError("LangGraph routing requires PaperPlanRequest or query")
 
 
 def _request_from_state(
@@ -46,13 +36,12 @@ def _request_from_state(
     query_key: str,
     arguments_key: str,
     request_factory: LangGraphRequestFactory | None,
-    paper_configured: bool,
-) -> PaperPlanRequest | PlanRequest | str:
+) -> PaperPlanRequest | str:
     if request_factory is not None:
-        return _coerce_request(request_factory(state), paper_configured=paper_configured)
+        return _coerce_request(request_factory(state))
 
     if request_key is not None and request_key in state:
-        return _coerce_request(state[request_key], paper_configured=paper_configured)
+        return _coerce_request(state[request_key])
 
     query = state.get(query_key)
     if not isinstance(query, str) or not query.strip():
@@ -70,14 +59,12 @@ def _request_from_state(
     if not isinstance(raw_arguments, Mapping):
         raise TypeError(f"state[{arguments_key!r}] must be a mapping when provided")
 
-    if paper_configured:
-        if raw_arguments or "host_source_arguments" in state:
-            raise ValueError(
-                "configured LangGraph routing requires an explicit PaperPlanRequest "
-                "for host_source_arguments; flat arguments are not supported",
-            )
-        return _coerce_request(query, paper_configured=True)
-    return PlanRequest(query=query, arguments=dict(raw_arguments))
+    if raw_arguments or "host_source_arguments" in state:
+        raise ValueError(
+            "LangGraph routing requires an explicit PaperPlanRequest "
+            "for host_source_arguments; flat arguments are not supported",
+        )
+    return _coerce_request(query)
 
 
 def _node_update(
@@ -108,14 +95,10 @@ def to_langgraph_node(
 ) -> Any:
     """Return a sync/async Runnable node for direct use in a LangGraph StateGraph.
 
-    The default state contract accepts either a complete request at request_key or a query plus
-    optional arguments mapping. The node returns a partial state update under result_key. Results
-    are serialized to JSON-compatible dictionaries by default for checkpoint-friendly state.
-
-    With prepared Algorithm 1 configured, a complete request is a PaperPlanRequest or its
-    mapping; a bare query is allowed, but flat arguments are rejected. The host must supply
-    source-local inputs explicitly. request_factory adapts application state without giving
-    LangGraph direct access to SchemaRouter execution authority.
+    The state contract accepts a PaperPlanRequest or its mapping at request_key, or a bare
+    query. Flat arguments are rejected; host inputs must be source-local. The node returns
+    a partial update under result_key. Results are JSON-compatible by default.
+    request_factory adapts state without granting LangGraph execution authority.
     """
     if not result_key:
         raise ValueError("result_key must be non-empty")
@@ -144,7 +127,6 @@ def to_langgraph_node(
             query_key=query_key,
             arguments_key=arguments_key,
             request_factory=request_factory,
-            paper_configured=router._paper_planning is not None or not router._legacy_routing,
         )
         results = router.invoke(request, config=run_config)
         return _node_update(
@@ -162,7 +144,6 @@ def to_langgraph_node(
             query_key=query_key,
             arguments_key=arguments_key,
             request_factory=request_factory,
-            paper_configured=router._paper_planning is not None or not router._legacy_routing,
         )
         results = await router.ainvoke(request, config=run_config)
         return _node_update(

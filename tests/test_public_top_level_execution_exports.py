@@ -1,7 +1,8 @@
 """Public export surface and top-level tool execution entrypoint E2E guards.
 
-This inventory includes every __all__ export. Four top-level callable functions
+This inventory includes every __all__ export. Three top-level callable functions
 which can initiate native tool execution must retain positive and denied tests.
+Historical selective invocation is tested through its research-only helper.
 The local fixture is not an external provider/model E2 benchmark.
 """
 from __future__ import annotations
@@ -22,15 +23,14 @@ from schemarouter import (
     RetrievalAbstentionPolicy,
     RunConfig,
     SchemaRouter,
-    ainvoke_selective,
     execute_selective_plan,
 )
+from scripts.research_legacy_planning.selective_invocation import ainvoke_selective
 from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
 EXECUTION_EXPORTS = {
-    "ainvoke_selective",
     "execute_selective_plan",
     "observe_and_execute_paper_plan",
     "observe_and_execute_paper_understood_graph",

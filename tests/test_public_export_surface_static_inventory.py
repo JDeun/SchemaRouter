@@ -14,7 +14,6 @@ ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
 PACKAGE = ROOT / "src/schemarouter/__init__.py"
 TOOL_EXECUTING_EXPORTS = frozenset({
-    "ainvoke_selective",
     "execute_selective_plan",
     "observe_and_execute_paper_plan",
     "observe_and_execute_paper_understood_graph",

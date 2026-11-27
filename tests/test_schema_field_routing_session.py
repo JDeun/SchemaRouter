@@ -1103,8 +1103,7 @@ def test_prepared_session_reuses_compiled_index_and_exposes_field_metadata(
         "build", classmethod(tracked),
     )
     session = router.prepare_field_routing(catalog=_catalog())
-    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
-        router.retrieve_authorized(ALIASES[0], principal=ACTOR)
+    assert not hasattr(router, "retrieve_authorized")
     assert all(session.discover(q, principal=ACTOR).status == "complete"
                for q in ALIASES)
     typed = session.compile(ALIASES[1], principal=ACTOR)
@@ -1124,8 +1123,7 @@ def test_prepared_session_reuses_compiled_index_and_exposes_field_metadata(
         (RIGHT, "customer_id", ROOT, "customer_id"),
     }
     assert builds == [router.registry.version]
-    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
-        router.retrieve_authorized(ALIASES[0], principal=ACTOR)
+    assert not hasattr(router, "retrieve_authorized")
 
 
 def test_prepared_session_never_calls_provider_executors(monkeypatch):

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from .authorization import PrincipalContext, _current_principal_context
 from .errors import PolicyViolationError
 from .field_routing_session import SchemaFieldRoutingSession
-from .models import ExecutionPlan, PaperPlanRequest, PlanRequest, ToolCall
+from .models import ExecutionPlan, PaperPlanRequest, ToolCall
 from .paper_native_rank import PaperNativeRankPolicy
 from .paper_query_needs import PaperQueryUnderstanding
 from .paper_query_understanding import PaperFieldModel, _prepare_model_query, _PreparedModelQuery
@@ -182,13 +182,9 @@ class _PreparedPaperPlanning:
             ) from None
 
     async def aplan(
-        self, request: PaperPlanRequest | PlanRequest | str,
+        self, request: PaperPlanRequest | str,
         *, principal: PrincipalContext | None, executable_only: bool = False,
     ) -> ExecutionPlan:
-        if isinstance(request, PlanRequest):
-            raise ValueError(
-                "configured paper planning requires str or PaperPlanRequest, not PlanRequest",
-            )
         if type(request) is str:
             request = PaperPlanRequest(query=request)
         if not isinstance(request, PaperPlanRequest):

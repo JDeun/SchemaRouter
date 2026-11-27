@@ -29,7 +29,13 @@ from schemarouter.models import (
     PlanRequest,
     ToolSpec,
 )
-from schemarouter.runtime import SchemaRouter, _validated_explicit_retrieval_principal
+from schemarouter.runs import RunConfig
+from schemarouter.runtime import (
+    ConfiguredSchemaRouter,
+    SchemaRouter,
+    _coerce_config,
+    _validated_explicit_retrieval_principal,
+)
 from schemarouter.state_retrieval import (
     StateAwareCapabilityRetrieval,
     filter_retrieval_by_state,
@@ -102,6 +108,18 @@ class LegacySchemaRouter(SchemaRouter):
         ):
             raise PolicyViolationError("retrieval authority changed: source availability mismatch")
         return authority.predicate
+
+    def with_config(
+        self, config: RunConfig | dict[str, Any],
+    ) -> ConfiguredSchemaRouter:
+        if self._paper_planning is not None:
+            return super().with_config(config)
+        return LegacyConfiguredSchemaRouter(self, _coerce_config(config))
+
+    def _request_trace_input(self, request: PlanRequest | PaperPlanRequest | str) -> Any:
+        if isinstance(request, PlanRequest):
+            return request.model_dump(mode="json")
+        return super()._request_trace_input(request)
 
     def _paper_configuration_for(
         self, request: PlanRequest | PaperPlanRequest | str,
@@ -697,3 +715,99 @@ class LegacySchemaRouter(SchemaRouter):
 
         with _principal_execution_context(principal):
             return await self.aretrieve_executable(request, k=k)
+
+
+class LegacyConfiguredSchemaRouter(ConfiguredSchemaRouter):
+    """Research-only configured lexical retrieval facade."""
+
+    router: LegacySchemaRouter
+
+    def retrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve_routes(request, k=k)
+
+    async def aretrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve_routes(request, k=k)
+
+    def retrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve(request, k=k)
+
+    async def aretrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve(request, k=k)
+
+    def retrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve_state_aware(
+                request,
+                execution_state=execution_state,
+                k=k,
+                state_requirements=state_requirements,
+                state_preconditions=state_preconditions,
+            )
+
+    async def aretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve_state_aware(
+                request,
+                execution_state=execution_state,
+                k=k,
+                state_requirements=state_requirements,
+                state_preconditions=state_preconditions,
+            )
+
+    def retrieve_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve_executable(request, k=k)
+
+    async def aretrieve_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve_executable(request, k=k)

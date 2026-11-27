@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "src/schemarouter/__init__.py",
   "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_EXECUTION_NOT_INDEPENDENT_E2",
-  "export_count": 442,
+  "export_count": 441,
   "exported_names": [
     "ADAPTER_ENTRY_POINT_GROUP",
     "AccessHealthMonitor",
@@ -348,7 +348,6 @@
     "WeaviateVectorBackend",
     "__version__",
     "aggregate_records",
-    "ainvoke_selective",
     "analyze_openapi_compatibility",
     "apply_host_semantic_attestation",
     "apply_retrieval_abstention",
@@ -449,13 +448,6 @@
   ],
   "standalone_tool_execution_exports": [
     {
-      "name": "ainvoke_selective",
-      "kind": "atomic-retrieval-plan-execute",
-      "test_file": "tests/test_public_top_level_execution_exports.py",
-      "positive": "test_exported_selective_ainvoke_uses_registered_invoker",
-      "denied": "test_exported_selective_ainvoke_denies_untrusted_principal"
-    },
-    {
       "name": "execute_selective_plan",
       "kind": "host-selected-plan-execution",
       "test_file": "tests/test_public_top_level_execution_exports.py",
@@ -477,5 +469,5 @@
       "denied": "test_midflight_permission_revocation_blocks_downstream"
     }
   ],
-  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. Four exported top-level functions which may reach registered native tool execution have real positive and denied local tests. `SchemaRouter`/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Other exported functions, classes, builders, retrievers and registration utilities are not independently proven runtime execution by this inventory."
+  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. Three exported top-level functions which may reach registered native tool execution have real positive and denied local tests. `SchemaRouter`/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Other exported functions, classes, builders, retrievers and registration utilities are not independently proven runtime execution by this inventory."
 }

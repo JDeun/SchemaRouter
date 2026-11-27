@@ -20,10 +20,10 @@ from schemarouter import (
     RetrievalAbstentionPolicy,
     ToolCall,
     ToolSpec,
-    ainvoke_selective,
     execute_selective_plan,
     validate_selective_execution,
 )
+from scripts.research_legacy_planning.selective_invocation import ainvoke_selective
 from scripts.research_legacy_router import legacy_router
 
 

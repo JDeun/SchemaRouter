@@ -100,7 +100,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "apply_retrieval_abstention",
         "validate_selective_execution",
         "execute_selective_plan",
-        "ainvoke_selective",
         "FieldObservation",
         "RetrievalMode",
         "SourceRecord",
@@ -563,3 +562,7 @@ def test_retired_lexical_planner_modules_and_exports_are_not_installed() -> None
         assert find_spec(f"schemarouter.{module}") is None
     for symbol in ("KeywordAnalyzer", "QueryAnalyzer", "SchemaPlanner"):
         assert not hasattr(schemarouter, symbol), symbol
+
+
+def test_lexical_selective_invocation_is_not_public() -> None:
+    assert not hasattr(schemarouter, "ainvoke_selective")

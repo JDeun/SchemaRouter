@@ -18,16 +18,13 @@ def test_research_router_constructs_without_product_legacy_mode(monkeypatch):
         assert not kwargs.get("_legacy_routing")
         original(self, **kwargs)
 
-    def forbidden(*_args, **_kwargs):
-        pytest.fail("research used installed legacy dispatch")
-
     monkeypatch.setattr(SchemaRouter, "__init__", forbid_legacy_constructor)
     assert "_legacy_routing" not in inspect.signature(original).parameters
     for name in ("_legacy_plan", "_alegacy_plan", "_require_legacy_planning_mode",
                  "_require_legacy_retrieval_mode"):
         assert not hasattr(SchemaRouter, name)
     for name in ("retrieve", "aretrieve"):
-        monkeypatch.setattr(SchemaRouter, name, forbidden)
+        assert not hasattr(SchemaRouter, name)
 
     @schema_tool(read_only=True)
     def lookup(value: str) -> str:
