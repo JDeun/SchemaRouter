@@ -155,7 +155,7 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
     monkeypatch.setattr(module, "compile_paper_understood_graph_plan", forbidden)
     from scripts.research_legacy_planning.planner import SchemaPlanner
 
-    assert session._router.planner is None
+    assert not hasattr(session._router, "planner")
     assert not hasattr(SchemaPlanner, "_build_paper_direct_plan")
     for name in ("_build_plan", "_analyze_sync", "_candidates"):
         monkeypatch.setattr(SchemaPlanner, name, forbidden)

@@ -389,17 +389,9 @@ def inspect_router(
 ) -> RouterInspection:
     """Inspect a live SchemaRouter without exposing invokers, credentials, or payload values."""
 
-    planner = router.planner
     return RouterInspection(
         registry=inspect_registry(router.registry),
-        planner=PlannerInspection(
-            analyzer=(
-                "PaperQueryUnderstanding"
-                if router._paper_planning is not None
-                else type(planner.analyzer).__name__ if planner is not None
-                else "PaperConfigurationRequired"
-            ),
-        ),
+        planner=PlannerInspection(analyzer=router._planning_analyzer_name()),
         decision_traces=tuple(
             inspect_capability_decision_trace(trace)
             for trace in decision_traces

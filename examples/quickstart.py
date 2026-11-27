@@ -95,7 +95,7 @@ def main() -> None:
         ),
         model_visible_intent_ids=("weather.read",),
     )
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     results = router.invoke(
         PaperPlanRequest(
             query="city temperature from current_weather",

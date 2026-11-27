@@ -43,7 +43,7 @@ def test_research_router_constructs_without_product_legacy_mode(monkeypatch):
 
 def test_default_router_remains_fail_closed():
     router = SchemaRouter()
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     assert not hasattr(router, "_legacy_routing")
     with pytest.raises(PolicyViolationError, match="lexical planning is unavailable"):
         router.plan("lookup")

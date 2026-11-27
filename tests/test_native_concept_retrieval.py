@@ -266,7 +266,7 @@ def test_blank_owner_source_or_license_constraints_cannot_enter_catalog(constrai
 @pytest.mark.parametrize("query", QUERIES)
 def test_native_concept_lookup_uses_default_router(query):
     router = _router(extra_noise=120)
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     index = NativeSchemaPostingIndex.build(router.registry)
     result = index.lookup_concepts(router, query, principal=ANALYST, catalog=CATALOG)
     assert result.status == "complete" and result.qualified_count == 1

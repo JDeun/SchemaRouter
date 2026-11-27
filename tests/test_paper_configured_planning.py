@@ -81,7 +81,7 @@ def _forbid_lexical(ctx, monkeypatch):
         pytest.fail("configured product planning entered the retired lexical candidate path")
     from scripts.research_legacy_planning.planner import SchemaPlanner
 
-    assert ctx.router.planner is None
+    assert not hasattr(ctx.router, "planner")
     for name in ("_build_paper_direct_plan", "_build_paper_query_plan"):
         assert not hasattr(SchemaPlanner, name)
     for name in ("_analyze_sync", "_analyze_async", "_candidates", "_build_plan"):
@@ -139,7 +139,7 @@ def test_configured_plan_and_aplan_share_algorithm1_without_lexical_analysis(mon
 def test_configured_input_schema_describes_active_paper_request_contract():
     ctx = _configured(configure=False)
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
-    assert ctx.router.planner is None
+    assert not hasattr(ctx.router, "planner")
     _configure(ctx)
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
     assert "host_source_arguments" in ctx.router.input_schema["properties"]
@@ -651,7 +651,7 @@ async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(me
 
     monkeypatch.setattr(SchemaPlanner, "__init__", forbidden)
     ctx = _configured(configure=False)
-    assert ctx.router.planner is None
+    assert not hasattr(ctx.router, "planner")
     assert ctx.router.input_schema == PaperPlanRequest.model_json_schema()
     with pytest.raises(PolicyViolationError, match="lexical (planning|retrieval) is unavailable"):
         api = getattr(ctx.router, method)

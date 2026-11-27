@@ -330,7 +330,7 @@ def test_optin_indexed_concept_direct_matches_current_one_step_and_join(query):
     ):
         historical = factory(router_factory=legacy_router, **options)
         router = factory(**options)
-        assert router.planner is None
+        assert not hasattr(router, "planner")
         baseline = legacy_concept_graph(
             historical, query, principal=ACTOR, catalog=catalog, index=_index(historical),
         )
@@ -424,7 +424,7 @@ def test_optin_indexed_mode_requires_actual_boolean(mode):
 
 def test_product_concept_graph_has_no_lexical_mode():
     router = _direct_router()
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     result = _select(router, catalog=_catalog(two_fields=True))
     assert result.route_ids == ("complete.read",)
     with pytest.raises(TypeError):

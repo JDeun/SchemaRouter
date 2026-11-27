@@ -165,7 +165,7 @@ class _PreparedPaperPlanning:
                 self.router._paper_planning is not self
                 or self.router._source_availability is not self.authority
                 or self.router.executor is not self.executor
-                or self.router.planner is not None
+                or self.authority.snapshot is not None
                 or self.executor.registry is not self.router.registry
                 or (
                     self.session.catalog_revision_id,

@@ -292,7 +292,7 @@ def test_default_cooldowns_reuse_source_hash_but_still_deny_and_recover(monkeypa
 
 def test_native_source_fixture_has_no_lexical_snapshot(monkeypatch):
     router, posting, _graph = _router(monkeypatch, 4)
-    assert router.planner is None
+    assert not hasattr(router, "planner")
     assert router._source_availability.snapshot is None
     callback = lambda _tool, _endpoint: False  # noqa: E731
     monkeypatch.setattr(router._source_availability, "predicate", callback)

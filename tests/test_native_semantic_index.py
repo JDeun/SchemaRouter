@@ -202,7 +202,7 @@ def test_native_postings_resolve_complete_fields_before_k_with_live_policy(query
     if router_factory is legacy_router:
         old = router.retrieve_authorized(query, principal=ANALYST, k=5)
     else:
-        assert router.planner is None
+        assert not hasattr(router, "planner")
     index = NativeSchemaPostingIndex.build(router.registry)
     assert index.indexed_route_count == 127
     assert "complete.read" in index.postings["crm.priority"]

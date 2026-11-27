@@ -58,6 +58,11 @@ class LegacySchemaRouter(SchemaRouter):
         self.planner._source_availability = self._source_availability
         self._legacy_routing = True
 
+    def _planning_analyzer_name(self) -> str:
+        if self._paper_planning is None and self._legacy_routing and self.planner is not None:
+            return type(self.planner.analyzer).__name__
+        return super()._planning_analyzer_name()
+
     @property
     def input_schema(self) -> dict[str, Any]:
         request_type = (

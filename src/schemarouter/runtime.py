@@ -530,8 +530,6 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         self._source_availability = _SourceAvailability(self._is_snapshot_access_available)
-        # Transitional diagnostic sentinel; no installed planner is constructed.
-        self.planner = None
         self._paper_planning: _PreparedPaperPlanning | None = None
         self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
@@ -565,7 +563,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         if (
             self._source_registry is not self.registry
             or self.executor.registry is not self.registry
-            or self.planner is not None
+            or authority.snapshot is not None
         ):
             raise PolicyViolationError("retrieval authority changed: source availability mismatch")
         return authority.predicate
@@ -1271,6 +1269,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
     @property
     def config_schema(self) -> dict[str, Any]:
         return RunConfig.model_json_schema()
+
+    def _planning_analyzer_name(self) -> str:
+        """Report only the active product planning contract, without model details."""
+        return (
+            "PaperQueryUnderstanding" if self._paper_planning is not None
+            else "PaperConfigurationRequired"
+        )
 
     def inspect(
         self,
@@ -4108,7 +4113,6 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             max_model_input_bytes=max_model_input_bytes,
             max_model_output_bytes=max_model_output_bytes,
         )
-        self._source_availability.snapshot = None
 
     def retrieve_authorized(
         self,
