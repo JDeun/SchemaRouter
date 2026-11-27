@@ -1,0 +1,14 @@
+[
+  {"id":"s01","question":"Find a calculated bulk modulus in GPa for silicon carbide and the title and DOI of relevant research papers. Do not fetch the values; select the fields and tools needed.","status":"select","needs":[[{"tool":"materials_project","paths":[["k_vrh"]]},{"tool":"jarvis","paths":[["bulk_modulus_kv"]]}],[{"tool":"arxiv","paths":[["title"],["doi"]]},{"tool":"crossref","paths":[["title"],["DOI"]]},{"tool":"europe_pmc","paths":[["title"],["doi"]]},{"tool":"openalex","paths":[["title"],["doi"]]}]]},
+  {"id":"s02","question":"I specifically need the Materials Project band gap and Fermi energy for a material.","status":"select","needs":[[{"tool":"materials_project","paths":[["band_gap"],["efermi"]]}]]},
+  {"id":"s03","question":"Find the count of citations received by a paper using Crossref, not the number of references in that paper.","status":"select","needs":[[{"tool":"crossref","paths":[["is-referenced-by-count"]]}]]},
+  {"id":"s04","question":"Find a chemical's molecular weight in g/mol and its canonical SMILES.","status":"select","needs":[[{"tool":"pubchem","paths":[["molecular_weight"],["canonical_smiles"]]}]]},
+  {"id":"s05","question":"I need JARVIS's Voigt shear modulus specifically, not the Materials Project VRH value.","status":"select","needs":[[{"tool":"jarvis","paths":[["shear_modulus_gv"]]}]]},
+  {"id":"s06","question":"Find the calculated band gap from both OQMD and Materials Project, keeping the two sources separate.","status":"select","needs":[[{"tool":"oqmd","paths":[["band_gap"]]}],[{"tool":"materials_project","paths":[["band_gap"]]}]]},
+  {"id":"s07","question":"Get the title and full abstract of a paper from Europe PMC, and its year.","status":"select","needs":[[{"tool":"europe_pmc","paths":[["title"],["abstract"],["year"]]}]]},
+  {"id":"s08","question":"Locate the lattice lengths a, b and c in angstroms in the experimental Crystallography Open Database.","status":"select","needs":[[{"tool":"cod","paths":[["_cod_a"],["_cod_b"],["_cod_c"]]}]]},
+  {"id":"s09","question":"Which field returns Young's modulus directly, without calculating it from bulk and shear modulus?","status":"unavailable","needs":[]},
+  {"id":"s10","question":"Which catalog field gives the measured melting point of a chemical? No indirect web search or inference.","status":"unavailable","needs":[]},
+  {"id":"s11","question":"Find an elastic modulus for a material; I have not specified whether I mean Young's, bulk or shear modulus. I need exactly one kind.","status":"clarify","needs":[]},
+  {"id":"s12","question":"What is the modulus? I need a single particular elastic quantity, but haven't identified which one.","status":"clarify","needs":[]}
+]
