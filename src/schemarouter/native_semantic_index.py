@@ -219,14 +219,13 @@ class IndexedNativeFieldCandidate:
 class IndexedNativeFieldResult:
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
-        "ranked_unverified", "ranker_abstained_unverified",
+        "ranked_unverified",
     ]
     registry_version: int
     index_snapshot_id: str
     requested_k: int
     qualified_count: int
     candidates: tuple[IndexedNativeFieldCandidate, ...]
-    experimental_ranked: bool = False
     deterministic_paper_ranked: bool = False
 
 
@@ -858,14 +857,12 @@ class NativeSchemaPostingIndex:
             ) from exc
         status: Literal[
             "complete", "no_proven_hit", "over_k_unranked",
-            "ranked_unverified", "ranker_abstained_unverified",
+            "ranked_unverified",
         ]
         if count > k:
-            status = (
-                "over_k_unranked" if ranked_offsets is None else
-                "ranked_unverified" if ranked_offsets else
-                "ranker_abstained_unverified"
-            )
+            # Reviewed Rank always returns at least one position for a
+            # nonempty cohort. Empty offsets, if encountered, still abstain.
+            status = "ranked_unverified" if ranked_offsets else "over_k_unranked"
         else:
             status = "complete" if count else "no_proven_hit"
         return IndexedNativeFieldResult(
@@ -879,7 +876,6 @@ class NativeSchemaPostingIndex:
                 if ranked_offsets is not None else
                 tuple(qualified) if count <= k else ()
             ),
-            experimental_ranked=ranked_offsets is not None,
             deterministic_paper_ranked=use_paper_rank,
         )
 

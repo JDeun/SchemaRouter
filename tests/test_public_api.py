@@ -675,3 +675,17 @@ def test_product_indexes_have_no_research_ranking_callback() -> None:
         schemarouter.NativeSchemaGraphIndex.lookup_two_hop,
     ):
         assert "_paper_rank_policy" in signature(method).parameters
+
+
+def test_product_index_receipts_do_not_expose_research_rank_metadata() -> None:
+    from dataclasses import fields
+    from typing import get_args, get_type_hints
+
+    for model in (schemarouter.IndexedNativeFieldResult, schemarouter.NativeIndexedGraphResult):
+        names = {field.name for field in fields(model)}
+        statuses = get_args(get_type_hints(model)["status"])
+        assert "experimental_ranked" not in names
+        assert "ranker_abstained_unverified" not in statuses
+        assert "deterministic_paper_ranked" in names
+        assert "ranked_unverified" in statuses
+        assert "over_k_unranked" in statuses

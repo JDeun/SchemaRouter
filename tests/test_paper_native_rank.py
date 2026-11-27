@@ -129,6 +129,7 @@ def test_posting_index_ranks_six_original_qualified_routes_after_auth_and_before
     assert result.status == "ranked_unverified"
     assert result.qualified_count == 7
     assert result.deterministic_paper_ranked is True
+    assert not hasattr(result, "experimental_ranked")
     assert tuple(candidate.route_id for candidate in result.candidates) == (
         "full_5.read", "complete.read", "full_0.read", "full_1.read",
         "full_2.read",

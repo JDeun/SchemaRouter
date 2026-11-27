@@ -7,7 +7,7 @@ never import this module from the installed package.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Literal
 
 from schemarouter.authorization import PrincipalContext
@@ -22,7 +22,6 @@ from schemarouter.field_group_retrieval import (
 from schemarouter.native_semantic_index import (
     STRICT_K,
     IndexedNativeFieldCandidate,
-    IndexedNativeFieldResult,
     NativeSchemaPostingIndex,
     _NativeSourcePass,
 )
@@ -32,6 +31,21 @@ if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter
 
 MAX_RESEARCH_RANKABLE_POSTINGS = 32
+
+
+@dataclass(frozen=True, slots=True)
+class IndexedNativeFieldResult:
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "ranker_abstained_unverified",
+    ]
+    registry_version: int
+    index_snapshot_id: str
+    requested_k: int
+    qualified_count: int
+    candidates: tuple[IndexedNativeFieldCandidate, ...]
+    experimental_ranked: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 def research_lookup_postings(

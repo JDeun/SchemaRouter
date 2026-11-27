@@ -6,8 +6,8 @@ post-callback checks. The installed graph never imports this comparator.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import replace
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Literal
 
 from schemarouter.authorization import PrincipalContext
 from schemarouter.errors import PolicyViolationError
@@ -23,7 +23,6 @@ from schemarouter.native_graph_index import (
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
     NativeIndexedGraphCandidate,
-    NativeIndexedGraphResult,
     NativeSchemaGraphIndex,
     _flat_same_record_source_contract,
     _host_source_input_names,
@@ -35,6 +34,25 @@ from schemarouter.paper_native_rank import PaperNativeRankPolicy, rank_authorize
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter
+
+
+@dataclass(frozen=True, slots=True)
+class NativeIndexedGraphResult:
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "ranker_abstained_unverified",
+        "internal_fork_arm", "budget_unsatisfied",
+    ]
+    index_snapshot_id: str
+    registry_version: int
+    requested_k: int
+    qualified_path_count: int
+    candidates: tuple[NativeIndexedGraphCandidate, ...]
+    independent_quality_evidence: bool = False
+    calibrated_no_fit: bool = False
+    executable_authority: bool = False
+    experimental_ranked: bool = False
+    deterministic_paper_ranked: bool = False
 
 
 def research_lookup_graph(

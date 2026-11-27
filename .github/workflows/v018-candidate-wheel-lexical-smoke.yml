@@ -99,6 +99,12 @@ jobs:
                          schemarouter.NativeSchemaGraphIndex.lookup,
                          schemarouter.NativeSchemaGraphIndex._lookup_native_paths):
               assert '_research_ranker' not in signature(method).parameters
+          from dataclasses import fields
+          from typing import get_args, get_type_hints
+          for model in (schemarouter.IndexedNativeFieldResult, schemarouter.NativeIndexedGraphResult):
+              assert 'experimental_ranked' not in {field.name for field in fields(model)}
+              assert 'ranker_abstained_unverified' not in get_args(get_type_hints(model)['status'])
+              assert 'ranked_unverified' in get_args(get_type_hints(model)['status'])
           assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
           assert callable(schemarouter.NativeSchemaGraphIndex.lookup_shared_root_forks)
           assert callable(schemarouter.evaluate_state_eligibility)

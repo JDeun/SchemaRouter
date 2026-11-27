@@ -228,7 +228,7 @@ class NativeIndexedGraphCandidate:
 class NativeIndexedGraphResult:
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
-        "ranked_unverified", "ranker_abstained_unverified",
+        "ranked_unverified",
         "internal_fork_arm", "budget_unsatisfied",
     ]
     index_snapshot_id: str
@@ -239,7 +239,6 @@ class NativeIndexedGraphResult:
     independent_quality_evidence: bool = False
     calibrated_no_fit: bool = False
     executable_authority: bool = False
-    experimental_ranked: bool = False
     deterministic_paper_ranked: bool = False
 
 
