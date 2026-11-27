@@ -8,11 +8,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from .authorization import PrincipalContext
-from .errors import PolicyViolationError
-from .field_group_retrieval import NativeDeclaredFieldGroup, _alias_key, _complete_fields
-from .models import EndpointSpec, ToolSpec
-from .native_graph_index import (
+from schemarouter.authorization import PrincipalContext
+from schemarouter.errors import PolicyViolationError
+from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup, _alias_key, _complete_fields
+from schemarouter.models import EndpointSpec, ToolSpec
+from schemarouter.native_graph_index import (
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
     _flat_same_record_source_contract,
@@ -23,8 +23,8 @@ from .native_graph_index import (
 )
 
 if TYPE_CHECKING:
-    from .native_graph_index import NativeSchemaGraphIndex
-    from .runtime import SchemaRouter
+    from schemarouter.native_graph_index import NativeSchemaGraphIndex
+    from schemarouter.runtime import SchemaRouter
 
 MAX_BOUNDED_HOPS = 4
 MAX_BOUNDED_VISITS = 256

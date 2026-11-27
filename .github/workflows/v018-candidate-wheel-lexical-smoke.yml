@@ -38,6 +38,7 @@ jobs:
               for name in (
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
+                  "native_deep_paths",
               ):
                   assert f"schemarouter/{name}.py" not in names, name
               assert not any("research_legacy" in name for name in names)
@@ -53,6 +54,7 @@ jobs:
           for name in (
                   "planner", "planning_context", "planning_stages", "state_retrieval",
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
+                  "native_deep_paths",
               ):
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (
@@ -84,6 +86,9 @@ jobs:
           assert not hasattr(schemarouter.SchemaRouter, "_project_route_retrieval_data_scope")
           assert callable(schemarouter.SchemaRouter)
           assert callable(schemarouter.PaperQueryUnderstanding)
+          assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_bounded_paths")
+          assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
+          assert callable(schemarouter.NativeSchemaGraphIndex.lookup_shared_root_forks)
           assert callable(schemarouter.evaluate_state_eligibility)
           assert callable(schemarouter.evaluate_preconditions)
           assert callable(schemarouter.validate_declared_operation_fit)

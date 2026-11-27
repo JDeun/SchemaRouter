@@ -42,7 +42,6 @@ from .paper_native_rank import (
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
-    from .native_deep_paths import NativeIndexedPathResult
     from .native_fork_index import NativeIndexedSharedRootForkResult
     from .runtime import SchemaRouter
 
@@ -1613,28 +1612,6 @@ class NativeSchemaGraphIndex:
             tuple(qualified) if count <= k else (),
         )
 
-    def lookup_bounded_paths(
-        self,
-        router: SchemaRouter,
-        query: str,
-        *,
-        group: NativeDeclaredFieldGroup,
-        principal: PrincipalContext,
-        hops: int = 3,
-        k: int = STRICT_K,
-    ) -> NativeIndexedPathResult:
-        """Explicit research-only 2–4-edge typed route proof, no execution.
-
-        This delegates to the existing graph's adjacency and original
-        source/field comparators. It never creates an additional index.
-        """
-        from .native_deep_paths import lookup_bounded_native_paths
-
-        return lookup_bounded_native_paths(
-            self, router, query, group=group, principal=principal,
-            hops=hops, k=k,
-        )
-
     def lookup_shared_root_forks(
         self,
         router: SchemaRouter,
@@ -1644,7 +1621,7 @@ class NativeSchemaGraphIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
     ) -> NativeIndexedSharedRootForkResult:
-        """Research-only common-source two-leaf field AND (no row merge).
+        """Source-attested common-root field AND (no row merge).
 
         Delegates all authorization and typed joins to the existing native
         G5 single-field lookups; does not create a new retrieval index.

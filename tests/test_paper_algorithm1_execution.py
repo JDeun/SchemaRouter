@@ -159,7 +159,8 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
     assert not hasattr(SchemaPlanner, "_build_paper_direct_plan")
     for name in ("_build_plan", "_analyze_sync", "_candidates"):
         monkeypatch.setattr(SchemaPlanner, name, forbidden)
-    for name in ("lookup", "lookup_two_hop", "lookup_bounded_paths", "lookup_shared_root_forks"):
+    assert not hasattr(NativeSchemaGraphIndex, "lookup_bounded_paths")
+    for name in ("lookup", "lookup_two_hop", "lookup_shared_root_forks"):
         monkeypatch.setattr(NativeSchemaGraphIndex, name, forbidden)
 
     results = await session.aexecute_direct(QUERY, **kwargs)

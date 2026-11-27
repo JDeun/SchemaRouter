@@ -635,3 +635,13 @@ def test_standalone_g5_execution_experiment_is_not_installed() -> None:
     assert callable(schemarouter.NativeSchemaGraphIndex)
     assert callable(schemarouter.SchemaRouter.prepare_field_routing)
     assert callable(schemarouter.SchemaRouter.execute)
+
+
+def test_general_depth_g5_experiment_is_not_installed() -> None:
+    from importlib.util import find_spec
+
+    assert find_spec("schemarouter.native_deep_paths") is None
+    assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_bounded_paths")
+    assert callable(schemarouter.NativeSchemaGraphIndex.lookup)
+    assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
+    assert callable(schemarouter.NativeSchemaGraphIndex.lookup_shared_root_forks)

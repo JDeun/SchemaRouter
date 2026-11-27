@@ -19,6 +19,7 @@ from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_g5_deep_paths import lookup_bounded_native_paths
 
 ACTOR = PrincipalContext(subject="auditor", roles=("reader",))
 ALIASES = ("payment status", "결제 상태", "支払状況")
@@ -125,8 +126,8 @@ def _index(router: SchemaRouter) -> NativeSchemaGraphIndex:
 def test_bounded_original_2_to_4_edges_are_exact_and_source_pinned(hops, query):
     router = _router(hops)
     graph = _index(router)
-    result = graph.lookup_bounded_paths(
-        router, query, group=GROUP, principal=ACTOR, hops=hops,
+    result = lookup_bounded_native_paths(
+        graph, router, query, group=GROUP, principal=ACTOR, hops=hops,
     )
     expected = (
         ("root.read",)
@@ -155,8 +156,8 @@ def test_bounded_original_2_to_4_edges_are_exact_and_source_pinned(hops, query):
 def test_three_hop_chain_cannot_masquerade_as_two_hop_route():
     router = _router(3)
     graph = _index(router)
-    out = graph.lookup_bounded_paths(
-        router, ALIASES[0], group=GROUP, principal=ACTOR, hops=2,
+    out = lookup_bounded_native_paths(
+        graph, router, ALIASES[0], group=GROUP, principal=ACTOR, hops=2,
     )
     assert out.status == "no_proven_hit"
     assert out.candidates == ()
@@ -174,8 +175,8 @@ def test_deep_chain_rejects_wrong_types_hidden_or_denied_middle(depth, failure):
         hidden_at=0 if failure == "hidden" else None,
         denied_at=0 if failure == "denied" else None,
     )
-    result = _index(router).lookup_bounded_paths(
-        router, ALIASES[0], group=GROUP, principal=ACTOR, hops=depth,
+    result = lookup_bounded_native_paths(
+        _index(router), router, ALIASES[0], group=GROUP, principal=ACTOR, hops=depth,
     )
     assert result.status == "no_proven_hit"
     assert result.qualified_path_count == 0
@@ -184,8 +185,8 @@ def test_deep_chain_rejects_wrong_types_hidden_or_denied_middle(depth, failure):
 
 def test_three_hop_over_k_refuses_to_expose_six_routes():
     router = _router(3, targets=6)
-    result = _index(router).lookup_bounded_paths(
-        router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+    result = lookup_bounded_native_paths(
+        _index(router), router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
     )
     assert result.status == "over_k_unranked"
     assert result.qualified_path_count == 6
@@ -204,8 +205,8 @@ def test_three_hop_query_does_not_fetch_unrelated_registered_tools(monkeypatch):
         return actual_get(key)
 
     monkeypatch.setattr(router.registry, "get", bounded)
-    result = graph.lookup_bounded_paths(
-        router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+    result = lookup_bounded_native_paths(
+        graph, router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
     )
     assert result.qualified_path_count == 1
     assert seen
@@ -227,8 +228,8 @@ def test_late_same_callable_revocation_invalidates_all_earlier_deep_paths():
         PolicyViolationError,
         match="G5 bounded path eligibility changed during lookup",
     ):
-        graph.lookup_bounded_paths(
-            router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+        lookup_bounded_native_paths(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
         )
     assert revoked
 
@@ -237,8 +238,8 @@ def test_late_same_callable_revocation_invalidates_all_earlier_deep_paths():
 def test_expansion_depth_must_be_explicitly_bounded(bad_hops):
     router = _router(3)
     with pytest.raises(ValueError, match="2..4 hops"):
-        _index(router).lookup_bounded_paths(
-            router, ALIASES[0], group=GROUP, principal=ACTOR, hops=bad_hops,
+        lookup_bounded_native_paths(
+            _index(router), router, ALIASES[0], group=GROUP, principal=ACTOR, hops=bad_hops,
         )
 
 
@@ -246,13 +247,13 @@ def test_deep_path_untrusted_query_and_registry_mutation_fail_closed():
     router = _router(3)
     graph = _index(router)
     with pytest.raises(ValueError, match="host-approved query edge"):
-        graph.lookup_bounded_paths(
-            router, "unreviewed target", group=GROUP, principal=ACTOR,
+        lookup_bounded_native_paths(
+            graph, router, "unreviewed target", group=GROUP, principal=ACTOR,
         )
     router.add_tool(_tool("new_source", output="other.new"))
     with pytest.raises(PolicyViolationError, match="source revision is stale"):
-        graph.lookup_bounded_paths(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        lookup_bounded_native_paths(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
 
 
@@ -268,8 +269,8 @@ def test_deep_path_availability_exception_redacts_private_provider_details():
     with pytest.raises(
         PolicyViolationError, match="G5 bounded path eligibility changed",
     ) as caught:
-        graph.lookup_bounded_paths(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        lookup_bounded_native_paths(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
     assert private not in str(caught.value)
     assert caught.value.__suppress_context__
@@ -281,8 +282,8 @@ def test_two_hop_new_general_depth_agrees_with_existing_source_evidence():
     legacy = graph.lookup_two_hop(
         router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
-    flexible = graph.lookup_bounded_paths(
-        router, ALIASES[0], group=GROUP, principal=ACTOR, hops=2,
+    flexible = lookup_bounded_native_paths(
+        graph, router, ALIASES[0], group=GROUP, principal=ACTOR, hops=2,
     )
     assert legacy.qualified_path_count == flexible.qualified_path_count == 1
     assert legacy.candidates[0].route_ids == flexible.candidates[0].route_ids
@@ -328,8 +329,8 @@ def test_bounded_graph_budget_counts_rejected_candidate_probes(
         PolicyViolationError,
         match="G5 bounded path eligibility changed during lookup",
     ) as caught:
-        graph.lookup_bounded_paths(
-            router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+        lookup_bounded_native_paths(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
         )
     # Dense target postings now fail at the preflight, BEFORE any health
     # callback or original ToolSpec fetch. Predecessor fanout is rejected
@@ -375,8 +376,8 @@ def test_g5_high_degree_short_circuits_before_sort_and_source_reads(
         PolicyViolationError,
         match="G5 bounded path eligibility changed during lookup",
     ):
-        graph.lookup_bounded_paths(
-            router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+        lookup_bounded_native_paths(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
         )
     if fanout == "target_postings":
         assert fetched == []
