@@ -1,0 +1,291 @@
+{
+  "kind": "mechanism_only_not_agent_score",
+  "source_api_blob": "da3b3dbda4173fec83d7fee064d01202fa69b04e",
+  "python": "3.13.5",
+  "revision": "ae604de5f0ac039fd8fc2ee3d15b3a82a564c47cde1beb75aeeb74bb2e6660e5",
+  "route_count": 19,
+  "field_count": 166,
+  "concept_count": 171,
+  "edge_count": 505,
+  "full_flat_bytes": 92792,
+  "full_graph_bytes": 100190,
+  "full_equal_information": true,
+  "neighborhoods_equal": 19,
+  "median_neighborhood_flat_bytes": 4004,
+  "median_neighborhood_graph_bytes": 4406,
+  "neighborhoods": [
+    {
+      "route": "r0",
+      "tool": "arxiv",
+      "flat_bytes": 5605,
+      "graph_bytes": 6064
+    },
+    {
+      "route": "r1",
+      "tool": "cod",
+      "flat_bytes": 6153,
+      "graph_bytes": 6739
+    },
+    {
+      "route": "r2",
+      "tool": "crossref",
+      "flat_bytes": 7666,
+      "graph_bytes": 8280
+    },
+    {
+      "route": "r3",
+      "tool": "dart",
+      "flat_bytes": 3073,
+      "graph_bytes": 3306
+    },
+    {
+      "route": "r4",
+      "tool": "europe_pmc",
+      "flat_bytes": 4290,
+      "graph_bytes": 4645
+    },
+    {
+      "route": "r5",
+      "tool": "jarvis",
+      "flat_bytes": 7682,
+      "graph_bytes": 8371
+    },
+    {
+      "route": "r6",
+      "tool": "materials_project",
+      "flat_bytes": 14017,
+      "graph_bytes": 15055
+    },
+    {
+      "route": "r7",
+      "tool": "nomad",
+      "flat_bytes": 6488,
+      "graph_bytes": 6886
+    },
+    {
+      "route": "r8",
+      "tool": "omdb",
+      "flat_bytes": 3121,
+      "graph_bytes": 3397
+    },
+    {
+      "route": "r9",
+      "tool": "openalex",
+      "flat_bytes": 3919,
+      "graph_bytes": 4249
+    },
+    {
+      "route": "r10",
+      "tool": "oqmd",
+      "flat_bytes": 4586,
+      "graph_bytes": 5009
+    },
+    {
+      "route": "r11",
+      "tool": "pubchem",
+      "flat_bytes": 7333,
+      "graph_bytes": 8035
+    },
+    {
+      "route": "r12",
+      "tool": "pubmed",
+      "flat_bytes": 3484,
+      "graph_bytes": 3828
+    },
+    {
+      "route": "r13",
+      "tool": "stack_exchange",
+      "flat_bytes": 3845,
+      "graph_bytes": 4172
+    },
+    {
+      "route": "r14",
+      "tool": "tavily",
+      "flat_bytes": 2111,
+      "graph_bytes": 2321
+    },
+    {
+      "route": "r15",
+      "tool": "tcod",
+      "flat_bytes": 4004,
+      "graph_bytes": 4406
+    },
+    {
+      "route": "r16",
+      "tool": "web_search",
+      "flat_bytes": 1776,
+      "graph_bytes": 1938
+    },
+    {
+      "route": "r17",
+      "tool": "wikinews",
+      "flat_bytes": 2052,
+      "graph_bytes": 2214
+    },
+    {
+      "route": "r18",
+      "tool": "wikipedia",
+      "flat_bytes": 2379,
+      "graph_bytes": 2589
+    }
+  ],
+  "fixed_traces": [
+    {
+      "term": "band_gap",
+      "routes": 3,
+      "route_ids": [
+        "r10",
+        "r6",
+        "r7"
+      ],
+      "field_hits": 3,
+      "candidate_concepts": 3,
+      "locator_bytes": 701,
+      "flat_inspect_bytes": 25041,
+      "graph_inspect_bytes": 26842,
+      "flat_total_observation_bytes": 25742,
+      "graph_total_observation_bytes": 27543,
+      "hits": [
+        {
+          "tool": "materials_project",
+          "path": [
+            "band_gap"
+          ]
+        },
+        {
+          "tool": "nomad",
+          "path": [
+            "results.properties.electronic_band_gap_value"
+          ]
+        },
+        {
+          "tool": "oqmd",
+          "path": [
+            "band_gap"
+          ]
+        }
+      ]
+    },
+    {
+      "term": "elastic modulus",
+      "routes": 2,
+      "route_ids": [
+        "r5",
+        "r6"
+      ],
+      "field_hits": 4,
+      "candidate_concepts": 3,
+      "locator_bytes": 865,
+      "flat_inspect_bytes": 21519,
+      "graph_inspect_bytes": 23217,
+      "flat_total_observation_bytes": 22384,
+      "graph_total_observation_bytes": 24082,
+      "hits": [
+        {
+          "tool": "jarvis",
+          "path": [
+            "bulk_modulus_kv"
+          ]
+        },
+        {
+          "tool": "jarvis",
+          "path": [
+            "shear_modulus_gv"
+          ]
+        },
+        {
+          "tool": "materials_project",
+          "path": [
+            "k_vrh"
+          ]
+        },
+        {
+          "tool": "materials_project",
+          "path": [
+            "g_vrh"
+          ]
+        }
+      ]
+    },
+    {
+      "term": "research paper",
+      "routes": 5,
+      "route_ids": [
+        "r0",
+        "r12",
+        "r2",
+        "r4",
+        "r9"
+      ],
+      "field_hits": 10,
+      "candidate_concepts": 1,
+      "locator_bytes": 1429,
+      "flat_inspect_bytes": 24596,
+      "graph_inspect_bytes": 26582,
+      "flat_total_observation_bytes": 26025,
+      "graph_total_observation_bytes": 28011,
+      "hits": [
+        {
+          "tool": "arxiv",
+          "path": [
+            "title"
+          ]
+        },
+        {
+          "tool": "arxiv",
+          "path": [
+            "summary"
+          ]
+        },
+        {
+          "tool": "crossref",
+          "path": [
+            "title"
+          ]
+        },
+        {
+          "tool": "crossref",
+          "path": [
+            "abstract"
+          ]
+        },
+        {
+          "tool": "europe_pmc",
+          "path": [
+            "title"
+          ]
+        },
+        {
+          "tool": "europe_pmc",
+          "path": [
+            "abstract"
+          ]
+        },
+        {
+          "tool": "openalex",
+          "path": [
+            "title"
+          ]
+        },
+        {
+          "tool": "openalex",
+          "path": [
+            "abstract"
+          ]
+        },
+        {
+          "tool": "pubmed",
+          "path": [
+            "title"
+          ]
+        },
+        {
+          "tool": "pubmed",
+          "path": [
+            "abstract"
+          ]
+        }
+      ]
+    }
+  ]
+}
