@@ -1,40 +1,14 @@
 # State-aware capability retrieval
 
-External runtimes can filter ordinary capability retrieval against explicit typed execution state without giving SchemaRouter workflow or execution authority.
+The development package no longer exposes the historical state-eligibility filter for lexical Top-K results. Original-paper Algorithm 1 planning does not rerank or backfill candidates based on host workflow state.
 
-The stable `retrieve(request, *, k=5)` facade remains stateless and backward-compatible. Use the explicit state-aware surface when host state must participate in eligibility:
-
-```python
-from schemarouter import CapabilityFieldContract, TypedExecutionState
-
-eligible = router.retrieve_state_aware(
-    "continue the material lookup",
-    execution_state=TypedExecutionState(...),
-    state_requirements={
-        "materials.summary": [
-            CapabilityFieldContract(
-                semantic_id="resource.material_id",
-                json_schema={"type": "string"},
-            )
-        ]
-    },
-)
-```
-
-The asynchronous counterpart is `await router.aretrieve_state_aware(...)`. The lower-level `filter_retrieval_by_state(...)` helper remains available when a host already has a `CapabilityRetrieval` object.
+Hosts can use the shared typed contracts `TypedExecutionState`, `evaluate_state_eligibility(requirements, state)`, and `evaluate_preconditions(preconditions, state)` to check explicitly declared state requirements and preconditions. These functions neither select candidates nor grant execution authority.
 
 ## Fixed Top-K eligibility
 
-`retrieve_state_aware(...)` checks the original bounded candidates without backfilling.
-The former state-conditioned backfill APIs are removed from the installed package.
-Their historical comparison implementation is preserved in `scripts/research_legacy_state_backfill.py`.
-Any subsequent workflow decision belongs to the host, not the routing algorithm.
+The historical fixed Top-K comparison is preserved in `scripts/research_legacy_planning/state_retrieval.py` in a source checkout, and the state-conditioned backfill comparison in `scripts/research_legacy_state_backfill.py`. Neither implementation is an installed API or a fallback for the paper planning path.
 
-`state_requirements` and `state_preconditions` are explicit host-supplied contract metadata. SchemaRouter does not infer workflow preconditions from route names, parameter names, descriptions, previous rank positions, or hidden future routes.
-
-A declared requirement with missing or incompatible typed state is excluded fail-closed; routes with no declared state requirement retain stateless behavior. Existing `router.retrieve(query, k=...)` and `router.aretrieve(...)` callers therefore keep the original `CapabilityRetrieval` contract and signature.
-
-This surface returns capability information only. It does not select a workflow, execute a capability, commit or roll back a transaction, mutate host state, schedule retries, compensate an operation, or widen authorization. Host runtimes remain responsible for policy, availability, execution, retry, and compensation.
+The historical comparison checks only already-visible candidates, never exposes hidden routes or infers workflow state, and fails closed on missing or incompatible declared requirements. Workflow selection, execution approval, state mutation, retries and compensation remain host responsibilities. The product's registered execution boundary and authorization checks are unchanged.
 
 ## Historical adaptive context baseline
 

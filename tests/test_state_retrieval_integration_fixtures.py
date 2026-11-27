@@ -1,7 +1,7 @@
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.execution_state import ObservedStateField, TypedExecutionState
 from schemarouter.models import CapabilityCandidate, CapabilityRetrieval
-from schemarouter.state_retrieval import filter_retrieval_by_state
+from scripts.research_legacy_planning.state_retrieval import filter_retrieval_by_state
 
 
 def _candidate(route_id: str, rank: int, tool: str) -> CapabilityCandidate:

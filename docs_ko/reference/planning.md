@@ -14,7 +14,7 @@
 
 ## SchemaPlanner
 
-::: schemarouter.SchemaPlanner
+개발 배포 API에서 제거된 과거 Lexical 계획 구성 요소입니다. 소스 체크아웃의 `scripts.research_legacy_planning.planner`에서 비교 구현을 확인할 수 있습니다.
 
 ## ExecutionPlan
 
@@ -30,11 +30,11 @@
 
 ## QueryAnalyzer
 
-::: schemarouter.QueryAnalyzer
+개발 배포 API에서 제거된 과거 Lexical 계획 구성 요소입니다. 소스 체크아웃의 `scripts.research_legacy_planning.planner`에서 비교 구현을 확인할 수 있습니다.
 
 ## KeywordAnalyzer
 
-::: schemarouter.KeywordAnalyzer
+개발 배포 API에서 제거된 과거 Lexical 계획 구성 요소입니다. 소스 체크아웃의 `scripts.research_legacy_planning.planner`에서 비교 구현을 확인할 수 있습니다.
 
 ## ModelQueryAnalyzer
 
@@ -90,5 +90,5 @@
 
 ## StateAwareCapabilityRetrieval
 
-::: schemarouter.StateAwareCapabilityRetrieval
+개발 배포 API에서 제거되었습니다. 과거 비교 타입은 소스 체크아웃의 `scripts.research_legacy_planning.state_retrieval`에 보존합니다.
 

@@ -35,10 +35,6 @@ from schemarouter.models import (
     ToolSpec,
 )
 from schemarouter.registry import ToolRegistry
-from schemarouter.state_retrieval import (
-    StateAwareCapabilityRetrieval,
-    filter_retrieval_by_state,
-)
 from schemarouter.validation import (
     canonical_field_value_schema,
     effective_input_schema,
@@ -61,6 +57,10 @@ from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.source_availability import (
     _LegacySourceAvailability,
     _SnapshotFingerprints,
+)
+from scripts.research_legacy_planning.state_retrieval import (
+    StateAwareCapabilityRetrieval,
+    filter_retrieval_by_state,
 )
 
 

@@ -29,7 +29,7 @@
     },
     {
       "path": "concepts/capability-catalog.md",
-      "source_blob": "ec4cf62eba40f612abbdbb1dab84a434ffadd3b1"
+      "source_blob": "ade5f6441dd9b3a98abbd96328d0386539b5a912"
     },
     {
       "path": "concepts/decision-backends.md",
@@ -49,7 +49,7 @@
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "982890c0e47393ccd92fcf7ced29fe3974a15446"
+      "source_blob": "2a436a6de5c8721093fb86ff629d847e169d892b"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -281,7 +281,7 @@
     },
     {
       "path": "guides/state-aware-retrieval.md",
-      "source_blob": "caae430f7614b32512454d8e1f51ec86fe5b12bc"
+      "source_blob": "3adddbde00f5bddffd45bf779ffe9e3d3302561b"
     },
     {
       "path": "guides/universal-ingestion.md",
@@ -417,11 +417,11 @@
     },
     {
       "path": "reference/models.md",
-      "source_blob": "bbad50fae210791153afbebca9548d270421529f"
+      "source_blob": "da3a423d4dc7caf511e6e967f4ec208c7b209fae"
     },
     {
       "path": "reference/planning.md",
-      "source_blob": "833da4de203f6371e82030ecb6c1262b9cc7cb21"
+      "source_blob": "45e612c4ae6f36c1d0ed8556be081378b2b58116"
     },
     {
       "path": "reference/runtime.md",
@@ -617,7 +617,7 @@
     },
     {
       "path": "stable-core.md",
-      "source_blob": "2866a405649d23ef423eb5536cd5fa8e2d867d9a"
+      "source_blob": "83cb539219d2fa143e2db61ff723c32d12534648"
     },
     {
       "path": "superpowers/plans/2026-10-22-g5-native-vertical-slice.md",
@@ -633,7 +633,7 @@
     },
     {
       "path": "versioning.md",
-      "source_blob": "4c3f0a766760b31c27a30bcbb43c915ce390010d"
+      "source_blob": "ee69659f0464e76a81e046d77b4533cf98eb35a6"
     }
   ]
 }

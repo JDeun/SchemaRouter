@@ -1,40 +1,14 @@
 # 상태 인식 capability retrieval
 
-외부 런타임은 SchemaRouter에 워크플로 또는 실행 권한을 넘기지 않고도 명시적인 typed execution state를 기준으로 일반 capability retrieval 결과를 필터링할 수 있습니다.
+개발 배포 패키지에서는 과거 Lexical Top-K 결과의 상태 적격성 필터링 API를 제거했습니다. 원 논문 Algorithm 1에 따른 계획은 호스트의 워크플로 상태를 근거로 재랭킹하거나 후보를 보충하지 않습니다.
 
-기존 `retrieve(request, *, k=5)` facade는 stateless 계약과 하위 호환성을 그대로 유지합니다. 호스트 상태를 eligibility 판단에 반영해야 할 때는 명시적인 state-aware API를 사용합니다.
-
-```python
-from schemarouter import CapabilityFieldContract, TypedExecutionState
-
-eligible = router.retrieve_state_aware(
-    "material 조회를 계속해",
-    execution_state=TypedExecutionState(...),
-    state_requirements={
-        "materials.summary": [
-            CapabilityFieldContract(
-                semantic_id="resource.material_id",
-                json_schema={"type": "string"},
-            )
-        ]
-    },
-)
-```
-
-비동기 API는 `await router.aretrieve_state_aware(...)` 입니다. 호스트가 이미 `CapabilityRetrieval` 객체를 가지고 있다면 하위 수준의 `filter_retrieval_by_state(...)` 도 사용할 수 있습니다.
+호스트는 공통 타입 계약인 `TypedExecutionState`와 `evaluate_state_eligibility(requirements, state)`, `evaluate_preconditions(preconditions, state)`를 사용하여 명시적으로 선언된 상태 요구사항과 사전조건을 검사할 수 있습니다. 이 함수들은 후보를 선택하거나 실행 권한을 부여하지 않습니다.
 
 ## 고정 Top-K 적격성 검사
 
-`retrieve_state_aware(...)`는 기존의 제한된 후보만 검사하며 다른 후보를 보충하지 않습니다.
-과거 상태 조건부 backfill API는 배포 패키지에서 제거되었습니다.
-기존 비교 구현은 `scripts/research_legacy_state_backfill.py`에 보존합니다.
-이후 워크플로 결정은 라우팅 알고리즘이 아니라 호스트의 책임입니다.
+과거 고정 Top-K 비교 구현은 소스 체크아웃의 `scripts/research_legacy_planning/state_retrieval.py`에, 상태 조건부 backfill 비교 구현은 `scripts/research_legacy_state_backfill.py`에 보존합니다. 두 구현은 배포 패키지의 API나 원 논문 계획 경로의 fallback이 아닙니다.
 
-`state_requirements` 와 `state_preconditions` 는 호스트가 명시적으로 제공하는 계약 메타데이터입니다. SchemaRouter는 route 이름, parameter 이름, 설명, 이전 rank 위치 또는 숨겨진 미래 route에서 workflow precondition을 추론하지 않습니다.
-
-선언된 requirement에 필요한 typed state가 없거나 호환되지 않으면 해당 후보는 fail-closed로 제외됩니다. 반대로 state requirement가 선언되지 않은 route는 기존 stateless 동작을 유지합니다. 따라서 기존 `router.retrieve(query, k=...)` 및 `router.aretrieve(...)` 호출은 원래의 `CapabilityRetrieval` 계약과 시그니처를 그대로 유지합니다.
-
-이 API는 capability 정보만 반환합니다. 워크플로 선택, capability 실행, transaction commit/rollback, 호스트 상태 변경, retry scheduling, compensation 실행 또는 authorization 확대를 수행하지 않습니다. 정책, availability, 실행, retry, compensation 권한은 계속 호스트 런타임에 있습니다.
+기존 비교 구현은 이미 허용된 후보만 검사하며 숨겨진 경로를 노출하거나 워크플로 상태를 추론하지 않습니다. 누락되거나 호환되지 않는 명시적 요구사항은 fail-closed로 처리합니다. 워크플로 선택, 실행 승인, 상태 변경, 재시도 및 보상 결정은 호스트의 책임입니다. 제품의 등록된 실행 경계와 권한 검증은 그대로 유지됩니다.
 
 ## 과거 adaptive context 비교 실험
 

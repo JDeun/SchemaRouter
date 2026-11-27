@@ -1,15 +1,17 @@
+"""Historical lexical fixed Top-K state filtering (source checkout only)."""
+
 from __future__ import annotations
 
 from pydantic import Field
 
-from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
-from .execution_state import (
+from schemarouter.capability_contracts import CapabilityFieldContract, CapabilityPrecondition
+from schemarouter.execution_state import (
     StateEligibility,
     TypedExecutionState,
     evaluate_preconditions,
     evaluate_state_eligibility,
 )
-from .models import CapabilityCandidate, CapabilityRetrieval, StrictModel
+from schemarouter.models import CapabilityCandidate, CapabilityRetrieval, StrictModel
 
 
 class StateAwareCapabilityCandidate(StrictModel):

@@ -498,12 +498,6 @@ from .semantic_attestations import (
     HostSemanticMapping,
     apply_host_semantic_attestation,
 )
-from .state_retrieval import (
-    StateAwareCapabilityCandidate,
-    StateAwareCapabilityRetrieval,
-    evaluate_candidate_state,
-    filter_retrieval_by_state,
-)
 from .storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
@@ -888,8 +882,6 @@ __all__ = [
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
-    "StateAwareCapabilityCandidate",
-    "StateAwareCapabilityRetrieval",
     "StateEligibility",
     "StateEligibilityReason",
     "StorageFormatError",
@@ -939,9 +931,7 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
-    "evaluate_candidate_state",
     "evaluate_preconditions",
-    "filter_retrieval_by_state",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",

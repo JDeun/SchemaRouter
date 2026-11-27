@@ -24,6 +24,10 @@
 
 ::: schemarouter.EvidenceRequirements
 
+## PaperPlanRequest
+
+::: schemarouter.PaperPlanRequest
+
 ## QueryIntent
 
 ::: schemarouter.QueryIntent
@@ -78,11 +82,11 @@
 
 ## StateAwareCapabilityCandidate
 
-::: schemarouter.StateAwareCapabilityCandidate
+개발 배포 API에서 제거되었습니다. 과거 비교 타입은 소스 체크아웃의 `scripts.research_legacy_planning.state_retrieval`에 보존합니다.
 
 ## StateAwareCapabilityRetrieval
 
-::: schemarouter.StateAwareCapabilityRetrieval
+개발 배포 API에서 제거되었습니다. 과거 비교 타입은 소스 체크아웃의 `scripts.research_legacy_planning.state_retrieval`에 보존합니다.
 
 
 ## CapabilityDecisionCandidate

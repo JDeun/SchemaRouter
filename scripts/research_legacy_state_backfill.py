@@ -8,8 +8,11 @@ from schemarouter.capability_contracts import CapabilityFieldContract, Capabilit
 from schemarouter.execution_state import TypedExecutionState
 from schemarouter.models import CapabilityCandidate, StrictModel
 from schemarouter.runtime import ConfiguredSchemaRouter, SchemaRouter
-from schemarouter.state_retrieval import StateAwareCapabilityCandidate, evaluate_candidate_state
 from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.state_retrieval import (
+    StateAwareCapabilityCandidate,
+    evaluate_candidate_state,
+)
 
 
 class StateConditionedCapabilityRetrieval(StrictModel):

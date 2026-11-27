@@ -1,5 +1,7 @@
 # Planning and field projection
 
+The lexical retrieval and planning examples on this page describe earlier releases, not the paper-first development package. Those APIs have been retired. The current planning input is `PaperPlanRequest` with `configure_field_routing`. For state-eligibility comparisons see the [historical state retrieval guide](../guides/state-aware-retrieval.md).
+
 Planning converts a request into one or more schema-constrained `ToolCall` objects.
 
 ## Input

@@ -1,5 +1,7 @@
 # Planning과 field projection
 
+이 페이지의 Lexical 검색 및 계획 예시는 이전 릴리스 계약을 설명하는 과거 자료입니다. 개발 중인 원 논문 중심 패키지에서는 해당 API가 제거되었습니다. 현재의 계획 입력은 `PaperPlanRequest`이며 `configure_field_routing`으로 설정합니다. 상태 적격성 비교는 [연구용 상태 검색 가이드](../guides/state-aware-retrieval.md)를 참고하세요.
+
 Planning은 요청을 schema 제약을 따르는 하나 이상의 `ToolCall` 객체로 변환합니다.
 
 ## 입력

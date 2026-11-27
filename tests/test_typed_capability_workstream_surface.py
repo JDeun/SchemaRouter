@@ -10,7 +10,7 @@ def test_typed_capability_workstream_public_surface_is_consolidated() -> None:
         "CapabilityFallbackEligibility",
         "CapabilityNegotiationResult",
         "CapabilityGraphSnapshot",
-        "StateAwareCapabilityRetrieval",
+        "TypedExecutionState",
     }
 
     assert expected <= set(schemarouter.__all__)

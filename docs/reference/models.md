@@ -24,6 +24,10 @@
 
 ::: schemarouter.EvidenceRequirements
 
+## PaperPlanRequest
+
+::: schemarouter.PaperPlanRequest
+
 ## QueryIntent
 
 ::: schemarouter.QueryIntent
@@ -80,11 +84,11 @@
 
 ## StateAwareCapabilityCandidate
 
-::: schemarouter.StateAwareCapabilityCandidate
+Retired from the development package. The historical comparison type remains in `scripts.research_legacy_planning.state_retrieval` in a source checkout.
 
 ## StateAwareCapabilityRetrieval
 
-::: schemarouter.StateAwareCapabilityRetrieval
+Retired from the development package. The historical comparison type remains in `scripts.research_legacy_planning.state_retrieval` in a source checkout.
 
 
 ## CapabilityDecisionCandidate

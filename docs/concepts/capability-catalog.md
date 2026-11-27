@@ -1,5 +1,7 @@
 # Structured retrieval and execution for RAG and agents
 
+The lexical retrieval and planning examples on this page describe earlier releases, not the paper-first development package. Those APIs have been retired. The current planning input is `PaperPlanRequest` with `configure_field_routing`. For state-eligibility comparisons see the [historical state retrieval guide](../guides/state-aware-retrieval.md).
+
 **RAG (Retrieval-Augmented Generation)** is a generation architecture in which a model's output is
 augmented with information retrieved from external, non-parametric sources.
 

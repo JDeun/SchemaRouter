@@ -1,5 +1,7 @@
 # Stable core contract
 
+The lexical retrieval and planning examples on this page describe earlier releases, not the paper-first development package. Those APIs have been retired. The current planning input is `PaperPlanRequest` with `configure_field_routing`. For state-eligibility comparisons see the [historical state retrieval guide](guides/state-aware-retrieval.md).
+
 SchemaRouter's current product architecture is considered complete enough to freeze while
 research continues independently.
 

@@ -14,7 +14,7 @@
 
 ## SchemaPlanner
 
-::: schemarouter.SchemaPlanner
+Retired lexical planning component. The historical comparison implementation is available in `scripts.research_legacy_planning.planner` in a source checkout.
 
 ## ExecutionPlan
 
@@ -30,11 +30,11 @@
 
 ## QueryAnalyzer
 
-::: schemarouter.QueryAnalyzer
+Retired lexical planning component. The historical comparison implementation is available in `scripts.research_legacy_planning.planner` in a source checkout.
 
 ## KeywordAnalyzer
 
-::: schemarouter.KeywordAnalyzer
+Retired lexical planning component. The historical comparison implementation is available in `scripts.research_legacy_planning.planner` in a source checkout.
 
 ## ModelQueryAnalyzer
 
@@ -92,5 +92,5 @@ Retired from the development package. Reproduce the historical schema-catalog an
 
 ## StateAwareCapabilityRetrieval
 
-::: schemarouter.StateAwareCapabilityRetrieval
+Retired from the development package. The historical comparison type remains in `scripts.research_legacy_planning.state_retrieval` in a source checkout.
 

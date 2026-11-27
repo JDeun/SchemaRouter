@@ -428,12 +428,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "CapabilityEffects",
         "CapabilityPrecondition",
         "EffectKind",
-        "StateAwareCapabilityCandidate",
-        "StateAwareCapabilityRetrieval",
         "TriState",
-        "evaluate_candidate_state",
         "evaluate_preconditions",
-        "filter_retrieval_by_state",
         "CapabilityGraphSnapshot",
         "validate_capability_publication",
         "CapabilitySnapshotStore",
@@ -573,3 +569,19 @@ def test_flat_lexical_request_is_not_installed() -> None:
     assert not hasattr(schemarouter, "PlanRequest")
     assert not hasattr(models, "PlanRequest")
     assert callable(schemarouter.PaperPlanRequest)
+
+
+def test_retired_lexical_state_retrieval_is_not_installed() -> None:
+    from importlib.util import find_spec
+
+    assert find_spec("schemarouter.state_retrieval") is None
+    for name in (
+        "StateAwareCapabilityCandidate",
+        "StateAwareCapabilityRetrieval",
+        "evaluate_candidate_state",
+        "filter_retrieval_by_state",
+    ):
+        assert not hasattr(schemarouter, name), name
+    assert callable(schemarouter.evaluate_state_eligibility)
+    assert callable(schemarouter.evaluate_preconditions)
+    assert callable(schemarouter.TypedExecutionState)

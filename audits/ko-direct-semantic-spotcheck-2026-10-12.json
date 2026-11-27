@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-11-26",
+  "review_date": "2026-11-27",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
   "reviewed_page_pairs": 158,
@@ -56,9 +56,9 @@
     },
     {
       "path": "concepts/capability-catalog.md",
-      "en_blob": "ec4cf62eba40f612abbdbb1dab84a434ffadd3b1",
-      "ko_blob": "75acfcc31a5179f125f017ac473ef62207f45312",
-      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "ade5f6441dd9b3a98abbd96328d0386539b5a912",
+      "ko_blob": "e3b0f95232916df25f315d363af1827d2139f6b9",
+      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     },
     {
       "path": "concepts/decision-backends.md",
@@ -87,9 +87,9 @@
     },
     {
       "path": "concepts/planning.md",
-      "en_blob": "982890c0e47393ccd92fcf7ced29fe3974a15446",
-      "ko_blob": "761fa1ae70394147f7d08b547a82c3eb8a4ead05",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
+      "en_blob": "2a436a6de5c8721093fb86ff629d847e169d892b",
+      "ko_blob": "a2b3543046e01e9bb7356a60ec82b96c916ef247",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership. 2026-11-03 delta: AI-assisted EN/KO comparison of required JSON Schema assertion checks shared by provider fallback and corroboration: enum/const, numeric/string/array constraints and canonical units; unproved differences do not establish compatibility and general subsumption is not claimed. Not independent human review. 2026-11-03 delta: AI-assisted EN/KO comparison. Shared assertion checks conservatively retain complete reference-dependent schemas and reject schema-bound NaN/infinity while preserving large integers and nullability. Not independent human editorial sign-off. The same schema-bound numeric boundary also rejects non-finite Decimal and complex values, with no conversion of finite Decimal or large integers. AI-assisted source comparison only. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -435,9 +435,9 @@
     },
     {
       "path": "guides/state-aware-retrieval.md",
-      "en_blob": "caae430f7614b32512454d8e1f51ec86fe5b12bc",
-      "ko_blob": "a1584b5f1b4332308e69568ae9ac692e55cbe7e4",
-      "notes": "Matched Top-K filtering versus backfill, visible-only surface, no workflow inference and bounded fingerprint history state. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "3adddbde00f5bddffd45bf779ffe9e3d3302561b",
+      "ko_blob": "6e4fccf553c29f894383946f521850c05b570996",
+      "notes": "Matched Top-K filtering versus backfill, visible-only surface, no workflow inference and bounded fingerprint history state. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     },
     {
       "path": "guides/universal-ingestion.md",
@@ -639,15 +639,15 @@
     },
     {
       "path": "reference/models.md",
-      "en_blob": "bbad50fae210791153afbebca9548d270421529f",
-      "ko_blob": "148179007dd994330682386fad89d5d1eab7ca03",
-      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "da3a423d4dc7caf511e6e967f4ec208c7b209fae",
+      "ko_blob": "5928c231eb10f35183f710408e495ad2e5e0f275",
+      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     },
     {
       "path": "reference/planning.md",
-      "en_blob": "833da4de203f6371e82030ecb6c1262b9cc7cb21",
-      "ko_blob": "db7a10d605a2b0de3310f8fe1683806e4d9eb2e7",
-      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification."
+      "en_blob": "45e612c4ae6f36c1d0ed8556be081378b2b58116",
+      "ko_blob": "67a37ffa383365de933be146defaec131b32d89c",
+      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-26: paired AI-assisted delta review of the catalog-based analyzer retirement and explicit research-only imports; product recipes use caller-owned requests, and local schema/authority boundaries remain unchanged. Not independent sentence-level certification. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     },
     {
       "path": "reference/runtime.md",
@@ -939,9 +939,9 @@
     },
     {
       "path": "stable-core.md",
-      "en_blob": "2866a405649d23ef423eb5536cd5fa8e2d867d9a",
-      "ko_blob": "d9cd35b56e7dffe8ebda971faa4298f33d3b8d21",
-      "notes": "Matched durable execution boundary, additive state-aware retrieval and conditions for architecture changes without conflating 1.0 guarantee. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "83cb539219d2fa143e2db61ff723c32d12534648",
+      "ko_blob": "1e97c88dec9597a7130329dcc49773c060360ab4",
+      "notes": "Matched durable execution boundary, additive state-aware retrieval and conditions for architecture changes without conflating 1.0 guarantee. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     },
     {
       "path": "superpowers/plans/2026-10-22-g5-native-vertical-slice.md",
@@ -963,9 +963,9 @@
     },
     {
       "path": "versioning.md",
-      "en_blob": "4c3f0a766760b31c27a30bcbb43c915ce390010d",
-      "ko_blob": "be4e8c6d24f97a1dce85b44d09e062b2411b640c",
-      "notes": "Compared release tag freshness, SQLite v0->v1 integrity rules, artifact 1.1 and snapshot 1.0 migrations, first-party trust and deprecation priorities. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off."
+      "en_blob": "ee69659f0464e76a81e046d77b4533cf98eb35a6",
+      "ko_blob": "7306069e91192605113e28698ea34b618587755c",
+      "notes": "Compared release tag freshness, SQLite v0->v1 integrity rules, artifact 1.1 and snapshot 1.0 migrations, first-party trust and deprecation priorities. 2026-11-26 delta: AI-assisted paired source review of removed state-conditioned backfill and retained fixed Top-K eligibility; historical comparisons remain outside installed routing. No independent human sign-off. 2026-11-27 delta: AI-assisted paired source review of retired fixed Top-K state filter, preserved explicit typed-state/precondition evaluation and checkout-only comparisons; earlier lexical recipes labeled historical. No independent human sign-off."
     }
   ],
   "separately_inspected_pending_pr": [
@@ -988,6 +988,7 @@
     "2026-11-26: Re-reviewed EN/KO API and decision-backend pages after removal of installed PairwiseDecisionBackend and PairwiseScoreCallable; archived comparison and regression scope explicit. AI-assisted source comparison only.",
     "2026-11-26: Compared four changed bilingual pairs after installed DecisionPolicy removal, historical checkout-only comparisons and live inspection-field removal. AI-assisted source review only.",
     "2026-11-26: Compared four bilingual pairs after removing remaining model-ranking callbacks from installed planner and relocating their experimental pipeline to checkout-only research. AI-assisted source review only.",
-    "2026-11-26: Compared ten bilingual pairs after removal of installed decision plugin and provider adapter modules; preserved checkout-only comparison instructions and temporary compatibility extras. AI-assisted source review only."
+    "2026-11-26: Compared ten bilingual pairs after removal of installed decision plugin and provider adapter modules; preserved checkout-only comparison instructions and temporary compatibility extras. AI-assisted source review only.",
+    "2026-11-27: Compared seven changed EN/KO page pairs for the state-aware lexical API retirement, retained explicit state/precondition contracts and historical recipe labels; exact blobs updated. AI-assisted source review only."
   ]
 }

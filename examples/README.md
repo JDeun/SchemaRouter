@@ -219,8 +219,8 @@ guides:
 - **Provider-first onboarding:** use `await router.add_provider("materials-project")` or the live
   Materials Project/Crossref/Tavily smoke scripts above. See
   [provider-first registration](../docs/guides/provider-first-registration.md).
-- **State eligibility:** `retrieve_state_aware(...)` checks only the fixed Top-K.
-  Historical backfill is a research baseline, not a product API. See
+- **Historical state eligibility:** fixed Top-K and backfill are source-checkout comparisons,
+  not product routing APIs. Shared typed precondition checks remain available. See
   [state-aware retrieval](../docs/guides/state-aware-retrieval.md).
 - **Capability graph scale:** run `scripts/benchmark_capability_graph.py` for sparse 1k/10k/50k
   construction/update measurements. See

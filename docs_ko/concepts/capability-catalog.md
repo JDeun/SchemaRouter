@@ -1,5 +1,7 @@
 # RAG와 에이전트를 위한 구조화된 검색과 실행
 
+이 페이지의 Lexical 검색 및 계획 예시는 이전 릴리스 계약을 설명하는 과거 자료입니다. 개발 중인 원 논문 중심 패키지에서는 해당 API가 제거되었습니다. 현재의 계획 입력은 `PaperPlanRequest`이며 `configure_field_routing`으로 설정합니다. 상태 적격성 비교는 [연구용 상태 검색 가이드](../guides/state-aware-retrieval.md)를 참고하세요.
+
 **RAG(Retrieval-Augmented Generation, 검색 증강 생성)**는 외부의 비매개변수적 정보원에서 검색한 내용을 모델의 출력 생성에 활용하는 아키텍처입니다.
 
 SchemaRouter는 **RAG 자체가 아니며** 답변 생성 단계를 담당하지 않습니다. 외부 정보를 OpenAPI 엔드포인트, MCP 도구, OPTIMADE 서비스, 타입이 지정된 Python callable과 같은 구조화된 실행 가능 정보원에서 가져와야 할 경우, RAG 또는 에이전트 시스템의 검색 측면에 참여할 수 있습니다.

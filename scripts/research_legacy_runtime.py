@@ -35,13 +35,13 @@ from schemarouter.runtime import (
     _coerce_config,
     _validated_explicit_retrieval_principal,
 )
-from schemarouter.state_retrieval import (
-    StateAwareCapabilityRetrieval,
-    filter_retrieval_by_state,
-)
 from scripts.research_legacy_planning.planner import QueryAnalyzer, SchemaPlanner
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.source_availability import _LegacySourceAvailability
+from scripts.research_legacy_planning.state_retrieval import (
+    StateAwareCapabilityRetrieval,
+    filter_retrieval_by_state,
+)
 
 if TYPE_CHECKING:
     from schemarouter.field_routing_session import SchemaFieldRoutingSession
