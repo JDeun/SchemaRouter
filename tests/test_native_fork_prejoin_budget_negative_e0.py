@@ -92,11 +92,17 @@ def test_indexed_common_root_prefilter_elides_unrelated_arms_before_cap(
     assert ordinary.candidates == ()  # Ordinary public G5 is still strict K5.
     # The internal fork-arm collector must not be callable via the public
     # strict-K API, even if a caller passes its former keyword explicitly.
-    with pytest.raises(TypeError, match="unexpected keyword argument"):
-        index.lookup(
-            router, ALIASES[0], group=status_only, principal=ACTOR,
-            _fork_arm_internal=True,
-        )
+    for lookup in (index.lookup, index._lookup_native_paths):
+        for removed in (
+            {"_fork_arm_internal": True},
+            {"_fork_root_filter": frozenset()},
+            {"_fork_target_filter": frozenset()},
+        ):
+            with pytest.raises(TypeError, match="unexpected keyword argument"):
+                lookup(
+                    router, ALIASES[0], group=status_only, principal=ACTOR,
+                    **removed,
+                )
 
     for query in ALIASES:
         observed = lookup_native_shared_root_forks(

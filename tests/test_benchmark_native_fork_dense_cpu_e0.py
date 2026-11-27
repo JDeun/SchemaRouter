@@ -7,6 +7,7 @@ import pytest
 
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_fork_arm
 from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_dense_cpu_e0 import STUDY, benchmark_dense
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
@@ -89,7 +90,7 @@ def test_bounded_source_index_prefork_shards_skip_redundant_overcap_scan(
     index = NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
     )
-    original = NativeSchemaGraphIndex._lookup_native_paths
+    original = research_legacy_fork_arm.lookup_native_fork_arm
 
     def observed() -> tuple[object, int]:
         count = 0
@@ -100,7 +101,7 @@ def test_bounded_source_index_prefork_shards_skip_redundant_overcap_scan(
                 count += 1
             return original(self, *args, **kwargs)
 
-        with patch.object(NativeSchemaGraphIndex, "_lookup_native_paths", spy):
+        with patch.object(research_legacy_fork_arm, "lookup_native_fork_arm", spy):
             result = native_fork_index.lookup_native_shared_root_forks(
                 index, router, ALIASES[0], group=GROUP, principal=ACTOR,
             )
@@ -191,7 +192,7 @@ def test_prefork_exact_128_target_limit_and_129_global_probe_preserve_authority(
     graph = NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
     )
-    original = NativeSchemaGraphIndex._lookup_native_paths
+    original = research_legacy_fork_arm.lookup_native_fork_arm
 
     def query_and_count(alias: str) -> tuple[object, int, str]:
         calls = 0
@@ -208,7 +209,7 @@ def test_prefork_exact_128_target_limit_and_129_global_probe_preserve_authority(
             return result
 
         with patch.object(
-            NativeSchemaGraphIndex, "_lookup_native_paths", counted,
+            research_legacy_fork_arm, "lookup_native_fork_arm", counted,
         ):
             observed = native_fork_index.lookup_native_shared_root_forks(
                 graph, router, alias, group=GROUP, principal=ACTOR,

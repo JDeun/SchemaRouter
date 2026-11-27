@@ -25,6 +25,7 @@ from schemarouter.paper_typed_tool_plan import (
     _check_current_call_scopes,
 )
 from schemarouter.runs import ExecutionBudget, RunConfig
+from scripts import research_legacy_fork_arm
 from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
@@ -221,8 +222,8 @@ def _pin_source_attested_paper_edge(
     # pinned these exact route identities. It performs G5's normal source,
     # authorization, scope, fingerprint and health validations, and no
     # candidate/over-K count is ever exposed to the public response.
-    current = index._lookup_native_paths(
-        router, query, group=group, principal=principal, k=k,
+    current = research_legacy_fork_arm.lookup_native_fork_arm(
+        index, router, query, group=group, principal=principal, k=k,
         _fork_arm_internal=True,
         _fork_root_filter=frozenset({root_route_id}),
         _fork_target_filter=frozenset({consumer_route_id}),

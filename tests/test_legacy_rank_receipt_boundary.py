@@ -5,6 +5,7 @@ from typing import get_args, get_type_hints
 import pytest
 
 from schemarouter import IndexedNativeFieldResult, NativeIndexedGraphResult
+from scripts.research_legacy_fork_arm import NativeIndexedGraphResult as HistoricalForkArmResult
 from scripts.research_legacy_g5_rank import NativeIndexedGraphResult as HistoricalGraphResult
 from scripts.research_legacy_posting_rank import IndexedNativeFieldResult as HistoricalFieldResult
 
@@ -45,4 +46,18 @@ def test_historical_abstention_remains_a_distinct_non_product_receipt(
     assert "ranker_abstained_unverified" not in get_args(get_type_hints(product)["status"])
     with pytest.raises(TypeError):
         product(**wire)
+    assert not receipt.deterministic_paper_ranked
+
+
+def test_historical_fork_arm_receipt_is_not_a_product_result() -> None:
+    receipt = HistoricalForkArmResult(
+        status="internal_fork_arm", registry_version=1, index_snapshot_id="snapshot",
+        requested_k=5, qualified_path_count=7, candidates=(),
+    )
+    assert type(receipt) is HistoricalForkArmResult
+    assert not isinstance(receipt, NativeIndexedGraphResult)
+    assert "internal_fork_arm" in get_args(get_type_hints(HistoricalForkArmResult)["status"])
+    assert "internal_fork_arm" not in get_args(get_type_hints(NativeIndexedGraphResult)["status"])
+    assert HistoricalForkArmResult(**asdict(receipt)) == receipt
+    assert not receipt.executable_authority
     assert not receipt.deterministic_paper_ranked

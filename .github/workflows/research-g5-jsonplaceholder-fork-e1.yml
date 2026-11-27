@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/research_legacy_native_fork.py"
+      - "scripts/research_legacy_fork_arm.py"
       - "scripts/research_legacy_g5_execution.py"
       - "scripts/research_g5_jsonplaceholder_fork_e1.py"
       - "tests/test_research_g5_jsonplaceholder_fork_e1.py"

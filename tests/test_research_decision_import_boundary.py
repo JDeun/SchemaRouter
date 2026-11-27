@@ -64,7 +64,10 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
             if isinstance(node, ast.arg):
-                assert node.arg not in {"_research_ranker", "model_visible_concept_ids"}, path
+                assert node.arg not in {
+                    "_research_ranker", "model_visible_concept_ids",
+                    "_fork_arm_internal", "_fork_root_filter", "_fork_target_filter",
+                }, path
             if isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 assert module not in {"schemarouter.decisions", "decisions"}, path
@@ -81,6 +84,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_field_retrieval"), path
                 assert not module.startswith("scripts.research_legacy_paper_typed_plan"), path
                 assert not module.startswith("scripts.research_legacy_native_fork"), path
+                assert not module.startswith("scripts.research_legacy_fork_arm"), path
                 assert not module.startswith("scripts.research_legacy_paper_observed_binding"), path
                 assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
@@ -115,6 +119,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_field_retrieval",
                                            "scripts.research_legacy_paper_typed_plan",
                                            "scripts.research_legacy_native_fork",
+                                           "scripts.research_legacy_fork_arm",
                                            "scripts.research_legacy_paper_observed_binding",
                                            "scripts.research_legacy_paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",

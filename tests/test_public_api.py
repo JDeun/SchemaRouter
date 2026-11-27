@@ -660,7 +660,8 @@ def test_product_indexes_have_no_research_ranking_callback() -> None:
         schemarouter.NativeSchemaGraphIndex.lookup,
         schemarouter.NativeSchemaGraphIndex._lookup_native_paths,
     ):
-        assert "_research_ranker" not in signature(method).parameters
+        assert {"_research_ranker", "_fork_arm_internal", "_fork_root_filter",
+                "_fork_target_filter"}.isdisjoint(signature(method).parameters)
     for method in (
         schemarouter.NativeSchemaPostingIndex.lookup,
         schemarouter.NativeSchemaGraphIndex.lookup,
@@ -678,6 +679,7 @@ def test_product_index_receipts_do_not_expose_research_rank_metadata() -> None:
         statuses = get_args(get_type_hints(model)["status"])
         assert "experimental_ranked" not in names
         assert "ranker_abstained_unverified" not in statuses
+        assert "internal_fork_arm" not in statuses
         assert "deterministic_paper_ranked" in names
         assert "ranked_unverified" in statuses
         assert "over_k_unranked" in statuses

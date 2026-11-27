@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/research_legacy_native_fork.py"
+      - "scripts/research_legacy_fork_arm.py"
       - "scripts/research_native_fork_validation_work_e0.py"
       - "tests/test_research_native_fork_validation_work_e0.py"
       - "research/autoresearch/g5-dense-validation-work-e0.md"
@@ -29,9 +30,9 @@ jobs:
           python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
       - name: Validation counter parity and strict authorized K5
         run: |
-          ruff check scripts/research_native_fork_validation_work_e0.py tests/test_research_native_fork_validation_work_e0.py
+          ruff check scripts/research_legacy_fork_arm.py scripts/research_native_fork_validation_work_e0.py tests/test_research_native_fork_validation_work_e0.py
           python -m pytest -q tests/test_research_native_fork_validation_work_e0.py
-          pyright scripts/research_native_fork_validation_work_e0.py
+          pyright scripts/research_legacy_fork_arm.py scripts/research_native_fork_validation_work_e0.py
       - name: Count actual original implementation calls at 500/5000 x 33/64
         run: |
           mkdir -p artifacts

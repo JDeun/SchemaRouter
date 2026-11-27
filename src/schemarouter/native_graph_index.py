@@ -228,7 +228,7 @@ class NativeIndexedGraphResult:
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
         "ranked_unverified",
-        "internal_fork_arm", "budget_unsatisfied",
+        "budget_unsatisfied",
     ]
     index_snapshot_id: str
     registry_version: int
@@ -760,7 +760,7 @@ class NativeSchemaGraphIndex:
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
         _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
     ) -> NativeIndexedGraphResult:
-        """Public G5 lookup: strict K5, never exposes private fork arms."""
+        """Public source-proven G5 lookup with strict K5."""
         return self._lookup_native_paths(
             router, query, group=group, principal=principal, k=k,
             allowed_target_routes=allowed_target_routes,
@@ -779,14 +779,11 @@ class NativeSchemaGraphIndex:
         allowed_target_routes: frozenset[str] | None = None,
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
         _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
-        _fork_arm_internal: bool = False,
-        _fork_root_filter: frozenset[str] | None = None,
-        _fork_target_filter: frozenset[str] | None = None,
     ) -> NativeIndexedGraphResult:
         """Discover source-proven typed paths with reviewed owner Rank.
 
-        Without owner Rank, public results abstain above K. The bounded
-        private fork-arm collector remains nonexecuting and source-scoped.
+        Without owner Rank, results abstain above K. All typed evidence is
+        nonexecuting and source-scoped.
         """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 strict fixed K5 required")
@@ -802,25 +799,10 @@ class NativeSchemaGraphIndex:
             )
         ):
             raise ValueError("G5 invalid bounded target route prefilter")
-        if _paper_rank_policy is not None and (
-            not isinstance(_paper_rank_policy, PaperNativeRankPolicy)
-            or _fork_arm_internal
+        if _paper_rank_policy is not None and not isinstance(
+            _paper_rank_policy, PaperNativeRankPolicy,
         ):
             raise ValueError("G5 owner Rank must be exclusive and source-reviewed")
-        if type(_fork_arm_internal) is not bool:
-            raise ValueError("G5 internal fork arm requires a boolean flag")
-        if _fork_root_filter is not None and (
-            not _fork_arm_internal
-            or type(_fork_root_filter) is not frozenset
-            or any(type(route) is not str for route in _fork_root_filter)
-        ):
-            raise ValueError("G5 root prefilter requires private typed fork mode")
-        if _fork_target_filter is not None and (
-            not _fork_arm_internal
-            or type(_fork_target_filter) is not frozenset
-            or any(type(route) is not str for route in _fork_target_filter)
-        ):
-            raise ValueError("G5 consumer prefilter requires private typed fork mode")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 invalid bounded query")
         if not isinstance(principal, PrincipalContext):
@@ -880,10 +862,6 @@ class NativeSchemaGraphIndex:
             # Model/host target IDs only NARROW graph structure before K;
             # normal principal, scope, source and typed checks still apply.
             targets.intersection_update(allowed_target_routes)
-        if _fork_target_filter is not None:
-            # Candidate-only optimization; current authorization is NEVER
-            # inferred from route IDs supplied to the private collector.
-            targets.intersection_update(_fork_target_filter)
 
         def authorized(route_id: str) -> tuple[ToolSpec, EndpointSpec] | None:
             where = self.field_index.route_locations.get(route_id)
@@ -917,14 +895,6 @@ class NativeSchemaGraphIndex:
 
         found: list[NativeIndexedGraphCandidate] = []
         for target_id in sorted(targets):
-            # Source-graph-only optimization, NOT an authorization grant.
-            # Skip routes whose typed indexed producers cannot be part of a
-            # two-field common-root fork; authorization remains downstream.
-            if _fork_root_filter is not None and not any(
-                root in _fork_root_filter
-                for root in self.graph.predecessors(target_id)
-            ):
-                continue
             target = authorized(target_id)
             if target is None:
                 continue
@@ -941,9 +911,6 @@ class NativeSchemaGraphIndex:
             if required_inputs is None:
                 continue
             for root_id in self.graph.predecessors(target_id):
-                if (_fork_root_filter is not None
-                        and root_id not in _fork_root_filter):
-                    continue
                 root = authorized(root_id)
                 if root is None:
                     continue
@@ -1117,20 +1084,6 @@ class NativeSchemaGraphIndex:
                 deterministic_paper_ranked=bool(found),
             )
         if len(found) > k:
-            # Source-private composition mode: authorize and recheck each
-            # one-hop witness exactly as in ordinary G5, but do NOT apply
-            # final public K to each arm before proving the shared root.
-            # Never expose >K arms from ordinary lookup or return >32 arms.
-            if _fork_arm_internal:
-                if len(found) > MAX_RESEARCH_RANKABLE_PATHS:
-                    return NativeIndexedGraphResult(
-                        "over_k_unranked", self.field_index.snapshot_id,
-                        self.field_index.registry_version, k, len(found), (),
-                    )
-                return NativeIndexedGraphResult(
-                    "internal_fork_arm", self.field_index.snapshot_id,
-                    self.field_index.registry_version, k, len(found), tuple(found),
-                )
             return NativeIndexedGraphResult(
                 "over_k_unranked", self.field_index.snapshot_id,
                 self.field_index.registry_version, k, len(found), (),

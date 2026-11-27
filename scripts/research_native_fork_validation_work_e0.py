@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from schemarouter import native_graph_index
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_fork_arm
 from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
@@ -42,8 +42,8 @@ def count_once(
         "pair_required_input_inspections": 0,
         "pair_root_flat_contract_inspections": 0,
     }
-    orig_lookup = NativeSchemaGraphIndex._lookup_native_paths
-    orig_graph_inputs = native_graph_index._native_required_inputs
+    orig_lookup = research_legacy_fork_arm.lookup_native_fork_arm
+    orig_graph_inputs = research_legacy_fork_arm._native_required_inputs
     orig_pair_inputs = native_fork_index._native_required_inputs
     orig_pair_flat = native_fork_index._flat_same_record_source_contract
 
@@ -68,8 +68,8 @@ def count_once(
         return orig_pair_flat(*args, **kwargs)
 
     with (
-        patch.object(NativeSchemaGraphIndex, "_lookup_native_paths", lookup_count),
-        patch.object(native_graph_index, "_native_required_inputs", graph_inputs_count),
+        patch.object(research_legacy_fork_arm, "lookup_native_fork_arm", lookup_count),
+        patch.object(research_legacy_fork_arm, "_native_required_inputs", graph_inputs_count),
         patch.object(native_fork_index, "_native_required_inputs", pair_inputs_count),
         patch.object(native_fork_index, "_flat_same_record_source_contract", pair_flat_count),
     ):

@@ -20,6 +20,8 @@ from schemarouter.native_graph_index import (
     _native_required_inputs,
 )
 
+from scripts import research_legacy_fork_arm
+
 if TYPE_CHECKING:
     from schemarouter.native_graph_index import NativeSchemaGraphIndex
     from schemarouter.runtime import SchemaRouter
@@ -195,8 +197,8 @@ def lookup_native_shared_root_forks(
             if attempts > MAX_FORK_SHARD_LOOKUPS:
                 # Never claim no-fit or release partially collected arms.
                 return None
-            result = index._lookup_native_paths(
-                router, query, group=sub_group, principal=actor, k=k,
+            result = research_legacy_fork_arm.lookup_native_fork_arm(
+                index, router, query, group=sub_group, principal=actor, k=k,
                 _fork_arm_internal=True, _fork_root_filter=roots,
                 _fork_target_filter=targets,
             )

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/research_legacy_native_fork.py"
+      - "scripts/research_legacy_fork_arm.py"
       - "scripts/research_g5_vs_scoped_lexical_k5_e0.py"
       - "tests/test_research_g5_vs_scoped_lexical_k5_e0.py"
       - "research/autoresearch/g5-vs-scoped-lexical-k5-e0.md"

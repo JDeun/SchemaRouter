@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/research_legacy_native_fork.py"
+      - "scripts/research_legacy_fork_arm.py"
       - "src/schemarouter/__init__.py"
       - "scripts/research_legacy_planning/**"
       - "src/schemarouter/models.py"

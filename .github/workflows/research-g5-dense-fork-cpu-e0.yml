@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/benchmark_native_fork_dense_cpu_e0.py"
       - "scripts/research_legacy_native_fork.py"
+      - "scripts/research_legacy_fork_arm.py"
       - "tests/test_benchmark_native_fork_dense_cpu_e0.py"
       - "tests/test_native_prefork_policy_scope_e0.py"
       - "tests/test_native_prefork_health_drift_e0.py"
@@ -32,9 +33,9 @@ jobs:
           python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
       - name: Strict-K5 dense native graph tests, syntax, typing
         run: |
-          ruff check scripts/benchmark_native_fork_dense_cpu_e0.py tests/test_benchmark_native_fork_dense_cpu_e0.py tests/test_native_prefork_policy_scope_e0.py tests/test_native_prefork_health_drift_e0.py tests/test_native_prefork_policy_drift_e0.py
+          ruff check scripts/research_legacy_fork_arm.py scripts/benchmark_native_fork_dense_cpu_e0.py tests/test_benchmark_native_fork_dense_cpu_e0.py tests/test_native_prefork_policy_scope_e0.py tests/test_native_prefork_health_drift_e0.py tests/test_native_prefork_policy_drift_e0.py
           python -m pytest -q tests/test_benchmark_native_fork_dense_cpu_e0.py tests/test_native_fork_prejoin_budget_negative_e0.py tests/test_native_prefork_policy_scope_e0.py tests/test_native_prefork_health_drift_e0.py tests/test_native_prefork_policy_drift_e0.py
-          pyright scripts/benchmark_native_fork_dense_cpu_e0.py
+          pyright scripts/research_legacy_fork_arm.py scripts/benchmark_native_fork_dense_cpu_e0.py
       - name: Dense 500/5000 base, 33/64 same-root original-fork workload
         run: |
           mkdir -p artifacts
