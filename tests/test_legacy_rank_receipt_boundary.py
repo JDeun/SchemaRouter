@@ -5,7 +5,10 @@ from typing import get_args, get_type_hints
 import pytest
 
 from schemarouter import IndexedNativeFieldResult, NativeIndexedGraphResult
-from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeIndexedTwoHopCandidate
+from schemarouter.native_graph_index import (
+    NativeIndexedGraphCandidate,
+    NativeIndexedTwoHopCandidate,
+)
 from scripts.research_legacy_fork_arm import NativeIndexedGraphResult as HistoricalForkArmResult
 from scripts.research_legacy_g5_rank import NativeIndexedGraphResult as HistoricalGraphResult
 from scripts.research_legacy_graph_candidates import (
