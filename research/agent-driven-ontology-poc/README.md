@@ -1,6 +1,8 @@
 # Agent-driven SchemaRouter — clean-slate PoC
 
-Status: design and comparison gate only; no implementation or measured performance yet.
+Status: PRD 0.1 defined; design and comparison gate only; no implementation or measured performance yet.
+
+**Canonical requirements:** [PRD.md](PRD.md). This README is an orientation; PRD requirement IDs and acceptance criteria govern new product work.
 Decision tracker: [#1897](https://github.com/JDeun/SchemaRouter/issues/1897).
 Work items: [prior art #1898](https://github.com/JDeun/SchemaRouter/issues/1898), [PoC #1899](https://github.com/JDeun/SchemaRouter/issues/1899), [evaluation #1900](https://github.com/JDeun/SchemaRouter/issues/1900), [legacy disposition #1901](https://github.com/JDeun/SchemaRouter/issues/1901).
 
@@ -51,6 +53,6 @@ If an ordinary ontology plus a small projection function is sufficient, reuse it
 ## Preservation
 
 Base main snapshot: `bbe466d5b7fd9284db9b1f467633186bf89c7d68`.
-Historical paper consolidation remains in Draft #1895 at `8fa102d28aa7071e00f2e212767c9b25838e747d`. Its pending tests and previous negative evidence (#432) remain separate. Do not delete or rewrite old branches or publish private paper assets. Release #1356 remains on HOLD.
+Historical paper consolidation PR #1895 was closed without merge; its exact head `8fa102d28aa7071e00f2e212767c9b25838e747d` and branch remain preserved. Its incomplete qualification and previous negative evidence (#432) remain separate. Do not delete or rewrite old branches or publish private paper assets. The old release candidate #1356 was canceled and closed without merge. See completed disposition #1901.
 
 This directory is the isolated new work area. No source code or benchmark has been run at this checkpoint.
