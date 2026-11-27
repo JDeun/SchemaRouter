@@ -1,0 +1,39 @@
+# SchemaRouter — final development retrospective
+
+**Decision date: 2026-11-27. Product disposition: RETIRE / ARCHIVE. Scientific verdict: INCONCLUSIVE.** The maintainer accepted the recommendation to discontinue independent product development and further experiments. Preserve all research, source history, negative results, published releases and the paper. This is a resource-allocation decision, not a retraction or scientific proof that schema graphs cannot help agents. No further feature work, qualification run, release or external integration is planned. GitHub's repository-level archive setting must be applied separately; this document itself does not make the repository read-only.
+
+## Original question and lessons
+
+The initial hypothesis was that an external agent could inspect a graph of heterogeneous tool schemas, fields, meanings, units and sources and choose appropriate tools/fields itself. The original paper goes further: Algorithm 1 includes model query understanding, candidate selection, ranking, deterministic field projection and metadata attachment. Subsequent product development expanded beyond both boundaries into planning and governed execution. That expansion was not necessary to test the initial hypothesis.
+
+The final review found substantial overlap with semantic service discovery (OWL-S), W3C WoT data schemas and discovery, and graph-based agent tool discovery. [ADR-001 and prior-art review](prior-art-and-adr.md) records the reuse decision: RDFLib/SPARQL rather than another graph engine. This is not a claim that an existing project reproduces every field-aware function. It is a judgment that the available evidence does not establish enough differentiated utility to justify an independent engine and continuing schema/annotation maintenance. Accurate response-field semantics, scientific method distinctions, units, provenance and authorization remain useful reusable ideas. Graph storage is not itself proof of better model reasoning or reduced context. Field projection does not imply reduced upstream wire payload.
+
+## Evidence preserved without reinterpretation
+
+- Published paper: [SchemaRouter, arXiv:2608.21375](https://arxiv.org/abs/2608.21375). Historical results remain historical; no change to manuscript or private original repository. Original implementation and manuscript were reviewed at revision 368116746170d6dd0d95a91352daba8abc42ca13. The separate public paper-restoration branch remains at 8fa102d28aa7071e00f2e212767c9b25838e747d; its PR #1895 was closed unmerged, not qualified. The paper's own method and historical results must not be conflated with this later graph-only PoC.
+- Gate A #1898 and Gate B #1899 completed only for the scoped research mechanism: 19 tools, 166 response fields, 80 inputs, 171 concepts, actual RDF graph. [Contract and 29 local tests](discovery-contract.md). No production compatibility, independent agent accuracy or authorization service qualification.
+- [Gate C1 DEV](gate-c1-dev-results.md), frozen result df3127ccc4c96326c8b0dd88ba578b98c1a02c23: 110 historical cases, 102 reference-positive, five arms, 550 case/arm rows. FULL archived tool/field exposure recall 100/100%; BM25-5 93.64/93.55%; RDF-5 21.82/20.05%, 72 positive cases with no candidate. Unlimited RDF unchanged; BM25-all 99.09/99.08%. Archived concepts and calls are exposed historical references, not independent gold or actual agent results. Low RDF recall is negative evidence for this conditional retrieval mechanism, not a refutation of graph presentation. Byte cost gains at low recall are not matched-quality gains.
+- [Gate C2 graph mechanism](graph-agent-mechanism.md), exact equal-information flat/graph full serialization 92,792 / 100,190 bytes (+7.97% graph). All 19 neighborhoods preserve information. Nine local mechanism/harness tests; scripted tests are not model outcomes.
+- [Gate C2 actual CPU pilot](https://github.com/JDeun/SchemaRouter/actions/runs/46005137943), immutable execution head b638249fb3d64a6471e82cd724ef7ce1bdc30055; Qwen/Qwen3-0.6B revision c1899de289a04d12100db370d81485cdf75e47ca, FP32 CPU. All three jobs completed, 48 task/arm records verified. A flat-full 0/12 and B graph-full 0/12: all 24 failed CPU allocation (roughly 48.9 GB and 64.1 GB requests respectively). C flat-browse 0/12 (10 invalid JSON, 2 invalid status), D graph-browse 0/12 (12 invalid JSON). 24 actual generation calls completed in the dynamic arms; no correct episode. Workflow success is not experiment success. These are infrastructure/protocol failures, not a valid comparison of graph vs flat reasoning. No R2 launched. E [original Algorithm 1 adapter](paper_algorithm_probe.py) was prepared but never run against the authorized original checkout/model. No independent held-out evidence, native provider execution, answer accuracy, or comparative utility claim.
+- Earlier negative and incomplete external validation records (including #432 and #506) remain intact. #1450 is a known unresolved scope-completeness concern; retirement is not a fix or assurance of security.
+
+## Evidence retention
+
+Gate C1 case subset and summaries are committed. Full C1 raw JSONL SHA-256: 016aff71abdada94833acff356d80fc513c9b16a7a9bae6b1e38fea1b365d134. The three C2 raw Actions artifact ZIPs were downloaded, checked against GitHub digests and included with C1 raw rows in an owner-downloadable backup, separately from the Git tree. Do not assume Actions retains artifacts indefinitely.
+
+| C2 shard | GitHub artifact ID | ZIP SHA-256 |
+|---|---:|---|
+| 0 | 15200602016 | 5ca9e41f8ae3e33f2be0eefbfcf097adaa3c2697542ef7c7b617fdcf59dccda1 |
+| 1 | 15202065483 | 8c7527c56c2c5226afd1bb079849303d6d1306205dca642ff74d662e7fae539a |
+| 2 | 15202385728 | 525908437d8a2d31707e7fdefe4dd49290a1abb491212a31c639d5c98297764b |
+
+Original artifact expiry recorded as 2026-12-27. Combined archive `SchemaRouter-final-research-backup.zip`, 33,603 bytes, SHA-256 a0bfbe60969f453ca32cbf76cf83d8e5a7312b058734808cf3b6b5436113835d, ZIP integrity verified. This is the latest experiment raw evidence backup, not an entire repository backup. Retain all branch refs, commits, tags, releases and existing documentation. Pre-retirement main checkpoint bbe466d5b7fd9284db9b1f467633186bf89c7d68; PoC implementation checkpoint 391662fc38fe98598a5d1f140420c68d7d60fb63. Existing stable release 0.17.0 remains available as historical, unmaintained software; v0.18 candidate #1356 remains canceled.
+
+## Final disposition
+
+- #1897: decision completed (retire), not implementation qualification. #1900: further evaluation discontinued; scientific verdict INCONCLUSIVE. No additional experiments or claims.
+- Close incomplete work as not planned: #1890, #1888, #1828, #1781, #1778, #1450, #1346, #1311, #1228, #1211, #1208, #839, #796, #584, #200, #199. Preserve upstream feedback and independently supplied cohort provenance; do not claim validation, contact external projects, alter their records or close their issues.
+- Close PR #1887 (research impact documentation, head 41edbbfc092f029e47aafdf9b3fb8954dcbf72f5) and #1896 (dependency updates, head d4a57dcbb3fcdf7680b8428be87a8c2aaf36f6ad) without merge; retain both branches. No new releases, no destructive cleanup. Completed prior work #1898/#1899/#1901 stays closed.
+- Final README notice should mark development discontinued and point here. Existing code and releases are not supported or represented as safe for production. No new maintenance or security commitment. Archive the public repository after verifying remaining open items and workflow status. No private paper source changes.
+
+The main lesson is to test an isolated product hypothesis against the simplest equal-information baseline before building surrounding infrastructure. Reuse established components first; treat failed or inconclusive experiments as evidence to preserve, not obligations to continue spending time.

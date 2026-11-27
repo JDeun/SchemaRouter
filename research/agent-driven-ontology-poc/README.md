@@ -1,3 +1,5 @@
+> **Development discontinued (2026-11-27).** This isolated PoC is preserved as research history. No new work or release is planned. See [final retrospective](FINAL-RETROSPECTIVE.md). The GitHub archive setting is a separate administrative step.
+
 # Agent-driven SchemaRouter — clean-slate PoC
 
 Status: restricted local discovery PoC implemented; 29/29 local engineering tests recorded. Agent-performance comparison not run.
