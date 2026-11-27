@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter.models import PlanCoverage, ToolCall
+from schemarouter.models import PlanCoverage
+from scripts.research_legacy_planning.plan_models import ToolCall
 from scripts.research_legacy_planning.planning_stages import (
     assemble_execution_plan,
     select_fallbacks_sync,

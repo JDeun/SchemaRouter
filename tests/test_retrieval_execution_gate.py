@@ -12,13 +12,11 @@ import pytest
 from schemarouter import (
     DeclaredOperationFitPolicy,
     EndpointSpec,
-    ExecutionPlan,
-    FallbackRoute,
     PolicyViolationError,
     PrincipalContext,
-    ToolCall,
     ToolSpec,
 )
+from scripts.research_legacy_planning.plan_models import ExecutionPlan, FallbackRoute, ToolCall
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.retrieval_abstention import RetrievalAbstentionPolicy
 from scripts.research_legacy_planning.retrieval_execution_gate import (

@@ -4,7 +4,8 @@ from collections.abc import Callable, Hashable, Sequence, Set
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-from schemarouter.models import ExecutionPlan, FallbackRoute, PlanCoverage, ToolCall
+from schemarouter.models import PlanCoverage
+from scripts.research_legacy_planning.plan_models import ExecutionPlan, FallbackRoute, ToolCall
 
 CandidateT = TypeVar("CandidateT")
 CallT = TypeVar("CallT")
@@ -198,7 +199,7 @@ def assemble_execution_plan(
     ],
     coverage_warning: Callable[[PlanCoverage | None], str | None],
 ) -> ExecutionPlan:
-    """Assemble the final public plan from already-selected calls and fallbacks."""
+    """Assemble the historical plan from already-selected calls and fallbacks."""
 
     required = frozenset(required_coverage)
     covered: set[CoverageT] = set()

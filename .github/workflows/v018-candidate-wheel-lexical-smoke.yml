@@ -59,6 +59,8 @@ jobs:
               "KeywordAnalyzer", "QueryAnalyzer", "SchemaPlanner", "PlanRequest",
               "StateAwareCapabilityCandidate", "StateAwareCapabilityRetrieval",
               "evaluate_candidate_state", "filter_retrieval_by_state",
+              "ScoreComponent", "PlanExplanation", "FieldSelectionExplanation",
+              "CandidateSelectionSource", "FieldSelectionReason",
               "CapabilityCandidate", "CapabilityRetrieval",
               "CapabilityRouteCandidate", "CapabilityRouteRetrieval",
               "RetrievalAbstentionPolicy", "SelectiveCapabilityRetrieval",
@@ -66,6 +68,11 @@ jobs:
           ):
               assert not hasattr(schemarouter, name), name
           from schemarouter import models, runtime
+          assert {"score", "explanation"}.isdisjoint(models.ToolCall.model_fields)
+          assert {"score", "explanation"}.isdisjoint(models.ToolCall.model_json_schema()["properties"])
+          for name in ("ScoreComponent", "PlanExplanation", "FieldSelectionExplanation",
+                       "CandidateSelectionSource", "FieldSelectionReason"):
+              assert not hasattr(models, name), name
           assert not hasattr(models, "CapabilityCandidate")
           assert not hasattr(models, "CapabilityRetrieval")
           assert not hasattr(schemarouter.SchemaRouter, "_project_retrieval_data_scope")

@@ -9,7 +9,7 @@
     },
     {
       "path": "architecture.md",
-      "source_blob": "dd94e575c550b244de6cf0643119c4861125ade7"
+      "source_blob": "4c9f9aa01bfae2b83442dddb42aa530463674685"
     },
     {
       "path": "assets/brand/README.md",
@@ -49,7 +49,7 @@
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "2a436a6de5c8721093fb86ff629d847e169d892b"
+      "source_blob": "8967bae0bf9fff7afe7619de884130130b81cfd7"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -417,7 +417,7 @@
     },
     {
       "path": "reference/models.md",
-      "source_blob": "f5b3484f2cf22e1df62c96224e9fddd629e4200e"
+      "source_blob": "351d882d6fc4cb123e737889e3a829fd87be736e"
     },
     {
       "path": "reference/planning.md",

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from schemarouter.models import CandidateSelectionSource, ScoreComponent, StrictModel
+from schemarouter.models import StrictModel
+from scripts.research_legacy_planning.plan_models import CandidateSelectionSource, ScoreComponent
 
 
 class CapabilityRouteCandidate(StrictModel):

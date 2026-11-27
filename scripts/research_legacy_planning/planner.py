@@ -14,20 +14,12 @@ from schemarouter.errors import ModelAnalysisError, PlanningError
 from schemarouter.evidence import available_evidence, field_evidence_status, global_evidence_status
 from schemarouter.execution_state import TypedExecutionState
 from schemarouter.models import (
-    CandidateSelectionSource,
     EndpointSpec,
     EvidenceRequirements,
-    ExecutionPlan,
-    FallbackRoute,
-    FieldSelectionExplanation,
-    FieldSelectionReason,
     FieldSpec,
     PlanCoverage,
-    PlanExplanation,
     QueryIntent,
-    ScoreComponent,
     SemanticFieldRequirement,
-    ToolCall,
     ToolSpec,
 )
 from schemarouter.registry import ToolRegistry
@@ -39,6 +31,16 @@ from schemarouter.validation import (
     json_schemas_compatible,
 )
 from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
+from scripts.research_legacy_planning.plan_models import (
+    CandidateSelectionSource,
+    ExecutionPlan,
+    FallbackRoute,
+    FieldSelectionExplanation,
+    FieldSelectionReason,
+    PlanExplanation,
+    ScoreComponent,
+    ToolCall,
+)
 from scripts.research_legacy_planning.planning_context import (
     PlanningContext,
     RegistrySnapshot,

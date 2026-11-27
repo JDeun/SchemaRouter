@@ -21,6 +21,7 @@ from schemarouter.operation_fit import (
     validate_declared_operation_fit,
 )
 from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
+from scripts.research_legacy_planning.plan_models import ExecutionPlan as LegacyExecutionPlan
 from scripts.research_legacy_planning.retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,
@@ -73,8 +74,10 @@ def validate_selective_execution(
     # non-list required-argument flags, or malformed fallback metadata into
     # an otherwise typed ExecutionPlan. Revalidate its complete nested
     # envelope before authorizing a single downstream execution.
+    # Use only the two known schemas; never select an arbitrary caller subclass.
+    plan_type = LegacyExecutionPlan if isinstance(plan, LegacyExecutionPlan) else ExecutionPlan
     try:
-        ExecutionPlan.model_validate(
+        plan_type.model_validate(
             plan.model_dump(mode="python", warnings=False)
         )
     except (TypeError, ValueError, OverflowError) as exc:
@@ -187,8 +190,9 @@ async def execute_selective_plan(
     # non-integer or stale registry identity before strict deep validation.
     if type(plan.registry_version) is not int:
         _deny("non-executable retrieval, stale registry or mismatched query/plan provenance")
+    plan_type = LegacyExecutionPlan if isinstance(plan, LegacyExecutionPlan) else ExecutionPlan
     try:
-        dispatch_plan = ExecutionPlan.model_validate(
+        dispatch_plan = plan_type.model_validate(
             plan.model_dump(mode="python", warnings=False),
             strict=True,
         )

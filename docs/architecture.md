@@ -309,12 +309,12 @@ model output cannot create or alter them.
 
 ### 26. Planning explanations must be auditable, not chain-of-thought
 
-Each planned call may carry a structured `PlanExplanation` containing deterministic score
-components, field-retention reasons, ignored undeclared arguments, and whether a bounded decision
-backend selected the candidate.
+The historical lexical `PlanExplanation` and `ToolCall.score` have moved to the research contract.
+The paper-first product uses Algorithm 1 field coverage, typed plans, Rank results and original-source
+witnesses; installed execution calls no longer carry lexical scores or explanations.
 
-These are locally observable routing facts. SchemaRouter does not expose or attempt to reconstruct
-private model reasoning.
+These diagnostics are not execution authority. SchemaRouter does not expose or reconstruct private
+model reasoning, and the registered executor's validation remains in force.
 
 ### 27. Descriptive metadata must not become hidden execution authority
 

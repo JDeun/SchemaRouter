@@ -73,33 +73,18 @@ Single-call decision behavior and empty-lexical-recall fail-closed behavior rema
 
 ## Structured plan explanations
 
-Every planned call can carry a `PlanExplanation` with locally observable routing facts:
+The installed `ToolCall` no longer carries lexical `score` or `explanation` fields. Historical `PlanExplanation`, score components, field-retention reasons, ignored arguments and bounded-decision selection metadata survive only in the source-checkout `scripts.research_legacy_planning.plan_models` and its research plan serialization.
 
-- deterministic score components;
-- why each projected field was retained;
-- undeclared argument names that were ignored;
-- whether a bounded decision backend selected the candidate.
+For Algorithm 1, inspect the plan status, field coverage, source-bound typed plan and original paper Rank results. Diagnostic information is not execution authority; the registered executor and local source witness enforce the execution boundary.
 
 ```python
-plan = router.plan(
-    PlanRequest(
-        query="LiFePO4 band gap",
-        arguments={"formula": "LiFePO4", "unknown": 1},
-    )
-)
-
-explanation = plan.calls[0].explanation
-for component in explanation.score_components:
-    print(component.kind, component.value, component.matched)
-
-for field in explanation.field_selection:
-    print(field.field, field.reason)
+plan = router.plan(paper_request)
+print(plan.planning_status, plan.coverage)
+for call in plan.calls:
+    print(call.tool, call.endpoint, call.fields, call.schema_fingerprint)
 ```
 
-This is not model chain-of-thought. It contains deterministic/runtime-visible facts that
-SchemaRouter itself can verify. If a model-assisted analyzer or bounded decision backend is used,
-the explanation records only the resulting bounded selection surface—not the provider's hidden
-reasoning.
+This example assumes an already configured paper-first router and `PaperPlanRequest`. It neither exposes nor reconstructs private model reasoning. Old lexical JSON is validated by the research schema, not as a current product plan.
 
 ## Field projection
 

@@ -10,7 +10,8 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
-from schemarouter.models import ParameterSpec, ScoreComponent
+from schemarouter.models import ParameterSpec
+from scripts.research_legacy_planning.plan_models import ScoreComponent
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_runtime import LegacySchemaRouter
 

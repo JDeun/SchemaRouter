@@ -54,15 +54,15 @@
 
 ## ScoreComponent
 
-::: schemarouter.ScoreComponent
+개발 배포 패키지에서 제거된 과거 Lexical 계획 설명 타입입니다. 소스 체크아웃의 `scripts.research_legacy_planning.plan_models`에서 기존 연구용 계약을 보존합니다.
 
 ## FieldSelectionExplanation
 
-::: schemarouter.FieldSelectionExplanation
+개발 배포 패키지에서 제거된 과거 Lexical 계획 설명 타입입니다. 소스 체크아웃의 `scripts.research_legacy_planning.plan_models`에서 기존 연구용 계약을 보존합니다.
 
 ## PlanExplanation
 
-::: schemarouter.PlanExplanation
+개발 배포 패키지에서 제거된 과거 Lexical 계획 설명 타입입니다. 소스 체크아웃의 `scripts.research_legacy_planning.plan_models`에서 기존 연구용 계약을 보존합니다.
 
 ## CapabilityGraphSnapshot
 

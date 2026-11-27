@@ -3,8 +3,9 @@ import inspect
 import pytest
 
 import schemarouter
-from schemarouter import InMemoryRegistry, SchemaPlanner
+from schemarouter import InMemoryRegistry
 from scripts.research_legacy_decision_policy import DecisionPolicy
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def test_decision_policy_is_off_by_default() -> None:

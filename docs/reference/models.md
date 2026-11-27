@@ -55,15 +55,15 @@ Retired lexical shortlist type. The historical comparison implementation is pres
 
 ## ScoreComponent
 
-::: schemarouter.ScoreComponent
+Retired lexical plan metadata. The original research contract remains in `scripts.research_legacy_planning.plan_models` in a source checkout.
 
 ## FieldSelectionExplanation
 
-::: schemarouter.FieldSelectionExplanation
+Retired lexical plan metadata. The original research contract remains in `scripts.research_legacy_planning.plan_models` in a source checkout.
 
 ## PlanExplanation
 
-::: schemarouter.PlanExplanation
+Retired lexical plan metadata. The original research contract remains in `scripts.research_legacy_planning.plan_models` in a source checkout.
 
 
 ## CapabilityGraphSnapshot

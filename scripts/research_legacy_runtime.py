@@ -26,7 +26,6 @@ from schemarouter.models import (
     ExecutionPlan,
     FieldSpec,
     PaperPlanRequest,
-    ScoreComponent,
     ToolSpec,
 )
 from schemarouter.runs import RunConfig
@@ -43,6 +42,7 @@ from schemarouter.runtime import (
     _validated_explicit_retrieval_principal,
 )
 from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
+from scripts.research_legacy_planning.plan_models import ScoreComponent
 from scripts.research_legacy_planning.planner import QueryAnalyzer, SchemaPlanner
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.route_models import CapabilityRouteRetrieval

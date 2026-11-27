@@ -157,7 +157,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "FallbackScope",
         "ExecutionPolicy",
         "FieldInspection",
-        "FieldSelectionExplanation",
         "FieldSpec",
         "InMemoryRegistry",
         "EndpointInspection",
@@ -184,7 +183,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "OpenAPICompatibilityReport",
         "ParameterSpec",
         "PlanCoverage",
-        "PlanExplanation",
         "PaperPlanRequest",
         "PlanValidationError",
         "PlanningError",
@@ -280,7 +278,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "CURRENT_STORAGE_FORMAT_VERSION",
         "CURRENT_REGISTRY_DOCUMENT_VERSION",
         "CURRENT_TRACE_DOCUMENT_VERSION",
-        "ScoreComponent",
         "SemanticFieldRequirement",
         "ServerProjectionSpec",
         "SourceAdapter",
@@ -611,4 +608,20 @@ def test_retired_full_candidate_dtos_and_projection_are_not_installed() -> None:
     assert not hasattr(schemarouter.SchemaRouter, "_project_retrieval_data_scope")
     assert not hasattr(runtime, "_scoped_public_score_components")
     assert callable(schemarouter.SchemaRouter.prepare_field_routing)
+    assert callable(schemarouter.SchemaRouter.execute)
+
+
+def test_retired_lexical_plan_metadata_is_not_installed() -> None:
+    from schemarouter import models
+
+    for name in (
+        "ScoreComponent", "PlanExplanation", "FieldSelectionExplanation",
+        "CandidateSelectionSource", "FieldSelectionReason",
+    ):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(models, name), name
+    assert {"score", "explanation"}.isdisjoint(schemarouter.ToolCall.model_fields)
+    schema = schemarouter.ToolCall.model_json_schema()
+    assert {"score", "explanation"}.isdisjoint(schema["properties"])
+    assert schema["additionalProperties"] is False
     assert callable(schemarouter.SchemaRouter.execute)

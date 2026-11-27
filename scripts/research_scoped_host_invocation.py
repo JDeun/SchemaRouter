@@ -8,13 +8,13 @@ from __future__ import annotations
 from typing import Any
 
 from schemarouter import (
-    ExecutionPlan,
     PolicyViolationError,
     RunConfig,
 )
 from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
 )
+from scripts.research_legacy_planning.plan_models import ExecutionPlan
 from scripts.research_legacy_planning.requests import PlanRequest
 
 

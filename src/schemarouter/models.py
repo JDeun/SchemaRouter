@@ -916,50 +916,6 @@ class PaperPlanRequest(StrictModel):
     max_calls: int = Field(default=5, ge=1, le=5, strict=True)
 
 
-class ScoreComponent(StrictModel):
-    """One deterministic contribution to candidate ranking."""
-
-    kind: str
-    value: float
-    matched: str | None = None
-
-
-FieldSelectionReason = Literal[
-    "identifier",
-    "field_exact",
-    "field_lexical",
-    "field_substring",
-    "recall_fallback",
-    "decision_backend",
-]
-CandidateSelectionSource = Literal[
-    "deterministic",
-    "semantic_recall",
-    "endpoint_disambiguation",
-    "decision_backend",
-    "decision_recall",
-]
-
-
-class FieldSelectionExplanation(StrictModel):
-    """Machine-readable reason a declared output field is retained."""
-
-    field: str
-    reason: FieldSelectionReason
-
-
-class PlanExplanation(StrictModel):
-    """Auditable structural explanation for one planned call.
-
-    This records locally observable routing signals, not model chain-of-thought.
-    """
-
-    candidate_selection: CandidateSelectionSource = "deterministic"
-    score_components: list[ScoreComponent] = Field(default_factory=list)
-    field_selection: list[FieldSelectionExplanation] = Field(default_factory=list)
-    ignored_arguments: list[str] = Field(default_factory=list)
-
-
 class ToolCall(StrictModel):
     # Only a local prepared planner can attach this extra restriction. It is
     # absent from JSON/schema and never replaces source authorization.
@@ -978,8 +934,6 @@ class ToolCall(StrictModel):
     schema_fingerprint: str
     tool_fingerprint: str | None = None
     missing_required_arguments: list[str] = Field(default_factory=list)
-    score: float = 0.0
-    explanation: PlanExplanation | None = None
 
     @property
     def executable(self) -> bool:

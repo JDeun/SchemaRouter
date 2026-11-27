@@ -221,9 +221,9 @@ Rule은 신뢰된 application configuration입니다. Remote schema, description
 
 ### 26. Planning explanation은 chain-of-thought가 아니라 audit 가능해야 한다
 
-각 planned call은 deterministic score component, field-retention reason, 무시된 undeclared argument, bounded decision backend의 candidate 선택 여부를 담은 structured `PlanExplanation`을 가질 수 있습니다.
+과거 Lexical 계획의 `PlanExplanation`과 `ToolCall.score`는 연구용 계약으로 이전했습니다. 현재 제품은 Algorithm 1의 필드 커버리지, Typed Tool Plan, Rank 결과 및 원천 witness를 사용하며 실행 호출에 Lexical 점수나 설명을 포함하지 않습니다.
 
-이 정보는 local에서 관찰 가능한 routing fact입니다. SchemaRouter는 private model reasoning을 노출하거나 재구성하려 하지 않습니다.
+이 정보는 실행 권한 자체가 아닙니다. SchemaRouter는 private model reasoning을 노출하거나 재구성하려 하지 않으며, 등록된 Executor의 검증을 유지합니다.
 
 ### 27. Descriptive metadata가 숨은 execution authority가 되어서는 안 된다
 

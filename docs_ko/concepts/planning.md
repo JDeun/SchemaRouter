@@ -73,33 +73,18 @@ Single-call decision 동작과 lexical recall이 비어 있을 때의 fail-close
 
 ## 구조화된 plan 설명
 
-계획된 각 call은 local에서 관찰 가능한 routing fact를 담은 `PlanExplanation`을 가질 수 있습니다.
+제품의 `ToolCall`은 더 이상 Lexical `score` 또는 `explanation`을 포함하지 않습니다. 과거의 `PlanExplanation`, 점수 성분, 필드 선택 이유, 무시된 인수 및 bounded decision 선택 출처는 소스 체크아웃의 `scripts.research_legacy_planning.plan_models`와 연구용 계획 직렬화에서만 유지합니다.
 
-- 결정론적 score component
-- 각 projected field가 유지된 이유
-- 무시된 undeclared argument name
-- bounded decision backend가 candidate를 선택했는지 여부
+현재 Algorithm 1의 계획 상태, 필드 커버리지, 원천에 결속된 Typed Tool Plan 및 원 논문 Rank 결과를 확인합니다. 계획 자체의 진단 정보는 실행 권한이 아니며, 등록된 Executor와 로컬 원천 witness가 실행 경계를 검증합니다.
 
 ```python
-plan = router.plan(
-    PlanRequest(
-        query="LiFePO4 band gap",
-        arguments={"formula": "LiFePO4", "unknown": 1},
-    )
-)
-
-explanation = plan.calls[0].explanation
-for component in explanation.score_components:
-    print(component.kind, component.value, component.matched)
-
-for field in explanation.field_selection:
-    print(field.field, field.reason)
+plan = router.plan(paper_request)
+print(plan.planning_status, plan.coverage)
+for call in plan.calls:
+    print(call.tool, call.endpoint, call.fields, call.schema_fingerprint)
 ```
 
-이 정보는 model chain-of-thought가 아닙니다. SchemaRouter 자체가 검증할 수 있는
-결정론적/runtime-visible fact만 포함합니다. Model-assisted analyzer 또는 bounded decision
-backend를 사용하더라도 explanation에는 결과로 얻은 제한된 selection surface만 기록하며,
-provider의 숨겨진 reasoning은 기록하지 않습니다.
+이 예제는 이미 설정한 원 논문 중심 라우터와 `PaperPlanRequest`를 전제로 합니다. 모델의 숨겨진 추론을 노출하거나 재구성하지 않습니다. 이전 Lexical JSON은 현재 제품 계획이 아닌 연구용 스키마에서 검증합니다.
 
 ## Field projection
 

@@ -16,12 +16,7 @@ from schemarouter.errors import PlanningError
 from schemarouter.models import (
     EndpointSpec,
     EvidenceRequirements,
-    ExecutionPlan,
-    FallbackRoute,
-    FieldSelectionExplanation,
-    PlanExplanation,
     QueryIntent,
-    ToolCall,
     ToolSpec,
 )
 from scripts.research_legacy_decisions import (
@@ -30,6 +25,13 @@ from scripts.research_legacy_decisions import (
     DecisionRequest,
     choose_async,
     choose_sync,
+)
+from scripts.research_legacy_planning.plan_models import (
+    ExecutionPlan,
+    FallbackRoute,
+    FieldSelectionExplanation,
+    PlanExplanation,
+    ToolCall,
 )
 from scripts.research_legacy_planning.planner import (
     SchemaPlanner,
