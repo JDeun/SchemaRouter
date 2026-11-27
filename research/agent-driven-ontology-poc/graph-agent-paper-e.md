@@ -1,0 +1,13 @@
+# E original Algorithm 1 comparator — prescore implementation
+
+Adapter: [paper_algorithm_probe.py](paper_algorithm_probe.py). No private original code is copied. Require an authorized clean checkout of original paper revision 368116746170d6dd0d95a91352daba8abc42ca13, exact original source blobs, and matching API array. Original router and original JSON parser remain unchanged; only model transport is replaced with the same pinned local CPU generation callback as A–D, and original remote clients/credentials are disabled. The original default completion cap is replaced by the common 768-token cap; this is a new small-model experiment, not historical performance reproduction.
+
+Report two stages: native tool plan and its offered need coverage / additional fields (mandatory identifiers or groups are not classified as errors); then external agent refinement using the common A static selection prompt over the native plan's selected schema subset with original stable IDs. The original full input contract stays visible; only selected output fields are exposed. No expansion to absent fields, invocation, or downstream factual answer. Parameters and native plan retained in the local receipt. Native plan empty does not prove unavailable vs clarify; refinement uses same selection rubric as A–D, and original Understand error is recorded as failure, not a correct refusal. Both routing and refinement token attempts count. E is a two-stage comparison, not a pure representation effect. Use same model snapshot/runtime and record environment independently; report across-host latency differences, do not present sequential runs as counterbalanced.
+
+Local mechanism checks (not original router execution): compiled adapter; synthetic native plan projection, preserved identifier, need coverage, extra fields, forbidden/unknown field and endpoint and empty-plan behavior checked against hash-verified public schema inventory. No actual original checkout mounted locally, no native router or model generation observed. Private original source must remain local. Public CI runs A–D only. E execution still requires authorized private checkout on the model host. Do not publish original private data or raw native-plan receipts without review.
+
+Use an exact HF cache snapshot downloaded for A–D. With matching Python/runtime and httpx available for original module import:
+```sh
+python paper_algorithm_probe.py --paper-root /path/to/clean/private-paper-checkout --snapshot /path/to/pinned/hf/snapshot --shard 0 --out /tmp/sr-paper-e0
+```
+Repeat shards 1 and 2 with distinct output paths. Freeze and verify actual runtime, source and weights before interpreting results. No real E measurements yet.
