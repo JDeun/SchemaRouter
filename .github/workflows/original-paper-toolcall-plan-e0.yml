@@ -51,6 +51,8 @@ on:
       - "tests/test_original_paper_full_replay.py"
       - "scripts/research_original_paper_inventory.py"
       - "scripts/research_original_paper_model_replay.py"
+      - "scripts/research_original_paper_public_model_pilot.py"
+      - "tests/test_research_original_paper_public_model_pilot.py"
       - "tests/test_paper_direct_union_parameters.py"
       - "tests/fixtures/original_paper_full_replay.json"
       - "tests/test_original_paper_mp_projection_replay.py"
@@ -101,6 +103,11 @@ on:
       - "research/autoresearch/paper-scoped-answered-graph-a9-e0-plan.md"
       - ".github/workflows/original-paper-toolcall-plan-e0.yml"
   workflow_dispatch:
+    inputs:
+      run_public_model_pilot:
+        description: Run actual Qwen3-0.6B public plan-agreement pilot after exact-head CI
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -136,6 +143,8 @@ jobs:
           ruff check tests/test_original_paper_full_replay.py tests/test_original_paper_mp_projection_replay.py
           ruff check scripts/research_original_paper_inventory.py scripts/research_original_paper_model_replay.py
           python -m pytest -q -s tests/test_original_paper_full_replay.py tests/test_original_paper_mp_projection_replay.py
+          ruff check scripts/research_original_paper_public_model_pilot.py tests/test_research_original_paper_public_model_pilot.py
+          python -m pytest -q tests/test_research_original_paper_public_model_pilot.py
         env:
           SCHEMAROUTER_PAPER_REPLAY_REPORT: ${{ runner.temp }}/original-paper-110-replay.json
       - name: Regress historical Field Union calls and shared typed source validation
@@ -175,4 +184,68 @@ jobs:
         with:
           name: original-paper-110-conditional-replay
           path: ${{ runner.temp }}/original-paper-110-replay.json
+          if-no-files-found: warn
+
+  public-small-model-pilot:
+    # Keep model downloads/inference out of protected no-model PR checks.
+    if: github.event_name == 'workflow_dispatch' && inputs.run_public_model_pilot
+    needs: native-paper-typed-plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - name: Require successful exact-head protected CI before spending model CPU
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&event=pull_request&per_page=100" > "$RUNNER_TEMP/exact-head-ci.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          runs = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "exact-head-ci.json").read_text()
+          )["workflow_runs"]
+          if not runs:
+              raise SystemExit("No protected CI for this exact head")
+          latest = max(runs, key=lambda run: (run["created_at"], run["id"]))
+          if (
+              latest["head_sha"] != os.environ["GITHUB_SHA"]
+              or latest["status"] != "completed"
+              or latest["conclusion"] != "success"
+          ):
+              raise SystemExit("Exact-head protected CI has not passed")
+          print("Qualified CI:", latest["html_url"])
+          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install public CPU model dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install . "transformers>=4.51,<5"
+      - name: Run nine public queries, no private repository, no provider calls
+        run: |
+          python -m scripts.research_original_paper_public_model_pilot \
+            --expected-source-tree 593dd4e350a481fb8f6b7f38a4a680aab389e6ef \
+            --out "$RUNNER_TEMP/public-paper-model-pilot.jsonl"
+      - name: Preserve public pilot rows and manifest including incomplete runs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: public-original-paper-qwen06b-pilot
+          path: |
+            ${{ runner.temp }}/public-paper-model-pilot.jsonl
+            ${{ runner.temp }}/public-paper-model-pilot.manifest.json
           if-no-files-found: warn
