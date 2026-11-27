@@ -30,7 +30,7 @@
 
 ## QueryIntent
 
-::: schemarouter.QueryIntent
+개발 배포 패키지에서 제거된 과거 Lexical 분석기 출력 타입입니다. 기존 `QueryIntent` 모델과 `RetrievalMode`, `FallbackScope` 요청 리터럴은 소스 체크아웃의 `scripts.research_legacy_planning.requests`에서만 보존합니다. 설치 패키지의 질의 요청은 `PaperPlanRequest`이며, `FallbackRoute`, `EvidenceRequirements`, `PlanCoverage`는 실행 및 커버리지 계약으로 유지합니다.
 
 ## ToolCall
 

@@ -12,7 +12,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    QueryIntent,
     ToolSpec,
 )
 
@@ -20,7 +19,7 @@ if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.research_legacy_planning.planner import SchemaPlanner  # noqa: E402
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent  # noqa: E402
 
 
 @dataclass(frozen=True)

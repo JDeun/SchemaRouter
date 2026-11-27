@@ -10,9 +10,9 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from schemarouter.errors import ModelAnalysisError
-from schemarouter.models import EvidenceRequirements, QueryIntent, ToolSpec
+from schemarouter.models import EvidenceRequirements, ToolSpec
 from schemarouter.registry import ToolRegistry
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 
 ModelCallable = Callable[[dict[str, Any]], dict[str, Any] | Awaitable[dict[str, Any]]]
 

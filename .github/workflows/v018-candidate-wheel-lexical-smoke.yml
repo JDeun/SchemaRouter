@@ -57,6 +57,7 @@ jobs:
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (
               "KeywordAnalyzer", "QueryAnalyzer", "SchemaPlanner", "PlanRequest",
+              "QueryIntent", "RetrievalMode", "FallbackScope",
               "StateAwareCapabilityCandidate", "StateAwareCapabilityRetrieval",
               "evaluate_candidate_state", "filter_retrieval_by_state",
               "ScoreComponent", "PlanExplanation", "FieldSelectionExplanation",
@@ -71,7 +72,8 @@ jobs:
           assert {"score", "explanation"}.isdisjoint(models.ToolCall.model_fields)
           assert {"score", "explanation"}.isdisjoint(models.ToolCall.model_json_schema()["properties"])
           for name in ("ScoreComponent", "PlanExplanation", "FieldSelectionExplanation",
-                       "CandidateSelectionSource", "FieldSelectionReason"):
+                       "CandidateSelectionSource", "FieldSelectionReason",
+                       "QueryIntent", "RetrievalMode", "FallbackScope"):
               assert not hasattr(models, name), name
           assert not hasattr(models, "CapabilityCandidate")
           assert not hasattr(models, "CapabilityRetrieval")

@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from schemarouter.models import EndpointSpec, QueryIntent, ToolSpec
-from scripts.research_legacy_planning.requests import PlanRequest
+from schemarouter.models import EndpointSpec, ToolSpec
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 
 
 class CandidateIndexSnapshot(Protocol):

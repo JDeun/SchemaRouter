@@ -895,19 +895,6 @@ class EvidenceLedgerEntry(StrictModel):
     validated: bool = True
 
 
-class QueryIntent(StrictModel):
-    concepts: list[str] = Field(default_factory=list)
-    preferred_tools: list[str] = Field(default_factory=list)
-    preferred_endpoints: list[str] = Field(default_factory=list)
-    arguments: dict[str, Any] = Field(default_factory=dict)
-    evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
-    field_evidence: dict[str, EvidenceRequirements] = Field(default_factory=dict)
-
-
-FallbackScope = Literal["disabled", "same_provider", "cross_provider"]
-RetrievalMode = Literal["coverage", "corroborate"]
-
-
 class PaperPlanRequest(StrictModel):
     """Query and explicit source-local host inputs for configured Algorithm 1 planning."""
 

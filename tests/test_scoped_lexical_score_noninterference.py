@@ -14,9 +14,8 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.models import QueryIntent
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 from scripts.research_legacy_router import legacy_router
 
 CANARY = "private_score_canary_t3397"

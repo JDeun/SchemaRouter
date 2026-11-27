@@ -7,12 +7,11 @@ from schemarouter import (
     CapabilityFieldContract,
     EndpointSpec,
     ObservedStateField,
-    QueryIntent,
     SchemaRouter,
     ToolSpec,
     TypedExecutionState,
 )
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_state_backfill import (
     legacy_areretrieve_state_aware,

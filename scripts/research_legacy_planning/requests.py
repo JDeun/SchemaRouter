@@ -2,11 +2,24 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
-from schemarouter.models import EvidenceRequirements, FallbackScope, RetrievalMode, StrictModel
+from schemarouter.models import EvidenceRequirements, StrictModel
+
+
+class QueryIntent(StrictModel):
+    concepts: list[str] = Field(default_factory=list)
+    preferred_tools: list[str] = Field(default_factory=list)
+    preferred_endpoints: list[str] = Field(default_factory=list)
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    field_evidence: dict[str, EvidenceRequirements] = Field(default_factory=dict)
+
+
+FallbackScope = Literal["disabled", "same_provider", "cross_provider"]
+RetrievalMode = Literal["coverage", "corroborate"]
 
 
 class PlanRequest(StrictModel):

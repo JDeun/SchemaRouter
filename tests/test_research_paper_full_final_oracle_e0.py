@@ -18,7 +18,6 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.field_routing_session import SchemaFieldRoutingSession
-from schemarouter.models import QueryIntent
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     EXPERIMENTAL_FULL_CONDITION,
@@ -26,6 +25,7 @@ from scripts.agent_utility_generated_common import (
 )
 from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import capture_authorized_agent_tool_surface
+from scripts.research_legacy_planning.requests import QueryIntent
 from scripts.research_paper_measured_episode_e0 import PaperProviderUsageResponse
 from scripts.research_paper_paired_agent_e0 import (
     run_paper_counterbalanced_agent_e0,

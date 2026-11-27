@@ -18,7 +18,6 @@ from schemarouter.models import (
     EvidenceRequirements,
     FieldSpec,
     PlanCoverage,
-    QueryIntent,
     SemanticFieldRequirement,
     ToolSpec,
 )
@@ -52,7 +51,7 @@ from scripts.research_legacy_planning.planning_stages import (
     select_fallbacks_sync,
     select_primary_candidates_sync,
 )
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 from scripts.research_legacy_planning.route_models import (
     CapabilityRouteCandidate,
     CapabilityRouteRetrieval,

@@ -18,12 +18,11 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Literal
 
-from schemarouter import QueryIntent
 from schemarouter.capability_contracts import SemanticEquivalence
 from schemarouter.errors import PlanningError
 from schemarouter.registry import ToolRegistry
 from scripts.research_legacy_planning.planner import KeywordAnalyzer
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 
 MAX_DECLARED_EQUIVALENCES = 32
 MAX_DECLARED_ALIASES = 128

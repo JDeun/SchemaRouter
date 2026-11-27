@@ -92,7 +92,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "NativeSchemaPostingIndex",
         "validate_declared_operation_fit",
         "FieldObservation",
-        "RetrievalMode",
         "SourceRecord",
         "aggregate_records",
         "canonical_identity",
@@ -154,7 +153,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "HealthStatus",
         "ExecutionPlan",
         "FallbackRoute",
-        "FallbackScope",
         "ExecutionPolicy",
         "FieldInspection",
         "FieldSpec",
@@ -209,7 +207,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "built_in_provider_profile_registry",
         "discover_provider_profile_plugins",
         "load_provider_profile_plugins",
-        "QueryIntent",
         "ResultFieldContract",
         "ClickHouseRecordBackend",
         "CosmosRecordBackend",
@@ -554,9 +551,13 @@ def test_lexical_selective_invocation_is_not_public() -> None:
 def test_flat_lexical_request_is_not_installed() -> None:
     from schemarouter import models
 
-    assert not hasattr(schemarouter, "PlanRequest")
-    assert not hasattr(models, "PlanRequest")
+    for name in ("PlanRequest", "QueryIntent", "RetrievalMode", "FallbackScope"):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(models, name), name
     assert callable(schemarouter.PaperPlanRequest)
+    assert callable(schemarouter.FallbackRoute)
+    assert callable(schemarouter.EvidenceRequirements)
+    assert callable(schemarouter.PlanCoverage)
 
 
 def test_retired_lexical_state_retrieval_is_not_installed() -> None:

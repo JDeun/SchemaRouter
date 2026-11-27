@@ -16,7 +16,6 @@ from schemarouter.errors import PlanningError
 from schemarouter.models import (
     EndpointSpec,
     EvidenceRequirements,
-    QueryIntent,
     ToolSpec,
 )
 from scripts.research_legacy_decisions import (
@@ -49,7 +48,7 @@ from scripts.research_legacy_planning.planning_stages import (
     PrimarySelectionResult,
     assemble_execution_plan,
 )
-from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest, QueryIntent
 
 ContextT = TypeVar("ContextT")
 

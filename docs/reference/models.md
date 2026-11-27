@@ -30,7 +30,7 @@
 
 ## QueryIntent
 
-::: schemarouter.QueryIntent
+Retired lexical analyzer output. The original `QueryIntent` model and the `RetrievalMode` and `FallbackScope` request literals remain in `scripts.research_legacy_planning.requests` in a source checkout only. The installed query request is `PaperPlanRequest`; `FallbackRoute`, `EvidenceRequirements`, and `PlanCoverage` remain execution and coverage contracts.
 
 ## ToolCall
 
