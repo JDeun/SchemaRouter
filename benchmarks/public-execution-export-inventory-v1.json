@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "src/schemarouter/__init__.py",
   "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_EXECUTION_NOT_INDEPENDENT_E2",
-  "export_count": 434,
+  "export_count": 429,
   "exported_names": [
     "ADAPTER_ENTRY_POINT_GROUP",
     "AccessHealthMonitor",
@@ -261,7 +261,6 @@
     "RegistryInspection",
     "ResolvedNativeConcepts",
     "ResultFieldContract",
-    "RetrievalAbstentionPolicy",
     "RetrievalMode",
     "RetryPolicy",
     "RouterInspection",
@@ -293,7 +292,6 @@
     "ScopedGraphStoreBackend",
     "ScopedVectorStoreBackend",
     "ScoreComponent",
-    "SelectiveCapabilityRetrieval",
     "SemanticEquivalence",
     "SemanticFieldRequirement",
     "ServerProjectionSpec",
@@ -345,7 +343,6 @@
     "aggregate_records",
     "analyze_openapi_compatibility",
     "apply_host_semantic_attestation",
-    "apply_retrieval_abstention",
     "artifact_edges_from_graph",
     "backup_sqlite_storage",
     "build_capability_artifact",
@@ -377,7 +374,6 @@
     "evaluate_operational_constraints",
     "evaluate_preconditions",
     "evaluate_state_eligibility",
-    "execute_selective_plan",
     "explain_capability_eligibility",
     "inspect_capability_decision_trace",
     "inspect_crossref_paper_source",
@@ -435,18 +431,10 @@
     "validate_capability_publication",
     "validate_capability_snapshot",
     "validate_declared_operation_fit",
-    "validate_selective_execution",
     "write_dashboard",
     "write_schema_explorer"
   ],
   "standalone_tool_execution_exports": [
-    {
-      "name": "execute_selective_plan",
-      "kind": "host-selected-plan-execution",
-      "test_file": "tests/test_public_top_level_execution_exports.py",
-      "positive": "test_exported_selective_plan_executes_registered_invoker",
-      "denied": "test_exported_selective_plan_denies_revoked_policy"
-    },
     {
       "name": "observe_and_execute_paper_plan",
       "kind": "paper-source-bound-fork",
@@ -462,5 +450,16 @@
       "denied": "test_midflight_permission_revocation_blocks_downstream"
     }
   ],
-  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. Three exported top-level functions which may reach registered native tool execution have real positive and denied local tests. `SchemaRouter`/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Other exported functions, classes, builders, retrievers and registration utilities are not independently proven runtime execution by this inventory."
+  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. Two exported top-level functions which may reach registered native tool execution have real positive and denied local tests. `SchemaRouter`/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Other exported functions, classes, builders, retrievers and registration utilities are not independently proven runtime execution by this inventory. The removed selective execution export retains its historical source-checkout evidence in historical_research_execution; this is not current product qualification.",
+  "historical_research_execution": [
+    {
+      "name": "execute_selective_plan",
+      "kind": "host-selected-plan-execution",
+      "test_file": "tests/test_public_top_level_execution_exports.py",
+      "positive": "test_exported_selective_plan_executes_registered_invoker",
+      "denied": "test_exported_selective_plan_denies_revoked_policy",
+      "module": "scripts.research_legacy_planning.retrieval_execution_gate",
+      "classification": "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
+    }
+  ]
 }

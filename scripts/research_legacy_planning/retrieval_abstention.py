@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import field_validator, model_validator
 
-from .models import CapabilityCandidate, CapabilityRetrieval, FieldSpec, StrictModel
+from schemarouter.models import CapabilityCandidate, CapabilityRetrieval, FieldSpec, StrictModel
 
 
 class RetrievalAbstentionPolicy(StrictModel):

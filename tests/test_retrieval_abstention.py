@@ -10,15 +10,17 @@ from schemarouter import (
     CapabilityRetrieval,
     EndpointSpec,
     FieldSpec,
-    RetrievalAbstentionPolicy,
-    SchemaRouter,
     ToolSpec,
+)
+from scripts.research_legacy_planning.retrieval_abstention import (
+    RetrievalAbstentionPolicy,
     apply_retrieval_abstention,
 )
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 
-def build_router() -> SchemaRouter:
+def build_router() -> LegacySchemaRouter:
     router = legacy_router()
     router.add_tool(
         ToolSpec(

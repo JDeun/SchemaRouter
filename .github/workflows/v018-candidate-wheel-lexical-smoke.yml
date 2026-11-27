@@ -35,7 +35,10 @@ jobs:
           wheel, = Path("artifacts/wheels").glob("*.whl")
           with ZipFile(wheel) as archive:
               names = set(archive.namelist())
-              for name in ("planner", "planning_context", "planning_stages", "state_retrieval"):
+              for name in (
+                  "planner", "planning_context", "planning_stages", "state_retrieval",
+                  "retrieval_abstention", "retrieval_execution_gate",
+              ):
                   assert f"schemarouter/{name}.py" not in names, name
               assert not any("research_legacy" in name for name in names)
           PY
@@ -47,13 +50,18 @@ jobs:
           import importlib.util
           import schemarouter
 
-          for name in ("planner", "planning_context", "planning_stages", "state_retrieval"):
+          for name in (
+                  "planner", "planning_context", "planning_stages", "state_retrieval",
+                  "retrieval_abstention", "retrieval_execution_gate",
+              ):
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (
               "KeywordAnalyzer", "QueryAnalyzer", "SchemaPlanner", "PlanRequest",
               "StateAwareCapabilityCandidate", "StateAwareCapabilityRetrieval",
               "evaluate_candidate_state", "filter_retrieval_by_state",
               "CapabilityRouteCandidate", "CapabilityRouteRetrieval",
+              "RetrievalAbstentionPolicy", "SelectiveCapabilityRetrieval",
+              "apply_retrieval_abstention", "validate_selective_execution", "execute_selective_plan",
           ):
               assert not hasattr(schemarouter, name), name
           from schemarouter import models
@@ -64,4 +72,5 @@ jobs:
           assert callable(schemarouter.PaperQueryUnderstanding)
           assert callable(schemarouter.evaluate_state_eligibility)
           assert callable(schemarouter.evaluate_preconditions)
+          assert callable(schemarouter.validate_declared_operation_fit)
           PY

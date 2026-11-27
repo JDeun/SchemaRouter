@@ -3,6 +3,10 @@
 **Status: offline diagnostic tooling only. Not an independently reviewed
 benchmark and not a calibrated recommendation.** Follows [#1291](https://github.com/JDeun/SchemaRouter/issues/1291).
 
+**Development-package migration (2026-11-27):** the score gate is now checkout-only in
+`scripts/research_legacy_planning/retrieval_abstention.py`. This diagnostic and its
+frozen historical evidence do not qualify the paper-first product.
+
 The merged opt-in `RetrievalAbstentionPolicy` / `apply_retrieval_abstention`
 does **not** alter the default `retrieve()` result, authorize executions, or
 automatically refuse unsupported actions. Historically exposed ClicShopping

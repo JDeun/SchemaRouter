@@ -1,8 +1,8 @@
 """Public export surface and top-level tool execution entrypoint E2E guards.
 
-This inventory includes every __all__ export. Three top-level callable functions
-which can initiate native tool execution must retain positive and denied tests.
-Historical selective invocation is tested through its research-only helper.
+This inventory includes every __all__ export. Two installed top-level callable
+functions which can initiate native tool execution retain positive and denied tests.
+Historical selective execution remains tested through its research-only helpers.
 The local fixture is not an external provider/model E2 benchmark.
 """
 from __future__ import annotations
@@ -19,25 +19,24 @@ from schemarouter import (
     AuthorizationRule,
     PolicyViolationError,
     PrincipalContext,
-    RetrievalAbstentionPolicy,
     RunConfig,
-    SchemaRouter,
-    execute_selective_plan,
 )
 from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.retrieval_abstention import RetrievalAbstentionPolicy
+from scripts.research_legacy_planning.retrieval_execution_gate import execute_selective_plan
 from scripts.research_legacy_planning.selective_invocation import ainvoke_selective
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
 EXECUTION_EXPORTS = {
-    "execute_selective_plan",
     "observe_and_execute_paper_plan",
     "observe_and_execute_paper_understood_graph",
 }
 
 
-def _registered() -> tuple[SchemaRouter, list[int], PlanRequest, RunConfig, RunConfig]:
+def _registered() -> tuple[LegacySchemaRouter, list[int], PlanRequest, RunConfig, RunConfig]:
     dispatched: list[int] = []
 
     def lookup(user_id: int) -> dict[str, str]:

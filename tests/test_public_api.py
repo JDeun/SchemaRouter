@@ -49,8 +49,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ExplorerUnitNormalization",
         "ExplorerWatchStatus",
         "CapabilityRetrieval",
-        "RetrievalAbstentionPolicy",
-        "SelectiveCapabilityRetrieval",
         "DeclaredOperationFitPolicy",
         "NativeDeclaredFieldGroup",
         "NativeConceptCatalog",
@@ -95,9 +93,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "IndexedNativeFieldResult",
         "NativeSchemaPostingIndex",
         "validate_declared_operation_fit",
-        "apply_retrieval_abstention",
-        "validate_selective_execution",
-        "execute_selective_plan",
         "FieldObservation",
         "RetrievalMode",
         "SourceRecord",
@@ -592,3 +587,18 @@ def test_retired_lightweight_route_dtos_are_not_installed() -> None:
         assert not hasattr(schemarouter, name), name
         assert not hasattr(models, name), name
     assert not hasattr(schemarouter.SchemaRouter, "_project_route_retrieval_data_scope")
+
+
+def test_retired_score_based_abstention_and_execution_are_not_installed() -> None:
+    from importlib.util import find_spec
+
+    for module in ("retrieval_abstention", "retrieval_execution_gate"):
+        assert find_spec(f"schemarouter.{module}") is None, module
+    for name in (
+        "RetrievalAbstentionPolicy", "SelectiveCapabilityRetrieval",
+        "apply_retrieval_abstention", "validate_selective_execution", "execute_selective_plan",
+    ):
+        assert not hasattr(schemarouter, name), name
+    assert callable(schemarouter.validate_declared_operation_fit)
+    assert callable(schemarouter.SchemaRouter.execute)
+    assert callable(schemarouter.PaperQueryUnderstanding)

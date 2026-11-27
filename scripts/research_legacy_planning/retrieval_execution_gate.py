@@ -9,27 +9,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from .errors import PolicyViolationError
-from .models import (
+from schemarouter.errors import PolicyViolationError
+from schemarouter.models import (
     CapabilityRetrieval,
     ExecutionPlan,
     FallbackRoute,
     ToolCall,
     ToolResult,
 )
-from .operation_fit import (
+from schemarouter.operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
 )
-from .retrieval_abstention import (
+from scripts.research_legacy_planning.retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,
     apply_retrieval_abstention,
 )
 
 if TYPE_CHECKING:
-    from .runs import RunConfig
-    from .runtime import SchemaRouter
+    from schemarouter.runs import RunConfig
+    from schemarouter.runtime import SchemaRouter
 
 
 def _deny(reason: str) -> None:

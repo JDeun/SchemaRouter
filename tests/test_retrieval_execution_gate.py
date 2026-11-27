@@ -16,13 +16,15 @@ from schemarouter import (
     FallbackRoute,
     PolicyViolationError,
     PrincipalContext,
-    RetrievalAbstentionPolicy,
     ToolCall,
     ToolSpec,
+)
+from scripts.research_legacy_planning.requests import PlanRequest
+from scripts.research_legacy_planning.retrieval_abstention import RetrievalAbstentionPolicy
+from scripts.research_legacy_planning.retrieval_execution_gate import (
     execute_selective_plan,
     validate_selective_execution,
 )
-from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.selective_invocation import ainvoke_selective
 from scripts.research_legacy_router import legacy_router
 
