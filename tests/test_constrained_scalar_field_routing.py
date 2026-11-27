@@ -19,7 +19,6 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
     UnitNormalizationSpec,
-    observe_and_execute_paper_plan,
 )
 from schemarouter.errors import SchemaValidationError
 from schemarouter.field_group_retrieval import _scalar_contract
@@ -34,6 +33,7 @@ from scripts.research_legacy_field_session import (
     research_compile_fields,
     research_discover_fields,
 )
+from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 from scripts.research_legacy_router import legacy_router
 
 ALIASES = ("record value", "레코드 값", "レコードの値")

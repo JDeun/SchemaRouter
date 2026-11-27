@@ -73,6 +73,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_capability_graph_analysis"), path
                 assert not module.startswith("scripts.research_legacy_posting_rank"), path
                 assert not module.startswith("scripts.research_legacy_field_session"), path
+                assert not module.startswith("scripts.research_legacy_paper_observed_binding"), path
+                assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
@@ -81,6 +83,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                     "schemarouter.retrieval_abstention", "schemarouter.retrieval_execution_gate",
                     "native_graph_execution", "schemarouter.native_graph_execution",
                     "native_deep_paths", "schemarouter.native_deep_paths",
+                    "paper_observed_binding", "schemarouter.paper_observed_binding",
                 }, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
@@ -97,6 +100,9 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_capability_graph_analysis",
                                            "scripts.research_legacy_posting_rank",
                                            "scripts.research_legacy_field_session",
+                                           "scripts.research_legacy_paper_observed_binding",
+                                           "scripts.research_legacy_paper_consumer_execution",
+                                           "schemarouter.paper_observed_binding",
                                            "scripts.research_legacy_g5_rank",
                                            "schemarouter.native_deep_paths",
                                            "schemarouter.native_graph_execution",
@@ -134,6 +140,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.retrieval_execution_gate",
                         "schemarouter.native_graph_execution",
                         "schemarouter.native_deep_paths",
+                        "schemarouter.paper_observed_binding",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
                     if node.module in {"schemarouter", "schemarouter.models",
@@ -150,6 +157,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.retrieval_execution_gate",
                             "schemarouter.native_graph_execution",
                             "schemarouter.native_deep_paths",
+                            "schemarouter.paper_observed_binding",
                         ))
                         for alias in node.names
                     ), path

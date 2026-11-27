@@ -25,7 +25,7 @@ from schemarouter.errors import (
     SchemaValidationError,
     TransientInvocationError,
 )
-from schemarouter.paper_observed_binding import observe_and_bind_paper_plan
+from scripts.research_legacy_paper_observed_binding import observe_and_bind_paper_plan
 
 ALIASES = ("customer status and owner", "고객 상태와 담당자", "顧客状態と担当者")
 ACTOR = PrincipalContext(subject="host-researcher", roles=("reader",))

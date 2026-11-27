@@ -386,9 +386,7 @@ from .operation_fit import (
     validate_declared_operation_fit,
 )
 from .paper_consumer_execution import (
-    PaperExecutedToolSequence,
     PaperUnderstoodExecutedGraph,
-    observe_and_execute_paper_plan,
     observe_and_execute_paper_understood_graph,
 )
 from .paper_crossref_registration import (
@@ -413,10 +411,6 @@ from .paper_field_retrieval import (
     retrieve_paper_field_coverage,
 )
 from .paper_native_rank import PaperNativeRankPolicy
-from .paper_observed_binding import (
-    PaperObservedBinding,
-    observe_and_bind_paper_plan,
-)
 from .paper_optimade_registration import (
     discover_optimade_paper_source,
     register_reviewed_optimade_paper_source,
@@ -566,10 +560,6 @@ def __dir__() -> list[str]:
 __all__ = [
     "discover_optimade_paper_source",
     "register_reviewed_optimade_paper_source",
-    "PaperObservedBinding",
-    "observe_and_bind_paper_plan",
-    "PaperExecutedToolSequence",
-    "observe_and_execute_paper_plan",
     "PaperUnderstoodExecutedGraph",
     "observe_and_execute_paper_understood_graph",
     "PaperPlanBinding",

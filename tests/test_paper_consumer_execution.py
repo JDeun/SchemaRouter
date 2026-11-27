@@ -16,7 +16,7 @@ from schemarouter.errors import (
 @pytest.mark.parametrize("query", ALIASES)
 async def test_original_producer_and_each_consumer_execute_once_with_observed_id(query):
     """Removing real leaf execution or incorrectly prebinding IDs must fail."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     router, catalog, index, seen = _fixture(allow_consumers=True)
     output = await observe_and_execute_paper_plan(
@@ -42,7 +42,7 @@ async def test_original_producer_and_each_consumer_execute_once_with_observed_id
 @pytest.mark.asyncio
 async def test_missing_required_consumer_output_aborts_before_other_leaf():
     """A selected required field cannot silently disappear from real data."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     router, catalog, index, seen = _fixture(
         allow_consumers=True,
@@ -59,7 +59,7 @@ async def test_missing_required_consumer_output_aborts_before_other_leaf():
 @pytest.mark.asyncio
 async def test_consumer_revokes_another_leaf_and_stops_without_partial_receipt():
     """A mid-run policy change cannot let a later branch use stale authority."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     def revoke_next(router, first_consumer):
         other = "fork_owner" if first_consumer == "fork_status" else "fork_status"
@@ -88,7 +88,7 @@ async def test_consumer_revokes_another_leaf_and_stops_without_partial_receipt()
 @pytest.mark.asyncio
 async def test_leaf_transient_failure_has_one_attempt_and_no_other_leaf():
     """Default fallback/retry machinery must not multiply paper calls."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     def transient(router, name):
         raise TransientInvocationError(f"transient {name}")
@@ -107,7 +107,7 @@ async def test_leaf_transient_failure_has_one_attempt_and_no_other_leaf():
 @pytest.mark.asyncio
 async def test_approved_host_parameterized_one_hop_executes_one_leaf_only():
     """Explicit source input is not inferred and does not mint a P1 1:N fork."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     router, catalog, index, seen = _fixture(
         source_parameter=True, single_consumer=True, allow_consumers=True,
@@ -127,7 +127,7 @@ async def test_approved_host_parameterized_one_hop_executes_one_leaf_only():
 @pytest.mark.asyncio
 async def test_source_revokes_leaf_before_consumers_no_leaf_executes():
     """The first actual observation is not authorization for downstream I/O."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     def revoke_after_root(router):
         router._source_availability.predicate = (
@@ -147,7 +147,7 @@ async def test_source_revokes_leaf_before_consumers_no_leaf_executes():
 @pytest.mark.asyncio
 async def test_unexpected_consumer_result_identity_never_publishes_a_join(monkeypatch):
     """Even a faulty executor adapter cannot mislabel the combined answer."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     router, catalog, index, seen = _fixture(allow_consumers=True)
     actual_execute = router.execute
@@ -170,7 +170,7 @@ async def test_unexpected_consumer_result_identity_never_publishes_a_join(monkey
 @pytest.mark.asyncio
 async def test_principal_mutated_during_producer_does_not_execute_leaves():
     """Source tenant A's ID must never run leaves as swapped tenant B."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     principal = PrincipalContext(subject="tenant-a", roles=("reader",))
 
@@ -190,7 +190,7 @@ async def test_principal_mutated_during_producer_does_not_execute_leaves():
 @pytest.mark.asyncio
 async def test_principal_mutated_during_first_leaf_blocks_following_leaf():
     """One valid leaf never authorizes another identity's next request."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     principal = PrincipalContext(subject="tenant-a", roles=("reader",))
 
@@ -211,7 +211,7 @@ async def test_principal_mutated_during_first_leaf_blocks_following_leaf():
 @pytest.mark.asyncio
 async def test_legitimate_nested_consumer_result_paths_preserve_original_output():
     """The executor's declared result_path is evidence, not the field's flat name."""
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_plan
+    from scripts.research_legacy_paper_consumer_execution import observe_and_execute_paper_plan
 
     router, catalog, index, seen = _fixture(
         allow_consumers=True,

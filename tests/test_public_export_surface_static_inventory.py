@@ -14,7 +14,6 @@ ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
 PACKAGE = ROOT / "src/schemarouter/__init__.py"
 TOOL_EXECUTING_EXPORTS = frozenset({
-    "observe_and_execute_paper_plan",
     "observe_and_execute_paper_understood_graph",
 })
 
@@ -68,17 +67,22 @@ def test_each_standalone_execution_export_has_distinct_real_test_references() ->
         assert row["positive"] != row["denied"], row["name"]
 
 
-def test_retired_selective_execution_evidence_remains_checkout_only() -> None:
+def test_retired_research_execution_evidence_remains_checkout_only() -> None:
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
-    row, = inventory["historical_research_execution"]
-    assert row["name"] == "execute_selective_plan"
-    assert row["classification"] == "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
-    assert row["name"] not in _public_exports()
-    module = ROOT / (row["module"].replace(".", "/") + ".py")
-    assert module.is_file()
-    source = ROOT / row["test_file"]
-    functions = {
-        node.name for node in ast.parse(source.read_text(encoding="utf-8")).body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    rows = inventory["historical_research_execution"]
+    assert {row["name"] for row in rows} == {
+        "execute_selective_plan",
+        "observe_and_bind_paper_plan",
+        "observe_and_execute_paper_plan",
     }
-    assert {row["positive"], row["denied"]} <= functions
+    for row in rows:
+        assert row["classification"] == "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
+        assert row["name"] not in _public_exports()
+        module = ROOT / (row["module"].replace(".", "/") + ".py")
+        assert module.is_file()
+        source = ROOT / row["test_file"]
+        functions = {
+            node.name for node in ast.parse(source.read_text(encoding="utf-8")).body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        assert {row["positive"], row["denied"]} <= functions

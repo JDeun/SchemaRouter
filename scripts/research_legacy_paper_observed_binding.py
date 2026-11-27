@@ -1,4 +1,4 @@
-"""Opt-in original-paper P2: real producer execution, deferred typed consumers.
+"""Checkout-only historical Field Union P2: real producer execution, deferred typed consumers.
 
 Only the original, source-attested root is invoked, exactly once, by the
 ordinary SchemaRouter executor. This does not execute consumers or grant a
@@ -9,27 +9,27 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any
 
-from .authorization import PrincipalContext
-from .concept_retrieval import (
+from schemarouter.authorization import PrincipalContext
+from schemarouter.concept_retrieval import (
     NativeConceptCatalog,
     resolve_native_concepts,
 )
-from .errors import PolicyViolationError, SchemaValidationError
-from .field_group_retrieval import NativeDeclaredFieldGroup
-from .models import ExecutionPlan, ToolResult
-from .native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
-from .native_graph_observation import _materialize_original_observed_edge
-from .paper_field_retrieval import retrieve_paper_field_coverage
-from .paper_typed_tool_plan import (
+from schemarouter.errors import PolicyViolationError, SchemaValidationError
+from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
+from schemarouter.models import ExecutionPlan, ToolResult
+from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
+from schemarouter.native_graph_observation import _materialize_original_observed_edge
+from schemarouter.paper_field_retrieval import retrieve_paper_field_coverage
+from schemarouter.paper_typed_tool_plan import (
     PaperPlanCall,
     PaperTypedToolPlan,
     _check_current_call_scopes,
     compile_paper_typed_tool_plan,
 )
-from .runs import ExecutionBudget, RunConfig
+from schemarouter.runs import ExecutionBudget, RunConfig
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
+    from schemarouter.runtime import SchemaRouter
 
 
 @dataclass(frozen=True, slots=True)

@@ -64,10 +64,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SchemaFieldReviewField",
         "SchemaFieldReviewRoute",
         "SchemaFieldReviewPage",
-        "PaperObservedBinding",
-        "observe_and_bind_paper_plan",
-        "PaperExecutedToolSequence",
-        "observe_and_execute_paper_plan",
             "PaperUnderstoodExecutedGraph",
             "observe_and_execute_paper_understood_graph",
         "PaperPlanBinding",
@@ -698,3 +694,19 @@ def test_alternate_query_only_session_methods_are_not_installed() -> None:
     assert callable(schemarouter.SchemaFieldRoutingSession.acompile_query)
     assert callable(schemarouter.SchemaFieldRoutingSession.inspect_visible_fields)
     assert callable(schemarouter.SchemaFieldRoutingSession.aexecute_direct)
+
+
+def test_alternate_field_union_observation_and_execution_are_checkout_only() -> None:
+    from importlib.util import find_spec
+
+    from schemarouter import paper_consumer_execution
+
+    assert find_spec("schemarouter.paper_observed_binding") is None
+    for name in (
+        "PaperObservedBinding", "PaperExecutedToolSequence",
+        "observe_and_bind_paper_plan", "observe_and_execute_paper_plan",
+    ):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(paper_consumer_execution, name), name
+    assert callable(schemarouter.observe_and_execute_paper_understood_graph)
+    assert callable(schemarouter.SchemaRouter.execute)

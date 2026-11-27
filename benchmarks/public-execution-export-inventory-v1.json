@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "src/schemarouter/__init__.py",
   "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_EXECUTION_NOT_INDEPENDENT_E2",
-  "export_count": 418,
+  "export_count": 414,
   "exported_names": [
     "ADAPTER_ENTRY_POINT_GROUP",
     "AccessHealthMonitor",
@@ -198,14 +198,12 @@
     "OperationalConstraintReason",
     "OperationalConstraintResult",
     "PROVIDER_PROFILE_ENTRY_POINT_GROUP",
-    "PaperExecutedToolSequence",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "PaperFieldRoute",
     "PaperIntentDeclaration",
     "PaperIntentRegistry",
     "PaperNativeRankPolicy",
-    "PaperObservedBinding",
     "PaperPlanBinding",
     "PaperPlanCall",
     "PaperPlanFieldMeta",
@@ -390,8 +388,6 @@
     "migrate_capability_snapshot",
     "migrate_sqlite_storage",
     "negotiate_capabilities",
-    "observe_and_bind_paper_plan",
-    "observe_and_execute_paper_plan",
     "observe_and_execute_paper_understood_graph",
     "raw_tool_spec_document",
     "record_run_events",
@@ -425,13 +421,6 @@
   ],
   "standalone_tool_execution_exports": [
     {
-      "name": "observe_and_execute_paper_plan",
-      "kind": "paper-source-bound-fork",
-      "test_file": "tests/test_paper_consumer_execution.py",
-      "positive": "test_original_producer_and_each_consumer_execute_once_with_observed_id",
-      "denied": "test_consumer_revokes_another_leaf_and_stops_without_partial_receipt"
-    },
-    {
       "name": "observe_and_execute_paper_understood_graph",
       "kind": "paper-source-bound-graph",
       "test_file": "tests/test_paper_understood_observed_graph_a9_e0.py",
@@ -439,7 +428,7 @@
       "denied": "test_midflight_permission_revocation_blocks_downstream"
     }
   ],
-  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. Two exported top-level functions which may reach registered native tool execution have real positive and denied local tests. `SchemaRouter`/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Other exported functions, classes, builders, retrievers and registration utilities are not independently proven runtime execution by this inventory. The removed selective execution export retains its historical source-checkout evidence in historical_research_execution; this is not current product qualification.",
+  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. One exported top-level function which may reach registered native tool execution has real positive and denied local tests. SchemaRouter/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Historical selective execution and Field Union observation/consumer execution retain source-checkout evidence in historical_research_execution; this is not current product qualification. Other exported symbols are not independently proven runtime execution by this inventory.",
   "historical_research_execution": [
     {
       "name": "execute_selective_plan",
@@ -448,6 +437,24 @@
       "positive": "test_exported_selective_plan_executes_registered_invoker",
       "denied": "test_exported_selective_plan_denies_revoked_policy",
       "module": "scripts.research_legacy_planning.retrieval_execution_gate",
+      "classification": "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
+    },
+    {
+      "name": "observe_and_execute_paper_plan",
+      "kind": "paper-source-bound-fork",
+      "test_file": "tests/test_paper_consumer_execution.py",
+      "positive": "test_original_producer_and_each_consumer_execute_once_with_observed_id",
+      "denied": "test_consumer_revokes_another_leaf_and_stops_without_partial_receipt",
+      "module": "scripts.research_legacy_paper_consumer_execution",
+      "classification": "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
+    },
+    {
+      "name": "observe_and_bind_paper_plan",
+      "kind": "paper-source-bound-producer-observation",
+      "test_file": "tests/test_paper_observed_binding.py",
+      "positive": "test_actual_original_producer_executes_once_and_deferred_consumers_bind",
+      "denied": "test_host_required_source_input_never_executes_without_explicit_value",
+      "module": "scripts.research_legacy_paper_observed_binding",
       "classification": "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
     }
   ]
