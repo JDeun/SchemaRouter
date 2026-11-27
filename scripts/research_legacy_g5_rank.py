@@ -29,7 +29,7 @@ from schemarouter.native_graph_index import (
     _root_field,
 )
 from schemarouter.native_semantic_index import _NativeSourcePass
-from schemarouter.paper_native_rank import PaperNativeRankPolicy
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_graph_rank import (
     MAX_OWNER_RANKABLE_PATHS,
     rank_authorized_paper_graph_one_hop,

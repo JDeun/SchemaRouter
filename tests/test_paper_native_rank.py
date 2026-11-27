@@ -18,13 +18,15 @@ from test_paper_understood_direct_plan import (
 
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import IndexedNativeFieldCandidate, NativeSchemaPostingIndex
-from schemarouter.paper_native_rank import (
-    PaperNativeRankPolicy,
-    rank_authorized_paper_direct,
-)
 from schemarouter.paper_understood_direct_plan import (
     PaperIntentDeclaration,
     PaperIntentRegistry,
+)
+from scripts.research_legacy_direct_plan import compile_research_direct
+from scripts.research_legacy_direct_rank import (
+    PaperNativeRankPolicy,
+    lookup_research_postings,
+    rank_authorized_paper_direct,
 )
 from scripts.research_legacy_offered_query import compile_offered_model_query
 
@@ -122,8 +124,8 @@ def test_posting_index_ranks_six_original_qualified_routes_after_auth_and_before
         snapshot_id=index.snapshot_id,
         route_priorities={"full_5.read": 10, "denied.read": 100},
     )
-    result = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+    result = lookup_research_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
         _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",), ("case priority",)),
     )
@@ -145,8 +147,8 @@ def test_domain_filter_applies_before_k_without_automatic_rank_on_named_tools():
         snapshot_id=index.snapshot_id,
         route_domains={f"full_{i}.read": ("cases",) for i in range(5)},
     )
-    result = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+    result = lookup_research_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
         _paper_rank_policy=policy, _paper_rank_domains=("cases",),
         _paper_rank_aliases=(("case status",),),
     )
@@ -155,8 +157,8 @@ def test_domain_filter_applies_before_k_without_automatic_rank_on_named_tools():
     assert {candidate.route_id for candidate in result.candidates} == {
         f"full_{i}.read" for i in range(5)
     }
-    named = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+    named = lookup_research_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
         allowed_tool_keys=("full_6",), _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",),),
     )
@@ -178,8 +180,8 @@ def test_owner_policy_refuses_nonexistent_or_stale_rank_source():
         ),
     ):
         with pytest.raises((ValueError, PolicyViolationError)):
-            index.lookup(
-                router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+            lookup_research_postings(
+                index, router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
                 _paper_rank_policy=policy,
                 _paper_rank_aliases=(("case status",),),
             )
@@ -197,8 +199,8 @@ def test_5000_registered_routes_rank_against_independent_authorized_oracle():
     policy = PaperNativeRankPolicy(
         snapshot_id=index.snapshot_id, route_priorities=weights,
     )
-    result = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+    result = lookup_research_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
         _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",), ("case priority",)),
     )
@@ -218,14 +220,16 @@ def test_public_understood_session_wires_reviewed_rank_into_nonexecuting_plan():
     router = _paper_router()
     session = router.prepare_field_routing(catalog=_paper_catalog())
     hints = _paper_understanding()
-    assert session.compile_understood(
+    assert compile_research_direct(
+        session,
         hints, principal=ANALYST, intent_registry=_paper_intents(),
     ).status == "over_k_unranked"
     policy = PaperNativeRankPolicy(
         snapshot_id=session.snapshot_id,
         route_priorities={"full_5.read": 10},
     )
-    ranked = session.compile_understood(
+    ranked = compile_research_direct(
+        session,
         hints, principal=ANALYST, intent_registry=_paper_intents(),
         rank_policy=policy,
     )
@@ -252,7 +256,8 @@ def test_public_intent_domains_limit_ranked_routes_without_named_override_loss()
         required_concept_ids=("crm.status", "crm.priority"),
         domains=("cases",),
     ),))
-    narrowed = session.compile_understood(
+    narrowed = compile_research_direct(
+        session,
         _paper_understanding(), principal=ANALYST,
         intent_registry=intents, rank_policy=policy,
     )
@@ -260,7 +265,8 @@ def test_public_intent_domains_limit_ranked_routes_without_named_override_loss()
     assert tuple(call.route_id for call in narrowed.calls) == ("full_3.read",)
     assert narrowed.ranked_unverified
 
-    named = session.compile_understood(
+    named = compile_research_direct(
+        session,
         _paper_understanding(named_tools=("full_4",)),
         principal=ANALYST, intent_registry=intents, rank_policy=policy,
     )
@@ -271,7 +277,9 @@ def test_public_intent_domains_limit_ranked_routes_without_named_override_loss()
 def test_paper_rank_public_api_exposes_only_explicit_no_execution_policy():
     import schemarouter
 
-    assert schemarouter.PaperNativeRankPolicy is PaperNativeRankPolicy
+    assert schemarouter.PaperNativeRankPolicy is not PaperNativeRankPolicy
+    canonical = schemarouter.PaperNativeRankPolicy(snapshot_id=SNAPSHOT)
+    assert canonical.direct_score_mode == "paper_v1" and canonical.focus_direct is True
 
 
 @pytest.mark.asyncio
@@ -670,7 +678,8 @@ def test_original_direct_focus_selects_one_after_authorization_and_full_field_pr
         route_priorities={"full_5.read": 10, "partial.read": 99, "denied.read": 100},
         focus_direct=True,
     )
-    plan = session.compile_understood(
+    plan = compile_research_direct(
+        session,
         _paper_understanding(), principal=ANALYST,
         intent_registry=_paper_intents(), rank_policy=policy,
     )
@@ -686,7 +695,8 @@ def test_original_direct_focus_preserves_multiple_explicitly_named_sources():
     policy = PaperNativeRankPolicy(
         snapshot_id=session.snapshot_id, focus_direct=True,
     )
-    plan = session.compile_understood(
+    plan = compile_research_direct(
+        session,
         _paper_understanding(named_tools=("full_4", "full_5")),
         principal=ANALYST, intent_registry=_paper_intents(), rank_policy=policy,
     )
@@ -702,8 +712,8 @@ def test_original_direct_focus_applies_even_below_k():
         snapshot_id=index.snapshot_id, focus_direct=True,
         route_priorities={"full_1.read": 10},
     )
-    result = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
+    result = lookup_research_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=ANALYST,
         _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",), ("case priority",)),
     )

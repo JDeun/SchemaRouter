@@ -40,7 +40,6 @@ from schemarouter import (
     NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
-    PaperNativeRankPolicy,
     ParameterSpec,
     PolicyViolationError,
     PrincipalContext,
@@ -49,6 +48,7 @@ from schemarouter import (
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_offered_query import compile_offered_model_query
 from scripts.research_legacy_paper_graph_plan import compile_research_understood
 

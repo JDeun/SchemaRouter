@@ -15,7 +15,6 @@ from schemarouter import (
     NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
-    PaperNativeRankPolicy,
     PaperUnderstanding,
     ParameterSpec,
     PrincipalContext,
@@ -24,6 +23,8 @@ from schemarouter import (
 from schemarouter.concept_retrieval import _merged_concept_constraints
 from schemarouter.errors import PolicyViolationError
 from scripts.research_legacy_concept_retrieval import resolve_native_concepts
+from scripts.research_legacy_direct_plan import compile_research_direct
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_field_session import research_compile_fields
 from scripts.research_legacy_paper_graph_plan import compile_research_understood
 from scripts.research_legacy_router import legacy_router
@@ -110,11 +111,13 @@ def _compile(router, concepts, *, source=None, rank=None):
     intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
         intent_id="case.lookup", required_concept_ids=tuple(c.concept_id for c in concepts),
     ),))
-    return session.compile_understood(
-        PaperUnderstanding(intent_id="case.lookup", source_type=source),
-        principal=ACTOR, intent_registry=intents,
-        rank_policy=rank(session) if rank else None,
-    )
+    hints = PaperUnderstanding(intent_id="case.lookup", source_type=source)
+    if rank:
+        return compile_research_direct(
+            session, hints, principal=ACTOR, intent_registry=intents,
+            rank_policy=rank(session),
+        )
+    return session.compile_understood(hints, principal=ACTOR, intent_registry=intents)
 
 
 def test_neutral_meaning_retains_other_original_providers_after_a_becomes_unavailable():

@@ -363,7 +363,7 @@ async def test_configured_source_change_during_model_await_fails_without_provide
 
 async def test_configured_owner_declarations_are_detached_from_caller_mutation():
     ctx = _configured()
-    ctx.owner["rank_policy"].direct_score_mode = "typed"
+    object.__setattr__(ctx.owner["rank_policy"], "direct_score_mode", "typed")
     ctx.owner["intent_registry"].intents[0].required_concept_ids = ("not-reviewed",)
     plan = await ctx.router.aplan_authorized(ctx.request, principal=ctx.principal)
     assert plan.planning_status == "ready" and plan.executable
@@ -406,7 +406,7 @@ def test_configure_rejects_foreign_or_stale_source_before_model(case):
     elif case == "stale_session":
         ctx.router.registry.register(ctx.router.registry.get("source_0"), replace=True)
     else:
-        ctx.owner["rank_policy"].direct_score_mode = "typed"
+        object.__setattr__(ctx.owner["rank_policy"], "direct_score_mode", "typed")
     with pytest.raises((TypeError, ValueError, PolicyViolationError)):
         _configure(ctx, session=session)
     assert ctx.model.payloads == [] and ctx.seen == []

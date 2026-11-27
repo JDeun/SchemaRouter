@@ -28,6 +28,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy as HistoricalRankPolicy
 from scripts.research_legacy_paper_graph_plan import compile_research_understood
 
 FIXTURE = json.loads(
@@ -272,7 +273,7 @@ def _candidate_replay():
         "projection_snapshot_id": session.snapshot_id,
         "route_field_groups": groups,
     })
-    policy = PaperNativeRankPolicy(
+    policy = HistoricalRankPolicy(
         snapshot_id=session.snapshot_id, route_domains=domains,
         route_priorities=priorities,
     )

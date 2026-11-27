@@ -196,10 +196,10 @@ def main() -> None:
 
     # Opt-in original Algorithm 1 Rank: source-pinned host policy, after
     # principal-scoped typed proof. This toy catalog has just one candidate;
-    # real >K catalogs select exactly the top five. A ranked receipt NEVER
-    # authorizes execution or model-proposed argument binding.
+    # unnamed discovery focuses on a single source after the original score.
+    # A ranked receipt NEVER grants execution authority.
     ranked = active.compile_understood(
-        PaperUnderstanding(intent_id="customer.lookup"),
+        PaperUnderstanding(intent_id="customer.lookup", raw_rank_concepts=("customer overview",)),
         principal=principal, intent_registry=reviewed_intents,
         rank_policy=PaperNativeRankPolicy(snapshot_id=active.snapshot_id),
     )
@@ -257,7 +257,7 @@ def main() -> None:
     ))
     print("model-assisted schema-only path:", natural_plan.status,
           tuple(call.route_id for call in natural_plan.calls))
-    print("model-derived values bound:",
+    print("source-validated parameter values bound:",
           any(call.call.arguments for call in natural_plan.calls))
 
 

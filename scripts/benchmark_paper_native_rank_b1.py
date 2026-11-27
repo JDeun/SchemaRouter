@@ -1,4 +1,4 @@
-"""Original-paper native Rank K5 at 500/5000 heterogeneous source routes.
+"""Historical typed native Rank K5 at 500/5000 heterogeneous source routes.
 
 E0 synthetic CPU/byte evidence only: no provider calls, task gold, E2 claims,
 model ranking or promotion to the default public retrieval path.
@@ -23,11 +23,11 @@ from schemarouter import (
     FieldSpec,
     NativeDeclaredFieldGroup,
     NativeSchemaPostingIndex,
-    PaperNativeRankPolicy,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
 )
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy, lookup_research_postings
 
 ACTOR = PrincipalContext(subject="paper-rank-b1-synthetic", roles=("reader",))
 SOURCES = ("crm", "mcp", "web", "custom")
@@ -109,8 +109,8 @@ def benchmark_paper_rank(
     for _ in range(repeats):
         start_wall = perf_counter_ns()
         start_cpu = process_time_ns()
-        result = index.lookup(
-            router, GROUP.aliases[0], principal=ACTOR, group=GROUP,
+        result = lookup_research_postings(
+            index, router, GROUP.aliases[0], principal=ACTOR, group=GROUP,
             _paper_rank_policy=policy,
             _paper_rank_aliases=(("case status",), ("case priority",)),
         )

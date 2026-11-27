@@ -12,9 +12,9 @@ from typing import Any
 from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
-from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_paper_graph_execution import (
     PaperUnderstoodExecutedGraph,
     observe_and_execute_paper_understood_graph,

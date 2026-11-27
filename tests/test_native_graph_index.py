@@ -1126,7 +1126,7 @@ def test_default_native_g5_rechecks_typed_bindings_after_scope_changes(
 
 @pytest.mark.parametrize("n_targets", [500, 5000])
 def test_owner_ranked_g5_path_lookup_ranks_entire_qualified_cohort(n_targets):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(n_targets=n_targets)
     idx = _index(router)
@@ -1157,7 +1157,7 @@ def test_owner_ranked_g5_path_lookup_ranks_entire_qualified_cohort(n_targets):
 
 
 def test_owner_ranked_g5_path_budget_overflow_returns_no_partial_receipts(monkeypatch):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts import research_legacy_graph_rank
 
     monkeypatch.setattr(research_legacy_graph_rank, "MAX_OWNER_RANKABLE_PATHS", 5)
@@ -1177,7 +1177,7 @@ def test_owner_ranked_g5_path_budget_overflow_returns_no_partial_receipts(monkey
 
 
 def test_owner_ranked_g5_policy_mutation_during_health_check_fails_closed():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(n_targets=6)
     idx = _index(router)

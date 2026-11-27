@@ -25,8 +25,8 @@ from schemarouter.native_semantic_index import (
     NativeSchemaPostingIndex,
     _NativeSourcePass,
 )
-from schemarouter.paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
 from scripts.research_legacy_concept_retrieval import resolve_native_concepts
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy, rank_authorized_paper_direct
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

@@ -252,7 +252,7 @@ async def test_bounded_final_observation_and_model_answer():
 async def test_scoped_unnamed_ranked_a9_execution_reaches_tool_free_finalizer():
     from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
 
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts.research_paper_scoped_answered_graph_a9_e0 import (
         run_paper_scoped_answered_graph_a9_e0,
     )
@@ -290,7 +290,7 @@ async def test_scoped_unnamed_ranked_a9_execution_reaches_tool_free_finalizer():
 async def test_scoped_ranked_finalizer_mutating_owner_policy_aborts_answer():
     from test_paper_understood_observed_graph_a9_e0 import _ranked_fixture
 
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts.research_paper_scoped_answered_graph_a9_e0 import (
         run_paper_scoped_answered_graph_a9_e0,
     )

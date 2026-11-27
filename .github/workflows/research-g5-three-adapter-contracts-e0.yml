@@ -11,6 +11,8 @@ on:
       - "src/schemarouter/adapters/optimade.py"
       - "src/schemarouter/native_graph_index.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_direct_rank.py"
+      - "scripts/research_legacy_direct_plan.py"
       - "src/schemarouter/semantic_attestations.py"
   workflow_dispatch:
 

@@ -15,13 +15,13 @@ from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.models import ExecutionPlan, ToolResult
 from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
 from schemarouter.native_graph_observation import _materialize_original_observed_edge
-from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_typed_tool_plan import (
     PaperTypedToolPlan,
     _check_current_call_scopes,
 )
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
 from schemarouter.runs import ExecutionBudget, RunConfig
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_paper_graph_plan import compile_paper_understood_graph_plan
 
 if TYPE_CHECKING:

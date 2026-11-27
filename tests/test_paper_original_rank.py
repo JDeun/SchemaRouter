@@ -29,6 +29,11 @@ from schemarouter import (
 )
 from schemarouter.native_semantic_index import IndexedNativeFieldCandidate
 from schemarouter.paper_native_rank import rank_authorized_paper_direct
+from scripts.research_legacy_direct_plan import compile_research_direct
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy as HistoricalRankPolicy
+from scripts.research_legacy_direct_rank import (
+    rank_authorized_paper_direct as rank_historical_direct,
+)
 from scripts.research_legacy_offered_query import compile_offered_model_query
 
 SNAPSHOT = "a" * 64
@@ -55,15 +60,23 @@ def _candidate(route: str, required: str = "value") -> IndexedNativeFieldCandida
 
 def _rank(names, raw, *, priorities=None, web=(), focus=True):
     candidates = tuple(_candidate(route, fields[0]) for route, fields in names.items())
-    offsets = rank_authorized_paper_direct(
-        candidates, concept_aliases=(),
-        visible_field_count={route: len(fields) for route, fields in names.items()},
-        visible_field_names=names, raw_concepts=raw,
-        policy=PaperNativeRankPolicy(
-            snapshot_id=SNAPSHOT, direct_score_mode="paper_v1", focus_direct=focus,
-            route_priorities=priorities or {}, web_route_ids=web,
-        ),
-    )
+    counts = {route: len(fields) for route, fields in names.items()}
+    if focus:
+        offsets = rank_authorized_paper_direct(
+            candidates, visible_field_count=counts, visible_field_names=names,
+            raw_concepts=raw, policy=PaperNativeRankPolicy(
+                snapshot_id=SNAPSHOT, route_priorities=priorities or {}, web_route_ids=web,
+            ),
+        )
+    else:
+        offsets = rank_historical_direct(
+            candidates, concept_aliases=(), visible_field_count=counts,
+            visible_field_names=names, raw_concepts=raw,
+            policy=HistoricalRankPolicy(
+                snapshot_id=SNAPSHOT, direct_score_mode="paper_v1", focus_direct=False,
+                route_priorities=priorities or {}, web_route_ids=web,
+            ),
+        )
     return tuple(candidates[offset].route_id for offset in offsets)
 
 
@@ -99,7 +112,7 @@ def test_original_rank_rejects_missing_raw_labels_or_visible_source_names():
     policy = PaperNativeRankPolicy(snapshot_id=SNAPSHOT, direct_score_mode="paper_v1")
     with pytest.raises(ValueError, match="raw concepts"):
         rank_authorized_paper_direct(
-            (_candidate("a.search"),), concept_aliases=(),
+            (_candidate("a.search"),),
             visible_field_count={"a.search": 1}, policy=policy,
         )
 
@@ -180,9 +193,11 @@ def test_original_rank_uses_visible_nonprojected_names_only_after_typed_and_acl_
     assert [call.route_id for call in plan.calls] == ["visible.search"]
     # The raw hint can rank, but cannot add a field to the typed plan.
     assert plan.calls[0].call.fields == ["value"]
-    typed = session.compile_understood(
-        understood, principal=ACTOR, intent_registry=INTENTS,
-        rank_policy=policy.model_copy(update={"direct_score_mode": "typed"}),
+    typed = compile_research_direct(
+        session, understood, principal=ACTOR, intent_registry=INTENTS,
+        rank_policy=HistoricalRankPolicy.model_validate({
+            **policy.model_dump(mode="python"), "direct_score_mode": "typed",
+        }),
     )
     assert [call.route_id for call in typed.calls] == ["hidden.search"]
     assert typed.calls[0].call.fields == ["value"]
@@ -257,3 +272,37 @@ async def test_paper_v1_refuses_dependency_discovery_before_model_disclosure():
             model_visible_intent_ids=("case.lookup",), rank_policy=policy,
             allow_unnamed_graph_discovery=True,
         )
+
+@pytest.mark.parametrize("options", (
+    {"direct_score_mode": "typed"},
+    {"focus_direct": False},
+))
+def test_installed_rank_rejects_alternate_policy_modes(options):
+    with pytest.raises(ValueError):
+        PaperNativeRankPolicy(snapshot_id=SNAPSHOT, **options)
+
+
+def test_installed_rank_does_not_offer_the_historical_comparator():
+    from inspect import signature
+
+    from schemarouter import NativeSchemaPostingIndex, paper_native_rank
+
+    policy = PaperNativeRankPolicy(snapshot_id=SNAPSHOT)
+    assert policy.direct_score_mode == "paper_v1" and policy.focus_direct is True
+    assert not hasattr(paper_native_rank, "_concept_match_strength")
+    assert "concept_aliases" not in signature(rank_authorized_paper_direct).parameters
+    assert "_paper_rank_aliases" not in signature(NativeSchemaPostingIndex.lookup).parameters
+
+
+@pytest.mark.asyncio
+async def test_product_compiler_rejects_historical_rank_before_model_disclosure():
+    session, policy = _session()
+    historical = HistoricalRankPolicy(snapshot_id=session.snapshot_id)
+    for invalid in (historical, policy.model_copy(update={"focus_direct": False}),
+                    policy.model_copy(update={"direct_score_mode": "typed"})):
+        with pytest.raises((ValueError, PolicyViolationError)):
+            await session.acompile_query(
+                "show case status", principal=ACTOR, intent_registry=INTENTS,
+                model=lambda _: pytest.fail("alternate Rank disclosed a model input"),
+                model_visible_intent_ids=("case.lookup",), rank_policy=invalid,
+            )

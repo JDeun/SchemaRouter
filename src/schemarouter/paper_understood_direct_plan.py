@@ -385,10 +385,6 @@ def _compile_paper_understood_direct_plan(
     )
     intent = next(i for i in intent_registry.intents
                   if i.intent_id == approved_hints.intent_id)
-    concept_ids = set(intent.required_concept_ids) | set(approved_hints.concept_ids)
-    approved_concepts = {c.concept_id: c for c in catalog.concepts}
-    rank_aliases = tuple(tuple(approved_concepts[cid].aliases)
-                         for cid in sorted(concept_ids))
 
     witness = router._retrieval_authority_witness()
     index.field_index._assert_source(router)
@@ -452,7 +448,7 @@ def _compile_paper_understood_direct_plan(
     first = index.field_index.lookup(
         router, group.aliases[0], principal=principal, group=group,
         k=k, allowed_tool_keys=keys,
-        _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
+        _paper_rank_policy=rank_policy,
         _paper_rank_domains=intent.domains,
         _paper_group_members=candidate_groups,
         _paper_target_tools=intent.target_tool_keys,
@@ -529,7 +525,7 @@ def _compile_paper_understood_direct_plan(
         second = index.field_index.lookup(
             router, group.aliases[0], principal=principal, group=group,
             k=k, allowed_tool_keys=keys,
-            _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
+            _paper_rank_policy=rank_policy,
             _paper_rank_domains=intent.domains,
             _paper_group_members=candidate_groups,
             _paper_target_tools=intent.target_tool_keys,

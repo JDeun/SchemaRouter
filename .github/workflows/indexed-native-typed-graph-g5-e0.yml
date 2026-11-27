@@ -7,6 +7,8 @@ on:
       - "scripts/research_legacy_indexed_concept_graph.py"
       - "scripts/research_legacy_g5_rank.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_direct_rank.py"
+      - "scripts/research_legacy_direct_plan.py"
       - "scripts/research_legacy_posting_rank.py"
       - "src/schemarouter/native_graph_index.py"
       - "src/schemarouter/native_deep_paths.py"
@@ -45,6 +47,6 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
       - name: Reuse typed graph composer and source-scoped native field index
         run: |
-          ruff check scripts/research_legacy_concept_retrieval.py scripts/research_legacy_indexed_concept_graph.py src/schemarouter/native_graph_index.py scripts/research_legacy_g5_deep_paths.py scripts/research_legacy_native_fork.py scripts/research_legacy_fork_arm.py tests/test_native_graph_index.py tests/test_native_graph_two_hop.py tests/test_native_graph_deep_paths.py tests/test_native_graph_shared_root_forks.py scripts/research_g5_decision_backend_ranker_e0.py scripts/research_legacy_g5_rank.py scripts/research_legacy_graph_rank.py scripts/research_legacy_posting_rank.py
+          ruff check scripts/research_legacy_concept_retrieval.py scripts/research_legacy_indexed_concept_graph.py src/schemarouter/native_graph_index.py scripts/research_legacy_g5_deep_paths.py scripts/research_legacy_native_fork.py scripts/research_legacy_fork_arm.py tests/test_native_graph_index.py tests/test_native_graph_two_hop.py tests/test_native_graph_deep_paths.py tests/test_native_graph_shared_root_forks.py scripts/research_g5_decision_backend_ranker_e0.py scripts/research_legacy_g5_rank.py scripts/research_legacy_graph_rank.py scripts/research_legacy_direct_rank.py scripts/research_legacy_direct_plan.py scripts/research_legacy_posting_rank.py
           python -m pytest -q tests/test_native_graph_index.py tests/test_native_graph_two_hop.py tests/test_native_graph_deep_paths.py tests/test_native_graph_shared_root_forks.py tests/test_native_semantic_index.py tests/test_research_discovered_native_graph_g4.py tests/test_public_api.py tests/test_legacy_rank_receipt_boundary.py
-          pyright scripts/research_legacy_concept_retrieval.py scripts/research_legacy_indexed_concept_graph.py src/schemarouter/native_graph_index.py scripts/research_legacy_g5_deep_paths.py scripts/research_legacy_native_fork.py scripts/research_legacy_fork_arm.py scripts/research_g5_decision_backend_ranker_e0.py scripts/research_legacy_g5_rank.py scripts/research_legacy_graph_rank.py scripts/research_legacy_posting_rank.py
+          pyright scripts/research_legacy_concept_retrieval.py scripts/research_legacy_indexed_concept_graph.py src/schemarouter/native_graph_index.py scripts/research_legacy_g5_deep_paths.py scripts/research_legacy_native_fork.py scripts/research_legacy_fork_arm.py scripts/research_g5_decision_backend_ranker_e0.py scripts/research_legacy_g5_rank.py scripts/research_legacy_graph_rank.py scripts/research_legacy_direct_rank.py scripts/research_legacy_direct_plan.py scripts/research_legacy_posting_rank.py

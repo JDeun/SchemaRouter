@@ -511,7 +511,7 @@ async def test_ranked_unnamed_g5_executes_only_one_original_complete_dag(hops):
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router, index, seen = _ranked_fixture(hops=hops)
     winner = "target_5.read"
@@ -541,7 +541,7 @@ async def test_ranked_named_five_targets_selects_top_owner_path_only():
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router, index, seen = _ranked_fixture(hops=1)
     policy = PaperNativeRankPolicy(
@@ -584,7 +584,7 @@ async def test_ranked_unnamed_g5_owner_policy_mutation_after_root_fails_closed()
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     policy_holder = {}
     def mutate(_router, step):
@@ -612,7 +612,7 @@ async def test_ranked_unnamed_g5_changed_live_policy_blocks_downstream_execution
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     def revoke(router, step):
         if step == "middle":
@@ -673,7 +673,7 @@ async def test_a9_owner_rank_cross_depth_executes_only_higher_ranked_two_hop_dag
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router, index, seen = _mixed_depth_bound_execution_fixture()
     policy = PaperNativeRankPolicy(
@@ -701,7 +701,7 @@ async def test_a9_cross_depth_policy_mutation_at_root_blocks_other_hops():
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     state = {}
     def mutate(_router, name):
@@ -734,7 +734,7 @@ async def test_a9_unnamed_g5_never_invokes_wrong_intent_domain_even_if_high_prio
     from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router, index, seen = _ranked_fixture(hops=2, n_targets=6)
     policy = PaperNativeRankPolicy(

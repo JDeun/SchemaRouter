@@ -72,7 +72,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
         for node in ast.walk(tree):
             if isinstance(node, ast.arg):
                 assert node.arg not in {
-                    "_research_ranker", "model_visible_concept_ids",
+                    "_research_ranker", "model_visible_concept_ids", "_paper_rank_aliases",
                     "_fork_arm_internal", "_fork_root_filter", "_fork_target_filter",
                 }, path
             if isinstance(node, ast.ImportFrom):
@@ -100,6 +100,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_graph_execution"), path
                 assert not module.startswith("scripts.research_legacy_paper_graph_plan"), path
                 assert not module.startswith("scripts.research_legacy_graph_rank"), path
+                assert not module.startswith("scripts.research_legacy_direct_rank"), path
+                assert not module.startswith("scripts.research_legacy_direct_plan"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
@@ -145,6 +147,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_graph_execution",
                                            "scripts.research_legacy_paper_graph_plan",
                                            "scripts.research_legacy_graph_rank",
+                                           "scripts.research_legacy_direct_rank",
+                                           "scripts.research_legacy_direct_plan",
                                            "schemarouter.paper_understood_graph_plan",
                                            "schemarouter.paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",

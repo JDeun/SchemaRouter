@@ -232,9 +232,9 @@ async def test_algorithm1_requires_current_original_paper_rank_contract(case):
     session, kwargs, seen, _callbacks = _fixture()
     policy = kwargs["rank_policy"]
     if case == "legacy_rank":
-        policy.direct_score_mode = "typed"
+        object.__setattr__(policy, "direct_score_mode", "typed")
     elif case == "unfocused":
-        policy.focus_direct = False
+        object.__setattr__(policy, "focus_direct", False)
     else:
         policy.snapshot_id = "0" * 64
     with pytest.raises((ValueError, PolicyViolationError)):

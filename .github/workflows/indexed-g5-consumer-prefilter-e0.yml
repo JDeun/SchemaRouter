@@ -5,6 +5,8 @@ on:
     paths:
       - "src/schemarouter/native_graph_index.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_direct_rank.py"
+      - "scripts/research_legacy_direct_plan.py"
       - "tests/test_native_graph_consumer_prefilter.py"
       - "tests/test_native_graph_prefilter_oracle_parity.py"
       - "scripts/benchmark_g5_consumer_prefilter_ab_e0.py"

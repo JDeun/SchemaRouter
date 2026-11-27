@@ -5,6 +5,8 @@ on:
     paths:
       - "scripts/benchmark_indexed_g5_selectivity_e0.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_direct_rank.py"
+      - "scripts/research_legacy_direct_plan.py"
       - "scripts/benchmark_indexed_native_graph_g5_cpu_e0.py"
       - "tests/test_benchmark_indexed_g5_selectivity_e0.py"
       - ".github/workflows/indexed-g5-selectivity-e0.yml"

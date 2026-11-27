@@ -16,9 +16,8 @@ from .concept_retrieval import (
     _merged_concept_fields,
 )
 from .errors import PolicyViolationError
-from .models import PlanCoverage, SemanticFieldRequirement
+from .models import PlanCoverage, SemanticFieldRequirement, StrictModel
 from .native_graph_index import NativeSchemaGraphIndex
-from .paper_native_rank import PaperNativeRankPolicy
 from .paper_typed_tool_plan import (
     PaperFieldRoute,
     PaperPlanBinding,
@@ -46,7 +45,7 @@ def _compile_understood_concept_plan(
     index: NativeSchemaGraphIndex,
     k: int,
     host_source_arguments: dict[str, dict[str, Any]] | None,
-    rank_policy: PaperNativeRankPolicy | None,
+    rank_policy: StrictModel | None,
     approved: PaperUnderstanding,
     intent: PaperIntentDeclaration,
     concepts: tuple[NativeDeclaredConcept, ...],

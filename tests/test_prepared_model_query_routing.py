@@ -284,7 +284,7 @@ async def test_model_query_rejects_incompatible_intent_or_payload_budget():
 
 @pytest.mark.asyncio
 async def test_host_opt_in_model_query_discovers_unnamed_dependency_without_tool_disclosure():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = build_fixture(500)
     session = router.prepare_field_routing(catalog=CATALOG)
@@ -335,7 +335,7 @@ async def test_host_unnamed_graph_discovery_without_rank_is_rejected_before_mode
 
 @pytest.mark.asyncio
 async def test_model_unnamed_query_preserves_host_only_intent_domain_g5_filter():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = build_fixture(500)
     session = router.prepare_field_routing(catalog=CATALOG)
@@ -377,7 +377,7 @@ async def test_model_unnamed_query_preserves_host_only_intent_domain_g5_filter()
 
 @pytest.mark.asyncio
 async def test_async_model_preflight_offers_only_source_proven_two_hop_intent_without_tools():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts.benchmark_paper_public_pipeline_e0 import (
         ACTOR as PROFILE_ACTOR,
     )
@@ -421,7 +421,7 @@ async def test_async_model_preflight_offers_only_source_proven_two_hop_intent_wi
 
 @pytest.mark.asyncio
 async def test_async_model_two_hop_concept_requires_host_graph_optin_before_model_call():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts.benchmark_paper_public_pipeline_e0 import (
         ACTOR as PROFILE_ACTOR,
     )

@@ -325,7 +325,7 @@ def test_source_availability_change_during_compilation_aborts(monkeypatch):
 
 @pytest.mark.parametrize("hops", [1, 2])
 def test_owner_rank_policy_selects_one_complete_g5_dependency_dag(hops):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=hops, n_targets=2)
     index = NativeSchemaGraphIndex.build(
@@ -354,7 +354,7 @@ def test_owner_rank_policy_selects_one_complete_g5_dependency_dag(hops):
 
 
 def test_owner_rank_policy_mutation_during_g5_lookup_fails_closed():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, n_targets=2)
     index = NativeSchemaGraphIndex.build(
@@ -376,7 +376,7 @@ def test_owner_rank_policy_mutation_during_g5_lookup_fails_closed():
 
 
 def test_owner_rank_filters_source_incompatible_upstream_before_selecting_top_path():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=2)
     foreign_root = _node(
@@ -405,7 +405,7 @@ def test_owner_rank_filters_source_incompatible_upstream_before_selecting_top_pa
 
 def test_owner_ranked_two_hop_graph_exceeds_legacy_research_32_path_cap():
     from schemarouter import NativeDeclaredFieldGroup
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, n_targets=33)
     index = NativeSchemaGraphIndex.build(
@@ -441,7 +441,7 @@ def test_owner_ranked_two_hop_graph_exceeds_legacy_research_32_path_cap():
 
 
 def test_public_prepared_session_uses_owner_rank_for_full_named_graph():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, n_targets=2)
     session = router.prepare_field_routing(catalog=CATALOG)
@@ -470,7 +470,7 @@ def test_public_prepared_session_uses_owner_rank_for_full_named_graph():
 
 @pytest.mark.parametrize("hops", [1, 2])
 def test_host_opt_in_discovers_unnamed_source_proven_dependency(hops):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=hops, n_targets=6)
     index = NativeSchemaGraphIndex.build(
@@ -499,7 +499,7 @@ def test_host_opt_in_discovers_unnamed_source_proven_dependency(hops):
 
 
 def test_host_opt_in_unnamed_graph_reaches_targets_beyond_model_five_name_limit():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=33)
     index = NativeSchemaGraphIndex.build(
@@ -520,7 +520,7 @@ def test_host_opt_in_unnamed_graph_reaches_targets_beyond_model_five_name_limit(
 
 
 def test_unnamed_graph_discovery_requires_host_approval_and_current_owner_rank():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router()
     index = NativeSchemaGraphIndex.build(
@@ -540,7 +540,7 @@ def test_unnamed_graph_discovery_requires_host_approval_and_current_owner_rank()
 
 
 def test_unnamed_graph_discovery_does_not_resurrect_hidden_or_denied_root():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     for hidden in (True, False):
         router = _router(hops=2, hidden_middle=hidden, deny_middle=not hidden)
@@ -561,7 +561,7 @@ def test_unnamed_graph_discovery_does_not_resurrect_hidden_or_denied_root():
 
 
 def test_unnamed_graph_direct_fallback_does_not_survive_live_health_revocation():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2)
     index = NativeSchemaGraphIndex.build(
@@ -588,7 +588,7 @@ def test_unnamed_graph_direct_fallback_does_not_survive_live_health_revocation()
 
 
 def test_unnamed_graph_discovery_never_discards_unproved_host_root_arguments():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, hidden_middle=True)
     index = NativeSchemaGraphIndex.build(
@@ -607,7 +607,7 @@ def test_unnamed_graph_discovery_never_discards_unproved_host_root_arguments():
 
 @pytest.mark.parametrize("n_targets", [500, 5000])
 def test_host_unnamed_g5_public_planner_selects_exact_k5_from_large_catalog(n_targets):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=n_targets)
     index = NativeSchemaGraphIndex.build(
@@ -655,7 +655,7 @@ def _mixed_depth_router():
 
 
 def test_cross_depth_owner_rank_prefers_stronger_two_hop_target_over_valid_one_hop():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -682,7 +682,7 @@ def test_cross_depth_owner_rank_prefers_stronger_two_hop_target_over_valid_one_h
 
 
 def test_cross_depth_unnamed_owner_rank_uses_same_full_dag_order():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -703,7 +703,7 @@ def test_cross_depth_unnamed_owner_rank_uses_same_full_dag_order():
 
 
 def test_cross_depth_rank_tie_uses_shorter_complete_path_as_tiebreaker():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -720,7 +720,7 @@ def test_cross_depth_rank_tie_uses_shorter_complete_path_as_tiebreaker():
 
 
 def test_cross_depth_rank_web_demotion_overrides_long_target_priority():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -741,7 +741,7 @@ def test_cross_depth_rank_web_demotion_overrides_long_target_priority():
 
 
 def test_cross_depth_rank_obeys_explicit_single_hop_cap():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -761,7 +761,7 @@ def test_cross_depth_rank_obeys_explicit_single_hop_cap():
 
 
 def test_cross_depth_owner_rank_combined_budget_abstains_without_path_names(monkeypatch):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from scripts import research_legacy_paper_graph_plan as paper_understood_graph_plan
 
     router = _mixed_depth_router()
@@ -786,7 +786,7 @@ def test_cross_depth_owner_rank_combined_budget_abstains_without_path_names(monk
 
 
 def test_public_session_owner_cross_depth_rank_selects_two_hop():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     session = router.prepare_field_routing(catalog=CATALOG)
@@ -810,7 +810,7 @@ def test_public_session_owner_cross_depth_rank_selects_two_hop():
 
 
 def test_cross_depth_mutable_availability_revocation_fails_before_returning_plan():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -845,7 +845,7 @@ def test_cross_depth_mutable_availability_revocation_fails_before_returning_plan
 
 
 def test_cross_depth_model_named_target_does_not_discover_other_tool_names():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -872,7 +872,7 @@ DOMAIN_INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
 
 
 def test_unnamed_graph_intent_domain_rejects_wrong_domain_before_priority():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=2)
     idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -896,7 +896,7 @@ def test_unnamed_graph_intent_domain_rejects_wrong_domain_before_priority():
 
 
 def test_model_named_graph_target_overrides_intent_domain_filter():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, n_targets=2)
     idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -914,7 +914,7 @@ def test_model_named_graph_target_overrides_intent_domain_filter():
 
 
 def test_unnamed_graph_never_uses_unannotated_or_wrong_domain_targets():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=2)
     idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -934,7 +934,7 @@ def test_unnamed_graph_never_uses_unannotated_or_wrong_domain_targets():
 
 def test_unnamed_domain_filter_precedes_graph_scoped_target_budget(monkeypatch):
     from scripts import research_legacy_paper_graph_plan as paper_understood_graph_plan
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=12)
     idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -959,7 +959,7 @@ def test_unnamed_domain_filter_precedes_graph_scoped_target_budget(monkeypatch):
 
 
 def test_unnamed_graph_domain_filters_target_not_required_dependency_root():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, n_targets=1)
     idx = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -983,7 +983,7 @@ def test_unnamed_graph_domain_filters_target_not_required_dependency_root():
 
 
 def test_unnamed_graph_direct_and_dependency_domain_filters_choose_same_target():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
     from schemarouter.paper_understood_direct_plan import compile_paper_understood_direct_plan
 
     router = _router(hops=1, n_targets=2)
@@ -1010,7 +1010,7 @@ def test_unnamed_graph_direct_and_dependency_domain_filters_choose_same_target()
 
 
 def test_prepared_session_unnamed_g5_uses_owner_reviewed_intent_domains():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=2, n_targets=2)
     session = router.prepare_field_routing(catalog=CATALOG)
@@ -1038,7 +1038,7 @@ def test_prepared_session_unnamed_g5_uses_owner_reviewed_intent_domains():
 
 @pytest.mark.parametrize("hops", [1, 2])
 def test_paper_v1_named_tool_never_falls_back_to_g5(hops, monkeypatch):
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router(hops=hops)
     index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -1063,7 +1063,7 @@ def test_paper_v1_named_tool_never_falls_back_to_g5(hops, monkeypatch):
 
 
 def test_paper_v1_refuses_explicit_g5_discovery():
-    from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _router()
     index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))

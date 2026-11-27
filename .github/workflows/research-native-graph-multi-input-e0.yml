@@ -5,6 +5,8 @@ on:
     paths:
       - "src/schemarouter/native_graph_index.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_direct_rank.py"
+      - "scripts/research_legacy_direct_plan.py"
       - "tests/test_native_graph_multi_input.py"
       - "tests/test_native_graph_index.py"
       - ".github/workflows/research-native-graph-multi-input-e0.yml"

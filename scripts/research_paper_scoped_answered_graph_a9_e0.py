@@ -16,10 +16,10 @@ from typing import Any
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
-from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.agent_utility_generated_common import GeneratedEpisodeAgent
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_paper_refusal_eval_e0 import Decision
 from scripts.research_paper_reviewed_model_arguments_e0 import PaperRootArgumentReviewer
 from scripts.research_paper_scoped_observed_graph_a9_e0 import (

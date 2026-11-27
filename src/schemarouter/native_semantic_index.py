@@ -552,7 +552,6 @@ class NativeSchemaPostingIndex:
         input_free_only: bool = False,
         allowed_tool_keys: tuple[str, ...] | None = None,
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
-        _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
         _paper_rank_domains: tuple[str, ...] = (),
         _paper_group_members: Mapping[str, frozenset[str]] | None = None,
         _paper_target_tools: tuple[str, ...] = (),
@@ -584,12 +583,7 @@ class NativeSchemaPostingIndex:
         if _paper_rank_domains and _paper_rank_policy is None:
             raise ValueError("paper intent domains need a reviewed rank policy")
         if (
-            type(_paper_rank_aliases) is not tuple
-            or len(_paper_rank_aliases) > 8
-            or any(type(group) is not tuple or not 1 <= len(group) <= 16
-                   or any(type(alias) is not str or not alias or len(alias) > 160
-                          for alias in group) for group in _paper_rank_aliases)
-            or type(_paper_rank_domains) is not tuple
+            type(_paper_rank_domains) is not tuple
             or len(_paper_rank_domains) > 8
             or any(type(domain) is not str for domain in _paper_rank_domains)
         ):
@@ -672,12 +666,8 @@ class NativeSchemaPostingIndex:
         # domain/group constraints still apply, but retain all eligible targets
         # rather than allowing the focus ranker to collapse a comparison.
         use_paper_rank = use_paper_domains and not target_tools
-        use_paper_v1 = (
-            use_paper_rank and rank_policy is not None
-            and rank_policy.direct_score_mode == "paper_v1"
-        )
-        # Only the opt-in historical comparator needs the complete visible
-        # field names. Keep those internal; never disclose hidden schema names.
+        # The original comparator uses complete current visible field names.
+        # Keep them internal; never disclose hidden schema names.
         visible_rank_fields: dict[str, tuple[str, ...]] = {}
         for route in sorted(matched):
             # Key is an opaque exact registered route; never parse a route ID
@@ -752,7 +742,6 @@ class NativeSchemaPostingIndex:
             ))
             if use_paper_rank:
                 visible_field_counts[route] = len(visible.output_fields)
-            if use_paper_v1:
                 visible_rank_fields[route] = tuple(sorted(
                     field.name for field in visible.output_fields
                 ))
@@ -760,11 +749,11 @@ class NativeSchemaPostingIndex:
         ranked_offsets: tuple[int, ...] | None = None
         if use_paper_rank and rank_policy is not None:
             ranked_offsets = rank_authorized_paper_direct(
-                tuple(qualified), concept_aliases=_paper_rank_aliases,
+                tuple(qualified),
                 visible_field_count=visible_field_counts,
                 policy=rank_policy, k=k,
                 raw_concepts=_paper_raw_rank_concepts,
-                visible_field_names=visible_rank_fields if use_paper_v1 else None,
+                visible_field_names=visible_rank_fields,
             )
         # A live availability callable may keep its identity while a
         # later candidate's health probe revokes an earlier candidate.
@@ -816,7 +805,7 @@ class NativeSchemaPostingIndex:
                 if (use_paper_rank and
                         len(scoped.output_fields) != visible_field_counts[candidate.route_id]):
                     raise PolicyViolationError("paper Rank visible field count changed")
-                if use_paper_v1 and tuple(sorted(
+                if use_paper_rank and tuple(sorted(
                     field.name for field in scoped.output_fields
                 )) != visible_rank_fields[candidate.route_id]:
                     raise PolicyViolationError("paper v1 Rank visible field names changed")

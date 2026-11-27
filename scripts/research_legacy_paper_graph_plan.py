@@ -15,7 +15,6 @@ from schemarouter.authorization import PrincipalContext
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
-from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_typed_tool_plan import (
     PaperFieldRoute,
     PaperPlanBinding,
@@ -27,10 +26,11 @@ from schemarouter.paper_typed_tool_plan import (
 from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
-    _compile_paper_understood_direct_plan,
     _source_owned_understood_concepts,
     _source_owned_understood_group,
 )
+from scripts.research_legacy_direct_plan import _compile_paper_understood_direct_plan
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_graph_rank import (
     MAX_OWNER_RANKABLE_PATHS,
     lookup_ranked_graph_one_hop,

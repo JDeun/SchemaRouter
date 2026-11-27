@@ -5,6 +5,8 @@ on:
     paths:
       - "src/schemarouter/native_graph_index.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_direct_rank.py"
+      - "scripts/research_legacy_direct_plan.py"
       - "src/schemarouter/native_semantic_index.py"
       - "src/schemarouter/registry.py"
       - "scripts/benchmark_native_g5_journal_graph_ab_e0.py"

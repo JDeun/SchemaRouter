@@ -15,6 +15,7 @@ from schemarouter import (
     PaperUnderstanding,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy as HistoricalRankPolicy
 from scripts.research_legacy_offered_query import compile_offered_model_query
 
 
@@ -149,7 +150,8 @@ async def test_common_final_verify_refuses_owner_mutation_during_condition_callb
     router, session = source(parameters=(city(),))
     intents = INTENTS.model_copy(deep=True)
     host = {"weather.read": {"city": "Seoul"}}
-    rank = PaperNativeRankPolicy(snapshot_id=session.snapshot_id)
+    policy_type = PaperNativeRankPolicy if mode == "independent" else HistoricalRankPolicy
+    rank = policy_type(snapshot_id=session.snapshot_id)
     applying = False
     changed = False
     original = query_module._apply_query_input_conditions

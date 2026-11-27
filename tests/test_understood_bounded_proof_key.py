@@ -37,7 +37,7 @@ def _source(aliases):
     intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
         intent_id="case.lookup", required_concept_ids=("case.first", "case.second"),
     ),))
-    understood = PaperUnderstanding(intent_id="case.lookup")
+    understood = PaperUnderstanding(intent_id="case.lookup", raw_rank_concepts=aliases)
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="case.read", roles_any=("reader",),
@@ -65,7 +65,7 @@ def test_public_understood_plan_accepts_long_combined_aliases_and_retains_rank_i
     original = NativeSchemaPostingIndex.lookup
 
     def lookup(self, *args, **kwargs):
-        seen.append(kwargs.get("_paper_rank_aliases"))
+        seen.append(kwargs.get("_paper_raw_rank_concepts"))
         return original(self, *args, **kwargs)
 
     monkeypatch.setattr(NativeSchemaPostingIndex, "lookup", lookup)
@@ -76,7 +76,7 @@ def test_public_understood_plan_accepts_long_combined_aliases_and_retains_rank_i
     assert plan.status == "ready" and plan.coverage.complete
     assert [call.route_id for call in plan.calls] == ["case.read"]
     assert plan.calls[0].call.fields == ["first", "second"]
-    assert seen and all(value == tuple((alias,) for alias in aliases) for value in seen)
+    assert seen and all(value == aliases for value in seen)
     assert plan.snapshot_id == session.snapshot_id and not plan.executable_authority
 
     router.authorization_policy = AuthorizationPolicy(default_effect="deny")

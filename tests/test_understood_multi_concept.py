@@ -23,6 +23,9 @@ from schemarouter import (
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.paper_understood_direct_plan import compile_paper_understood_direct_plan
+from scripts.research_legacy_direct_plan import (
+    compile_paper_understood_direct_plan as compile_historical_direct,
+)
 from scripts.research_legacy_paper_graph_plan import compile_research_understood
 from scripts.research_legacy_router import legacy_router
 
@@ -352,7 +355,7 @@ def test_complete_homogeneous_rank_precedes_independent_concept_menus(unresolved
         _paper_understanding,
     )
 
-    from schemarouter import PaperNativeRankPolicy
+    from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 
     router = _paper_router()
     catalog, intents = _paper_catalog(), _paper_intents()
@@ -361,7 +364,7 @@ def test_complete_homogeneous_rank_precedes_independent_concept_menus(unresolved
         snapshot_id=session.snapshot_id, route_priorities={"full_5.read": 10},
     )
     hints = _paper_understanding().model_copy(update={"unresolved_concepts": unresolved})
-    plan = compile_paper_understood_direct_plan(
+    plan = compile_historical_direct(
         router, hints, principal=ANALYST, catalog=catalog, intent_registry=intents,
         index=session._index, rank_policy=policy,
     )

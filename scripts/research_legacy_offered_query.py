@@ -20,7 +20,7 @@ from schemarouter.concept_retrieval import (
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.models import PlanCoverage, SemanticFieldRequirement
-from schemarouter.paper_native_rank import PaperNativeRankPolicy
+from schemarouter.paper_native_rank import PaperNativeRankPolicy as ProductRankPolicy
 from schemarouter.paper_query_conditions import _apply_query_input_conditions
 from schemarouter.paper_query_needs import PaperQueryUnderstanding
 from schemarouter.paper_query_understanding import (
@@ -36,6 +36,7 @@ from schemarouter.paper_understood_direct_plan import (
     _bounded_name,
 )
 from scripts.research_legacy_concept_retrieval import MAX_QUERY_BYTES, MAX_QUERY_CHARS
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy, lookup_research_postings
 from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_paper_graph_plan import compile_research_understood
 
@@ -164,7 +165,7 @@ async def compile_offered_model_query(
     max_hops: int = 2,
     max_model_input_bytes: int = 32768,
     max_model_output_bytes: int = 4096,
-    rank_policy: PaperNativeRankPolicy | None = None,
+    rank_policy: PaperNativeRankPolicy | ProductRankPolicy | None = None,
     allow_unnamed_graph_discovery: bool = False,
 ) -> PaperTypedToolPlan:
     """Historical explicitly offered-ID protocol; never an installed product route."""
@@ -198,7 +199,7 @@ def _prepare_model_query(
     max_hops: int = 2,
     max_model_input_bytes: int = 32768,
     max_model_output_bytes: int = 4096,
-    rank_policy: PaperNativeRankPolicy | None = None,
+    rank_policy: PaperNativeRankPolicy | ProductRankPolicy | None = None,
     allow_unnamed_graph_discovery: bool = False,
 ) -> _PreparedModelQuery:
     """Prepare the historical source-proven offered-ID disclosure."""
@@ -214,6 +215,8 @@ def _prepare_model_query(
         raise PolicyViolationError("paper query requires trusted principal")
     if not isinstance(intent_registry, PaperIntentRegistry):
         raise ValueError("host-approved intent registry required")
+    if isinstance(rank_policy, ProductRankPolicy):
+        raise ValueError("paper v1 Rank requires schema-independent Understand labels")
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
     if (
@@ -406,8 +409,9 @@ def _prepare_model_query(
                 required_fields=concept.required_fields,
                 source_type=concept.source_type, license=concept.license,
             )
-            ranked = session._index.field_index.lookup(
-                router, concept.aliases[0], principal=principal, group=group,
+            ranked = lookup_research_postings(
+                session._index.field_index, router, concept.aliases[0],
+                principal=principal, group=group,
                 k=k, _paper_rank_policy=rank_policy,
                 _paper_rank_aliases=(tuple(concept.aliases),),
             )

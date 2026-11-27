@@ -137,6 +137,17 @@ jobs:
                          schemarouter.NativeSchemaGraphIndex.lookup_two_hop):
               assert {'_paper_rank_policy', '_paper_rank_aliases'}.isdisjoint(signature(method).parameters)
           from schemarouter import paper_native_rank
+          policy = schemarouter.PaperNativeRankPolicy(snapshot_id="a" * 64)
+          assert policy.direct_score_mode == "paper_v1" and policy.focus_direct is True
+          assert not hasattr(paper_native_rank, "_concept_match_strength")
+          assert "_paper_rank_aliases" not in signature(schemarouter.NativeSchemaPostingIndex.lookup).parameters
+          for options in ({"direct_score_mode": "typed"}, {"focus_direct": False}):
+              try:
+                  schemarouter.PaperNativeRankPolicy(snapshot_id="a" * 64, **options)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("wheel accepted alternate Rank")
           for name in ("rank_authorized_paper_graph_one_hop",
                        "rank_authorized_paper_graph_two_hop",
                        "rank_authorized_paper_graph_mixed"):
