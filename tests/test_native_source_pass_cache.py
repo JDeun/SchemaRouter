@@ -293,8 +293,18 @@ def test_default_cooldowns_reuse_source_hash_but_still_deny_and_recover(monkeypa
 def test_native_source_fixture_has_no_lexical_snapshot(monkeypatch):
     router, posting, _graph = _router(monkeypatch, 4)
     assert not hasattr(router, "planner")
-    assert router._source_availability.snapshot is None
+    assert not hasattr(router._source_availability, "snapshot")
     callback = lambda _tool, _endpoint: False  # noqa: E731
     monkeypatch.setattr(router._source_availability, "predicate", callback)
     assert router._source_availability_predicate() is callback
     assert _lookup(posting, router).status == "no_proven_hit"
+
+
+def test_native_router_rejects_research_snapshot_authority(monkeypatch):
+    from scripts.research_legacy_planning.source_availability import _LegacySourceAvailability
+
+    router, posting, _graph = _router(monkeypatch, 4)
+    authority = _LegacySourceAvailability(router._source_availability.predicate)
+    monkeypatch.setattr(router, "_source_availability", authority)
+    with pytest.raises(PolicyViolationError, match="source availability mismatch"):
+        _lookup(posting, router)

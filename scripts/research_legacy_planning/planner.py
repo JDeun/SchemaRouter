@@ -9,7 +9,6 @@ from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
 from schemarouter._schema_identity import _normalize, _tokens
-from schemarouter._source_availability import _SnapshotFingerprints, _SourceAvailability
 from schemarouter.capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from schemarouter.errors import ModelAnalysisError, PlanningError
 from schemarouter.evidence import available_evidence, field_evidence_status, global_evidence_status
@@ -58,6 +57,10 @@ from scripts.research_legacy_planning.planning_stages import (
     assemble_execution_plan,
     select_fallbacks_sync,
     select_primary_candidates_sync,
+)
+from scripts.research_legacy_planning.source_availability import (
+    _LegacySourceAvailability,
+    _SnapshotFingerprints,
 )
 
 
@@ -548,7 +551,7 @@ class SchemaPlanner:
         self.analyzer = analyzer or KeywordAnalyzer()
         self.candidate_index = candidate_index
         self.structural_retrieval = structural_retrieval
-        self._source_availability = _SourceAvailability(availability_predicate)
+        self._source_availability = _LegacySourceAvailability(availability_predicate)
         self._candidate_index: _CandidateIndex | None = None
         self._structural_specificity_cache: (
             tuple[int, dict[str, float]] | None

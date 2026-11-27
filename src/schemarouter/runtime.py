@@ -563,7 +563,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         if (
             self._source_registry is not self.registry
             or self.executor.registry is not self.registry
-            or authority.snapshot is not None
+            or type(authority) is not _SourceAvailability
         ):
             raise PolicyViolationError("retrieval authority changed: source availability mismatch")
         return authority.predicate

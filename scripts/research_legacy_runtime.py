@@ -35,6 +35,7 @@ from schemarouter.state_retrieval import (
     filter_retrieval_by_state,
 )
 from scripts.research_legacy_planning.planner import QueryAnalyzer, SchemaPlanner
+from scripts.research_legacy_planning.source_availability import _LegacySourceAvailability
 
 if TYPE_CHECKING:
     from schemarouter.field_routing_session import SchemaFieldRoutingSession
@@ -52,6 +53,7 @@ class LegacySchemaRouter(SchemaRouter):
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
+        self._source_availability = _LegacySourceAvailability(self._source_availability.predicate)
         self.planner = SchemaPlanner(
             self.registry, analyzer=analyzer, structural_retrieval=structural_retrieval,
         )
@@ -89,6 +91,8 @@ class LegacySchemaRouter(SchemaRouter):
         if (
             self._source_registry is not self.registry
             or self.executor.registry is not self.registry
+            or type(authority) is not _LegacySourceAvailability
+            or (not self._legacy_routing and authority.snapshot is not None)
             or (planner is not None and (
                 not self._legacy_routing or planner.registry is not self.registry
                 or planner._source_availability is not authority
