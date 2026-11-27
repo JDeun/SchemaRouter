@@ -84,8 +84,10 @@ OOD = (
 ACTOR = PrincipalContext(subject="g5-local-synthetic-dev", roles=("reader",))
 
 
-def _source() -> tuple[SchemaRouter, NativeSchemaGraphIndex, NativeDeclaredFieldGroup]:
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+def _source(*, router_factory=SchemaRouter) -> tuple[
+    SchemaRouter, NativeSchemaGraphIndex, NativeDeclaredFieldGroup,
+]:
+    router = router_factory(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
             effect="allow", operation="*.*", roles_any=("reader",),

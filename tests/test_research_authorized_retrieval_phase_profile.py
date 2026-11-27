@@ -34,7 +34,7 @@ def test_scoped_current_router_phases_and_no_scope_control() -> None:
     )
     assert policy.default_effect == "deny"
 
-    from schemarouter import AuthorizationPolicy, SchemaRouter
+    from schemarouter import AuthorizationPolicy
 
     no_scope = legacy_router(
         registry=router.registry,

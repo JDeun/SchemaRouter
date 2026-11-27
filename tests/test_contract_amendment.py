@@ -328,7 +328,7 @@ class _RestampRecord(BaseModel):
 
 
 def _bound_router():
-    from schemarouter import SchemaRouter, schema_tool
+    from schemarouter import schema_tool
 
     @schema_tool(read_only=True)
     def materials(material_id: str) -> _RestampRecord:
@@ -406,7 +406,7 @@ def test_restamp_does_not_expose_or_accept_an_invoker():
 
 def _declaring_router():
     """A router whose tool publishes no output declarations, like most MCP servers."""
-    from schemarouter import EndpointSpec, ParameterSpec, SchemaRouter, ToolSpec
+    from schemarouter import EndpointSpec, ParameterSpec, ToolSpec
 
     router = legacy_router()
     key = router.add_tool(
@@ -600,7 +600,7 @@ async def test_a_metadata_only_amendment_cannot_relax_a_required_output_field():
     and let the same pre-amendment binding return a response missing a field
     the caller had declared required.
     """
-    from schemarouter import SchemaRouter, SchemaValidationError, ToolCall
+    from schemarouter import SchemaValidationError, ToolCall
 
     router = legacy_router()
     key = router.add_tool(_output_required_tool())
@@ -709,7 +709,7 @@ def test_amending_one_endpoint_of_several_preserves_the_others():
     # endpoint and keep every other endpoint on the tool in place, or any
     # multi-endpoint tool hits "endpoints removed: [...] (the endpoint set is
     # frozen)".
-    from schemarouter import FieldSpec, SchemaRouter
+    from schemarouter import FieldSpec
 
     router = legacy_router()
     key = router.add_tool(

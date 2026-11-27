@@ -53,6 +53,7 @@ from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
     DecisionBackend,
 )
+from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
 ARMS = ("source_first5", "e5_fixed5")
@@ -251,7 +252,7 @@ def run_fixture(
         or (omit_identical_descriptions and system_prompt != GROUNDED_PROMPT)
     ):
         raise ValueError("invalid E0 source/model provenance")
-    router, graph, concept = _source()
+    router, graph, concept = _source(router_factory=legacy_router)
     registry = router.registry
     if not isinstance(registry, InMemoryRegistry):
         raise ValueError("G5 fixture requires frozen in-memory source executor")

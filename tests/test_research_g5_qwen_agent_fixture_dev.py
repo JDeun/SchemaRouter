@@ -34,6 +34,7 @@ from scripts.research_g5_qwen_agent_fixture_dev import (
     summarize_balanced_prompt_runs,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend
+from scripts.research_legacy_router import legacy_router
 
 
 class RefusingAgent:
@@ -118,7 +119,7 @@ def test_paired_native_g5_agent_fixture_is_scored_only_after_real_agent_loop():
 
 
 def test_adapter_g5_native_source_before_ranker_rejects_revoked_permission():
-    router, graph, concept = _source()
+    router, graph, concept = _source(router_factory=legacy_router)
     query = "refund request status for account " + ACCOUNT_ID
     view = capture_authorized_agent_tool_surface(router, query, principal=ACTOR)
     demand = NativeDeclaredFieldGroup(

@@ -69,7 +69,7 @@ class TwoToolAgent:
 
 
 def test_graph_selector_passes_two_routes_to_existing_agent() -> None:
-    router = _joined_router()
+    router = _joined_router(router_factory=legacy_router)
     view, selector = _selector(router)
     assert selector("case status", view.visible_route_ids) == ["contacts.read", "cases.read"]
     assert selector.last_status == "complete"
@@ -142,7 +142,7 @@ def test_graph_view_redacts_nested_hidden_metadata() -> None:
 
 
 def test_graph_selector_rejects_policy_content_drift() -> None:
-    router = _joined_router()
+    router = _joined_router(router_factory=legacy_router)
     view, selector = _selector(router)
     policy = router.authorization_policy
     assert policy is not None
@@ -152,7 +152,7 @@ def test_graph_selector_rejects_policy_content_drift() -> None:
 
 
 def test_graph_selector_rejects_schema_fingerprint_drift() -> None:
-    router = _joined_router()
+    router = _joined_router(router_factory=legacy_router)
     view, selector = _selector(router)
     router.add_tool(ToolSpec(name="changed", endpoints=[EndpointSpec(name="read", read_only=True)]))
     with pytest.raises(PolicyViolationError):
@@ -160,12 +160,12 @@ def test_graph_selector_rejects_schema_fingerprint_drift() -> None:
 
 
 def test_graph_selector_rejects_over_k_or_byte_budget(monkeypatch) -> None:
-    router = _joined_router(extra_consumers=5)
+    router = _joined_router(extra_consumers=5, router_factory=legacy_router)
     view, selector = _selector(router)
     assert selector("case status", view.visible_route_ids) == []
     assert selector.last_status == "over_k_unranked"
 
-    fresh_router = _joined_router()
+    fresh_router = _joined_router(router_factory=legacy_router)
     view, selector = _selector(fresh_router)
     def reject_budget(*_args, **_kwargs):
         raise ValueError("model-visible tool definitions exceed research byte cap")
@@ -175,7 +175,7 @@ def test_graph_selector_rejects_over_k_or_byte_budget(monkeypatch) -> None:
 
 
 def test_graph_selector_no_gold_or_execution_access(monkeypatch) -> None:
-    router = _joined_router()
+    router = _joined_router(router_factory=legacy_router)
     view, selector = _selector(router)
     def forbidden(*_args, **_kwargs):
         raise AssertionError("candidate discovery invoked execution")
@@ -187,6 +187,6 @@ def test_graph_selector_no_gold_or_execution_access(monkeypatch) -> None:
 
 @pytest.mark.parametrize("query", ("case status", "문의 상태", "問い合わせ状態"))
 def test_graph_selector_multilingual_host_aliases(query: str) -> None:
-    router = _joined_router()
+    router = _joined_router(router_factory=legacy_router)
     view, selector = _selector(router, query)
     assert selector(query, view.visible_route_ids) == ["contacts.read", "cases.read"]

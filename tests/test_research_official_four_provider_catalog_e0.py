@@ -19,7 +19,7 @@ def four_tools() -> tuple:
 
 
 def test_four_original_publishers_in_one_catalog_preserve_methods(four_tools: tuple) -> None:
-    from schemarouter import AuthorizationPolicy, PrincipalContext, SchemaRouter
+    from schemarouter import AuthorizationPolicy, PrincipalContext
 
     assert len(four_tools) == 4
     openai, github, ollama, pirate = four_tools

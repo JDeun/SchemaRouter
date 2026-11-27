@@ -19,6 +19,7 @@ from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 
 QUERY = "show case status and priority"
 
@@ -35,7 +36,7 @@ def _new_selector(router, *, query=QUERY, principal=ANALYST, ranker=None, catalo
 
 
 def test_indexed_bridge_exposes_only_conjunctively_complete_direct_fields():
-    router = _router(many_partial=6)
+    router = _router(many_partial=6, router_factory=legacy_router)
     router.add_tool(ToolSpec(
         name="bound", source_type="crm", license="reviewed",
         endpoints=[EndpointSpec(
@@ -59,7 +60,7 @@ def test_indexed_bridge_exposes_only_conjunctively_complete_direct_fields():
 
 
 def test_indexed_bridge_over_k_abstains_and_research_ranker_remains_unverified():
-    router = _router(many_complete=6)
+    router = _router(many_complete=6, router_factory=legacy_router)
     view, selector = _new_selector(router)
     assert selector(QUERY, view.visible_route_ids) == []
     assert selector.last_status == "over_k_unranked"
@@ -73,7 +74,7 @@ def test_indexed_bridge_over_k_abstains_and_research_ranker_remains_unverified()
 
 
 def test_indexed_bridge_preserves_unknown_concept_and_hidden_field_abstention():
-    router = _router()
+    router = _router(router_factory=legacy_router)
     view, selector = _new_selector(router, query="unrelated request")
     assert selector("unrelated request", view.visible_route_ids) == []
     assert selector.last_status == "no_declared_concept_not_calibrated_no_fit"
@@ -84,7 +85,7 @@ def test_indexed_bridge_preserves_unknown_concept_and_hidden_field_abstention():
 
 
 def test_indexed_bridge_rejects_policy_drift_and_query_forgery():
-    router = _router()
+    router = _router(router_factory=legacy_router)
     view, selector = _new_selector(router)
     with pytest.raises(PolicyViolationError, match="query/view mismatch"):
         selector("case status", view.visible_route_ids)
@@ -96,7 +97,7 @@ def test_indexed_bridge_rejects_policy_drift_and_query_forgery():
 
 
 def test_indexed_bridge_rejects_source_mutation_during_untrusted_ranking():
-    router = _router(many_complete=6)
+    router = _router(many_complete=6, router_factory=legacy_router)
 
     def mutate_source(_query, _candidates, _k):
         router.add_tool(ToolSpec(
@@ -112,7 +113,7 @@ def test_indexed_bridge_rejects_source_mutation_during_untrusted_ranking():
 
 
 def test_indexed_bridge_rejects_concept_contract_mutation_during_ranking():
-    router = _router(many_complete=6)
+    router = _router(many_complete=6, router_factory=legacy_router)
     catalog = deepcopy(CATALOG)
 
     def mutate_catalog(_query, _candidates, _k):
@@ -125,7 +126,7 @@ def test_indexed_bridge_rejects_concept_contract_mutation_during_ranking():
 
 
 def test_indexed_bridge_rejects_unavailable_model_schema_budget(monkeypatch):
-    router = _router()
+    router = _router(router_factory=legacy_router)
     view, selector = _new_selector(router)
 
     def reject_budget(*_args, **_kwargs):
@@ -156,7 +157,7 @@ class ScriptedAgent:
 
 
 def test_indexed_bridge_runs_in_original_e0_agent_executor_without_gold_access():
-    router = _router(many_partial=6)
+    router = _router(many_partial=6, router_factory=legacy_router)
     view, selector = _new_selector(router)
     task = {
         "semantic_task_id": "index-direct-e0", "query": QUERY,

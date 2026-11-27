@@ -257,7 +257,7 @@ def test_leaf_query_can_select_nested_leaf_without_parent_token_leakage() -> Non
 
 
 def test_nested_field_can_receive_full_trusted_contract_enrichment() -> None:
-    from schemarouter import EndpointSpec, FieldSpec, SchemaRouter, ToolSpec
+    from schemarouter import EndpointSpec, FieldSpec, ToolSpec
 
     tool = tool_from_openapi(
         "materials",
