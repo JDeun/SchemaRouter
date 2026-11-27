@@ -1,6 +1,8 @@
 # Agent-driven SchemaRouter — clean-slate PoC
 
-Status: PRD 0.1 defined; design and comparison gate only; no implementation or measured performance yet.
+Status: restricted local discovery PoC implemented; 29/29 local engineering tests recorded. Agent-performance comparison not run.
+
+**Current implementation and test receipt:** [Discovery contract / Gate B acceptance](discovery-contract.md). Backend decision: [ADR-001](prior-art-and-adr.md).
 
 **Canonical requirements:** [PRD.md](PRD.md). This README is an orientation; PRD requirement IDs and acceptance criteria govern new product work.
 Decision tracker: [#1897](https://github.com/JDeun/SchemaRouter/issues/1897).
@@ -12,12 +14,12 @@ SchemaRouter is an agent-consumed semantic tool-schema ontology and field-aware 
 
 The historical Algorithm 1 includes an LLM Understand stage and tool-plan construction; that remains a separate reproducible paper experiment. This narrower future product contract does not rewrite the paper or historical evidence.
 
-## Minimal interface (design sketch, not implemented)
+## Minimal interface (implemented research subset)
 
 ```text
-register(source_schema, reviewed_semantic_annotations)
-discover(semantic_requirements, optional_scope, optional_budget)
-  -> matched routes + projected schemas + coverage + source revision
+Catalog(concepts, host_permitted_routes)
+Catalog.discover(requirements, max_routes=None)
+  -> matched routes + projected schemas + per-requirement receipts + revision
 ```
 
 Separate search by known semantic identifiers/aliases from natural-language matching of search terms; the agent supplies requirements, not a mandatory raw-user-query plan. The first experiment must not require a model inside the search core. Index the host-permitted schema surface. Preserve necessary input properties and constraints, identifiers, selected output properties and their provenance. Return original route identity and revision; a discovery hit does not grant execution authority. An output view is not a promise of upstream wire-level field selection.
@@ -55,4 +57,4 @@ If an ordinary ontology plus a small projection function is sufficient, reuse it
 Base main snapshot: `bbe466d5b7fd9284db9b1f467633186bf89c7d68`.
 Historical paper consolidation PR #1895 was closed without merge; its exact head `8fa102d28aa7071e00f2e212767c9b25838e747d` and branch remain preserved. Its incomplete qualification and previous negative evidence (#432) remain separate. Do not delete or rewrite old branches or publish private paper assets. The old release candidate #1356 was canceled and closed without merge. See completed disposition #1901.
 
-This directory is the isolated new work area. No source code or benchmark has been run at this checkpoint.
+This directory is the isolated new work area. Local mechanism tests are complete for the documented subset; fresh CI and Gate C agent comparisons remain outstanding.

@@ -1,0 +1,8 @@
+# Observed Python 3.13.5 environment; not a hashed/cross-platform lock.
+rdflib==7.5.0
+pyparsing==3.3.2
+jsonschema==4.26.0
+attrs==26.1.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rpds-py==2026.5.1
