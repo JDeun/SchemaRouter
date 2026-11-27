@@ -654,12 +654,17 @@ def test_product_indexes_have_no_research_ranking_callback() -> None:
     ):
         assert {"_research_ranker", "_fork_arm_internal", "_fork_root_filter",
                 "_fork_target_filter"}.isdisjoint(signature(method).parameters)
-    for method in (
+    assert "_paper_rank_policy" in signature(
         schemarouter.NativeSchemaPostingIndex.lookup,
+    ).parameters
+    for method in (
         schemarouter.NativeSchemaGraphIndex.lookup,
+        schemarouter.NativeSchemaGraphIndex._lookup_native_paths,
         schemarouter.NativeSchemaGraphIndex.lookup_two_hop,
     ):
-        assert "_paper_rank_policy" in signature(method).parameters
+        assert {"_paper_rank_policy", "_paper_rank_aliases"}.isdisjoint(
+            signature(method).parameters,
+        )
 
 
 def test_product_index_receipts_do_not_expose_research_rank_metadata() -> None:
@@ -672,9 +677,20 @@ def test_product_index_receipts_do_not_expose_research_rank_metadata() -> None:
         assert "experimental_ranked" not in names
         assert "ranker_abstained_unverified" not in statuses
         assert "internal_fork_arm" not in statuses
-        assert "deterministic_paper_ranked" in names
-        assert "ranked_unverified" in statuses
         assert "over_k_unranked" in statuses
+        if model is schemarouter.IndexedNativeFieldResult:
+            assert "deterministic_paper_ranked" in names
+            assert "ranked_unverified" in statuses
+        else:
+            assert "deterministic_paper_ranked" not in names
+            assert "ranked_unverified" not in statuses
+
+    from schemarouter import paper_native_rank
+
+    for name in ("rank_authorized_paper_graph_one_hop",
+                 "rank_authorized_paper_graph_two_hop",
+                 "rank_authorized_paper_graph_mixed"):
+        assert not hasattr(paper_native_rank, name)
 
 
 def test_alternate_query_only_session_methods_are_not_installed() -> None:

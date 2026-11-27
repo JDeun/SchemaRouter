@@ -99,6 +99,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_paper_graph_execution"), path
                 assert not module.startswith("scripts.research_legacy_paper_graph_plan"), path
+                assert not module.startswith("scripts.research_legacy_graph_rank"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
@@ -143,6 +144,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_consumer_execution",
                                            "scripts.research_legacy_paper_graph_execution",
                                            "scripts.research_legacy_paper_graph_plan",
+                                           "scripts.research_legacy_graph_rank",
                                            "schemarouter.paper_understood_graph_plan",
                                            "schemarouter.paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",

@@ -10,6 +10,7 @@ on:
       - "scripts/benchmark_paper_public_pipeline_e0.py"
       - "tests/test_benchmark_paper_public_pipeline_e0.py"
       - "scripts/research_legacy_paper_graph_plan.py"
+      - "scripts/research_legacy_graph_rank.py"
       - "src/schemarouter/paper_understood_direct_plan.py"
       - "src/schemarouter/paper_query_understanding.py"
       - "scripts/research_legacy_offered_query.py"

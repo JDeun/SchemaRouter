@@ -399,7 +399,7 @@ def _two_hop_candidate(
 
 
 def test_owner_rank_orders_complete_one_hop_paths_by_paper_precedence():
-    from schemarouter import paper_native_rank
+    from scripts import research_legacy_graph_rank as paper_native_rank
 
     candidates = (
         _graph_candidate("root_p.read", "target_partial.read",
@@ -434,7 +434,7 @@ def test_owner_rank_orders_complete_one_hop_paths_by_paper_precedence():
 
 
 def test_owner_rank_orders_complete_two_hop_paths_by_visible_binding_cost():
-    from schemarouter import paper_native_rank
+    from scripts import research_legacy_graph_rank as paper_native_rank
 
     candidates = (
         _two_hop_candidate("root_w.read", "middle_w.read", "target_web.read"),
@@ -467,7 +467,7 @@ def test_owner_rank_orders_complete_two_hop_paths_by_visible_binding_cost():
 
 @pytest.mark.parametrize("count", [500, 5000])
 def test_owner_rank_handles_500_and_5000_complete_path_receipts(count):
-    from schemarouter import paper_native_rank
+    from scripts import research_legacy_graph_rank as paper_native_rank
 
     candidates = tuple(
         _graph_candidate(f"root_{i:05d}.read", f"target_{i:05d}.read")
@@ -490,7 +490,7 @@ def test_owner_rank_handles_500_and_5000_complete_path_receipts(count):
 
 
 def test_owner_rank_refuses_more_than_5000_complete_path_receipts():
-    from schemarouter import paper_native_rank
+    from scripts import research_legacy_graph_rank as paper_native_rank
 
     candidates = tuple(
         _graph_candidate(f"root_{i:05d}.read", f"target_{i:05d}.read")
@@ -520,7 +520,7 @@ def test_g5_rank_e0_benchmark_reports_independent_oracle_and_latency(hops):
 def test_one_hop_rank_uses_all_current_scoped_output_fields_not_only_matched_projection():
     from dataclasses import replace
 
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_one_hop
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_one_hop
 
     candidates = (
         replace(
@@ -542,7 +542,7 @@ def test_one_hop_rank_uses_all_current_scoped_output_fields_not_only_matched_pro
 def test_two_hop_rank_uses_current_principal_scoped_route_width_for_each_hop():
     from dataclasses import replace
 
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_two_hop
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_two_hop
 
     candidates = (
         replace(
@@ -562,7 +562,7 @@ def test_two_hop_rank_uses_current_principal_scoped_route_width_for_each_hop():
 
 
 def test_mixed_depth_rank_compares_full_path_owner_priority_before_depth():
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_mixed
 
     first = _graph_candidate("root_short.read", "target_short.read")
     second = _two_hop_candidate(
@@ -580,7 +580,7 @@ def test_mixed_depth_rank_compares_full_path_owner_priority_before_depth():
 
 
 def test_mixed_depth_rank_uses_shortest_proved_dag_only_after_equal_scores():
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_mixed
 
     first = _graph_candidate("root_short.read", "target_short.read")
     second = _two_hop_candidate(
@@ -594,7 +594,7 @@ def test_mixed_depth_rank_uses_shortest_proved_dag_only_after_equal_scores():
 
 
 def test_mixed_depth_rank_web_demotion_is_stronger_than_owner_priority():
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_mixed
 
     first = _graph_candidate("root_short.read", "target_short.read")
     second = _two_hop_candidate(
@@ -612,7 +612,7 @@ def test_mixed_depth_rank_web_demotion_is_stronger_than_owner_priority():
 
 @pytest.mark.parametrize("size", [500, 5000])
 def test_mixed_depth_rank_matches_independent_source_oracle_at_scale(size):
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_mixed
 
     one_count = size // 2
     two_count = size - one_count
@@ -642,7 +642,7 @@ def test_mixed_depth_rank_matches_independent_source_oracle_at_scale(size):
 
 
 def test_mixed_depth_rank_rejects_combined_5001_path_receipts():
-    from schemarouter.paper_native_rank import rank_authorized_paper_graph_mixed
+    from scripts.research_legacy_graph_rank import rank_authorized_paper_graph_mixed
 
     short = tuple(
         _graph_candidate(f"root_{i:05d}.read", f"short_{i:05d}.read")

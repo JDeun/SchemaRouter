@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "src/schemarouter/native_graph_index.py"
+      - "scripts/research_legacy_graph_rank.py"
       - "src/schemarouter/native_semantic_index.py"
       - "tests/test_native_graph_index.py"
       - "tests/test_native_semantic_index.py"

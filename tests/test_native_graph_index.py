@@ -32,6 +32,7 @@ from scripts.research_g5_decision_backend_ranker_e0 import (
 from scripts.research_legacy_concept_retrieval import lookup_graph_concepts
 from scripts.research_legacy_decisions import CallableDecisionBackend
 from scripts.research_legacy_g5_rank import research_lookup_graph
+from scripts.research_legacy_graph_rank import lookup_ranked_graph_one_hop
 
 ANALYST = PrincipalContext(subject="analyst", roles=("reader",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -1135,8 +1136,8 @@ def test_owner_ranked_g5_path_lookup_ranks_entire_qualified_cohort(n_targets):
         route_priorities={winner: 100},
     )
 
-    result = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    result = lookup_ranked_graph_one_hop(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",),),
     )
@@ -1156,16 +1157,16 @@ def test_owner_ranked_g5_path_lookup_ranks_entire_qualified_cohort(n_targets):
 
 
 def test_owner_ranked_g5_path_budget_overflow_returns_no_partial_receipts(monkeypatch):
-    from schemarouter import native_graph_index
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts import research_legacy_graph_rank
 
-    monkeypatch.setattr(native_graph_index, "MAX_OWNER_RANKABLE_PATHS", 5)
+    monkeypatch.setattr(research_legacy_graph_rank, "MAX_OWNER_RANKABLE_PATHS", 5)
     router = _router(n_targets=6)
     idx = _index(router)
     policy = PaperNativeRankPolicy(snapshot_id=idx.field_index.snapshot_id)
 
-    result = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    result = lookup_ranked_graph_one_hop(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",),),
     )
@@ -1189,8 +1190,8 @@ def test_owner_ranked_g5_policy_mutation_during_health_check_fails_closed():
 
     router._source_availability.predicate = mutate_on_candidate
     with pytest.raises(PolicyViolationError, match="Rank owner declaration changed"):
-        idx.lookup(
-            router, ALIASES[0], group=GROUP, principal=ANALYST,
+        lookup_ranked_graph_one_hop(
+            idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
             _paper_rank_policy=policy,
             _paper_rank_aliases=(("case status",),),
         )

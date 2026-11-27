@@ -14,8 +14,8 @@ from schemarouter._authorization_witness import _policy_contents_digest
 from schemarouter.authorization import PrincipalContext
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.errors import PolicyViolationError
-from schemarouter.native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
-from schemarouter.paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed
+from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_typed_tool_plan import (
     PaperFieldRoute,
     PaperPlanBinding,
@@ -30,6 +30,12 @@ from schemarouter.paper_understood_direct_plan import (
     _compile_paper_understood_direct_plan,
     _source_owned_understood_concepts,
     _source_owned_understood_group,
+)
+from scripts.research_legacy_graph_rank import (
+    MAX_OWNER_RANKABLE_PATHS,
+    lookup_ranked_graph_one_hop,
+    lookup_ranked_graph_two_hop,
+    rank_authorized_paper_graph_mixed,
 )
 
 if TYPE_CHECKING:
@@ -362,13 +368,13 @@ def _compile_paper_understood_graph_plan(
 
     def lookup(hops: int) -> Any:
         if hops == 1:
-            return index.lookup(
-                router, group.aliases[0], group=group, principal=principal,
+            return lookup_ranked_graph_one_hop(
+                index, router, group.aliases[0], group=group, principal=principal,
                 k=k, allowed_target_routes=target_routes,
                 _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
             )
-        return index.lookup_two_hop(
-            router, group.aliases[0], group=group, principal=principal,
+        return lookup_ranked_graph_two_hop(
+            index, router, group.aliases[0], group=group, principal=principal,
             k=k, allowed_target_routes=target_routes,
             _paper_rank_policy=rank_policy, _paper_rank_aliases=rank_aliases,
         )

@@ -10,6 +10,7 @@ on:
       - "src/schemarouter/adapters/mcp.py"
       - "src/schemarouter/adapters/optimade.py"
       - "src/schemarouter/native_graph_index.py"
+      - "scripts/research_legacy_graph_rank.py"
       - "src/schemarouter/semantic_attestations.py"
   workflow_dispatch:
 

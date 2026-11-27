@@ -27,6 +27,7 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
 )
+from scripts.research_legacy_graph_rank import lookup_ranked_graph_two_hop
 from scripts.research_legacy_paper_graph_plan import (
     compile_paper_understood_graph_plan,
     compile_research_understood,
@@ -424,8 +425,8 @@ def test_owner_ranked_two_hop_graph_exceeds_legacy_research_32_path_cap():
         index.lookup_two_hop(
             router, "case status", group=group, principal=ACTOR,
         )
-    ranked = index.lookup_two_hop(
-        router, "case status", group=group, principal=ACTOR,
+    ranked = lookup_ranked_graph_two_hop(
+        index, router, "case status", group=group, principal=ACTOR,
         _paper_rank_policy=policy,
         _paper_rank_aliases=(("case status",),),
     )

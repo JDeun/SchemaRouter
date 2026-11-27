@@ -17,8 +17,8 @@ from schemarouter.native_graph_index import (
     NativeIndexedGraphCandidate,
     NativeIndexedTwoHopCandidate,
 )
-from schemarouter.paper_native_rank import (
-    PaperNativeRankPolicy,
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
+from scripts.research_legacy_graph_rank import (
     rank_authorized_paper_graph_one_hop,
     rank_authorized_paper_graph_two_hop,
 )

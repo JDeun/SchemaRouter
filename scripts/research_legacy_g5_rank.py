@@ -19,7 +19,6 @@ from schemarouter.field_group_retrieval import (
 )
 from schemarouter.models import EndpointSpec, ToolSpec
 from schemarouter.native_graph_index import (
-    MAX_OWNER_RANKABLE_PATHS,
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
     NativeIndexedGraphCandidate,
@@ -30,7 +29,11 @@ from schemarouter.native_graph_index import (
     _root_field,
 )
 from schemarouter.native_semantic_index import _NativeSourcePass
-from schemarouter.paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_one_hop
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
+from scripts.research_legacy_graph_rank import (
+    MAX_OWNER_RANKABLE_PATHS,
+    rank_authorized_paper_graph_one_hop,
+)
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

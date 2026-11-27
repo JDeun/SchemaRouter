@@ -7,6 +7,7 @@ import pytest
 from schemarouter import IndexedNativeFieldResult, NativeIndexedGraphResult
 from scripts.research_legacy_fork_arm import NativeIndexedGraphResult as HistoricalForkArmResult
 from scripts.research_legacy_g5_rank import NativeIndexedGraphResult as HistoricalGraphResult
+from scripts.research_legacy_graph_rank import NativeIndexedGraphResult as HistoricalOwnerRankResult
 from scripts.research_legacy_posting_rank import IndexedNativeFieldResult as HistoricalFieldResult
 
 
@@ -39,7 +40,10 @@ def test_historical_abstention_remains_a_distinct_non_product_receipt(
     assert wire["status"] == "ranker_abstained_unverified"
     assert wire["experimental_ranked"] is True
     assert historical(**wire) == receipt
-    assert tuple(field.name for field in fields(historical) if field.name != "experimental_ranked") == (
+    research_only = {"experimental_ranked"}
+    if product is NativeIndexedGraphResult:
+        research_only.add("deterministic_paper_ranked")
+    assert tuple(field.name for field in fields(historical) if field.name not in research_only) == (
         tuple(field.name for field in fields(product))
     )
     assert "ranker_abstained_unverified" in get_args(get_type_hints(historical)["status"])
@@ -61,3 +65,16 @@ def test_historical_fork_arm_receipt_is_not_a_product_result() -> None:
     assert HistoricalForkArmResult(**asdict(receipt)) == receipt
     assert not receipt.executable_authority
     assert not receipt.deterministic_paper_ranked
+
+
+def test_owner_ranked_graph_receipt_is_checkout_only() -> None:
+    receipt = HistoricalOwnerRankResult(
+        status="ranked_unverified", registry_version=1, index_snapshot_id="snapshot",
+        requested_k=5, qualified_path_count=7, candidates=(),
+        deterministic_paper_ranked=True,
+    )
+    assert not isinstance(receipt, NativeIndexedGraphResult)
+    assert "ranked_unverified" not in get_args(get_type_hints(NativeIndexedGraphResult)["status"])
+    assert "deterministic_paper_ranked" not in {f.name for f in fields(NativeIndexedGraphResult)}
+    assert HistoricalOwnerRankResult(**asdict(receipt)) == receipt
+    assert not receipt.executable_authority

@@ -15,6 +15,8 @@ on:
       - "scripts/research_legacy_paper_consumer_execution.py"
       - "scripts/research_legacy_paper_graph_execution.py"
       - "scripts/research_legacy_paper_graph_plan.py"
+      - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_paper_g5_rank_benchmark_e0.py"
       - "src/schemarouter/paper_understood_direct_plan.py"
       - "src/schemarouter/paper_understood_concept_plan.py"
       - "tests/test_original_paper_cross_source_projection.py"
@@ -118,7 +120,7 @@ jobs:
           python -m pytest -q tests/test_original_paper_cross_source_projection.py tests/test_paper_understood_direct_plan.py tests/test_understood_multi_concept.py tests/test_understood_typed_group_composition.py
       - name: Verify original direct Rank comparator and focus
         run: |
-          ruff check src/schemarouter/paper_native_rank.py tests/test_paper_original_rank.py tests/test_paper_native_rank.py
+          ruff check src/schemarouter/paper_native_rank.py scripts/research_legacy_graph_rank.py tests/test_paper_original_rank.py tests/test_paper_native_rank.py
           python -m pytest -q tests/test_paper_original_rank.py
           python -m pytest -q tests/test_paper_native_rank.py -k original_direct_focus
       - name: Verify original literature input and output concept separation

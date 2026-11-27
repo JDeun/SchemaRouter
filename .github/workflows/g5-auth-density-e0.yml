@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/benchmark_g5_auth_density_e0.py"
+      - "scripts/research_legacy_graph_rank.py"
       - "tests/test_benchmark_g5_auth_density_e0.py"
       - ".github/workflows/g5-auth-density-e0.yml"
       - "research/autoresearch/g5-auth-density-e0.md"
