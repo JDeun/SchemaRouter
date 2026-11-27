@@ -164,7 +164,7 @@
 
 ## dependency_strongly_connected_components
 
-::: schemarouter.dependency_strongly_connected_components
+독립적인 SCC, 순환 증거 및 충족 가능성 분석은 소스 체크아웃의 `scripts.research_legacy_capability_graph_analysis`에 보존한 과거 연구용 기능입니다. 설치 패키지에는 타입 기반 의존 그래프 생성, 증분 갱신, 인접 경로 조회를 유지합니다.
 
 ## validate_capability_publication
 

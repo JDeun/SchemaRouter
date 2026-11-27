@@ -2,7 +2,7 @@ from schemarouter.capability_contracts import (
     CapabilityContract,
     CapabilityFieldContract,
 )
-from schemarouter.capability_graph import satisfiable_capability_ids
+from scripts.research_legacy_capability_graph_analysis import satisfiable_capability_ids
 
 
 def _field(semantic_id: str, type_name: str = "number") -> CapabilityFieldContract:

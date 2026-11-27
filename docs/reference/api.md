@@ -168,7 +168,7 @@ This contract is no longer an installed API. For historical comparison only, use
 
 ## dependency_strongly_connected_components
 
-::: schemarouter.dependency_strongly_connected_components
+Standalone SCC, cycle-witness and satisfiability diagnostics are historical research utilities, available in `scripts.research_legacy_capability_graph_analysis` in a source checkout. The installed graph retains typed dependency construction, incremental updates, and adjacency lookup.
 
 ## validate_capability_publication
 

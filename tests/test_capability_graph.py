@@ -15,9 +15,11 @@ from schemarouter import (
     SemanticEquivalence,
     build_capability_dependency_graph,
     compare_capability_composition,
+    update_capability_dependency_graph,
+)
+from scripts.research_legacy_capability_graph_analysis import (
     dependency_cycles,
     dependency_strongly_connected_components,
-    update_capability_dependency_graph,
 )
 
 

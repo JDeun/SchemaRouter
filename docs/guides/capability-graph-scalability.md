@@ -43,7 +43,9 @@ Only edges incident to added, removed, or changed capability contracts are recom
 
 If the `CompatibilityContext` itself changes, perform a full rebuild. A semantic-equivalence or unit-conversion policy change can alter edges between otherwise unchanged contracts.
 
-## Cycle analysis
+## Cycle analysis (research checkout only)
+
+The diagnostics below are archived in `scripts.research_legacy_capability_graph_analysis`, not installed product APIs. Typed graph construction and adjacency lookup remain available in the installed package.
 
 `dependency_strongly_connected_components(...)` uses Tarjan's algorithm.
 

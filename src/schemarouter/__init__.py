@@ -188,9 +188,6 @@ from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
-    dependency_cycles,
-    dependency_strongly_connected_components,
-    satisfiable_capability_ids,
     update_capability_dependency_graph,
 )
 from .capability_lineage import (
@@ -914,9 +911,6 @@ __all__ = [
     "introspect_record_backend",
     "introspect_sqlalchemy_engine",
     "migrate_sqlite_storage",
-    "dependency_cycles",
-    "dependency_strongly_connected_components",
-    "satisfiable_capability_ids",
     "update_capability_dependency_graph",
     "discover_adapter_plugins",
     "inspect_registry",

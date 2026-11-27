@@ -49,6 +49,9 @@ RETIRED = {
     "FirstOptionDecisionBackend",
     "choose_async",
     "choose_sync",
+    "dependency_cycles",
+    "dependency_strongly_connected_components",
+    "satisfiable_capability_ids",
 }
 
 
@@ -65,6 +68,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_model_analyzer"), path
                 assert not module.startswith("scripts.research_legacy_g5_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_deep_paths"), path
+                assert not module.startswith("scripts.research_legacy_capability_graph_analysis"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
                     "schemarouter.state_retrieval",
@@ -75,7 +79,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 }, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
-                if module in {"schemarouter", "schemarouter.models", "models"}:
+                if module in {"schemarouter", "schemarouter.models", "models",
+                              "schemarouter.capability_graph", "capability_graph"}:
                     assert RETIRED.isdisjoint(alias.name for alias in node.names), path
             elif isinstance(node, ast.Import):
                 assert not any(
@@ -84,6 +89,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_model_analyzer",
                                            "scripts.research_legacy_g5_execution",
                                            "scripts.research_legacy_g5_deep_paths",
+                                           "scripts.research_legacy_capability_graph_analysis",
                                            "schemarouter.native_deep_paths",
                                            "schemarouter.native_graph_execution",
                                            "scripts.research_legacy_planning",
@@ -122,7 +128,8 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.native_deep_paths",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
-                    if node.module in {"schemarouter", "schemarouter.models"}:
+                    if node.module in {"schemarouter", "schemarouter.models",
+                                       "schemarouter.capability_graph"}:
                         assert RETIRED.isdisjoint(alias.name for alias in node.names), path
                 elif isinstance(node, ast.Import):
                     assert all(

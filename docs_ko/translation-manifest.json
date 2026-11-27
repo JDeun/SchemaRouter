@@ -141,7 +141,7 @@
     },
     {
       "path": "guides/capability-graph-scalability.md",
-      "source_blob": "ae52774094b218c3da06418ae8d6321e95e4203d"
+      "source_blob": "1c2eb3c8afe338aa21edb1c05e56ae62b3892342"
     },
     {
       "path": "guides/capability-lineage.md",
@@ -413,7 +413,7 @@
     },
     {
       "path": "reference/api.md",
-      "source_blob": "45e56779c6cb3ca8303a365af5fa99af1dfc3d75"
+      "source_blob": "7039184fb491dc419cbfe72d399b5e14481c4032"
     },
     {
       "path": "reference/models.md",

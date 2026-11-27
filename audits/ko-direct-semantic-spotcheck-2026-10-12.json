@@ -225,9 +225,9 @@
     },
     {
       "path": "guides/capability-graph-scalability.md",
-      "en_blob": "ae52774094b218c3da06418ae8d6321e95e4203d",
-      "ko_blob": "a380bc33f865c55fcad1225d2725309fee511a8f",
-      "notes": "Matched conservative semantic ID index, required full compatibility, incremental vs complete rebuild condition, bounded SCC cycle witnesses and scalability matrix."
+      "en_blob": "1c2eb3c8afe338aa21edb1c05e56ae62b3892342",
+      "ko_blob": "d3ef2a1ccaa0e174871758598455c8850ff1053d",
+      "notes": "Matched conservative semantic ID index, required full compatibility, incremental vs complete rebuild condition, bounded SCC cycle witnesses and scalability matrix. 2026-11-27 delta: AI-assisted paired review of archived standalone graph diagnostics; typed graph construction, incremental updates and adjacency remain installed. No independent human sign-off."
     },
     {
       "path": "guides/capability-lineage.md",
@@ -633,9 +633,9 @@
     },
     {
       "path": "reference/api.md",
-      "en_blob": "45e56779c6cb3ca8303a365af5fa99af1dfc3d75",
-      "ko_blob": "f6119e750ed57d09d7522f6cbb9535620eaaf86d",
-      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of configured standard Algorithm 1 planning: same-router prepared session, reviewed paper_v1/focus_direct configuration, one schema-independent model call per plan, route-scoped PaperPlanRequest arguments and strict 1–5 call budget, required request principal, explicit rejection of legacy request shape, preserved paper statuses/coverage/partial calls, and no model re-call at execution. Private issued-plan proof survives an unchanged deep copy but not serialization; stale sources require refresh, review and reconfiguration. Legacy unconfigured behavior and serialized status omission remain explicit. This bounded source/translation review is not independent human certification."
+      "en_blob": "7039184fb491dc419cbfe72d399b5e14481c4032",
+      "ko_blob": "1c909ec09ef0c98d02662c6ee31361329839e4f6",
+      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch. 2026-11-26 delta: directly compared EN/KO pairwise removal and historical research-only status; no independent human sign-off. 2026-11-26 delta: paired AI-assisted review of research-only decision-adapter relocation, updated source-checkout imports, removed API directives or module inventory; no independent human sign-off. 2026-11-26: paired AI-assisted delta review of shared decision-contract relocation, archive imports and API reference; historical security boundaries and comparisons retained. Not independent sentence-level certification. 2026-11-26: paired AI-assisted delta review of configured standard Algorithm 1 planning: same-router prepared session, reviewed paper_v1/focus_direct configuration, one schema-independent model call per plan, route-scoped PaperPlanRequest arguments and strict 1–5 call budget, required request principal, explicit rejection of legacy request shape, preserved paper statuses/coverage/partial calls, and no model re-call at execution. Private issued-plan proof survives an unchanged deep copy but not serialization; stale sources require refresh, review and reconfiguration. Legacy unconfigured behavior and serialized status omission remain explicit. This bounded source/translation review is not independent human certification. 2026-11-27 delta: AI-assisted paired review of archived standalone graph diagnostics; typed graph construction, incremental updates and adjacency remain installed. No independent human sign-off."
     },
     {
       "path": "reference/models.md",

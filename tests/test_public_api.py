@@ -368,9 +368,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "introspect_record_backend",
         "introspect_sqlalchemy_engine",
         "migrate_sqlite_storage",
-        "dependency_cycles",
-        "dependency_strongly_connected_components",
-        "satisfiable_capability_ids",
         "update_capability_dependency_graph",
         "discover_adapter_plugins",
         "inspect_registry",
@@ -645,3 +642,18 @@ def test_general_depth_g5_experiment_is_not_installed() -> None:
     assert callable(schemarouter.NativeSchemaGraphIndex.lookup)
     assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
     assert callable(schemarouter.NativeSchemaGraphIndex.lookup_shared_root_forks)
+
+
+def test_standalone_graph_diagnostics_are_not_installed() -> None:
+    from schemarouter import capability_graph
+
+    for name in (
+        "dependency_cycles", "dependency_strongly_connected_components",
+        "satisfiable_capability_ids",
+    ):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(capability_graph, name), name
+    assert callable(schemarouter.build_capability_dependency_graph)
+    assert callable(schemarouter.update_capability_dependency_graph)
+    assert callable(schemarouter.CapabilityDependencyGraph.predecessors)
+    assert callable(schemarouter.CapabilityDependencyGraph.successors)

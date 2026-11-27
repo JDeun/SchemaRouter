@@ -43,7 +43,9 @@ updated = update_capability_dependency_graph(
 
 `CompatibilityContext` 자체가 바뀐 경우에는 full rebuild를 수행해야 합니다. semantic equivalence나 unit conversion policy 변경은 contract 자체가 바뀌지 않은 capability 사이의 edge에도 영향을 줄 수 있습니다.
 
-## Cycle 분석
+## Cycle 분석 (연구용 소스 체크아웃)
+
+아래 분석 기능은 설치 패키지 API가 아니라 `scripts.research_legacy_capability_graph_analysis`에 보존한 연구용 기능입니다. 타입 기반 그래프 생성과 인접 경로 조회는 설치 패키지에 유지합니다.
 
 `dependency_strongly_connected_components(...)` 는 Tarjan 알고리즘을 사용합니다.
 
