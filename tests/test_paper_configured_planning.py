@@ -668,15 +668,17 @@ def test_explicit_research_router_loses_legacy_path_on_configuration():
 
 @pytest.mark.asyncio
 async def test_product_understand_rejects_legacy_concept_disclosure_before_model():
-    from inspect import signature
-
     from schemarouter.paper_query_understanding import compile_model_query
 
     ctx = _configured(count=1)
-    assert "model_visible_concept_ids" not in signature(ctx.session.acompile_query).parameters
-    assert "model_visible_concept_ids" not in signature(compile_model_query).parameters
+    assert "model_visible_concept_ids" not in inspect.signature(ctx.session.acompile_query).parameters
+    assert "model_visible_concept_ids" not in inspect.signature(compile_model_query).parameters
     with pytest.raises(TypeError, match="model_visible_concept_ids"):
         await ctx.session.acompile_query(
-            ctx.request.query, **ctx.owner, model_visible_concept_ids=("measurement.value",),
+            ctx.request.query, principal=ctx.principal, model=ctx.model,
+            intent_registry=ctx.owner["intent_registry"],
+            model_visible_intent_ids=("measurement.compare",),
+            rank_policy=ctx.owner["rank_policy"],
+            model_visible_concept_ids=("measurement.value",),
         )
     assert ctx.model.payloads == [] and ctx.seen == []

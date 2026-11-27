@@ -30,6 +30,7 @@ from schemarouter import (
     retrieve_paper_field_coverage,
 )
 from schemarouter.errors import PolicyViolationError
+from schemarouter.paper_query_understanding import compile_model_query
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -355,6 +356,26 @@ async def test_direct_model_compiler_requires_approved_catalog_before_model():
             model_visible_intent_ids=("crm.review",),
             model_visible_concept_ids=("crm.customer_fields",),
         )
+
+
+@pytest.mark.asyncio
+async def test_schema_independent_compilers_require_reviewed_catalog_before_model():
+    session = build_fixture(500).prepare_field_routing()
+    intents = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+        intent_id="crm.review", required_concept_ids=("crm.customer_fields",),
+    ),))
+
+    async def forbidden_model(_payload):
+        pytest.fail("unapproved session must never call schema-independent Understand")
+
+    kwargs = dict(
+        principal=ACTOR, model=forbidden_model, intent_registry=intents,
+        model_visible_intent_ids=("crm.review",),
+    )
+    with pytest.raises(PolicyViolationError, match="catalog|review"):
+        await session.acompile_query("customer owner", **kwargs)
+    with pytest.raises(PolicyViolationError, match="catalog|review"):
+        await compile_model_query(session, "customer owner", **kwargs)
 
 
 def test_review_only_session_can_refresh_before_owner_catalog_approval():

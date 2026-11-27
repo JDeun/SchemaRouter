@@ -35,20 +35,20 @@ Raw source assertions are validated before conversion. Canonical bounds and fini
 transformed; predicates that cannot be proved after conversion are omitted only from the canonical
 description, so a stricter requirement remains unproved. Identity normalization preserves the
 original numeric value and type. The host explicitly prepares and configures this path; an
-unconfigured router retains its existing lexical routing.
+unconfigured router refuses query-driven planning.
 
 ## Prepared schema-only plans
 
 `router.prepare_field_routing(catalog=...)` prepares a source-pinned index with a host-reviewed
 concept catalog. `session.compile_understood(...)` checks a `PaperUnderstanding` against that catalog
-and the host's `PaperIntentRegistry`. In `session.acompile_query(...)`, omitting
-`model_visible_concept_ids` selects the schema-independent model protocol: the application's model
-receives the query, fixed intent names and response format/rules, without concept aliases, field
-names, tool catalog or route IDs. Passing an explicit tuple retains the earlier offered-ID protocol,
-which discloses the approved concept IDs/aliases and tool names. These APIs are opt-in. Without
-field-routing configuration, `router.plan(...)` uses the lexical `KeywordAnalyzer`, which does not
-provide general multilingual understanding, temporal reasoning or extraction of argument values
-from query text. Configuring the prepared session selects the Algorithm 1 path described below.
+and the host's `PaperIntentRegistry`. The installed `session.acompile_query(...)` uses only
+schema-independent Understand: the model receives the query, fixed intent names and response
+format/rules, without concept aliases, field names, tool catalog or route IDs.
+The historical offered Concept-ID/alias disclosure protocol is available only in source checkouts
+as `scripts.research_legacy_offered_query.compile_offered_model_query`; the installed APIs no
+longer accept `model_visible_concept_ids`. In the unreleased paper-first candidate, unconfigured
+query-driven `router.plan(...)` fails closed. Configure the prepared session to use the Algorithm 1
+path described below.
 
 Each concept's complete required field group is proved independently at an authorized endpoint
 under its own source type and license. In `NativeDeclaredConcept`, `source_type=None` and

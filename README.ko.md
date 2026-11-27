@@ -72,7 +72,9 @@ Understand 콜백을 `configure_field_routing(...)`으로 명시적으로 설정
 준비된 세션은 `compile_understood()` 또는 스키마 독립적인 `acompile_query()`로
 타입 기반 비실행 계획을 생성합니다. 과거 정확한 별칭 기반 `discover()`와 `compile()`은
 설치 패키지에서 제거되어 `scripts.research_legacy_field_session`의 소스 체크아웃 연구용
-함수로만 보존합니다.
+함수로만 보존합니다. 과거 모델에 Concept-ID·alias를 공개하던 프로토콜도
+`scripts.research_legacy_offered_query`의 연구용 함수로만 유지하며, 제품 모델에는
+질문, 고정된 intent 이름과 응답 형식만 전달합니다.
 
 소스 체크아웃에서 [원 논문 중심 빠른 시작](examples/quickstart.py) 또는
 [스키마 전용 검색 예제](examples/schema_only_field_routing.py)를 실행할 수 있습니다.

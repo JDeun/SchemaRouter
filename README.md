@@ -238,15 +238,15 @@ review intent→concept contracts; model-proposed `parameter_hints` are never
 used as call arguments. `compile_understood` does **not** call an LLM or any
 provider. For natural-language paraphrases, the separate opt-in async method
 `await session.acompile_query(query, principal=reader, model=host_callback,
-intent_registry=reviewed_intents, model_visible_intent_ids=(...),
-model_visible_concept_ids=(...), model_visible_tool_keys=(...))` invokes
-**one host-owned model callback** with only explicitly disclosed, currently
-field-proven intent/concept IDs and scoped tool keys. It strictly validates
-the returned IDs, and delegates to that same source-proven direct/one-/two-hop
-compiler. The caller is responsible for model privacy and deciding what to
-disclose; the router never fetches provider rows, promotes model suggestions
-to source authority, or binds model-proposed parameter values. An independent
-model-understanding benchmark is still required.
+intent_registry=reviewed_intents, model_visible_intent_ids=(...))` invokes
+**one host-owned model callback** with the query, fixed intent names and the response
+format, not concept IDs/aliases or the tool catalog. It strictly validates the model's
+schema-independent needs and delegates to current source-proven compilation. Named sources
+are resolved only after understanding, against authorized current sources. The earlier
+offered Concept-ID protocol is a checkout-only historical comparator in
+`scripts.research_legacy_offered_query`. The caller is responsible for model privacy;
+model proposals do not confer execution authority. An independent model-understanding
+benchmark is still required.
 
 For original-paper **Algorithm 1 `Rank(Tcand, C)`**, a trusted host can
 optionally declare `PaperNativeRankPolicy(snapshot_id=session.snapshot_id,

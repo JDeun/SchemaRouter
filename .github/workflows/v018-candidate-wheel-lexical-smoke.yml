@@ -100,6 +100,10 @@ jobs:
           assert callable(schemarouter.PaperQueryUnderstanding)
           assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_bounded_paths")
           from inspect import signature
+          from schemarouter.paper_query_understanding import compile_model_query
+          for compiler in (schemarouter.SchemaFieldRoutingSession.acompile_query,
+                           compile_model_query):
+              assert "model_visible_concept_ids" not in signature(compiler).parameters
           for method in (schemarouter.NativeSchemaPostingIndex.lookup,
                          schemarouter.NativeSchemaPostingIndex.lookup_concepts,
                          schemarouter.NativeSchemaGraphIndex.lookup,

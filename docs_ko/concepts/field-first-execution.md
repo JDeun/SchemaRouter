@@ -18,11 +18,11 @@ user query
 
 G5 dependency producer에는 계속 단위 없는 스칼라 identifier가 필요하며, 신뢰된 호스트 입력의 기존 스칼라 한도도 유지합니다. 원본 container가 선언된 숨김 하위 필드와 겹치면 결과 경로가 달라도 제외합니다. 제한된 view의 schema stripping도 유지합니다. 필드 요건을 입증하려고 raw registry에서 제거된 중첩 계약 정보를 복구하지 않습니다.
 
-필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 호스트가 이 경로를 명시적으로 준비하고 설정하며, 설정하지 않은 router는 기존 어휘 기반 라우팅을 유지합니다.
+필드 요건은 명시적인 단위 정규화를 거친 최종 출력 계약과 비교합니다. 원본 값의 제약은 변환 전에 검증하고, 최종 값의 경계와 유한한 값 목록은 변환합니다. 변환 후 성립을 입증할 수 없는 술어는 최종 값 설명에서만 생략하므로 더 엄격한 요건은 미입증 상태로 남습니다. 항등 변환은 원래 숫자 값과 타입을 보존합니다. 호스트가 이 경로를 명시적으로 준비하고 설정하며, 설정하지 않은 router는 질문 기반 계획을 거부합니다.
 
 ## 준비된 schema-only plan
 
-`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. `session.acompile_query(...)`에서 `model_visible_concept_ids`를 생략하면 schema-independent 모델 프로토콜을 사용합니다. 애플리케이션의 모델에는 질문, 고정된 intent 이름과 응답 형식·규칙만 전달하며 concept alias, 필드 이름, tool catalog, route ID는 보내지 않습니다. 명시적인 tuple을 전달하면 승인된 concept ID/alias와 tool 이름을 공개하는 기존 offered-ID 프로토콜을 유지합니다. 이 API들은 명시적으로 선택해야 합니다. Field-routing을 설정하지 않으면 `router.plan(...)`은 어휘 기반 `KeywordAnalyzer`를 사용하며, 일반적인 다국어 이해·시간 조건 추론·질문에서 인자 값을 추출하는 기능을 제공하지 않습니다. 준비된 session을 설정하면 아래의 Algorithm 1 경로를 선택합니다.
+`router.prepare_field_routing(catalog=...)`는 호스트가 검토한 concept catalog와 원본에 고정된 index를 준비합니다. `session.compile_understood(...)`는 `PaperUnderstanding`을 그 catalog 및 호스트의 `PaperIntentRegistry`와 대조합니다. 설치된 `session.acompile_query(...)`는 schema-independent Understand만 사용합니다. 모델에는 질문, 고정된 intent 이름과 응답 형식·규칙만 전달하며 concept alias, 필드 이름, tool catalog, route ID는 보내지 않습니다. 과거 Concept-ID·alias 공개 프로토콜은 소스 체크아웃 전용 `scripts.research_legacy_offered_query.compile_offered_model_query`에만 보존하며 설치된 API는 더 이상 `model_visible_concept_ids`를 받지 않습니다. 미출시 논문 중심 후보판에서 설정하지 않은 router는 질문 기반 `router.plan(...)`을 거부합니다. 준비된 session을 설정하여 아래의 Algorithm 1 경로를 사용하십시오.
 
 각 concept의 필수 필드 집합 전체를 그 concept의 source type과 license에 따라 권한이 있는 endpoint에서 독립적으로 입증합니다. `NativeDeclaredConcept`의 `source_type=None`과 `license=None`은 source type이나 license를 제한하지 않는다는 뜻이며, 실제 원본 metadata를 제거하지 않습니다. 따라서 독립적인 concept들은 서로 다른 tool과 license를 사용할 수 있습니다. Semantic ID가 같더라도 schema·단위·qualifier 요건이 호환되지 않으면 ID만으로 합치지 않고 독립적인 입증을 유지합니다. 입증된 route들을 합치고, 반복되는 route는 선택 필드의 합집합을 원본 선언 순서로 보존합니다. Identifier와 호스트가 요구한 intent group은 recall을 보존하며, 결과가 항상 최소 필드 수라고 보장하지는 않습니다. 전체 route 집합은 K5 한도를 따르므로 합집합이 다섯 route를 넘으면 call 없이 `budget_unsatisfied`를 반환합니다.
 일반 intent는 `required_concept_ids=()`를 선언할 수 있으며, 임의의 대표 필드를 추가하지 않습니다.
