@@ -19,8 +19,8 @@ from benchmarks.agent_utility_v5_structural_confirmation import (  # noqa: E402
     build_confirmation_registry,
     build_confirmation_tasks,
 )
-from schemarouter import SchemaPlanner  # noqa: E402
-from schemarouter.planner import (  # noqa: E402
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    SchemaPlanner,
     _STRUCTURAL_OPERATION_FAMILY_BONUS,
     _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
 )

@@ -17,11 +17,11 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.evidence import available_evidence
-from schemarouter.planner import KeywordAnalyzer
 from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from scripts.research_legacy_router import legacy_router
 
 CANARY = "private_route_canary_q9421"

@@ -23,7 +23,7 @@ SOURCES = (
     "scripts/benchmark_realistic_break_even.py",
     "scripts/benchmark_retrieval_hot_path.py",
     "scripts/external_validation_gearlynx.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "src/schemarouter/models.py",
     "src/schemarouter/runtime.py",
     "src/schemarouter/authorization.py",

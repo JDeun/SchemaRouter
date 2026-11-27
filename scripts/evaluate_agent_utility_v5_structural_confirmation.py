@@ -16,8 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter import InMemoryRegistry, SchemaPlanner, ToolSpec  # noqa: E402
-from schemarouter.planner import (  # noqa: E402
+from schemarouter import InMemoryRegistry, ToolSpec  # noqa: E402
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    SchemaPlanner,
     _STRUCTURAL_OPERATION_FAMILY_BONUS,
     _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
 )

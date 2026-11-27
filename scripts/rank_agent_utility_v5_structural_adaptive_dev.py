@@ -13,11 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter import SchemaPlanner  # noqa: E402
-from schemarouter.planner import (  # noqa: E402
-    _STRUCTURAL_OPERATION_FAMILY_BONUS,
-    _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
-)
 from scripts.rank_agent_utility_v5_adaptive_dev import (  # noqa: E402
     CATALOG_SIZES,
     MAX_K,
@@ -27,6 +22,11 @@ from scripts.rank_agent_utility_v5_adaptive_dev import (  # noqa: E402
     _sha,
     _tool_tokens,
     _verify_freeze,
+)
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    SchemaPlanner,
+    _STRUCTURAL_OPERATION_FAMILY_BONUS,
+    _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
 )
 
 PREREG = (

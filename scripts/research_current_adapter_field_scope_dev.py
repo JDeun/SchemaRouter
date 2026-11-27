@@ -34,7 +34,7 @@ SOURCE_FILES = (
     "benchmarks/current_adapter_field_scope_dev_v1.py",
     "scripts/research_current_adapter_field_scope_dev.py",
     "src/schemarouter/runtime.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "src/schemarouter/authorization.py",
     "src/schemarouter/adapters/openapi.py",
     "src/schemarouter/adapters/mcp.py",

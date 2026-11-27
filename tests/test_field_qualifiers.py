@@ -8,7 +8,6 @@ from schemarouter import (
     InMemoryRegistry,
     PlanRequest,
     RegistryExecutor,
-    SchemaPlanner,
     ToolCall,
     ToolSpec,
     compare_endpoint_specs,
@@ -19,6 +18,7 @@ from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisi
 from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def _qualified_tool(

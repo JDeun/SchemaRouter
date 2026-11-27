@@ -26,7 +26,7 @@ from benchmarks.agent_utility_b2_executor import (
     ExecutionAttempt,
     _schema_valid,
 )
-from schemarouter import InMemoryRegistry, PolicyViolationError, SchemaPlanner
+from schemarouter import InMemoryRegistry, PolicyViolationError
 from scripts.agent_utility_v6_state import (
     empty_state,
     render_retrieval_query,
@@ -50,6 +50,7 @@ from scripts.research_agent_stage_evidence_e0 import (
 from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 EXTENDED_CATALOG_SIZES = (100, 250, 500, 1000)
 DOWNSTREAM_CATALOG_SIZES = (100, 250, 500)

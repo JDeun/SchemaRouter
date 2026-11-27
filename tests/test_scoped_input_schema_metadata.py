@@ -19,12 +19,12 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
-from schemarouter.planner import KeywordAnalyzer
 from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     RequiredEnumValue,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from scripts.research_legacy_router import legacy_router
 
 HIDDEN = "private_value"

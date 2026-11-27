@@ -29,12 +29,12 @@ from schemarouter.models import (
     PlanRequest,
     ToolSpec,
 )
-from schemarouter.planner import QueryAnalyzer, SchemaPlanner
 from schemarouter.runtime import SchemaRouter, _validated_explicit_retrieval_principal
 from schemarouter.state_retrieval import (
     StateAwareCapabilityRetrieval,
     filter_retrieval_by_state,
 )
+from scripts.research_legacy_planning.planner import QueryAnalyzer, SchemaPlanner
 
 if TYPE_CHECKING:
     from schemarouter.field_routing_session import SchemaFieldRoutingSession

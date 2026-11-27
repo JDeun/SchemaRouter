@@ -449,7 +449,6 @@ from .paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
 )
-from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
     ApprovalCallback,
     ExecutionPolicy,
@@ -782,7 +781,6 @@ __all__ = [
     "ToolInspection",
     "TraceInspection",
     "TrustedBindingConfig",
-    "KeywordAnalyzer",
     "MCPBoundClientFactory",
     "ArangoGraphBackend",
     "FalkorGraphBackend",
@@ -845,7 +843,6 @@ __all__ = [
     "built_in_provider_profile_registry",
     "discover_provider_profile_plugins",
     "load_provider_profile_plugins",
-    "QueryAnalyzer",
     "QueryIntent",
     "ResultFieldContract",
     "RetrievalMode",
@@ -883,7 +880,6 @@ __all__ = [
     "SchemaChangeSeverity",
     "SchemaCompatibility",
     "SchemaDiffReport",
-    "SchemaPlanner",
     "SchemaProposal",
     "RetrievalAbstentionPolicy",
     "SelectiveCapabilityRetrieval",

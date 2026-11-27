@@ -21,7 +21,8 @@ from benchmarks.agent_utility_v1_catalog import (  # noqa: E402
     TASKS,
     build_registry,
 )
-from schemarouter import PlanRequest, SchemaPlanner  # noqa: E402
+from schemarouter import PlanRequest  # noqa: E402
+from scripts.research_legacy_planning.planner import SchemaPlanner  # noqa: E402
 
 
 def _endpoint_document(tool: Any, endpoint: Any) -> dict[str, Any]:

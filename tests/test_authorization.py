@@ -491,7 +491,7 @@ async def test_retry_recomputes_data_scope_before_second_invocation(policy_owner
 
 def test_scoped_retrieval_never_embeds_hidden_schema_property() -> None:
     """Trusted raw provider schema is not an authorized model-visible view."""
-    from schemarouter.planner import KeywordAnalyzer
+    from scripts.research_legacy_planning.planner import KeywordAnalyzer
 
     seen_analysis_schemas: list[dict] = []
 

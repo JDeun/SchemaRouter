@@ -10,9 +10,9 @@ from schemarouter import (
     EndpointSpec,
     InMemoryRegistry,
     PlanRequest,
-    SchemaPlanner,
     ToolSpec,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def registry(*, declare_alias: bool) -> InMemoryRegistry:

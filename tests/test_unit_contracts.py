@@ -7,12 +7,12 @@ from schemarouter import (
     InMemoryRegistry,
     PlanRequest,
     RegistryExecutor,
-    SchemaPlanner,
     SchemaValidationError,
     ToolCall,
     ToolSpec,
     UnitNormalizationSpec,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def _quantity_field(

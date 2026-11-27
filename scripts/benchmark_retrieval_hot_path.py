@@ -22,9 +22,9 @@ from schemarouter import (
     FieldSpec,
     InMemoryRegistry,
     PlanRequest,
-    SchemaPlanner,
     ToolSpec,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def _percentile(values: list[float], fraction: float) -> float:

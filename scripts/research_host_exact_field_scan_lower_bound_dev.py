@@ -41,7 +41,7 @@ SOURCE_PATHS = (
     "scripts/research_legacy_host_field_contract.py",
     "src/schemarouter/_authorization_witness.py",
     "src/schemarouter/runtime.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "src/schemarouter/authorization.py",
 )
 # Same-author visible DEV expectations, deliberately not a blinded holdout.

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import EndpointSpec, InMemoryRegistry, SchemaPlanner, ToolSpec
+from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 @pytest.mark.parametrize("indexed", [False, True])

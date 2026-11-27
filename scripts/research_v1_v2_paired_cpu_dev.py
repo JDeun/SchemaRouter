@@ -54,7 +54,7 @@ INPUTS = (
     "scripts/research_autoresearch_sandbox.py",
     "scripts/research_current_main_multilingual_dev.py",
     "benchmarks/agent_utility_v5_catalog.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
 )
 
 

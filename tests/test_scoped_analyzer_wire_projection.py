@@ -17,7 +17,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.models import AuthRequirementSet, AuthSchemeRequirement
-from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from scripts.research_legacy_router import legacy_router
 
 CANARY = "wire_private_source_xyz_2749"

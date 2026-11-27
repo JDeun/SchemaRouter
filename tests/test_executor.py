@@ -28,12 +28,12 @@ from schemarouter import (
     RegistryExecutor,
     RetryPolicy,
     SchemaDriftError,
-    SchemaPlanner,
     SchemaValidationError,
     ToolCall,
     ToolSpec,
     TransientInvocationError,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def make_registry() -> InMemoryRegistry:

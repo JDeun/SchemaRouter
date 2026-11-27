@@ -79,7 +79,7 @@ def _configured(*, count=2, needs_input=False, configure=True, legacy=False):
 def _forbid_lexical(ctx, monkeypatch):
     def forbidden(*args, **kwargs):
         pytest.fail("configured product planning entered the retired lexical candidate path")
-    from schemarouter.planner import SchemaPlanner
+    from scripts.research_legacy_planning.planner import SchemaPlanner
 
     assert ctx.router.planner is None
     for name in ("_build_paper_direct_plan", "_build_paper_query_plan"):
@@ -591,9 +591,9 @@ async def test_legacy_retrieval_started_before_configuration_cannot_publish(monk
 
 
 def test_paper_name_identity_is_independent_of_lexical_planner(monkeypatch):
-    from schemarouter import planner
     from schemarouter._schema_identity import _locale_lexical_text, _normalize
     from schemarouter.paper_query_needs import _normalize as paper_normalize
+    from scripts.research_legacy_planning import planner
 
     def forbidden(_text):
         pytest.fail("paper query identity called the legacy planner")
@@ -644,7 +644,7 @@ async def test_inflight_legacy_plan_cannot_publish_after_configuration(method, m
     "retrieve_executable", "aretrieve_executable",
 ])
 async def test_unconfigured_default_never_constructs_or_calls_lexical_planner(method, monkeypatch):
-    from schemarouter.planner import SchemaPlanner
+    from scripts.research_legacy_planning.planner import SchemaPlanner
 
     def forbidden(*args, **kwargs):
         pytest.fail("the default router must not construct a lexical planner")

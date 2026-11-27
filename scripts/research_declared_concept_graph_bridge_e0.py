@@ -21,8 +21,8 @@ from typing import Literal
 from schemarouter import PlanRequest, QueryIntent
 from schemarouter.capability_contracts import SemanticEquivalence
 from schemarouter.errors import PlanningError
-from schemarouter.planner import KeywordAnalyzer
 from schemarouter.registry import ToolRegistry
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 
 MAX_DECLARED_EQUIVALENCES = 32
 MAX_DECLARED_ALIASES = 128

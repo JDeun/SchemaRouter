@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       # Native MCP ingestion and default ranking determine K3/K5 selection.
-      - "src/schemarouter/planner.py"
+      - "scripts/research_legacy_planning/**"
       - "src/schemarouter/adapters/mcp.py"
       - "tests/test_declared_tool_name_ranking.py"
       - "benchmarks/external-validation-servicenow-platform-mcp-dev-v1/**"

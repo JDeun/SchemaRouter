@@ -7,13 +7,13 @@ from schemarouter import (
     InMemoryRegistry,
     PlanningError,
     PlanRequest,
-    SchemaPlanner,
     ToolSpec,
 )
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
 from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def registry(

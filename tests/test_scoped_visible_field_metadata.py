@@ -20,11 +20,11 @@ from schemarouter import (
     UnitNormalizationSpec,
 )
 from schemarouter.evidence import available_evidence
-from schemarouter.planner import KeywordAnalyzer
 from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from scripts.research_legacy_router import legacy_router
 
 PRIVATE = "secret_field_reference_xyz"

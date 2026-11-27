@@ -22,7 +22,7 @@ def _pull_request_path_filters() -> list[str]:
 def test_native_ranker_changes_trigger_pinned_servicenow_dev_replay() -> None:
     patterns = _pull_request_path_filters()
     for changed_path in (
-        "src/schemarouter/planner.py",
+        "scripts/research_legacy_planning/planner.py",
         "src/schemarouter/adapters/mcp.py",
         "tests/test_declared_tool_name_ranking.py",
     ):

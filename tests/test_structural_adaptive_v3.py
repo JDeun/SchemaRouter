@@ -8,15 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter.planner import (  # noqa: E402
-    _STRUCTURAL_OPERATION_FAMILY_BONUS,
-    _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
-)
 from scripts.evaluate_agent_utility_v5_adaptive_shortlist import (  # noqa: E402
     _surface_contract,
 )
 from scripts.rank_agent_utility_v5_structural_adaptive_dev import (  # noqa: E402
     _verify_preregistered_identity,
+)
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    _STRUCTURAL_OPERATION_FAMILY_BONUS,
+    _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
 )
 
 PREREG = (

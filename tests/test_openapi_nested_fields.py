@@ -201,7 +201,8 @@ def test_nested_field_unit_and_type_contract_are_preserved() -> None:
 
 
 def test_parent_query_does_not_implicitly_select_nested_leaf() -> None:
-    from schemarouter import InMemoryRegistry, PlanRequest, SchemaPlanner
+    from schemarouter import InMemoryRegistry, PlanRequest
+    from scripts.research_legacy_planning.planner import SchemaPlanner
 
     tool = tool_from_openapi(
         "materials",
@@ -229,7 +230,8 @@ def test_parent_query_does_not_implicitly_select_nested_leaf() -> None:
 
 
 def test_leaf_query_can_select_nested_leaf_without_parent_token_leakage() -> None:
-    from schemarouter import InMemoryRegistry, PlanRequest, SchemaPlanner
+    from schemarouter import InMemoryRegistry, PlanRequest
+    from scripts.research_legacy_planning.planner import SchemaPlanner
 
     tool = tool_from_openapi(
         "materials",

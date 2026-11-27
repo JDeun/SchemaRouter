@@ -14,9 +14,9 @@ from schemarouter import (
     EndpointSpec,
     InMemoryRegistry,
     PlanRequest,
-    SchemaPlanner,
     ToolSpec,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 ALIASES = (
     "lookup property",
@@ -291,6 +291,6 @@ def test_unrelated_compatibility_symbols_are_not_globally_nfkc_normalized(
 ) -> None:
     # The fullwidth *identifier* fold cannot be expanded into arbitrary
     # compatibility units/symbols without independent capability semantics.
-    from schemarouter.planner import _normalize
+    from scripts.research_legacy_planning.planner import _normalize
 
     assert _normalize(query) != _normalize(expected_alias)

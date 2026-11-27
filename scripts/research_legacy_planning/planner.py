@@ -8,13 +8,13 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
-from ._schema_identity import _normalize, _tokens
-from ._source_availability import _SnapshotFingerprints, _SourceAvailability
-from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
-from .errors import ModelAnalysisError, PlanningError
-from .evidence import available_evidence, field_evidence_status, global_evidence_status
-from .execution_state import TypedExecutionState
-from .models import (
+from schemarouter._schema_identity import _normalize, _tokens
+from schemarouter._source_availability import _SnapshotFingerprints, _SourceAvailability
+from schemarouter.capability_contracts import CapabilityFieldContract, CapabilityPrecondition
+from schemarouter.errors import ModelAnalysisError, PlanningError
+from schemarouter.evidence import available_evidence, field_evidence_status, global_evidence_status
+from schemarouter.execution_state import TypedExecutionState
+from schemarouter.models import (
     CandidateSelectionSource,
     CapabilityCandidate,
     CapabilityRetrieval,
@@ -36,24 +36,28 @@ from .models import (
     ToolCall,
     ToolSpec,
 )
-from .planning_context import PlanningContext, RegistrySnapshot, SnapshotToolRegistry
-from .planning_stages import (
-    CandidatePipelineResult,
-    assemble_execution_plan,
-    select_fallbacks_sync,
-    select_primary_candidates_sync,
-)
-from .registry import ToolRegistry
-from .state_retrieval import (
+from schemarouter.registry import ToolRegistry
+from schemarouter.state_retrieval import (
     StateAwareCapabilityRetrieval,
     filter_retrieval_by_state,
 )
-from .validation import (
+from schemarouter.validation import (
     canonical_field_value_schema,
     effective_input_schema,
     effective_output_schema,
     json_schema_types,
     json_schemas_compatible,
+)
+from scripts.research_legacy_planning.planning_context import (
+    PlanningContext,
+    RegistrySnapshot,
+    SnapshotToolRegistry,
+)
+from scripts.research_legacy_planning.planning_stages import (
+    CandidatePipelineResult,
+    assemble_execution_plan,
+    select_fallbacks_sync,
+    select_primary_candidates_sync,
 )
 
 

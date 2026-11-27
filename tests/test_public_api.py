@@ -179,7 +179,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "TraceInspection",
         "TraceRedactionConfig",
         "TrustedBindingConfig",
-        "KeywordAnalyzer",
         "MCPBoundClientFactory",
         "MCPClientFactory",
         "MCPDiscoveryLimits",
@@ -223,7 +222,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "built_in_provider_profile_registry",
         "discover_provider_profile_plugins",
         "load_provider_profile_plugins",
-        "QueryAnalyzer",
         "QueryIntent",
         "ResultFieldContract",
         "ClickHouseRecordBackend",
@@ -255,7 +253,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SchemaChangeSeverity",
         "SchemaCompatibility",
         "SchemaDiffReport",
-        "SchemaPlanner",
         "SchemaProposal",
         "ArangoGraphBackend",
         "FalkorGraphBackend",
@@ -529,7 +526,6 @@ def test_retired_catalog_model_analyzer_is_not_installed() -> None:
     assert find_spec("schemarouter.analyzers") is None
     for symbol in ("ModelCallable", "ModelIntent", "ModelQueryAnalyzer"):
         assert not hasattr(schemarouter, symbol), symbol
-    assert callable(schemarouter.KeywordAnalyzer)
     assert callable(schemarouter.PaperQueryUnderstanding)
 
 
@@ -558,3 +554,12 @@ def test_retired_lexical_host_diagnostics_are_not_installed() -> None:
         "infer_operation_intent",
     ):
         assert not hasattr(schemarouter, name), name
+
+
+def test_retired_lexical_planner_modules_and_exports_are_not_installed() -> None:
+    from importlib.util import find_spec
+
+    for module in ("planner", "planning_context", "planning_stages"):
+        assert find_spec(f"schemarouter.{module}") is None
+    for symbol in ("KeywordAnalyzer", "QueryAnalyzer", "SchemaPlanner"):
+        assert not hasattr(schemarouter, symbol), symbol

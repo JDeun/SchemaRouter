@@ -26,13 +26,14 @@ from benchmarks.agent_utility_v5_catalog import (
     build_tasks,
 )
 from research.autoresearch.actions_ranker import rank, validate
-from schemarouter import PlanRequest, SchemaPlanner
+from schemarouter import PlanRequest
 from scripts.research_autoresearch_sandbox import candidate_view, decide
 from scripts.research_current_main_multilingual_dev import (
     KS,
     score_case,
     select_cases,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 from scripts.research_v1_v2_paired_cpu_dev import compare_pairs, frozen_genomes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,7 +47,7 @@ SOURCES = (
     "research/autoresearch/actions_ranker.py",
     "scripts/research_autoresearch_sandbox.py",
     "benchmarks/agent_utility_v5_catalog.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
 )
 
 

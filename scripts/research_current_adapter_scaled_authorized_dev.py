@@ -46,7 +46,7 @@ SOURCES = (
     "scripts/research_v1_v2_paired_cpu_dev.py",
     "scripts/research_autoresearch_sandbox.py",
     "research/autoresearch/actions_ranker.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "src/schemarouter/runtime.py",
     "src/schemarouter/authorization.py",
     "src/schemarouter/adapters/openapi.py",

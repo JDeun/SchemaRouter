@@ -4,7 +4,7 @@ from collections.abc import Callable, Hashable, Sequence, Set
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-from .models import ExecutionPlan, FallbackRoute, PlanCoverage, ToolCall
+from schemarouter.models import ExecutionPlan, FallbackRoute, PlanCoverage, ToolCall
 
 CandidateT = TypeVar("CandidateT")
 CallT = TypeVar("CallT")

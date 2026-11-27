@@ -11,9 +11,9 @@ from schemarouter import (
     PlanningError,
     PlanRequest,
     QueryIntent,
-    SchemaPlanner,
     ToolSpec,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def make_tool(

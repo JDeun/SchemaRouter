@@ -25,14 +25,21 @@ from schemarouter.models import (
     ToolCall,
     ToolSpec,
 )
-from schemarouter.planner import (
+from scripts.research_legacy_decisions import (
+    DecisionBackend,
+    DecisionOption,
+    DecisionRequest,
+    choose_async,
+    choose_sync,
+)
+from scripts.research_legacy_planning.planner import (
     SchemaPlanner,
     _Candidate,
     _scoring_tool_for_visible_endpoint,
     _visible_endpoint,
 )
-from schemarouter.planning_context import PlanningContext, RegistrySnapshot
-from schemarouter.planning_stages import (
+from scripts.research_legacy_planning.planning_context import PlanningContext, RegistrySnapshot
+from scripts.research_legacy_planning.planning_stages import (
     CallT,
     CandidatePipelineResult,
     CandidateT,
@@ -40,13 +47,6 @@ from schemarouter.planning_stages import (
     FallbackSelectionResult,
     PrimarySelectionResult,
     assemble_execution_plan,
-)
-from scripts.research_legacy_decisions import (
-    DecisionBackend,
-    DecisionOption,
-    DecisionRequest,
-    choose_async,
-    choose_sync,
 )
 
 ContextT = TypeVar("ContextT")

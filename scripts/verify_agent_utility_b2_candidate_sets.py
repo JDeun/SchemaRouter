@@ -18,8 +18,9 @@ from benchmarks.agent_utility_b2_catalog import (  # noqa: E402
     build_registry,
     route_ids,
 )
-from schemarouter import PlanRequest, SchemaPlanner  # noqa: E402
-from schemarouter.planner import (  # noqa: E402
+from schemarouter import PlanRequest  # noqa: E402
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    SchemaPlanner,
     _Candidate,
     _matched_field_qualifiers,
     _normalize,

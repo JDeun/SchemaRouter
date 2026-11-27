@@ -27,7 +27,7 @@ from benchmarks.agent_utility_v5_catalog import (
     build_tasks,
 )
 from research.autoresearch.actions_ranker import BASE, generate, rank, validate
-from schemarouter import PlanRequest, SchemaPlanner
+from schemarouter import PlanRequest
 from scripts.research_autoresearch_sandbox import candidate_view, decide
 from scripts.research_current_main_multilingual_dev import (
     KS,
@@ -35,6 +35,7 @@ from scripts.research_current_main_multilingual_dev import (
     score_case,
     select_cases,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 ROOT = Path(__file__).resolve().parents[1]
 POOL_WIDTHS = (24, 64, 128)
@@ -261,7 +262,7 @@ def full_result(
         "scripts/research_actions_width_search_dev.py",
         "scripts/research_autoresearch_sandbox.py",
         "benchmarks/agent_utility_v5_catalog.py",
-        "src/schemarouter/planner.py",
+        "scripts/research_legacy_planning/planner.py",
     )
     return {
         "schema_version": 1,

@@ -35,7 +35,7 @@ SOURCE_PATHS = (
     "scripts/research_legacy_host_field_contract.py",
     "src/schemarouter/_authorization_witness.py",
     "src/schemarouter/runtime.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "benchmarks/current_adapter_scaled_authorized_dev_v1.py",
     "benchmarks/current_adapter_field_scope_dev_v1.py",
     "scripts/research_host_field_contract_scaled_cpu_dev.py",

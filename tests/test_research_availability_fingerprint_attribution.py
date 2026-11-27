@@ -6,12 +6,12 @@ import pytest
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import build_fixture
 from schemarouter import AuthorizationPolicy, ToolSpec
 from schemarouter.executor import RegistryExecutor
-from schemarouter.planner import SchemaPlanner
 from scripts.research_availability_fingerprint_attribution import (
     STAGES,
     evaluate,
     sample,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 from scripts.research_legacy_router import legacy_router
 
 

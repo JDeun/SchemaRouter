@@ -33,7 +33,7 @@ SOURCES = (
     "src/schemarouter/runtime.py",
     "src/schemarouter/_source_availability.py",
     "src/schemarouter/executor.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "src/schemarouter/models.py",
     "benchmarks/current_adapter_scaled_authorized_dev_v1.py",
     "scripts/research_lazy_fingerprint_cooldown_dev.py",

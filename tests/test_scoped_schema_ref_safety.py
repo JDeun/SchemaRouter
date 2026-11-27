@@ -15,7 +15,7 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
-from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from scripts.research_legacy_router import legacy_router
 
 

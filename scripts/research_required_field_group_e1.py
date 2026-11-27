@@ -23,7 +23,7 @@ from schemarouter.capability_contracts import (
     compare_capability_fields,
 )
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
-from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 
 STRICT_K = 5
 

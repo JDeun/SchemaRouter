@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import statistics
+import sys
 import time
 import tracemalloc
 from dataclasses import dataclass
+from pathlib import Path
 
 from schemarouter import (
     EndpointSpec,
@@ -12,9 +14,13 @@ from schemarouter import (
     InMemoryRegistry,
     PlanRequest,
     QueryIntent,
-    SchemaPlanner,
     ToolSpec,
 )
+
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.research_legacy_planning.planner import SchemaPlanner  # noqa: E402
 
 
 @dataclass(frozen=True)

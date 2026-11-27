@@ -11,7 +11,7 @@ from benchmarks.agent_utility_v1_catalog import (
     TASKS,
     build_registry,
 )
-from schemarouter import SchemaPlanner
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALUATOR = (

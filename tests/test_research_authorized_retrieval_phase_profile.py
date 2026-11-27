@@ -53,7 +53,7 @@ def test_scoped_current_router_phases_and_no_scope_control() -> None:
 
 def test_instrumentation_restores_original_methods_after_calls() -> None:
     from schemarouter import SchemaRouter
-    from schemarouter.planner import SchemaPlanner
+    from scripts.research_legacy_planning.planner import SchemaPlanner
 
     methods = [(cls, name, getattr(cls, name)) for cls, name, _ in STAGE_METHODS]
     router, _ = build_fixture(100)

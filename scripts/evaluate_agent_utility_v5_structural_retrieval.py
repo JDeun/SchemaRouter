@@ -22,8 +22,11 @@ from benchmarks.agent_utility_v5_catalog import (  # noqa: E402
     build_registry,
     build_tasks,
 )
-from schemarouter import PlanRequest, SchemaPlanner  # noqa: E402
-from schemarouter.planner import _tokens  # noqa: E402
+from schemarouter import PlanRequest  # noqa: E402
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    SchemaPlanner,
+    _tokens,
+)
 
 PREREG = (
     ROOT

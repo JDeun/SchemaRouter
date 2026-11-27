@@ -23,11 +23,6 @@ from benchmarks.agent_utility_v1_catalog import (  # noqa: E402
     TASKS,
     build_registry,
 )
-from schemarouter import SchemaPlanner  # noqa: E402
-from schemarouter.planner import (  # noqa: E402
-    _STRUCTURAL_OPERATION_FAMILY_BONUS,
-    _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
-)
 from scripts.evaluate_agent_utility_phase_b_smollm3 import (  # noqa: E402
     ATTN_IMPLEMENTATION,
     MAX_NEW_TOKENS,
@@ -40,6 +35,11 @@ from scripts.evaluate_agent_utility_phase_b_smollm3 import (  # noqa: E402
     _run_episode,
     _runtime_identity,
     _summary,
+)
+from scripts.research_legacy_planning.planner import (  # noqa: E402
+    SchemaPlanner,
+    _STRUCTURAL_OPERATION_FAMILY_BONUS,
+    _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
 )
 
 CONDITIONS = ("STRUCT-FIXED-3", "STRUCT-FIXED-5")

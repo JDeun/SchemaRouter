@@ -46,7 +46,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "scripts/research_legacy_planning/planner.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/python.py",
       "test_file": "tests/test_python_adapter.py",
@@ -57,7 +57,7 @@
         "test_callable_argument_types_are_runtime_validated"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered local Python callable; PlanRequest via public invoke; schema validation negative."
+      "notes": "Registered local Python callable; PlanRequest via public invoke; schema validation negative. Historical lexical fixture now resides outside the installed package; this receipt is not qualification of the restored paper planner."
     },
     {
       "id": "router.python.callable.async",
@@ -65,7 +65,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "scripts/research_legacy_planning/planner.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/python.py",
       "test_file": "tests/test_python_adapter.py",
@@ -76,7 +76,7 @@
         "test_async_registered_callable_rejects_invalid_arguments"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered async Python callable via public ainvoke; invalid arguments denied through that same path. DEV only; independent E2 remains HOLD."
+      "notes": "Registered async Python callable via public ainvoke; invalid arguments denied through that same path. DEV only; independent E2 remains HOLD. Historical lexical fixture now resides outside the installed package; this receipt is not qualification of the restored paper planner."
     },
     {
       "id": "router.sqlite.select",
@@ -84,7 +84,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/sqlite_database.py",
       "test_file": "tests/test_sqlite_database_adapter.py",
@@ -95,7 +95,7 @@
         "test_database_tools_compose_with_employee_and_executive_authorization"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered local SQLite real SELECT execution; parameterized query and principal authorization tests."
+      "notes": "Registered local SQLite real SELECT execution; parameterized query and principal authorization tests. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.http_json.get",
@@ -103,7 +103,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "scripts/research_legacy_planning/planner.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/http_json.py",
       "test_file": "tests/test_http_json_adapter.py",
@@ -114,7 +114,7 @@
         "test_declarative_http_denies_changed_principal_before_registered_get"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered local deterministic HTTP MockTransport GET; protected public execute denies changed principal before dispatch. DEV only."
+      "notes": "Registered local deterministic HTTP MockTransport GET; protected public execute denies changed principal before dispatch. DEV only. Historical lexical fixture now resides outside the installed package; this receipt is not qualification of the restored paper planner."
     },
     {
       "id": "router.graphql.query",
@@ -122,7 +122,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/graphql.py",
       "test_file": "tests/test_graphql_adapter.py",
@@ -133,7 +133,7 @@
         "test_graphql_mutation_remains_policy_gated"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2."
+      "notes": "Local deterministic HTTP mock transport execution; not independent live-provider E2. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.openrpc.method",
@@ -141,7 +141,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/openrpc.py",
       "test_file": "tests/test_openrpc_adapter.py",
@@ -152,7 +152,7 @@
         "test_openrpc_positional_params_fail_on_ambiguous_optional_gap"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Local deterministic OpenRPC JSON-RPC fixture; negative optional positional-gap now goes through public SchemaRouter.execute. DEV only."
+      "notes": "Local deterministic OpenRPC JSON-RPC fixture; negative optional positional-gap now goes through public SchemaRouter.execute. DEV only. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.odata.select",
@@ -160,7 +160,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/odata.py",
       "test_file": "tests/test_odata_adapter.py",
@@ -171,7 +171,7 @@
         "test_odata_denies_changed_principal_before_registered_get"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered OData discovery and local GET fixture; public execute denies changed principal before source data request. DEV only."
+      "notes": "Registered OData discovery and local GET fixture; public execute denies changed principal before source data request. DEV only. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.mcp.http",
@@ -179,7 +179,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "scripts/research_legacy_planning/planner.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/mcp.py",
       "test_file": "tests/test_mcp_integration.py",
@@ -191,7 +191,7 @@
         "test_real_http_mcp_denies_revoked_principal_before_execution"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered streamable HTTP MCP: malformed-input denial and execution-time principal revocation against a real local MCP server; CI integration run required, DEV only."
+      "notes": "Registered streamable HTTP MCP: malformed-input denial and execution-time principal revocation against a real local MCP server; CI integration run required, DEV only. Historical lexical fixture now resides outside the installed package; this receipt is not qualification of the restored paper planner."
     },
     {
       "id": "router.graph.neo4j",
@@ -199,7 +199,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/graph_native.py",
       "test_file": "tests/test_graph_native_adapters.py",
@@ -210,7 +210,7 @@
         "test_neo4j_trusted_filter_scope_fails_before_vendor_traversal"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2."
+      "notes": "Native adapter fixture; vendor client simulated locally, not external-provider E2. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.record.mongodb",
@@ -218,7 +218,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/record_native.py",
       "test_file": "tests/test_record_native_adapters.py",
@@ -229,7 +229,7 @@
         "test_mongodb_public_execute_denies_guest_before_native_query"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered MongoDB fake-vendor client: public execute must deny guest before the actual native find call; positive same-plan employee succeeds; DEV ONLY."
+      "notes": "Registered MongoDB fake-vendor client: public execute must deny guest before the actual native find call; positive same-plan employee succeeds; DEV ONLY. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.vector.qdrant",
@@ -237,7 +237,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "invoker": "src/schemarouter/adapters/vector_native.py",
       "test_file": "tests/test_vector_native_adapters.py",
@@ -248,7 +248,7 @@
         "test_qdrant_public_execute_denies_guest_before_native_query"
       ],
       "qualification": "DEV_ONLY",
-      "notes": "Registered Qdrant fake-vendor client: public execute must deny guest before native vector query; positive same-plan employee succeeds; DEV ONLY."
+      "notes": "Registered Qdrant fake-vendor client: public execute must deny guest before native vector query; positive same-plan employee succeeds; DEV ONLY. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.openapi.get",
@@ -256,7 +256,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "qualification": "DEV_ONLY",
       "invoker": "src/schemarouter/adapters/openapi.py",
@@ -267,7 +267,7 @@
       "denial_tests": [
         "test_openapi_denied_principal_never_reaches_http"
       ],
-      "notes": "Local deterministic discovery+registered HTTP GET with MockTransport and actual principal/argument denial. Not independent live provider E1/E2."
+      "notes": "Local deterministic discovery+registered HTTP GET with MockTransport and actual principal/argument denial. Not independent live provider E1/E2. This receipt attests execution of host-authored typed plans, not automatic planning."
     },
     {
       "id": "router.sqlalchemy.select",
@@ -275,7 +275,7 @@
       "implementation": "src/schemarouter/runtime.py",
       "registry": "src/schemarouter/registry.py",
       "authorization": "src/schemarouter/authorization.py",
-      "planning": "src/schemarouter/planner.py",
+      "planning": "src/schemarouter/models.py",
       "executor": "src/schemarouter/executor.py",
       "qualification": "DEV_ONLY",
       "invoker": "src/schemarouter/adapters/sqlalchemy_database.py",
@@ -286,7 +286,7 @@
       "denial_tests": [
         "test_sqlalchemy_denied_principal_never_reaches_driver"
       ],
-      "notes": "Actual in-memory SQLAlchemy SQLite engine; denied role and SQL injection input fail before native driver. DEV only."
+      "notes": "Actual in-memory SQLAlchemy SQLite engine; denied role and SQL injection input fail before native driver. DEV only. This receipt attests execution of host-authored typed plans, not automatic planning."
     }
   ]
 }

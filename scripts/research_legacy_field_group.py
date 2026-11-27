@@ -16,7 +16,7 @@ from schemarouter.field_group_retrieval import (
     _root_envelope_empty,
 )
 from schemarouter.models import CapabilityRetrieval, EndpointSpec, PlanRequest, ToolSpec
-from schemarouter.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 from schemarouter.runtime import SchemaRouter
 
 

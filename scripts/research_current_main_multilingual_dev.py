@@ -28,7 +28,8 @@ from benchmarks.agent_utility_v5_catalog import (
     build_registry,
     build_tasks,
 )
-from schemarouter import PlanRequest, SchemaPlanner
+from schemarouter import PlanRequest
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 ROOT = Path(__file__).resolve().parents[1]
 KS = (3, 5, 10)
@@ -207,7 +208,7 @@ def source_identity() -> dict[str, Any]:
     paths = (
         "benchmarks/agent_utility_v5_catalog.py",
         "scripts/research_current_main_multilingual_dev.py",
-        "src/schemarouter/planner.py",
+        "scripts/research_legacy_planning/planner.py",
         "src/schemarouter/models.py",
     )
     digests = {path: sha256((ROOT / path).read_bytes()) for path in paths}

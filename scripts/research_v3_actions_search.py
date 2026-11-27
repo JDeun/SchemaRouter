@@ -44,7 +44,7 @@ SOURCE_FILES = (
     ".github/workflows/research-actions-v3-continue.yml",
     "benchmarks/autoresearch-v1-v2-frozen-incumbents.json",
     "benchmarks/agent_utility_v5_catalog.py",
-    "src/schemarouter/planner.py",
+    "scripts/research_legacy_planning/planner.py",
     "src/schemarouter/models.py",
 )
 

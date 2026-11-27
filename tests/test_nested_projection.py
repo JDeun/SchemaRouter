@@ -7,11 +7,11 @@ from schemarouter import (
     PlanRequest,
     PlanValidationError,
     RegistryExecutor,
-    SchemaPlanner,
     SchemaValidationError,
     ToolCall,
     ToolSpec,
 )
+from scripts.research_legacy_planning.planner import SchemaPlanner
 
 
 def nested_tool() -> ToolSpec:

@@ -6,7 +6,7 @@ on:
     paths:
       - "src/schemarouter/__init__.py"
       - "src/schemarouter/models.py"
-      - "src/schemarouter/planner.py"
+      - "scripts/research_legacy_planning/**"
       - "src/schemarouter/runtime.py"
       - "tests/test_candidate_index.py"
       - "tests/test_capability_retrieval.py"

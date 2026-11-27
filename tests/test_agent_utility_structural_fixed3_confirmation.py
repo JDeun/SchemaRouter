@@ -23,7 +23,7 @@ from benchmarks.agent_utility_v5_structural_fixed3_confirmation import (  # noqa
     build_fixed3_confirmation_registry,
     build_fixed3_confirmation_tasks,
 )
-from schemarouter import SchemaPlanner  # noqa: E402
+from scripts.research_legacy_planning.planner import SchemaPlanner  # noqa: E402
 
 GENERATOR = (
     ROOT

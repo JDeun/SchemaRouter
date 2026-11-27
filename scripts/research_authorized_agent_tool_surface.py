@@ -22,11 +22,11 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
 )
-from schemarouter.planner import KeywordAnalyzer
 from scripts.research_bounded_authorized_semantic_diagnostic import (
     CapturedAuthorizedSemanticRoute,
     scoped_semantic_model_description,
 )
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
 
 MAX_SOURCE_ENDPOINTS = 500
 MAX_TOOL_DEFINITIONS = 5
