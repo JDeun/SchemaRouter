@@ -367,7 +367,7 @@ def _graph_candidate(
     fields: tuple[str, ...] = ("case status",),
     bindings: tuple[tuple[str, str], ...] = (("case_id", "case_id"),),
 ):
-    from schemarouter.native_graph_index import NativeIndexedGraphCandidate
+    from scripts.research_legacy_graph_candidates import NativeIndexedGraphCandidate
 
     single = len(bindings) == 1
     return NativeIndexedGraphCandidate(
@@ -394,7 +394,7 @@ def _two_hop_candidate(
     first: tuple[tuple[str, str], ...] = (("contact_id", "contact_id"),),
     second: tuple[tuple[str, str], ...] = (("case_id", "case_id"),),
 ):
-    from schemarouter.native_graph_index import NativeIndexedTwoHopCandidate
+    from scripts.research_legacy_graph_candidates import NativeIndexedTwoHopCandidate
 
     return NativeIndexedTwoHopCandidate(
         route_ids=(root, middle, target),

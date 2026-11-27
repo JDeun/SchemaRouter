@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/research_legacy_g5_rank.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_graph_candidates.py"
       - "scripts/research_legacy_direct_rank.py"
       - "scripts/research_legacy_direct_plan.py"
       - "scripts/research_g5_e5_overflow_cpu_dev.py"

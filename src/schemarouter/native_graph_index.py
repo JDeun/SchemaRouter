@@ -210,10 +210,6 @@ class NativeIndexedGraphCandidate:
     consumer_output_fields: tuple[str, ...]
     parameter_bindings: tuple[tuple[str, str], ...] = ()
     source_root_parameters: tuple[str, ...] = ()
-    # Counts reflect current principal-scoped source views; never raw
-    # provider schemas, denied output fields or unscoped graph metadata.
-    producer_visible_field_count: int | None = None
-    consumer_visible_field_count: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -242,7 +238,6 @@ class NativeIndexedTwoHopCandidate:
     intermediate_to_target: tuple[tuple[str, str], ...]
     target_output_fields: tuple[str, ...]
     source_root_parameters: tuple[str, ...]
-    visible_field_counts: tuple[int, int, int] | None = None
 
 
 @dataclass(frozen=True, slots=True)

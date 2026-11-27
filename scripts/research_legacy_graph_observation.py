@@ -20,6 +20,9 @@ from schemarouter.native_graph_index import (
     _native_required_inputs,
 )
 from schemarouter.validation import validate_json_schema_value
+from scripts.research_legacy_graph_candidates import (
+    NativeIndexedGraphCandidate as HistoricalGraphCandidate,
+)
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter
@@ -78,7 +81,7 @@ def materialize_native_observed_arguments(
 def _materialize_original_observed_edge(
     index: NativeSchemaGraphIndex,
     router: SchemaRouter,
-    candidate: NativeIndexedGraphCandidate,
+    candidate: NativeIndexedGraphCandidate | HistoricalGraphCandidate,
     observation: ToolResult,
 ) -> NativeObservedArgumentEvidence:
     """Scalar checks shared by the public and private source-verified paths.

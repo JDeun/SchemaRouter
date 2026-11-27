@@ -102,6 +102,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_graph_execution"), path
                 assert not module.startswith("scripts.research_legacy_paper_graph_plan"), path
                 assert not module.startswith("scripts.research_legacy_graph_rank"), path
+                assert not module.startswith("scripts.research_legacy_graph_candidates"), path
                 assert not module.startswith("scripts.research_legacy_graph_observation"), path
                 assert not module.startswith("scripts.research_legacy_direct_rank"), path
                 assert not module.startswith("scripts.research_legacy_direct_plan"), path
@@ -151,6 +152,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_graph_execution",
                                            "scripts.research_legacy_paper_graph_plan",
                                            "scripts.research_legacy_graph_rank",
+                                           "scripts.research_legacy_graph_candidates",
                                            "scripts.research_legacy_graph_observation",
                                            "schemarouter.native_graph_observation",
                                            "scripts.research_legacy_direct_rank",

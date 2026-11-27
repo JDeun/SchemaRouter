@@ -14,7 +14,6 @@ from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import (
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
-    NativeIndexedGraphCandidate,
 )
 from scripts.research_legacy_decisions import (
     DecisionBackend,
@@ -22,6 +21,7 @@ from scripts.research_legacy_decisions import (
     DecisionRequest,
     choose_sync,
 )
+from scripts.research_legacy_graph_candidates import NativeIndexedGraphCandidate
 
 MAX_MODEL_INPUT_BYTES = 16_384
 

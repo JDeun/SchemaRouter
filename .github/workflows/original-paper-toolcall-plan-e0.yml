@@ -16,6 +16,7 @@ on:
       - "scripts/research_legacy_paper_graph_execution.py"
       - "scripts/research_legacy_paper_graph_plan.py"
       - "scripts/research_legacy_graph_rank.py"
+      - "scripts/research_legacy_graph_candidates.py"
       - "scripts/benchmark_paper_native_rank_b1.py"
       - "scripts/research_legacy_direct_rank.py"
       - "scripts/research_legacy_direct_plan.py"

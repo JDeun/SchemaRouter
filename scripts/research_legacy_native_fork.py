@@ -15,11 +15,11 @@ from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup, _alias_
 from schemarouter.native_graph_index import (
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
-    NativeIndexedGraphCandidate,
     _flat_same_record_source_contract,
     _native_required_inputs,
 )
 from scripts import research_legacy_fork_arm
+from scripts.research_legacy_graph_candidates import NativeIndexedGraphCandidate
 
 if TYPE_CHECKING:
     from schemarouter.native_graph_index import NativeSchemaGraphIndex

@@ -21,7 +21,6 @@ from schemarouter.models import EndpointSpec, ToolSpec
 from schemarouter.native_graph_index import (
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
-    NativeIndexedGraphCandidate,
     NativeSchemaGraphIndex,
     _flat_same_record_source_contract,
     _host_source_input_names,
@@ -30,6 +29,7 @@ from schemarouter.native_graph_index import (
 )
 from schemarouter.native_semantic_index import _NativeSourcePass
 from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
+from scripts.research_legacy_graph_candidates import NativeIndexedGraphCandidate
 from scripts.research_legacy_graph_rank import (
     MAX_OWNER_RANKABLE_PATHS,
     rank_authorized_paper_graph_one_hop,

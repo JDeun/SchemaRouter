@@ -13,11 +13,11 @@ import time
 from pathlib import Path
 from typing import Any, cast
 
-from schemarouter.native_graph_index import (
+from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
+from scripts.research_legacy_graph_candidates import (
     NativeIndexedGraphCandidate,
     NativeIndexedTwoHopCandidate,
 )
-from scripts.research_legacy_direct_rank import PaperNativeRankPolicy
 from scripts.research_legacy_graph_rank import (
     rank_authorized_paper_graph_one_hop,
     rank_authorized_paper_graph_two_hop,

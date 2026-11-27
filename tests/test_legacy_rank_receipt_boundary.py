@@ -1,12 +1,19 @@
 """Research ranking receipts must stay distinct from installed paper receipts."""
-from dataclasses import asdict, fields
+from dataclasses import asdict, fields, replace
 from typing import get_args, get_type_hints
 
 import pytest
 
 from schemarouter import IndexedNativeFieldResult, NativeIndexedGraphResult
+from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeIndexedTwoHopCandidate
 from scripts.research_legacy_fork_arm import NativeIndexedGraphResult as HistoricalForkArmResult
 from scripts.research_legacy_g5_rank import NativeIndexedGraphResult as HistoricalGraphResult
+from scripts.research_legacy_graph_candidates import (
+    NativeIndexedGraphCandidate as HistoricalGraphCandidate,
+)
+from scripts.research_legacy_graph_candidates import (
+    NativeIndexedTwoHopCandidate as HistoricalTwoHopCandidate,
+)
 from scripts.research_legacy_graph_rank import NativeIndexedGraphResult as HistoricalOwnerRankResult
 from scripts.research_legacy_posting_rank import IndexedNativeFieldResult as HistoricalFieldResult
 
@@ -78,3 +85,60 @@ def test_owner_ranked_graph_receipt_is_checkout_only() -> None:
     assert "deterministic_paper_ranked" not in {f.name for f in fields(NativeIndexedGraphResult)}
     assert HistoricalOwnerRankResult(**asdict(receipt)) == receipt
     assert not receipt.executable_authority
+
+
+@pytest.mark.parametrize(
+    ("product", "historical", "kwargs", "counts"),
+    [
+        (
+            NativeIndexedGraphCandidate,
+            HistoricalGraphCandidate,
+            {
+                "producer_route_id": "root.read",
+                "consumer_route_id": "target.read",
+                "producer_tool_fingerprint": "t1",
+                "producer_endpoint_fingerprint": "e1",
+                "consumer_tool_fingerprint": "t2",
+                "consumer_endpoint_fingerprint": "e2",
+                "producer_identifier_field": "id",
+                "consumer_required_parameter": "id",
+                "consumer_output_fields": ("status",),
+                "parameter_bindings": (("id", "id"),),
+            },
+            {"producer_visible_field_count": 3, "consumer_visible_field_count": 4},
+        ),
+        (
+            NativeIndexedTwoHopCandidate,
+            HistoricalTwoHopCandidate,
+            {
+                "route_ids": ("root.read", "middle.read", "target.read"),
+                "route_fingerprints": (("t1", "e1"), ("t2", "e2"), ("t3", "e3")),
+                "root_to_intermediate": (("id", "id"),),
+                "intermediate_to_target": (("id2", "id2"),),
+                "target_output_fields": ("status",),
+                "source_root_parameters": (),
+            },
+            {"visible_field_counts": (3, 4, 5)},
+        ),
+    ],
+)
+def test_historical_graph_candidate_keeps_rank_counts_outside_product(
+    product, historical, kwargs, counts,
+) -> None:
+    current = product(**kwargs)
+    research = historical(**kwargs, **counts)
+    assert type(current) is product
+    assert type(research) is historical
+    assert not isinstance(research, product)
+    assert tuple(f.name for f in fields(historical) if f.name not in counts) == (
+        tuple(f.name for f in fields(product))
+    )
+    assert asdict(research) == {**asdict(current), **counts}
+    assert historical(**asdict(research)) == research
+    assert replace(research) == research
+    assert replace(research, **dict.fromkeys(counts)) == historical(**kwargs)
+    assert research != historical(**kwargs)
+    assert historical(**kwargs) != current
+    assert counts.keys().isdisjoint(asdict(current))
+    with pytest.raises(TypeError):
+        product(**asdict(research))
