@@ -93,6 +93,12 @@ jobs:
           assert callable(schemarouter.SchemaRouter)
           assert callable(schemarouter.PaperQueryUnderstanding)
           assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_bounded_paths")
+          from inspect import signature
+          for method in (schemarouter.NativeSchemaPostingIndex.lookup,
+                         schemarouter.NativeSchemaPostingIndex.lookup_concepts,
+                         schemarouter.NativeSchemaGraphIndex.lookup,
+                         schemarouter.NativeSchemaGraphIndex._lookup_native_paths):
+              assert '_research_ranker' not in signature(method).parameters
           assert callable(schemarouter.NativeSchemaGraphIndex.lookup_two_hop)
           assert callable(schemarouter.NativeSchemaGraphIndex.lookup_shared_root_forks)
           assert callable(schemarouter.evaluate_state_eligibility)

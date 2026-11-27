@@ -53,6 +53,7 @@ from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
     DecisionBackend,
 )
+from scripts.research_legacy_g5_rank import research_lookup_graph
 from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,8 +123,8 @@ def _candidate_selector(
         view.assert_source_unchanged()
         if query != view.original_query or offered != view.visible_route_ids:
             raise ValueError("G5 agent authorized source query/route drift")
-        result = graph.lookup(
-            view.router, query,
+        result = research_lookup_graph(
+            graph, view.router, query,
             group=required, principal=ACTOR, _research_ranker=ranker,
         )
         view.assert_source_unchanged()

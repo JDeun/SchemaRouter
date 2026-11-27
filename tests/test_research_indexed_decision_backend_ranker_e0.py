@@ -29,6 +29,10 @@ from scripts.research_legacy_decisions import (
     DecisionResult,
     DecisionSelection,
 )
+from scripts.research_legacy_posting_rank import (
+    research_lookup_posting_concepts,
+    research_lookup_postings,
+)
 from scripts.research_legacy_router import legacy_router
 
 PRINCIPAL = PrincipalContext(subject="index-experiment", roles=("analyst",))
@@ -91,8 +95,8 @@ def test_model_backend_reuses_authorized_index_and_preserves_order(query):
         _backend(calls=calls), omit_identical_descriptions=True,
     )
     initial = index.lookup(router, query, group=GROUP, principal=PRINCIPAL)
-    result = index.lookup(
-        router, query, group=GROUP, principal=PRINCIPAL,
+    result = research_lookup_postings(
+        index, router, query, group=GROUP, principal=PRINCIPAL,
         _research_ranker=ranker,
     )
     assert initial.status == "over_k_unranked"
@@ -123,8 +127,8 @@ def test_scoped_field_names_are_only_descriptions_sent_to_backend():
     ranker = ResearchIndexedFieldDecisionRanker(
         _backend(calls=requests),
     )
-    result = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+    result = research_lookup_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
         _research_ranker=ranker,
     )
     assert result.status == "ranked_unverified"
@@ -135,8 +139,8 @@ def test_scoped_field_names_are_only_descriptions_sent_to_backend():
 def test_model_abstention_is_not_claimed_as_no_fit():
     router, index = _source()
     backend = CallableDecisionBackend(lambda _request: DecisionResult(abstained=True))
-    selected = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+    selected = research_lookup_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
         _research_ranker=ResearchIndexedFieldDecisionRanker(backend),
     )
     assert selected.status == "ranker_abstained_unverified"
@@ -162,8 +166,8 @@ def test_model_backend_rejects_partial_duplicate_and_forged_choices(selected):
 
     ranker = ResearchIndexedFieldDecisionRanker(CallableDecisionBackend(invalid))
     with pytest.raises(PolicyViolationError, match="indexed research ranking failed"):
-        index.lookup(
-            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+        research_lookup_postings(
+            index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
             _research_ranker=ranker,
         )
 
@@ -172,8 +176,8 @@ def test_model_backend_rejects_partial_even_as_valid_decision_result():
     router, index = _source()
     ranker = ResearchIndexedFieldDecisionRanker(_backend(select=(0, 1)))
     with pytest.raises(PolicyViolationError, match="indexed research ranking failed"):
-        index.lookup(
-            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+        research_lookup_postings(
+            index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
             _research_ranker=ranker,
         )
 
@@ -237,8 +241,8 @@ def test_model_backend_cannot_mutate_host_decision_option_set():
         CallableDecisionBackend(mutating),
     )
     with pytest.raises(PolicyViolationError, match="indexed research ranking failed"):
-        index.lookup(
-            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+        research_lookup_postings(
+            index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
             _research_ranker=ranker,
         )
 
@@ -254,8 +258,8 @@ def test_model_backend_error_omits_provider_secret_and_cause():
         CallableDecisionBackend(failed_provider),
     )
     with pytest.raises(PolicyViolationError, match="indexed research ranking failed") as exc:
-        index.lookup(
-            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+        research_lookup_postings(
+            index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
             _research_ranker=ranker,
         )
     assert secret not in str(exc.value)
@@ -281,8 +285,8 @@ def test_model_backend_health_revocation_of_unselected_route_fails_closed():
         CallableDecisionBackend(revoke_unselected),
     )
     with pytest.raises(PolicyViolationError, match="eligibility changed") as exc:
-        index.lookup(
-            router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+        research_lookup_postings(
+            index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
             _research_ranker=ranker,
         )
     assert exc.value.__cause__ is None
@@ -311,8 +315,8 @@ def test_model_backend_never_receives_over_limit_scoped_source_menu():
     ranker = ResearchIndexedFieldDecisionRanker(
         _backend(calls=attempts),
     )
-    result = index.lookup(
-        router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
+    result = research_lookup_postings(
+        index, router, GROUP.aliases[0], group=GROUP, principal=PRINCIPAL,
         _research_ranker=ranker,
     )
     assert result.status == "over_k_unranked"
@@ -332,8 +336,8 @@ def test_model_backend_concept_lookup_requires_declared_source_semantics():
         license="reviewed",
     ),))
     calls = []
-    result = index.lookup_concepts(
-        router, GROUP.aliases[0], principal=PRINCIPAL, catalog=catalog,
+    result = research_lookup_posting_concepts(
+        index, router, GROUP.aliases[0], principal=PRINCIPAL, catalog=catalog,
         _research_ranker=ResearchIndexedFieldDecisionRanker(
             _backend(calls=calls),
         ),

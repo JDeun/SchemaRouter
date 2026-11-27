@@ -11,7 +11,6 @@ from dataclasses import dataclass
 
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import (
-    MAX_RESEARCH_RANKABLE_POSTINGS,
     STRICT_K,
     IndexedNativeFieldCandidate,
 )
@@ -21,13 +20,14 @@ from scripts.research_legacy_decisions import (
     DecisionRequest,
     choose_sync,
 )
+from scripts.research_legacy_posting_rank import MAX_RESEARCH_RANKABLE_POSTINGS
 
 MAX_MODEL_INPUT_BYTES = 16_384
 
 
 @dataclass(frozen=True, slots=True)
 class ResearchIndexedFieldDecisionRanker:
-    """Explicit E0 ranking callback for NativeSchemaPostingIndex.lookup."""
+    """Explicit E0 ranking callback for the archived posting lookup."""
 
     backend: DecisionBackend
     max_model_input_bytes: int = MAX_MODEL_INPUT_BYTES

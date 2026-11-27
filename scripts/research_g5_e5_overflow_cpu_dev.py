@@ -47,6 +47,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     validate_decision,
 )
+from scripts.research_legacy_g5_rank import research_lookup_graph
 
 ROOT = Path(__file__).resolve().parents[1]
 K = 5
@@ -292,8 +293,8 @@ def run(
         ):
             raise ValueError("changed default G5 strict over-K behavior")
         started = time.perf_counter_ns()
-        original = graph.lookup(
-            router, query, group=requested, principal=ACTOR,
+        original = research_lookup_graph(
+            graph, router, query, group=requested, principal=ACTOR,
             _research_ranker=baseline,
         )
         durations["first5"].append((time.perf_counter_ns() - started) / 1e6)
@@ -311,8 +312,8 @@ def run(
                 len(observer.observed) if observer is not None else None
             )
             started = time.perf_counter_ns()
-            ranked = graph.lookup(
-                router, query, group=requested, principal=ACTOR,
+            ranked = research_lookup_graph(
+                graph, router, query, group=requested, principal=ACTOR,
                 _research_ranker=semantic,
             )
             durations["e5"].append((time.perf_counter_ns() - started) / 1e6)

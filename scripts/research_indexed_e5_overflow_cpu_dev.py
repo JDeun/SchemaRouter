@@ -37,6 +37,7 @@ from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend, DecisionBackend
+from scripts.research_legacy_posting_rank import research_lookup_postings
 
 ROOT = Path(__file__).resolve().parents[1]
 K = 5
@@ -150,8 +151,8 @@ def run(semantic_backend: DecisionBackend | None = None) -> dict[str, Any]:
             raise ValueError("indexed direct default abstention contract changed")
 
         begin = time.perf_counter_ns()
-        baseline = index.lookup(
-            router, query, principal=ACTOR, group=demand,
+        baseline = research_lookup_postings(
+            index, router, query, principal=ACTOR, group=demand,
             input_free_only=True, _research_ranker=first5,
         )
         latency["first5"].append((time.perf_counter_ns() - begin) / 1e6)
@@ -166,8 +167,8 @@ def run(semantic_backend: DecisionBackend | None = None) -> dict[str, Any]:
         new: set[str] | None = None
         if semantic is not None:
             begin = time.perf_counter_ns()
-            ranked = index.lookup(
-                router, query, principal=ACTOR, group=demand,
+            ranked = research_lookup_postings(
+                index, router, query, principal=ACTOR, group=demand,
                 input_free_only=True, _research_ranker=semantic,
             )
             latency["model"].append((time.perf_counter_ns() - begin) / 1e6)

@@ -53,6 +53,7 @@ from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
 from scripts.research_legacy_decisions import DecisionBackend
+from scripts.research_legacy_posting_rank import research_lookup_postings
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTOR = PrincipalContext(subject="indexed-paired-public-dev", roles=("reader",))
@@ -215,8 +216,8 @@ def run_paired_dev(
             if arm not in arms:
                 continue
             start = time.perf_counter_ns()
-            decision = index.lookup(
-                router, query, group=group, principal=ACTOR,
+            decision = research_lookup_postings(
+                index, router, query, group=group, principal=ACTOR,
                 input_free_only=True, _research_ranker=ranker,
             )
             timings[arm].append((time.perf_counter_ns() - start) / 1e6)

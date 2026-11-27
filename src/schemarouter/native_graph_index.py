@@ -7,8 +7,7 @@ leaves this opt-in research retrieval. No model, agent or execution logic.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
@@ -760,10 +759,6 @@ class NativeSchemaGraphIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         allowed_target_routes: frozenset[str] | None = None,
-        _research_ranker: Callable[
-            [str, tuple[NativeIndexedGraphCandidate, ...], int],
-            tuple[int, ...],
-        ] | None = None,
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
         _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
     ) -> NativeIndexedGraphResult:
@@ -771,7 +766,6 @@ class NativeSchemaGraphIndex:
         return self._lookup_native_paths(
             router, query, group=group, principal=principal, k=k,
             allowed_target_routes=allowed_target_routes,
-            _research_ranker=_research_ranker,
             _paper_rank_policy=_paper_rank_policy,
             _paper_rank_aliases=_paper_rank_aliases,
         )
@@ -785,23 +779,16 @@ class NativeSchemaGraphIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         allowed_target_routes: frozenset[str] | None = None,
-        _research_ranker: Callable[
-            [str, tuple[NativeIndexedGraphCandidate, ...], int],
-            tuple[int, ...],
-        ] | None = None,
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
         _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
         _fork_arm_internal: bool = False,
         _fork_root_filter: frozenset[str] | None = None,
         _fork_target_filter: frozenset[str] | None = None,
     ) -> NativeIndexedGraphResult:
-        """Discover source-proven typed paths; default remains unranked at >K.
+        """Discover source-proven typed paths with reviewed owner Rank.
 
-        An explicitly supplied host-owned E0 callback sees only FULLY
-        current-authorized and field-scoped graph candidate evidence. Its
-        tuple of offered candidate offsets is untrusted and checked after
-        the callback, as is current authority. This is NOT a production
-        ranking policy, no-fit classifier, or grant of execution authority.
+        Without owner Rank, public results abstain above K. The bounded
+        private fork-arm collector remains nonexecuting and source-scoped.
         """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 strict fixed K5 required")
@@ -817,18 +804,13 @@ class NativeSchemaGraphIndex:
             )
         ):
             raise ValueError("G5 invalid bounded target route prefilter")
-        if _research_ranker is not None and not callable(_research_ranker):
-            raise ValueError("G5 experimental ranker must be callable")
         if _paper_rank_policy is not None and (
             not isinstance(_paper_rank_policy, PaperNativeRankPolicy)
-            or _research_ranker is not None
             or _fork_arm_internal
         ):
             raise ValueError("G5 owner Rank must be exclusive and source-reviewed")
-        if type(_fork_arm_internal) is not bool or (
-            _fork_arm_internal and _research_ranker is not None
-        ):
-            raise ValueError("G5 internal fork arm forbids external ranking")
+        if type(_fork_arm_internal) is not bool:
+            raise ValueError("G5 internal fork arm requires a boolean flag")
         if _fork_root_filter is not None and (
             not _fork_arm_internal
             or type(_fork_root_filter) is not frozenset
@@ -1077,8 +1059,7 @@ class NativeSchemaGraphIndex:
                     raise PolicyViolationError("G5 candidate visible breadth changed")
                 # A later health/scope callback may keep source identities
                 # stable while withdrawing a previously proven typed join.
-                # The default (unranked) K5 path needs the same binding proof
-                # already required after an optional research ranker.
+                # The default (unranked) K5 path requires the same binding proof.
                 current_inputs = _native_required_inputs(target_ep_now)
                 if (
                     current_inputs is None
@@ -1152,120 +1133,9 @@ class NativeSchemaGraphIndex:
                     "internal_fork_arm", self.field_index.snapshot_id,
                     self.field_index.registry_version, k, len(found), tuple(found),
                 )
-            if (
-                _research_ranker is None
-                or len(found) > MAX_RESEARCH_RANKABLE_PATHS
-            ):
-                return NativeIndexedGraphResult(
-                    "over_k_unranked", self.field_index.snapshot_id,
-                    self.field_index.registry_version, k, len(found), (),
-                )
-            # All structural, policy, data-scope, visibility, availability
-            # and source checks have already completed, BEFORE disclosure.
-            # The research callback is UNTRUSTED. Even frozen dataclasses
-            # can be mutated with object.__setattr__. Send detached copies:
-            # selected outputs must always be drawn from the original
-            # source-verified `found` snapshot, never objects the backend held.
-            offered = tuple(replace(candidate) for candidate in found)
-            chosen = _research_ranker(query, offered, k)
-            self.field_index._assert_source(router)
-            router._check_retrieval_authority_witness(witness)
-            current_policy = router.authorization_policy
-            if current_policy is None or (
-                current_policy.default_effect,
-                repr(current_policy.rules),
-                repr(current_policy.data_rules),
-            ) != original_policy:
-                raise PolicyViolationError(
-                    "G5 authorization rules changed during research ranking"
-                )
-            if (
-                type(chosen) is not tuple
-                or len(chosen) not in (0, k)
-                or any(type(offset) is not int
-                       or not 0 <= offset < len(found) for offset in chosen)
-                or len(set(chosen)) != len(chosen)
-            ):
-                raise PolicyViolationError(
-                    "G5 research ranker returned forged, partial or duplicate offsets"
-                )
-            # A caller-owned availability callable can change state without
-            # changing its object identity (or registry/policy version) while
-            # the untrusted research ranker runs. Recheck ALL at-most-32
-            # originally qualified paths, not only the chosen K, because
-            # qualified_path_count is also published to the caller.
-            # These checks never grant access or invoke source tools.
-            source_pass.reset()
-            try:
-                for candidate in found:
-                    current_root = authorized(candidate.producer_route_id)
-                    current_target = authorized(candidate.consumer_route_id)
-                    if current_root is None or current_target is None:
-                        raise PolicyViolationError(
-                            "G5 source eligibility changed during research ranking"
-                        )
-                    source_tool, source_endpoint = current_root
-                    _target_tool, target_endpoint = current_target
-                    if not _complete_fields(
-                        target_endpoint.output_fields, demand.required_fields,
-                    ):
-                        raise PolicyViolationError(
-                            "G5 visible field contract changed during research ranking"
-                        )
-                    current_inputs = _native_required_inputs(target_endpoint)
-                    if (
-                        current_inputs is None
-                        or len(current_inputs) != len(candidate.parameter_bindings)
-                        or any(
-                            required_name != bound_name
-                            or (field := _root_field(source_endpoint, contract))
-                            is None or field.name != bound_field
-                            for (required_name, contract), (bound_name, bound_field)
-                            in zip(
-                                current_inputs, candidate.parameter_bindings,
-                                strict=True,
-                            )
-                        )
-                    ):
-                        raise PolicyViolationError(
-                            "G5 source binding changed during research ranking"
-                        )
-                    if len(candidate.parameter_bindings) > 1 and not (
-                        _flat_same_record_source_contract(
-                            source_tool.endpoint(source_endpoint.name),
-                            source_endpoint,
-                            tuple(field for _, field in candidate.parameter_bindings),
-                        )
-                    ):
-                        raise PolicyViolationError(
-                            "G5 source record contract changed during research ranking"
-                        )
-                    public_names = tuple(sorted({
-                        field.name for field in target_endpoint.output_fields
-                        if any(
-                            _complete_fields([field], (required,))
-                            for required in demand.required_fields
-                        )
-                    }))
-                    if public_names != candidate.consumer_output_fields:
-                        raise PolicyViolationError(
-                            "G5 source projection changed during research ranking"
-                        )
-            except Exception:
-                # Source/host callbacks may contain private route/field text
-                # in an exception. Never expose it through this optional API.
-                raise PolicyViolationError(
-                    "G5 authorized graph changed during research ranking"
-                ) from None
-            self.field_index._assert_source(router)
-            router._check_retrieval_authority_witness(witness)
             return NativeIndexedGraphResult(
-                "ranked_unverified" if chosen
-                else "ranker_abstained_unverified",
-                self.field_index.snapshot_id,
-                self.field_index.registry_version, k, len(found),
-                tuple(found[offset] for offset in chosen),
-                experimental_ranked=True,
+                "over_k_unranked", self.field_index.snapshot_id,
+                self.field_index.registry_version, k, len(found), (),
             )
         return NativeIndexedGraphResult(
             "complete" if found else "no_proven_hit",

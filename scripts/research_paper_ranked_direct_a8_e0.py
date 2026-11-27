@@ -20,6 +20,7 @@ from schemarouter.paper_understood_direct_plan import (
     _source_owned_understood_group,
 )
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_legacy_posting_rank import research_lookup_postings
 from scripts.research_paper_scoped_understand_e0 import _validated_owner_snapshot
 
 PaperRanker = Callable[
@@ -109,8 +110,8 @@ def research_rank_paper_understood_direct_e0(
         assert_original_sources()
         return chosen
 
-    result = index.field_index.lookup(
-        view.router, group.aliases[0], group=group,
+    result = research_lookup_postings(
+        index.field_index, view.router, group.aliases[0], group=group,
         principal=view._principal, k=5,
         allowed_tool_keys=approved_hints.named_tools or None,
         _research_ranker=original_query_ranker,

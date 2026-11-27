@@ -657,3 +657,21 @@ def test_standalone_graph_diagnostics_are_not_installed() -> None:
     assert callable(schemarouter.update_capability_dependency_graph)
     assert callable(schemarouter.CapabilityDependencyGraph.predecessors)
     assert callable(schemarouter.CapabilityDependencyGraph.successors)
+
+
+def test_product_indexes_have_no_research_ranking_callback() -> None:
+    from inspect import signature
+
+    for method in (
+        schemarouter.NativeSchemaPostingIndex.lookup,
+        schemarouter.NativeSchemaPostingIndex.lookup_concepts,
+        schemarouter.NativeSchemaGraphIndex.lookup,
+        schemarouter.NativeSchemaGraphIndex._lookup_native_paths,
+    ):
+        assert "_research_ranker" not in signature(method).parameters
+    for method in (
+        schemarouter.NativeSchemaPostingIndex.lookup,
+        schemarouter.NativeSchemaGraphIndex.lookup,
+        schemarouter.NativeSchemaGraphIndex.lookup_two_hop,
+    ):
+        assert "_paper_rank_policy" in signature(method).parameters

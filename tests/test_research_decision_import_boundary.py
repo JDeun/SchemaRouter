@@ -59,6 +59,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
     for path in (ROOT / "src/schemarouter").rglob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
+            if isinstance(node, ast.arg):
+                assert node.arg != "_research_ranker", path
             if isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 assert module not in {"schemarouter.decisions", "decisions"}, path
@@ -69,6 +71,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_g5_execution"), path
                 assert not module.startswith("scripts.research_legacy_g5_deep_paths"), path
                 assert not module.startswith("scripts.research_legacy_capability_graph_analysis"), path
+                assert not module.startswith("scripts.research_legacy_posting_rank"), path
+                assert not module.startswith("scripts.research_legacy_g5_rank"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
                     "schemarouter.state_retrieval",
@@ -90,6 +94,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_g5_execution",
                                            "scripts.research_legacy_g5_deep_paths",
                                            "scripts.research_legacy_capability_graph_analysis",
+                                           "scripts.research_legacy_posting_rank",
+                                           "scripts.research_legacy_g5_rank",
                                            "schemarouter.native_deep_paths",
                                            "schemarouter.native_graph_execution",
                                            "scripts.research_legacy_planning",

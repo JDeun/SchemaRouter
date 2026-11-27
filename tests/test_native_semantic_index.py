@@ -24,6 +24,10 @@ from schemarouter import (
 from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
+from scripts.research_legacy_posting_rank import (
+    research_lookup_posting_concepts,
+    research_lookup_postings,
+)
 from scripts.research_legacy_router import legacy_router
 
 ANALYST = PrincipalContext(subject="researcher", roles=("analyst",))
@@ -962,8 +966,8 @@ def test_research_ranker_returns_exact_five_authorized_source_candidates(query):
                    for candidate in offered)
         return (6, 5, 4, 3, 2)
 
-    chosen = index.lookup(
-        router, query, principal=ANALYST, group=GROUP,
+    chosen = research_lookup_postings(
+        index, router, query, principal=ANALYST, group=GROUP,
         _research_ranker=choose,
     )
     assert chosen.status == "ranked_unverified"
@@ -988,8 +992,8 @@ def test_research_ranker_refuses_partial_duplicate_forged_or_nontuple(selection)
     router = _router(many_complete=6)
     index = NativeSchemaPostingIndex.build(router.registry)
     with pytest.raises(PolicyViolationError, match="forged, partial or duplicate"):
-        index.lookup(
-            router, ALIASES[0], principal=ANALYST, group=GROUP,
+        research_lookup_postings(
+            index, router, ALIASES[0], principal=ANALYST, group=GROUP,
             _research_ranker=lambda _q, _offered, _k: selection,
         )
 
@@ -997,8 +1001,8 @@ def test_research_ranker_refuses_partial_duplicate_forged_or_nontuple(selection)
 def test_research_ranker_may_explicitly_abstain_without_disclosing_candidates():
     router = _router(many_complete=6)
     index = NativeSchemaPostingIndex.build(router.registry)
-    result = index.lookup(
-        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    result = research_lookup_postings(
+        index, router, ALIASES[0], principal=ANALYST, group=GROUP,
         _research_ranker=lambda _q, _offered, _k: (),
     )
     assert result.status == "ranker_abstained_unverified"
@@ -1015,8 +1019,8 @@ def test_research_ranker_private_exception_is_sanitized():
         raise RuntimeError("private-source-credentials-must-not-leak")
 
     with pytest.raises(PolicyViolationError, match="indexed research ranking failed") as exc:
-        index.lookup(
-            router, ALIASES[0], principal=ANALYST, group=GROUP,
+        research_lookup_postings(
+            index, router, ALIASES[0], principal=ANALYST, group=GROUP,
             _research_ranker=leaking_ranker,
         )
     assert "private-source-credentials" not in str(exc.value)
@@ -1026,8 +1030,8 @@ def test_research_ranker_private_exception_is_sanitized():
 def test_research_ranker_is_not_called_when_candidate_menu_exceeds_32():
     router = _router(many_complete=33)
     index = NativeSchemaPostingIndex.build(router.registry)
-    result = index.lookup(
-        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    result = research_lookup_postings(
+        index, router, ALIASES[0], principal=ANALYST, group=GROUP,
         _research_ranker=lambda *_: pytest.fail("unbounded ranker menu"),
     )
     assert result.status == "over_k_unranked"
@@ -1051,8 +1055,8 @@ def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
         return (6, 5, 4, 3, 2)
 
     with pytest.raises(PolicyViolationError, match="eligibility changed"):
-        index.lookup(
-            router, ALIASES[0], principal=ANALYST, group=GROUP,
+        research_lookup_postings(
+            index, router, ALIASES[0], principal=ANALYST, group=GROUP,
             _research_ranker=withdraw,
         )
 
@@ -1064,8 +1068,8 @@ def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
         return (6, 5, 4, 3, 2)
 
     with pytest.raises(PolicyViolationError, match="declarations changed"):
-        index.lookup(
-            router, ALIASES[0], principal=live, group=GROUP,
+        research_lookup_postings(
+            index, router, ALIASES[0], principal=live, group=GROUP,
             _research_ranker=swap_identity,
         )
 
@@ -1073,8 +1077,8 @@ def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
 def test_research_ranker_on_concept_lookup_reuses_indexed_field_proof():
     router = _router(many_complete=6)
     index = NativeSchemaPostingIndex.build(router.registry)
-    result = index.lookup_concepts(
-        router, "show case status and priority", principal=ANALYST, catalog=CATALOG,
+    result = research_lookup_posting_concepts(
+        index, router, "show case status and priority", principal=ANALYST, catalog=CATALOG,
         _research_ranker=lambda _q, _offered, _k: (0, 1, 2, 3, 4),
     )
     assert result.status == "ranked_unverified"

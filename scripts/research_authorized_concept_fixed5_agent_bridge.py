@@ -31,6 +31,7 @@ from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSu
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints
 from scripts.research_legacy_concept_graph import retrieve_authorized_concept_graph
 from scripts.research_legacy_field_group import retrieve_authorized_concepts
+from scripts.research_legacy_posting_rank import research_lookup_posting_concepts
 
 STRICT_K = 5
 
@@ -302,8 +303,8 @@ class AuthorizedIndexedFieldFixed5Selector(AuthorizedConceptFixed5Selector):
             self.last_status = "no_declared_concept_not_calibrated_no_fit"
             return []
 
-        result = self.index.lookup_concepts(
-            self.view.router, query, catalog=self.catalog,
+        result = research_lookup_posting_concepts(
+            self.index, self.view.router, query, catalog=self.catalog,
             principal=self.view._principal, k=STRICT_K,
             input_free_only=True, _research_ranker=self.research_ranker,
         )

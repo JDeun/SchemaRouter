@@ -29,6 +29,7 @@ from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend
+from scripts.research_legacy_posting_rank import research_lookup_postings
 
 EVIDENCE_TIER = "E0_QUERY_CONTAINS_GOLD_ROUTE_SYNTHETIC_NOT_INDEPENDENT_E2"
 
@@ -49,8 +50,8 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
         # semantic posting hit may be a consumer requiring unavailable args.
         # Filter before K5, never by trimming an already disclosed menu.
         group = resolve_native_concepts(query, catalog=CATALOG).field_group
-        return index.lookup(
-            router, query, principal=ACTOR, group=group,
+        return research_lookup_postings(
+            index, router, query, principal=ACTOR, group=group,
             input_free_only=True, _research_ranker=research_ranker,
         )
 

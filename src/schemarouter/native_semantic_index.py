@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from hashlib import sha256
 from types import MappingProxyType
@@ -36,8 +36,6 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 STRICT_K = 5
-# Non-production research rankers never receive an unbounded private candidate menu.
-MAX_RESEARCH_RANKABLE_POSTINGS = 32
 _SOURCE_REGISTRY_GETTERS = {
     InMemoryRegistry: InMemoryRegistry.get,
     SQLiteRegistry: SQLiteRegistry.get,
@@ -555,9 +553,6 @@ class NativeSchemaPostingIndex:
         k: int = STRICT_K,
         input_free_only: bool = False,
         allowed_tool_keys: tuple[str, ...] | None = None,
-        _research_ranker: Callable[
-            [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
-        ] | None = None,
         _paper_rank_policy: PaperNativeRankPolicy | None = None,
         _paper_rank_aliases: tuple[tuple[str, ...], ...] = (),
         _paper_rank_domains: tuple[str, ...] = (),
@@ -565,12 +560,10 @@ class NativeSchemaPostingIndex:
         _paper_target_tools: tuple[str, ...] = (),
         _paper_raw_rank_concepts: tuple[str, ...] | None = None,
     ) -> IndexedNativeFieldResult:
-        """Conjunctive source-owned lookup with optional bounded E0 ranking.
+        """Conjunctive source-owned lookup with reviewed paper Rank.
 
-        The default >K result abstains. An explicit research callback can
-        choose *offsets* among at most 32 fully authorized, visible candidates.
-        Such a choice is tagged unverified and confers no execution authority.
-        An optional direct-only filter runs BEFORE candidate budgeting.
+        Without owner Rank, the >K result abstains. An optional direct-only
+        filter runs BEFORE candidate budgeting. No research ranker runs here.
         """
         if type(input_free_only) is not bool:
             raise ValueError("indexed direct-only flag must be boolean")
@@ -586,14 +579,10 @@ class NativeSchemaPostingIndex:
             or len(set(allowed_tool_keys)) != len(allowed_tool_keys)
         ):
             raise ValueError("invalid bounded named tool override")
-        if _research_ranker is not None and not callable(_research_ranker):
-            raise ValueError("indexed research ranker must be callable")
         if _paper_rank_policy is not None and not isinstance(
             _paper_rank_policy, PaperNativeRankPolicy,
         ):
             raise ValueError("original paper Rank needs a reviewed policy")
-        if _paper_rank_policy is not None and _research_ranker is not None:
-            raise ValueError("original paper Rank cannot share a model ranker")
         if _paper_rank_domains and _paper_rank_policy is None:
             raise ValueError("paper intent domains need a reviewed rank policy")
         if (
@@ -779,31 +768,6 @@ class NativeSchemaPostingIndex:
                 raw_concepts=_paper_raw_rank_concepts,
                 visible_field_names=visible_rank_fields if use_paper_v1 else None,
             )
-        elif (
-            count > k and _research_ranker is not None
-            and count <= MAX_RESEARCH_RANKABLE_POSTINGS
-        ):
-            # Pass detached read-only-shaped records to an UNTRUSTED ranker.
-            # Never trust returned candidate objects, route names or arbitrary
-            # ranking values: only unique indices into our verified snapshot.
-            offered = tuple(replace(candidate) for candidate in qualified)
-            try:
-                proposed = _research_ranker(query, offered, k)
-            except Exception:
-                raise PolicyViolationError("indexed research ranking failed") from None
-            if (
-                type(proposed) is not tuple
-                or len(proposed) not in (0, k)
-                or any(
-                    type(offset) is not int or not 0 <= offset < count
-                    for offset in proposed
-                )
-                or len(set(proposed)) != len(proposed)
-            ):
-                raise PolicyViolationError(
-                    "indexed ranker returned forged, partial or duplicate offsets"
-                )
-            ranked_offsets = proposed
         # A live availability callable may keep its identity while a
         # later candidate's health probe revokes an earlier candidate.
         # Recheck every already-qualified route, even when >K ultimately
@@ -928,13 +892,10 @@ class NativeSchemaPostingIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         input_free_only: bool = False,
-        _research_ranker: Callable[
-            [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
-        ] | None = None,
     ) -> IndexedNativeFieldResult:
         """Original query → declared concepts → typed field intersection."""
         resolved = resolve_native_concepts(query, catalog=catalog)
         return self.lookup(
             router, query, group=resolved.field_group, principal=principal,
-            k=k, input_free_only=input_free_only, _research_ranker=_research_ranker,
+            k=k, input_free_only=input_free_only,
         )

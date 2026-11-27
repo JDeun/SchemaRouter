@@ -30,6 +30,7 @@ from scripts.research_g5_decision_backend_ranker_e0 import (
     ResearchAuthorizedG5DecisionRanker,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend
+from scripts.research_legacy_g5_rank import research_lookup_graph
 
 ANALYST = PrincipalContext(subject="analyst", roles=("reader",))
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -341,8 +342,8 @@ def test_research_ranker_receives_only_current_authorized_scoped_paths_after_k()
         )
         return (6, 4, 2, 0, 5)
 
-    outcome = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    outcome = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=ranker,
     )
     assert len(seen) == 1
@@ -388,8 +389,8 @@ def test_research_ranker_mutated_offered_candidate_cannot_forge_returned_source(
         )
         return (6, 4, 2, 0, 5)
 
-    ranked = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    ranked = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=adversarial,
     )
     assert ranked.status == "ranked_unverified"
@@ -419,8 +420,8 @@ def test_research_ranker_never_sees_denied_hidden_or_unavailable_paths():
         def forbidden(*_args):
             pytest.fail("ranker was called with no authorized complete paths")
 
-        outcome = idx.lookup(
-            router, ALIASES[0], group=GROUP, principal=actor,
+        outcome = research_lookup_graph(
+            idx, router, ALIASES[0], group=GROUP, principal=actor,
             _research_ranker=forbidden,
         )
         assert outcome.status == "no_proven_hit"
@@ -430,8 +431,8 @@ def test_research_ranker_never_sees_denied_hidden_or_unavailable_paths():
     router._source_availability.predicate = (
         lambda tool, _endpoint: tool.key not in {"cases_4", "cases_5", "cases_6"}
     )
-    outcome = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    outcome = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda *_: pytest.fail("ranker invoked below K"),
     )
     assert outcome.status == "complete"
@@ -450,8 +451,8 @@ def test_research_ranker_refuses_partial_forged_or_duplicate_offsets(forged):
     router = _router(n_targets=7)
     idx = _index(router)
     with pytest.raises(PolicyViolationError, match="forged, partial or duplicate"):
-        idx.lookup(
-            router, ALIASES[0], group=GROUP, principal=ANALYST,
+        research_lookup_graph(
+            idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
             _research_ranker=lambda *_: forged,
         )
 
@@ -459,8 +460,8 @@ def test_research_ranker_refuses_partial_forged_or_duplicate_offsets(forged):
 def test_research_ranker_abstention_never_claims_calibrated_no_fit():
     router = _router(n_targets=7)
     idx = _index(router)
-    result = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    result = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda *_: (),
     )
     assert result.status == "ranker_abstained_unverified"
@@ -474,8 +475,8 @@ def test_research_ranker_abstention_never_claims_calibrated_no_fit():
 def test_research_ranker_bounded_to_32_authorized_paths_before_callback():
     router = _router(n_targets=33)
     idx = _index(router)
-    outcome = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    outcome = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda *_: pytest.fail("ranker saw unbounded 33 paths"),
     )
     assert outcome.qualified_path_count == 33
@@ -504,8 +505,8 @@ def test_research_ranker_policy_or_source_mutation_fails_closed():
             return (0, 1, 2, 3, 4)
 
         with pytest.raises(PolicyViolationError):
-            idx.lookup(
-                router, ALIASES[0], group=GROUP, principal=ANALYST,
+            research_lookup_graph(
+                idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
                 _research_ranker=malicious,
             )
 
@@ -515,8 +516,8 @@ def test_research_ranker_is_not_an_agent_and_cannot_plan_or_execute(monkeypatch)
     idx = _index(router)
     monkeypatch.setattr(router, "execute", lambda *_a, **_k: pytest.fail("executed"))
     monkeypatch.setattr(router, "plan", lambda *_a, **_k: pytest.fail("planned"))
-    result = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    result = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda _query, candidates, _k: tuple(
             range(5)
         ) if len(candidates) == 7 else (),
@@ -544,8 +545,8 @@ def test_research_g5_ranker_can_use_existing_strict_decision_backend():
         ]}
 
     ranker = ResearchAuthorizedG5DecisionRanker(CallableDecisionBackend(model))
-    outcome = idx.lookup(
-        router, ALIASES[1], group=GROUP, principal=ANALYST,
+    outcome = research_lookup_graph(
+        idx, router, ALIASES[1], group=GROUP, principal=ANALYST,
         _research_ranker=ranker,
     )
     assert len(captured) == 1
@@ -572,14 +573,14 @@ def test_optional_common_field_description_ablation_never_edits_native_paths():
             {"option_id": option.id} for option in request.options[:5]
         ]}
 
-    raw = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    raw = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=ResearchAuthorizedG5DecisionRanker(
             CallableDecisionBackend(model),
         ),
     )
-    common = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    common = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=ResearchAuthorizedG5DecisionRanker(
             CallableDecisionBackend(model),
             omit_identical_descriptions=True,
@@ -597,8 +598,8 @@ def test_optional_common_field_description_ablation_never_edits_native_paths():
     assert not common.independent_quality_evidence
     assert not common.calibrated_no_fit
     originals = []
-    idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda _q, paths, _k: (
             originals.extend(paths) or (0, 1, 2, 3, 4)
         ),
@@ -647,8 +648,8 @@ def test_research_g5_backend_rejects_partial_forged_and_abstention_is_not_no_fit
             CallableDecisionBackend(model),
         )
         with pytest.raises(error):
-            idx.lookup(
-                router, ALIASES[0], group=GROUP, principal=ANALYST,
+            research_lookup_graph(
+                idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
                 _research_ranker=ranker,
             )
     abstain = ResearchAuthorizedG5DecisionRanker(
@@ -656,8 +657,8 @@ def test_research_g5_backend_rejects_partial_forged_and_abstention_is_not_no_fit
             lambda _req: {"abstained": True, "selections": []},
         ),
     )
-    result = idx.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    result = research_lookup_graph(
+        idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=abstain,
     )
     assert result.status == "ranker_abstained_unverified"
@@ -674,8 +675,8 @@ def test_research_g5_backend_model_input_budget_fails_before_backend():
         CallableDecisionBackend(no_call), max_model_input_bytes=64,
     )
     with pytest.raises(PolicyViolationError, match="input byte cap"):
-        idx.lookup(
-            router, ALIASES[0], group=GROUP, principal=ANALYST,
+        research_lookup_graph(
+            idx, router, ALIASES[0], group=GROUP, principal=ANALYST,
             _research_ranker=ranker,
         )
     for invalid in (0, 16385, True, 12.5):
@@ -714,8 +715,8 @@ def test_research_ranker_same_callable_availability_revocation_is_fail_closed(
     with pytest.raises(
         PolicyViolationError, match="authorized graph changed",
     ):
-        index.lookup(
-            router, ALIASES[0], group=GROUP, principal=ANALYST,
+        research_lookup_graph(
+            index, router, ALIASES[0], group=GROUP, principal=ANALYST,
             _research_ranker=revoke_after_exposure,
         )
 
@@ -724,8 +725,8 @@ def test_research_ranker_stable_availability_still_returns_original_k5():
     router = _router(n_targets=7)
     index = _index(router)
     router._source_availability.predicate = lambda _tool, _endpoint: True
-    actual = index.lookup(
-        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    actual = research_lookup_graph(
+        index, router, ALIASES[0], group=GROUP, principal=ANALYST,
         _research_ranker=lambda _q, _offered, _k: (0, 1, 2, 3, 4),
     )
     assert actual.status == "ranked_unverified"

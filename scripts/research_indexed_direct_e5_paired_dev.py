@@ -32,6 +32,7 @@ from scripts.research_indexed_decision_backend_ranker_e0 import (
     ResearchIndexedFieldDecisionRanker,
 )
 from scripts.research_legacy_decisions import CallableDecisionBackend, DecisionBackend
+from scripts.research_legacy_posting_rank import research_lookup_postings
 
 K = 5
 LANGUAGES = ("en", "ko", "ja")
@@ -105,8 +106,8 @@ def run(backend: DecisionBackend | None = None) -> dict[str, Any]:
             if default.status != "over_k_unranked" or default.qualified_count != 24:
                 raise ValueError("E0 default overflow/roster drift")
             baseline_start = time.perf_counter()
-            baseline = index.lookup(
-                router, query, principal=ACTOR, group=group,
+            baseline = research_lookup_postings(
+                index, router, query, principal=ACTOR, group=group,
                 _research_ranker=first_five,
             )
             baseline_durations.append(
@@ -119,8 +120,8 @@ def run(backend: DecisionBackend | None = None) -> dict[str, Any]:
             ):
                 raise ValueError("E0 baseline candidate cohort drift")
             start = time.perf_counter()
-            result = index.lookup(
-                router, query, principal=ACTOR, group=group,
+            result = research_lookup_postings(
+                index, router, query, principal=ACTOR, group=group,
                 _research_ranker=ranking,
             )
             durations.append((time.perf_counter() - start) * 1000)
@@ -156,16 +157,16 @@ def run(backend: DecisionBackend | None = None) -> dict[str, Any]:
         if default.status != "over_k_unranked" or default.qualified_count != 24:
             raise ValueError("E0 OOD default overflow/roster drift")
         baseline_start = time.perf_counter()
-        baseline = index.lookup(
-            router, query, principal=ACTOR, group=group,
+        baseline = research_lookup_postings(
+            index, router, query, principal=ACTOR, group=group,
             _research_ranker=first_five,
         )
         baseline_durations.append((time.perf_counter() - baseline_start) * 1000)
         if baseline.status != "ranked_unverified" or len(baseline.candidates) != K:
             raise ValueError("E0 OOD baseline cohort drift")
         start = time.perf_counter()
-        result = index.lookup(
-            router, query, principal=ACTOR, group=group,
+        result = research_lookup_postings(
+            index, router, query, principal=ACTOR, group=group,
             _research_ranker=ranking,
         )
         durations.append((time.perf_counter() - start) * 1000)

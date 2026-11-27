@@ -22,6 +22,8 @@ from schemarouter.field_group_retrieval import _complete_fields
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts import benchmark_native_g5_build_fingerprint_ab_e0 as fixture
+from scripts.research_legacy_g5_rank import research_lookup_graph
+from scripts.research_legacy_posting_rank import research_lookup_postings
 
 
 def _router(monkeypatch, n: int, packed: bool = True, *, registry=None, router_factory=SchemaRouter):
@@ -268,10 +270,16 @@ def test_default_health_revocation_during_ranker_is_rechecked_before_publication
         return tuple(range(k))
 
     with pytest.raises(PolicyViolationError):
-        (posting if kind == "posting" else graph).lookup(
-            router, fixture.QUERY, group=fixture.GROUP, principal=fixture.PRINCIPAL,
-            _research_ranker=ranker,
-        )
+        if kind == "posting":
+            research_lookup_postings(
+                posting, router, fixture.QUERY, group=fixture.GROUP,
+                principal=fixture.PRINCIPAL, _research_ranker=ranker,
+            )
+        else:
+            research_lookup_graph(
+                graph, router, fixture.QUERY, group=fixture.GROUP,
+                principal=fixture.PRINCIPAL, _research_ranker=ranker,
+            )
     assert calls == 1
 
 
