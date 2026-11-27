@@ -332,3 +332,37 @@ def test_two_hop_availability_callback_never_leaks_private_error():
         )
     assert secret not in str(caught.value)
     assert caught.value.__suppress_context__
+
+
+@pytest.mark.parametrize("method_name", ("lookup", "lookup_two_hop"))
+def test_graph_target_prefilter_keeps_existing_32_route_limit(method_name):
+    router = _router()
+    index = _index(router)
+    lookup = getattr(index, method_name)
+    allowed = frozenset({"target_0.read"} | {f"absent_{i}.read" for i in range(31)})
+    assert len(allowed) == 32
+    result = lookup(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+        allowed_target_routes=allowed,
+    )
+    expected = "complete" if method_name == "lookup_two_hop" else "no_proven_hit"
+    assert result.status == expected
+    with pytest.raises(ValueError, match="invalid bounded target route prefilter"):
+        lookup(
+            router, ALIASES[0], group=GROUP, principal=ACTOR,
+            allowed_target_routes=allowed | frozenset({"extra.read"}),
+        )
+
+
+def test_two_hop_expansion_keeps_32_path_limit_distinct_from_k5():
+    router = _router(n_targets=33)
+    index = _index(router)
+    within = index.lookup_two_hop(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+        allowed_target_routes=frozenset(f"target_{i}.read" for i in range(32)),
+    )
+    assert within.status == "over_k_unranked"
+    assert within.qualified_path_count == 32
+    assert within.candidates == ()
+    with pytest.raises(PolicyViolationError, match="source eligibility changed"):
+        index.lookup_two_hop(router, ALIASES[0], group=GROUP, principal=ACTOR)

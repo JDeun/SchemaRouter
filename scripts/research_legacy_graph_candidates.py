@@ -1,4 +1,4 @@
-"""Historical G5 candidate DTOs, checkout only; preserve ranked evidence shape.
+"""Historical G5 candidate contracts, checkout only; preserve ranked evidence shape.
 
 These nonexecuting records are distinct from installed unranked source proofs.
 The product must not import them or treat them as execution authority.
@@ -6,6 +6,10 @@ The product must not import them or treat them as execution authority.
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+# Frozen historical callback/fork/depth exposure and expansion budget.
+# This is not an installed-product setting or a change to the historical K5.
+MAX_RESEARCH_RANKABLE_PATHS = 32
 
 
 @dataclass(frozen=True, slots=True)

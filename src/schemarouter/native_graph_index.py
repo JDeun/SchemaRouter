@@ -3,7 +3,7 @@
 The registry remains the only source of tool truth. The dependency graph
 is built from source-owned scalar ID outputs and exact required inputs;
 current principal/policy/data visibility is enforced BEFORE graph evidence
-leaves this opt-in research retrieval. No model, agent or execution logic.
+leaves this unranked graph evidence lookup. No model, agent or execution logic.
 """
 from __future__ import annotations
 
@@ -38,8 +38,10 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 STRICT_K = 5
-# Absolute research-only model exposure cap; never silently widen fixed K5.
-MAX_RESEARCH_RANKABLE_PATHS = 32
+# Explicit target filter and bounded two-hop source proof limits. Neither
+# authorizes ranking or widens the fixed K5 output contract.
+_MAX_TARGET_ROUTE_PREFILTER = 32
+_MAX_TWO_HOP_QUALIFIED_PATHS = 32
 
 
 def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
@@ -765,7 +767,7 @@ class NativeSchemaGraphIndex:
             raise ValueError("G5 strict fixed K5 required")
         if allowed_target_routes is not None and (
             type(allowed_target_routes) is not frozenset
-            or len(allowed_target_routes) > MAX_RESEARCH_RANKABLE_PATHS
+            or len(allowed_target_routes) > _MAX_TARGET_ROUTE_PREFILTER
             or any(
                 type(route) is not str or not 1 <= len(route) <= 320
                 for route in allowed_target_routes
@@ -1020,7 +1022,7 @@ class NativeSchemaGraphIndex:
             raise ValueError("G5 two-hop strict fixed K5 required")
         if allowed_target_routes is not None and (
             type(allowed_target_routes) is not frozenset
-            or len(allowed_target_routes) > MAX_RESEARCH_RANKABLE_PATHS
+            or len(allowed_target_routes) > _MAX_TARGET_ROUTE_PREFILTER
             or any(
                 type(route) is not str or not 1 <= len(route) <= 320
                 for route in allowed_target_routes
@@ -1187,7 +1189,7 @@ class NativeSchemaGraphIndex:
                             target_output_fields=names,
                             source_root_parameters=external_inputs,
                         ))
-                        if len(qualified) > MAX_RESEARCH_RANKABLE_PATHS:
+                        if len(qualified) > _MAX_TWO_HOP_QUALIFIED_PATHS:
                             raise PolicyViolationError(
                                 "G5 two-hop source expansion exceeds E0 limit"
                             )

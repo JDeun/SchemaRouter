@@ -13,7 +13,6 @@ from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup, _alias_key, _complete_fields
 from schemarouter.models import EndpointSpec, ToolSpec
 from schemarouter.native_graph_index import (
-    MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
     _flat_same_record_source_contract,
     _host_source_input_names,
@@ -21,6 +20,7 @@ from schemarouter.native_graph_index import (
     _root_envelope_empty,
     _root_field,
 )
+from scripts.research_legacy_graph_candidates import MAX_RESEARCH_RANKABLE_PATHS
 
 if TYPE_CHECKING:
     from schemarouter.native_graph_index import NativeSchemaGraphIndex

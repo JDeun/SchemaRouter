@@ -1195,3 +1195,11 @@ def test_owner_ranked_g5_policy_mutation_during_health_check_fails_closed():
             _paper_rank_policy=policy,
             _paper_rank_aliases=(("case status",),),
         )
+
+
+def test_one_hop_unranked_count_not_truncated_by_historical_research_budget():
+    router = _router(n_targets=33)
+    result = _index(router).lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
+    assert result.status == "over_k_unranked"
+    assert result.qualified_path_count == 33
+    assert result.candidates == ()

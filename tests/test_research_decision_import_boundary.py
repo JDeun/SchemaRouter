@@ -240,3 +240,11 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
 def test_native_graph_observation_is_checkout_only() -> None:
     assert not (ROOT / "src/schemarouter/native_graph_observation.py").exists()
     assert (ROOT / "scripts/research_legacy_graph_observation.py").is_file()
+
+
+def test_historical_graph_rank_limit_is_not_an_installed_contract() -> None:
+    for path in (ROOT / "src/schemarouter").rglob("*.py"):
+        assert "MAX_RESEARCH_RANKABLE_PATHS" not in path.read_text(encoding="utf-8"), path
+    from scripts.research_legacy_graph_candidates import MAX_RESEARCH_RANKABLE_PATHS
+
+    assert MAX_RESEARCH_RANKABLE_PATHS == 32

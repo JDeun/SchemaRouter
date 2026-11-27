@@ -11,17 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from schemarouter.errors import PolicyViolationError
-from schemarouter.native_graph_index import (
-    MAX_RESEARCH_RANKABLE_PATHS,
-    STRICT_K,
-)
+from schemarouter.native_graph_index import STRICT_K
 from scripts.research_legacy_decisions import (
     DecisionBackend,
     DecisionOption,
     DecisionRequest,
     choose_sync,
 )
-from scripts.research_legacy_graph_candidates import NativeIndexedGraphCandidate
+from scripts.research_legacy_graph_candidates import (
+    MAX_RESEARCH_RANKABLE_PATHS,
+    NativeIndexedGraphCandidate,
+)
 
 MAX_MODEL_INPUT_BYTES = 16_384
 

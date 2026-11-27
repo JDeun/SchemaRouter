@@ -125,7 +125,11 @@ jobs:
               assert {'_research_ranker', '_fork_arm_internal', '_fork_root_filter',
                       '_fork_target_filter'}.isdisjoint(signature(method).parameters)
           from dataclasses import fields
+          from schemarouter import native_graph_index
           from schemarouter.native_graph_index import NativeIndexedTwoHopCandidate
+          assert not hasattr(native_graph_index, "MAX_RESEARCH_RANKABLE_PATHS")
+          assert native_graph_index._MAX_TARGET_ROUTE_PREFILTER == 32
+          assert native_graph_index._MAX_TWO_HOP_QUALIFIED_PATHS == 32
           for model in (schemarouter.NativeIndexedGraphCandidate, NativeIndexedTwoHopCandidate):
               assert {"producer_visible_field_count", "consumer_visible_field_count",
                       "visible_field_counts"}.isdisjoint(field.name for field in fields(model))
