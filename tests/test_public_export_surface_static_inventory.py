@@ -13,9 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
 PACKAGE = ROOT / "src/schemarouter/__init__.py"
-TOOL_EXECUTING_EXPORTS = frozenset({
-    "observe_and_execute_paper_understood_graph",
-})
+TOOL_EXECUTING_EXPORTS: frozenset[str] = frozenset()
 
 
 def _public_exports() -> list[str]:
@@ -74,6 +72,7 @@ def test_retired_research_execution_evidence_remains_checkout_only() -> None:
         "execute_selective_plan",
         "observe_and_bind_paper_plan",
         "observe_and_execute_paper_plan",
+        "observe_and_execute_paper_understood_graph",
     }
     for row in rows:
         assert row["classification"] == "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"

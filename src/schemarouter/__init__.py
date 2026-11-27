@@ -375,10 +375,6 @@ from .operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
 )
-from .paper_consumer_execution import (
-    PaperUnderstoodExecutedGraph,
-    observe_and_execute_paper_understood_graph,
-)
 from .paper_crossref_registration import (
     CrossrefPaperSourceProbe,
     inspect_crossref_paper_source,
@@ -544,8 +540,6 @@ def __dir__() -> list[str]:
 __all__ = [
     "discover_optimade_paper_source",
     "register_reviewed_optimade_paper_source",
-    "PaperUnderstoodExecutedGraph",
-    "observe_and_execute_paper_understood_graph",
     "PaperPlanBinding",
     "PaperPlanCall",
     "PaperPlanFieldMeta",

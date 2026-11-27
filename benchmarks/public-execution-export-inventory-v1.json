@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "src/schemarouter/__init__.py",
   "evidence_tier": "DEV_ONLY_LOCAL_REGISTERED_EXECUTION_NOT_INDEPENDENT_E2",
-  "export_count": 405,
+  "export_count": 403,
   "exported_names": [
     "ADAPTER_ENTRY_POINT_GROUP",
     "AccessHealthMonitor",
@@ -209,7 +209,6 @@
     "PaperQueryUnderstanding",
     "PaperTypedToolPlan",
     "PaperUnderstanding",
-    "PaperUnderstoodExecutedGraph",
     "ParameterSpec",
     "PersistedDocumentLimits",
     "PgvectorVectorBackend",
@@ -382,7 +381,6 @@
     "migrate_capability_snapshot",
     "migrate_sqlite_storage",
     "negotiate_capabilities",
-    "observe_and_execute_paper_understood_graph",
     "raw_tool_spec_document",
     "record_run_events",
     "register_reviewed_crossref_paper_source",
@@ -410,16 +408,8 @@
     "write_dashboard",
     "write_schema_explorer"
   ],
-  "standalone_tool_execution_exports": [
-    {
-      "name": "observe_and_execute_paper_understood_graph",
-      "kind": "paper-source-bound-graph",
-      "test_file": "tests/test_paper_understood_observed_graph_a9_e0.py",
-      "positive": "test_registered_executor_observes_exact_named_path_and_binds_each_edge",
-      "denied": "test_midflight_permission_revocation_blocks_downstream"
-    }
-  ],
-  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. One exported top-level function which may reach registered native tool execution has real positive and denied local tests. SchemaRouter/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Historical selective execution and Field Union observation/consumer execution retain source-checkout evidence in historical_research_execution; this is not current product qualification. Other exported symbols are not independently proven runtime execution by this inventory.",
+  "standalone_tool_execution_exports": [],
+  "notes": "Every __all__ symbol is enumerated, regardless of callable/type/constant. No standalone top-level function initiates registered native tool execution. SchemaRouter/Configured/FieldRoutingSession methods and adapter families are tracked in their dedicated manifests. Historical selective execution, Field Union observation/consumer execution and A9 dependency graph execution retain source-checkout evidence in historical_research_execution; this is not current product qualification. Other exported symbols are not independently proven runtime execution by this inventory.",
   "historical_research_execution": [
     {
       "name": "execute_selective_plan",
@@ -446,6 +436,15 @@
       "positive": "test_actual_original_producer_executes_once_and_deferred_consumers_bind",
       "denied": "test_host_required_source_input_never_executes_without_explicit_value",
       "module": "scripts.research_legacy_paper_observed_binding",
+      "classification": "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
+    },
+    {
+      "name": "observe_and_execute_paper_understood_graph",
+      "kind": "paper-source-bound-graph",
+      "test_file": "tests/test_paper_understood_observed_graph_a9_e0.py",
+      "positive": "test_registered_executor_observes_exact_named_path_and_binds_each_edge",
+      "denied": "test_midflight_permission_revocation_blocks_downstream",
+      "module": "scripts.research_legacy_paper_graph_execution",
       "classification": "CHECKOUT_ONLY_NOT_CURRENT_PRODUCT_EXECUTION_EXPORT"
     }
   ]

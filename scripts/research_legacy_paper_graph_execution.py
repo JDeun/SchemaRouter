@@ -1,6 +1,7 @@
-"""Explicit understood-graph producer-to-consumer execution.
+"""Checkout-only historical A9 understood-graph producer-to-consumer execution.
 
 All values originate from the internal registered executor observation.
+Algorithm 1 does not discover or execute producer-to-consumer dependency DAGs.
 """
 from __future__ import annotations
 
@@ -8,23 +9,23 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any
 
-from .authorization import PrincipalContext
-from .concept_retrieval import NativeConceptCatalog
-from .errors import PolicyViolationError, SchemaValidationError
-from .models import ExecutionPlan, ToolResult
-from .native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
-from .native_graph_observation import _materialize_original_observed_edge
-from .paper_native_rank import PaperNativeRankPolicy
-from .paper_typed_tool_plan import (
+from schemarouter.authorization import PrincipalContext
+from schemarouter.concept_retrieval import NativeConceptCatalog
+from schemarouter.errors import PolicyViolationError, SchemaValidationError
+from schemarouter.models import ExecutionPlan, ToolResult
+from schemarouter.native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
+from schemarouter.native_graph_observation import _materialize_original_observed_edge
+from schemarouter.paper_native_rank import PaperNativeRankPolicy
+from schemarouter.paper_typed_tool_plan import (
     PaperTypedToolPlan,
     _check_current_call_scopes,
 )
-from .paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
-from .paper_understood_graph_plan import compile_paper_understood_graph_plan
-from .runs import ExecutionBudget, RunConfig
+from schemarouter.paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
+from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
+from schemarouter.runs import ExecutionBudget, RunConfig
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
+    from schemarouter.runtime import SchemaRouter
 
 
 @dataclass(frozen=True, slots=True)

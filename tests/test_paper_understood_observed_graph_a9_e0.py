@@ -26,7 +26,9 @@ from schemarouter.paper_understood_graph_plan import compile_paper_understood_gr
 
 @pytest.mark.asyncio
 async def test_unsupported_understanding_never_invokes_a_graph_tool():
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_understood_graph
+    from scripts.research_legacy_paper_graph_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
 
     router, index, seen = _fixture()
     with pytest.raises(ValueError):
@@ -104,7 +106,7 @@ def _hints(*, target: str = "target_0", parameter_hints=None):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("hops", [1, 2])
 async def test_registered_executor_observes_exact_named_path_and_binds_each_edge(hops):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -135,7 +137,7 @@ async def test_registered_executor_observes_exact_named_path_and_binds_each_edge
 
 @pytest.mark.asyncio
 async def test_explicit_host_approved_root_is_required_and_never_model_inferred():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -172,7 +174,7 @@ async def test_explicit_host_approved_root_is_required_and_never_model_inferred(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("invalid", [None, ["other"], {"id": "forged"}, 3.0, ""])
 async def test_invalid_root_observation_never_reaches_middle(invalid):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -189,7 +191,7 @@ async def test_invalid_root_observation_never_reaches_middle(invalid):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("invalid", [None, ["other"], {"id": "forged"}, 4.0, ""])
 async def test_invalid_middle_observation_never_reaches_target(invalid):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -210,7 +212,7 @@ async def test_invalid_middle_observation_never_reaches_target(invalid):
     ("root", "middle"), ("middle", "target_0"),
 ])
 async def test_midflight_permission_revocation_blocks_downstream(revoke_at, blocked):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -240,7 +242,7 @@ async def test_midflight_permission_revocation_blocks_downstream(revoke_at, bloc
 
 @pytest.mark.asyncio
 async def test_principal_mutation_during_middle_invalidates_original_observation():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -261,7 +263,7 @@ async def test_principal_mutation_during_middle_invalidates_original_observation
 
 @pytest.mark.asyncio
 async def test_unknown_named_tool_never_triggers_executor():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -277,7 +279,7 @@ async def test_unknown_named_tool_never_triggers_executor():
 
 @pytest.mark.asyncio
 async def test_transient_middle_error_does_not_retry_or_publish_partial_result():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -297,7 +299,7 @@ async def test_transient_middle_error_does_not_retry_or_publish_partial_result()
 
 @pytest.mark.asyncio
 async def test_source_owned_understanding_mutation_during_root_aborts_following_calls():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -319,7 +321,7 @@ async def test_source_owned_understanding_mutation_during_root_aborts_following_
 
 @pytest.mark.asyncio
 async def test_source_owned_host_arguments_mutation_during_middle_aborts_target():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -342,7 +344,7 @@ async def test_source_owned_host_arguments_mutation_during_middle_aborts_target(
 
 @pytest.mark.asyncio
 async def test_middle_output_data_scope_hidden_during_root_stops_before_middle():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -371,7 +373,7 @@ async def test_middle_output_data_scope_hidden_during_root_stops_before_middle()
 
 @pytest.mark.asyncio
 async def test_bad_last_result_identity_does_not_publish_fake_completed_graph(monkeypatch):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -396,7 +398,7 @@ async def test_bad_last_result_identity_does_not_publish_fake_completed_graph(mo
 
 @pytest.mark.asyncio
 async def test_exact_one_attempt_one_call_budget_per_node(monkeypatch):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -425,7 +427,7 @@ async def test_exact_one_attempt_one_call_budget_per_node(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_max_hops_bound_disallows_two_hop_without_any_invocation():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -441,7 +443,7 @@ async def test_max_hops_bound_disallows_two_hop_without_any_invocation():
 
 @pytest.mark.asyncio
 async def test_missing_last_required_field_rejects_combined_success():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -473,14 +475,17 @@ def test_named_graph_host_arg_compilation_is_source_scoped():
     assert plan.calls[1].call.arguments == {}
 
 
-def test_named_graph_execution_api_is_explicitly_exported():
-    from schemarouter import (
+def test_named_graph_execution_api_is_checkout_only():
+    import schemarouter
+    from scripts.research_legacy_paper_graph_execution import (
         PaperUnderstoodExecutedGraph,
         observe_and_execute_paper_understood_graph,
     )
 
     assert PaperUnderstoodExecutedGraph.__name__ == "PaperUnderstoodExecutedGraph"
     assert callable(observe_and_execute_paper_understood_graph)
+    assert not hasattr(schemarouter, "observe_and_execute_paper_understood_graph")
+    assert not hasattr(schemarouter, "PaperUnderstoodExecutedGraph")
 
 
 def _ranked_fixture(*, hops: int = 2, n_targets: int = 6, on_step=None,
@@ -503,7 +508,7 @@ def _ranked_fixture(*, hops: int = 2, n_targets: int = 6, on_step=None,
 @pytest.mark.asyncio
 @pytest.mark.parametrize("hops", [1, 2])
 async def test_ranked_unnamed_g5_executes_only_one_original_complete_dag(hops):
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
@@ -533,7 +538,7 @@ async def test_ranked_unnamed_g5_executes_only_one_original_complete_dag(hops):
 
 @pytest.mark.asyncio
 async def test_ranked_named_five_targets_selects_top_owner_path_only():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
@@ -559,7 +564,7 @@ async def test_ranked_named_five_targets_selects_top_owner_path_only():
 
 @pytest.mark.asyncio
 async def test_ranked_unnamed_g5_requires_owner_policy_before_any_provider_call():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
 
@@ -576,7 +581,7 @@ async def test_ranked_unnamed_g5_requires_owner_policy_before_any_provider_call(
 
 @pytest.mark.asyncio
 async def test_ranked_unnamed_g5_owner_policy_mutation_after_root_fails_closed():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
@@ -604,7 +609,7 @@ async def test_ranked_unnamed_g5_owner_policy_mutation_after_root_fails_closed()
 
 @pytest.mark.asyncio
 async def test_ranked_unnamed_g5_changed_live_policy_blocks_downstream_execution():
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
@@ -665,7 +670,9 @@ def _mixed_depth_bound_execution_fixture(*, on_step=None):
 
 @pytest.mark.asyncio
 async def test_a9_owner_rank_cross_depth_executes_only_higher_ranked_two_hop_dag():
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_understood_graph
+    from scripts.research_legacy_paper_graph_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
 
     router, index, seen = _mixed_depth_bound_execution_fixture()
@@ -691,7 +698,9 @@ async def test_a9_owner_rank_cross_depth_executes_only_higher_ranked_two_hop_dag
 
 @pytest.mark.asyncio
 async def test_a9_cross_depth_policy_mutation_at_root_blocks_other_hops():
-    from schemarouter.paper_consumer_execution import observe_and_execute_paper_understood_graph
+    from scripts.research_legacy_paper_graph_execution import (
+        observe_and_execute_paper_understood_graph,
+    )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
 
     state = {}
@@ -722,7 +731,7 @@ async def test_a9_cross_depth_policy_mutation_at_root_blocks_other_hops():
 async def test_a9_unnamed_g5_never_invokes_wrong_intent_domain_even_if_high_priority():
     from test_paper_understood_graph_plan import DOMAIN_INTENTS
 
-    from schemarouter.paper_consumer_execution import (
+    from scripts.research_legacy_paper_graph_execution import (
         observe_and_execute_paper_understood_graph,
     )
     from schemarouter.paper_native_rank import PaperNativeRankPolicy

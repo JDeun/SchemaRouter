@@ -1,8 +1,8 @@
 """Public export surface and top-level tool execution entrypoint E2E guards.
 
-This inventory includes every __all__ export. One installed top-level callable
-function which can initiate native tool execution retains positive and denied tests.
-Historical selective execution remains tested through its research-only helpers.
+This inventory includes every __all__ export. Registered tool execution is
+exposed through reviewed owner methods, not standalone top-level functions.
+Historical selective and graph execution retain separate research-only tests.
 The local fixture is not an external provider/model E2 benchmark.
 """
 from __future__ import annotations
@@ -30,9 +30,7 @@ from scripts.research_legacy_runtime import LegacySchemaRouter
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/public-execution-export-inventory-v1.json"
-EXECUTION_EXPORTS = {
-    "observe_and_execute_paper_understood_graph",
-}
+EXECUTION_EXPORTS: set[str] = set()
 
 
 def _registered() -> tuple[LegacySchemaRouter, list[int], PlanRequest, RunConfig, RunConfig]:
