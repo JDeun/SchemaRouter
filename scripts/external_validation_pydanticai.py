@@ -12,6 +12,7 @@ import inspect
 import json
 import re
 import statistics
+import sys
 import time
 from collections.abc import Sequence
 from copy import deepcopy
@@ -29,7 +30,12 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from scripts.research_legacy_router import legacy_router
+
+if not __package__:
+    # Direct historical CLI execution must resolve the source-only research package.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.research_legacy_router import legacy_router  # noqa: E402
 
 CATALOG: tuple[dict[str, Any], ...] = (
     {

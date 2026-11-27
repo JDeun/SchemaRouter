@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import statistics
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -32,7 +33,12 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from scripts.research_legacy_router import legacy_router
+
+if not __package__:
+    # Direct historical CLI execution must resolve the source-only research package.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.research_legacy_router import legacy_router  # noqa: E402
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+")
 SIZES = (20, 50, 100, 250, 500)

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 from statistics import median
@@ -11,7 +12,12 @@ from typing import Any
 import schemarouter as schemarouter_package
 from schemarouter import SchemaRouter
 from schemarouter.models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
-from scripts.research_legacy_router import legacy_router
+
+if not __package__:
+    # Direct historical CLI execution must resolve the source-only research package.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.research_legacy_router import legacy_router  # noqa: E402
 
 try:
     from scripts.external_validation_provenance import implementation_provenance

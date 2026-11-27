@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 from statistics import median
@@ -15,7 +16,12 @@ except ModuleNotFoundError:  # direct python scripts/... invocation
 
 import schemarouter as schemarouter_package
 from schemarouter.adapters.mcp import tool_from_mcp
-from scripts.research_legacy_router import legacy_router
+
+if not __package__:
+    # Direct historical CLI execution must resolve the source-only research package.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.research_legacy_router import legacy_router  # noqa: E402
 
 try:
     from scripts.external_validation_provenance import implementation_provenance
