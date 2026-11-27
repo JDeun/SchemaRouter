@@ -71,6 +71,29 @@ class HistoricalInventoryTests(unittest.TestCase):
         self.assertIn('VRH', tools['materials_project']['projectedOutputSchema']['properties']['k_vrh']['description'])
         self.assertIn('Voigt', tools['jarvis']['projectedOutputSchema']['properties']['bulk_modulus_kv']['description'])
 
+    def test_structured_agent_requirements(self):
+        result = self.catalog.discover([
+            {'id': 'modulus', 'conceptId': 'capability:bulk_modulus', 'unit': 'GPa',
+             'sourceType': 'calculated'},
+            {'id': 'papers', 'concept': 'research paper', 'sourceType': 'literature'},
+            {'id': 'young', 'conceptId': 'capability:young_modulus'},
+        ])
+        self.assertEqual(result['coverage'], {'modulus': 'matched', 'papers': 'matched',
+                                              'young': 'uncovered'})
+        self.assertFalse(result['allRequirementsMatched'])
+        receipts = {r['requirement']['id']: r for r in result['requirementResults']}
+        self.assertEqual([receipts[k]['returnedRoutes'] for k in ('modulus', 'papers', 'young')], [2, 5, 0])
+        views = {v['route'][1]: v for v in result['views']}
+        mp = views['materials_project']
+        self.assertEqual(mp['matches'], [{'requirementId': 'modulus', 'paths': [['k_vrh']]}])
+        self.assertIn(['g_vrh'], mp['adjunctPaths'])
+        self.assertEqual(views['crossref']['matches'], [
+            {'requirementId': 'papers', 'paths': [['abstract'], ['title']]}])
+        exact_license = mp['fields'][0]['license']
+        restricted = self.catalog.discover([{'id': 'x', 'conceptId': 'capability:bulk_modulus',
+                                             'license': exact_license}])
+        self.assertEqual([v['route'][1] for v in restricted['views']], ['materials_project'])
+
     def test_ambiguity_and_uncovered(self):
         result = self.catalog.discover(['elastic modulus', "Young's modulus", 'unsupported invented concept', 'title'])
         self.assertEqual(result['coverage'], {'elastic modulus': 'ambiguous', "Young's modulus": 'uncovered',
