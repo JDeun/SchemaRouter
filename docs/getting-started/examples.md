@@ -103,7 +103,8 @@ python examples/context_reduction_demo.py
 The example constructs a 40-tool registry and reports the serialized size of:
 
 - the complete registered tool catalog;
-- the source-proven routes from a prepared native `PaperFieldCoverage` receipt with K=3.
+- the source-proven routes from a prepared `PaperTypedToolPlan` receipt returned by
+  `session.compile_understood(...)` under fixed K5.
 
 The bounded payload must be smaller and contain only the field-complete weather route for the
 weather query. The receipt does not grant execution authority. This is a product demonstration,

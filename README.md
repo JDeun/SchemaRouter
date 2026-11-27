@@ -170,7 +170,12 @@ application already has an approved catalog. In the unreleased candidate, use
 or the schema-independent `session.acompile_query(...)` for typed, non-executing
 call shapes and source/unit/license field metadata. The former exact-alias
 `discover()` and `compile()` session methods are checkout-only historical
-comparators in `scripts.research_legacy_field_session`. Each compiled route also provides
+comparators in `scripts.research_legacy_field_session`. The query-alias Field Union search,
+its alternative-plan compiler and shared-root fork selector are also checkout-only historical
+comparators (`scripts/research_legacy_paper_field_retrieval.py`,
+`scripts/research_legacy_paper_typed_plan.py`, `scripts/research_legacy_native_fork.py`).
+The product retains shared typed route/field contracts and current authorization checks.
+Each compiled route also provides
 `parameters_meta` (safe input names, required flags, locations, JSON type
 labels), without exposing raw schema annotations or supplying argument values.
 For registered sources needing an explicit host-supplied scalar (for example,

@@ -152,12 +152,14 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
         pytest.fail("Algorithm 1 direct execution entered a competing planner")
 
     from schemarouter import paper_typed_tool_plan
-    from scripts import research_legacy_paper_typed_plan
+    from scripts import research_legacy_native_fork, research_legacy_paper_typed_plan
 
     assert not hasattr(type(session), "discover")
     assert not hasattr(type(session), "compile")
     assert not hasattr(paper_typed_tool_plan, "compile_paper_typed_tool_plan")
-    monkeypatch.setattr(research_legacy_paper_typed_plan, "compile_paper_typed_tool_plan", forbidden)
+    monkeypatch.setattr(
+        research_legacy_paper_typed_plan, "compile_paper_typed_tool_plan", forbidden,
+    )
     monkeypatch.setattr(module, "compile_paper_understood_graph_plan", forbidden)
     from scripts.research_legacy_planning.planner import SchemaPlanner
 
@@ -166,7 +168,11 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
     for name in ("_build_plan", "_analyze_sync", "_candidates"):
         monkeypatch.setattr(SchemaPlanner, name, forbidden)
     assert not hasattr(NativeSchemaGraphIndex, "lookup_bounded_paths")
-    for name in ("lookup", "lookup_two_hop", "lookup_shared_root_forks"):
+    assert not hasattr(NativeSchemaGraphIndex, "lookup_shared_root_forks")
+    monkeypatch.setattr(
+        research_legacy_native_fork, "lookup_native_shared_root_forks", forbidden,
+    )
+    for name in ("lookup", "lookup_two_hop"):
         monkeypatch.setattr(NativeSchemaGraphIndex, name, forbidden)
 
     results = await session.aexecute_direct(QUERY, **kwargs)

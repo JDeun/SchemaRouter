@@ -14,6 +14,7 @@ from scripts.research_g5_jsonplaceholder_fork_e1 import (
     build_fork_router,
     run,
 )
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 
 def demo_transport(
@@ -147,8 +148,8 @@ async def test_revoked_original_email_consumer_never_reaches_provider():
             lambda tool, _ep: tool.key != "demo_user_email"
         )
         for alias in FORK_ALIASES:
-            forbidden = graph.lookup_shared_root_forks(
-                router, alias, group=FORK_GROUP, principal=ACTOR,
+            forbidden = lookup_native_shared_root_forks(
+                graph, router, alias, group=FORK_GROUP, principal=ACTOR,
             )
             assert forbidden.status == "no_proven_hit"
             assert forbidden.qualified_fork_count == 0

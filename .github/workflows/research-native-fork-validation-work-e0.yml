@@ -3,6 +3,7 @@ name: G5 Native Dense Fork Validation Work E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "scripts/research_native_fork_validation_work_e0.py"
       - "tests/test_research_native_fork_validation_work_e0.py"
       - "research/autoresearch/g5-dense-validation-work-e0.md"

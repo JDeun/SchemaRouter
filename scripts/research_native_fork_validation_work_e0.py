@@ -12,9 +12,10 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from schemarouter import native_fork_index, native_graph_index
+from schemarouter import native_graph_index
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -72,8 +73,8 @@ def count_once(
         patch.object(native_fork_index, "_native_required_inputs", pair_inputs_count),
         patch.object(native_fork_index, "_flat_same_record_source_contract", pair_flat_count),
     ):
-        observed = graph.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        observed = native_fork_index.lookup_native_shared_root_forks(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
     if (
         observed.status != wanted_status
@@ -116,8 +117,8 @@ def profile(*, registered_routes: int, extra_status: int) -> dict[str, Any]:
         graph, router, wanted_status="complete", wanted_forks=1,
     )
     for alias in ALIASES:
-        result = graph.lookup_shared_root_forks(
-            router, alias, group=GROUP, principal=ACTOR,
+        result = native_fork_index.lookup_native_shared_root_forks(
+            graph, router, alias, group=GROUP, principal=ACTOR,
         )
         if (result.status != "complete" or result.qualified_fork_count != 1
                 or len(result.candidates) != 1):

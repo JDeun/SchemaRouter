@@ -29,6 +29,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     build_fixture,
     exhaustive_source_fork_reference,
 )
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 SCHEMA_VERSION = "native-g5-source-verified-schema-exposure-e0-v1"
 SIZES = (500, 5000)
@@ -134,8 +135,8 @@ def evaluate_fixture(
     rows: list[dict[str, Any]] = []
     for language, query in zip(("en", "ko", "ja"), ALIASES, strict=True):
         t0 = time.perf_counter_ns()
-        selection = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR, k=MAX_K,
+        selection = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR, k=MAX_K,
         )
         lookup_ms = (time.perf_counter_ns() - t0) / 1_000_000
         found = tuple(
@@ -180,8 +181,8 @@ def evaluate_fixture(
         lambda tool, _endpoint: tool.key != "fork_owner"
     )
     for query in ALIASES:
-        denied = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR, k=MAX_K,
+        denied = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR, k=MAX_K,
         )
         if denied.candidates or denied.status != "no_proven_hit":
             raise ValueError("G5 source authorization/availability drift disclosed")

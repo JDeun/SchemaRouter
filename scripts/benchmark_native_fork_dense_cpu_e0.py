@@ -15,9 +15,9 @@ from statistics import fmean
 from typing import Any
 from unittest.mock import patch
 
-from schemarouter import native_fork_index
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -76,8 +76,8 @@ def benchmark_dense(
             native_fork_index, "MAX_FORK_PREFORK_TARGETS",
             128 if prefork else 0,
         ):
-            return graph.lookup_shared_root_forks(
-                router, query, group=GROUP, principal=ACTOR,
+            return native_fork_index.lookup_native_shared_root_forks(
+                graph, router, query, group=GROUP, principal=ACTOR,
             )
 
     def assert_observed(

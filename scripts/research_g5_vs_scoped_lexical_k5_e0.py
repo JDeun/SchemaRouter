@@ -31,6 +31,7 @@ from scripts.research_g5_source_schema_exposure_e0 import (
 from scripts.research_g5_source_schema_exposure_e0 import (
     SCHEMA_VERSION as PARENT_SCHEMA_VERSION,
 )
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 SCHEMA_VERSION = "g5-vs-scoped-lexical-k5-e0-v1"
 TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)
@@ -145,8 +146,8 @@ def compare_source_pair(
     rows: list[dict[str, Any]] = []
     for lang, query in zip(("en", "ko", "ja"), ALIASES, strict=True):
         selected, budget = scoped_source_lexical_k5(router, query=query)
-        g5 = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR, k=MAX_K,
+        g5 = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR, k=MAX_K,
         )
         actual_paths = tuple(
             (c.root_route_id, *c.branch_route_ids) for c in g5.candidates
@@ -186,8 +187,8 @@ def compare_source_pair(
     router._source_availability.predicate = (
         lambda tool, _ep: tool.key != "fork_owner"
     )
-    refused = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR, k=MAX_K,
+    refused = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR, k=MAX_K,
     )
     lexical_denied, denied_budget = scoped_source_lexical_k5(
         router, query=ALIASES[0],

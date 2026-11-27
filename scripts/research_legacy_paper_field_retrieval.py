@@ -18,6 +18,7 @@ from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import _complete_fields
 from schemarouter.native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
 from schemarouter.paper_typed_tool_plan import PaperFieldRoute
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter
@@ -189,8 +190,8 @@ def retrieve_paper_field_coverage(
         raw_alternatives = []
         status = current.status
     elif 2 <= len(group.required_fields) <= k - 1:
-        fork = index.lookup_shared_root_forks(
-            router, query, principal=principal, group=group, k=k,
+        fork = lookup_native_shared_root_forks(
+            index, router, query, principal=principal, group=group, k=k,
         )
         if (
             fork.registry_version != witness[1]

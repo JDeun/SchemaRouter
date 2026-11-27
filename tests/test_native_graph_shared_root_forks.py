@@ -23,6 +23,7 @@ from schemarouter.errors import PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
@@ -217,8 +218,8 @@ def test_three_field_fork_does_not_join_unapproved_third_leaf(defect):
         aliases=ALIASES, required_fields=fields,
         source_type="crm", license="reviewed",
     )
-    result = _index(router).lookup_shared_root_forks(
-        router, ALIASES[0], group=group, principal=ACTOR,
+    result = lookup_native_shared_root_forks(
+        _index(router), router, ALIASES[0], group=group, principal=ACTOR,
     )
     assert result.status == "no_proven_hit"
     assert result.candidates == ()
@@ -235,8 +236,8 @@ def test_three_field_fork_over_k_does_not_publish_truncated_route_menu():
         aliases=ALIASES, required_fields=fields,
         source_type="crm", license="reviewed",
     )
-    out = _index(router).lookup_shared_root_forks(
-        router, ALIASES[0], group=group, principal=ACTOR,
+    out = lookup_native_shared_root_forks(
+        _index(router), router, ALIASES[0], group=group, principal=ACTOR,
     )
     assert out.status == "over_k_unranked"
     assert out.candidates == ()
@@ -250,8 +251,8 @@ def test_shared_root_two_leaf_fieldgroup_is_source_attested_not_executable(query
     assert idx.lookup(router, query, group=GROUP, principal=ACTOR).status == (
         "no_proven_hit"
     )
-    out = idx.lookup_shared_root_forks(
-        router, query, group=GROUP, principal=ACTOR,
+    out = lookup_native_shared_root_forks(
+        idx, router, query, group=GROUP, principal=ACTOR,
     )
     assert out.status == "complete"
     assert out.qualified_fork_count == 1
@@ -285,8 +286,8 @@ def test_shared_root_rejects_hidden_denied_optional_or_unhealthy_branch(conditio
         router._source_availability.predicate = (
             lambda tool, _endpoint: tool.key != "right_0"
         )
-    result = _index(router).lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    result = lookup_native_shared_root_forks(
+        _index(router), router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert result.status == "no_proven_hit"
     assert result.qualified_fork_count == 0
@@ -295,8 +296,8 @@ def test_shared_root_rejects_hidden_denied_optional_or_unhealthy_branch(conditio
 
 def test_fork_six_source_visible_leaf_paths_abstain_without_candidate_ids():
     router = _router(right_count=6)
-    result = _index(router).lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    result = lookup_native_shared_root_forks(
+        _index(router), router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert result.status == "over_k_unranked"
     assert result.candidates == ()
@@ -315,8 +316,8 @@ def test_shared_root_does_not_scan_unrelated_registered_routes(monkeypatch):
         return real_get(key)
 
     monkeypatch.setattr(router.registry, "get", only_relevant)
-    result = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    result = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert result.status == "complete"
     assert touched
@@ -338,8 +339,8 @@ def test_shared_root_rechecks_both_fields_after_live_health_change():
     with pytest.raises(
         PolicyViolationError, match="G5 fork eligibility changed during lookup",
     ):
-        index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
     assert right_seen >= 3
 
@@ -348,17 +349,17 @@ def test_shared_root_invalid_group_wrong_k_and_source_mutation_fail_closed():
     router = _router()
     index = _index(router)
     with pytest.raises(ValueError, match="fixed K5"):
-        index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR, k=4,
+        lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR, k=4,
         )
     with pytest.raises(ValueError, match="approved query-to-field"):
-        index.lookup_shared_root_forks(
-            router, "not declared", group=GROUP, principal=ACTOR,
+        lookup_native_shared_root_forks(
+            index, router, "not declared", group=GROUP, principal=ACTOR,
         )
     router.add_tool(_root(name="new_origin"))
     with pytest.raises(PolicyViolationError, match="source revision is stale"):
-        index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
 
 
@@ -374,8 +375,8 @@ def test_shared_root_callback_error_redacts_original_private_exception():
     with pytest.raises(
         PolicyViolationError, match="G5 fork eligibility changed",
     ) as caught:
-        index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
     assert secret not in str(caught.value)
     assert caught.value.__suppress_context__
@@ -385,8 +386,8 @@ def test_shared_root_pair_count_over_k_abstains_even_with_each_arm_under_k():
     router = _router(right_count=3)
     router.add_tool(_leaf("left_extra_1", "crm.status", "status"))
     router.add_tool(_leaf("left_extra_2", "crm.status", "status"))
-    out = _index(router).lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    out = lookup_native_shared_root_forks(
+        _index(router), router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert out.status == "over_k_unranked"
     assert out.qualified_fork_count == 9
@@ -412,8 +413,8 @@ def test_fork_rejects_mismatched_root_provenance_or_license(qualifier):
     assert index.lookup(
         router, ALIASES[0], group=sub_group, principal=ACTOR,
     ).status == "complete"
-    forks = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    forks = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert forks.status == "no_proven_hit"
     assert forks.candidates == ()
@@ -533,8 +534,8 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
     for leaf in leaves:
         router.add_tool(leaf)
     idx = _index(router)
-    out = idx.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    out = lookup_native_shared_root_forks(
+        idx, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     # Original-paper P1 must reuse exactly these real, host-attested
     # OpenAPI and MCP original source contracts, not a separate mock
@@ -653,8 +654,8 @@ def test_shared_root_fork_refuses_cross_owner_join_without_group_qualifiers(
         assert idx.lookup(
             router, ALIASES[0], group=single, principal=ACTOR,
         ).status == "complete"
-    result = idx.lookup_shared_root_forks(
-        router, ALIASES[0], group=unconstrained, principal=ACTOR,
+    result = lookup_native_shared_root_forks(
+        idx, router, ALIASES[0], group=unconstrained, principal=ACTOR,
     )
     assert result.status == "no_proven_hit"
     assert result.qualified_fork_count == 0
@@ -696,8 +697,8 @@ def test_fork_rejects_different_consumer_contracts_despite_valid_one_hops(
         assert index.lookup(
             router, ALIASES[0], group=leaf_group, principal=ACTOR,
         ).status == "complete"
-    out = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    out = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert out.status == "no_proven_hit"
     assert out.qualified_fork_count == 0
@@ -721,6 +722,6 @@ def test_original_registry_rejects_duplicate_output_field_source_names():
     assert router.registry.version == before
     # The rejected original never enters the typed graph/index.
     index = _index(router)
-    assert index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    assert lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     ).status == "complete"

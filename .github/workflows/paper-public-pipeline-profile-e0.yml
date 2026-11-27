@@ -3,6 +3,7 @@ name: Original Paper Public Pipeline E0 Profile
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "scripts/benchmark_paper_public_pipeline_e0.py"
       - "tests/test_benchmark_paper_public_pipeline_e0.py"
       - "src/schemarouter/paper_understood_graph_plan.py"

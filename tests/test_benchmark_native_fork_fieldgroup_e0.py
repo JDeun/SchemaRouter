@@ -16,6 +16,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     build_fixture,
     exhaustive_source_fork_reference,
 )
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 
 def test_native_fork_500_source_index_matches_original_exhaustive_scan():
@@ -59,8 +60,8 @@ def test_native_fork_mixed_scope_source_decoys_match_original_oracle(size):
     assert visible is None  # Entire scoped route disappears with its sole hidden field.
     index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
     for query in ALIASES:
-        found = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        found = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert found.status == "complete"
         assert found.qualified_fork_count == 1
@@ -74,8 +75,8 @@ def test_native_fork_mixed_scope_source_decoys_match_original_oracle(size):
             effect="allow", operation="fork_status.read", roles_any=("reader",),
         ),),
     )
-    refused = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    refused = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert refused.status == "no_proven_hit" and refused.candidates == ()
 

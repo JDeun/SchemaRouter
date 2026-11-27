@@ -3,6 +3,7 @@ name: Public Top-Level Execution Exports DEV
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "src/schemarouter/__init__.py"
       - "scripts/research_legacy_planning/**"
       - "src/schemarouter/models.py"

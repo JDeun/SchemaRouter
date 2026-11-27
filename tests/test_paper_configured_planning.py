@@ -124,7 +124,9 @@ def test_configured_plan_and_aplan_share_algorithm1_without_lexical_analysis(mon
         pytest.fail("configured Algorithm 1 entered the older field-union discovery path")
 
     assert not hasattr(paper_query_understanding, "retrieve_paper_field_coverage")
-    monkeypatch.setattr(research_legacy_paper_field_retrieval, "retrieve_paper_field_coverage", forbidden)
+    monkeypatch.setattr(
+        research_legacy_paper_field_retrieval, "retrieve_paper_field_coverage", forbidden,
+    )
     sync = ctx.router.plan_authorized(ctx.request, principal=ctx.principal)
     asynchronous = asyncio.run(ctx.router.aplan_authorized(ctx.request, principal=ctx.principal))
     assert sync.model_dump() == asynchronous.model_dump()

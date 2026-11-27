@@ -31,6 +31,7 @@ from scripts.research_g5_source_schema_exposure_e0 import (
     _visible_original_contract_bytes,
 )
 from scripts.research_g5_vs_scoped_lexical_k5_e0 import scoped_source_lexical_k5
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 SCHEMA_VERSION = "g5-paired-qwen-schema-tokenizer-e0-v1"
 TOKENIZER_REPO = "Qwen/Qwen3-1.7B"
@@ -136,8 +137,8 @@ def tokenized_same_k5(
             lexical, _budget = scoped_source_lexical_k5(
                 router, query=query, group=group,
             )
-            result = graph.lookup_shared_root_forks(
-                router, query, group=group, principal=ACTOR, k=MAX_K,
+            result = lookup_native_shared_root_forks(
+                graph, router, query, group=group, principal=ACTOR, k=MAX_K,
             )
             got = tuple(
                 (row.root_route_id, *row.branch_route_ids)

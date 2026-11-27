@@ -34,6 +34,7 @@ from scripts.research_g5_source_schema_exposure_e0 import MAX_K, SIZES
 from scripts.research_g5_vs_scoped_lexical_k5_e0 import (
     scoped_source_lexical_k5,
 )
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 SCHEMA_VERSION = "g5-multidomain-matched-k5-e0-v1"
 LICENSE = "host-reviewed-synthetic"
@@ -261,8 +262,8 @@ def analyze_multidomain_source(
             lexical, visible_cost = scoped_source_lexical_k5(
                 router, query=query, group=group,
             )
-            native = graph.lookup_shared_root_forks(
-                router, query, group=group, principal=ACTOR, k=MAX_K,
+            native = lookup_native_shared_root_forks(
+                graph, router, query, group=group, principal=ACTOR, k=MAX_K,
             )
             g5_paths = tuple(
                 (p.root_route_id, *p.branch_route_ids)
@@ -311,8 +312,8 @@ def analyze_multidomain_source(
         lexical, budget = scoped_source_lexical_k5(
             router, query=aliases[0], group=group,
         )
-        g5 = graph.lookup_shared_root_forks(
-            router, aliases[0], group=group, principal=ACTOR, k=MAX_K,
+        g5 = lookup_native_shared_root_forks(
+            graph, router, aliases[0], group=group, principal=ACTOR, k=MAX_K,
         )
         if (
             forbidden in lexical or forbidden in budget

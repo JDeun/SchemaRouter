@@ -3,6 +3,7 @@ name: G5 Multidomain Native K5 Paired E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "scripts/research_g5_multidomain_paired_k5_e0.py"
       - "scripts/research_g5_vs_scoped_lexical_k5_e0.py"
       - "tests/test_research_g5_multidomain_paired_k5_e0.py"

@@ -41,7 +41,6 @@ from .paper_native_rank import (
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
-    from .native_fork_index import NativeIndexedSharedRootForkResult
     from .runtime import SchemaRouter
 
 STRICT_K = 5
@@ -1479,26 +1478,6 @@ class NativeSchemaGraphIndex:
             k,
             count,
             tuple(qualified) if count <= k else (),
-        )
-
-    def lookup_shared_root_forks(
-        self,
-        router: SchemaRouter,
-        query: str,
-        *,
-        group: NativeDeclaredFieldGroup,
-        principal: PrincipalContext,
-        k: int = STRICT_K,
-    ) -> NativeIndexedSharedRootForkResult:
-        """Source-attested common-root field AND (no row merge).
-
-        Delegates all authorization and typed joins to the existing native
-        G5 single-field lookups; does not create a new retrieval index.
-        """
-        from .native_fork_index import lookup_native_shared_root_forks
-
-        return lookup_native_shared_root_forks(
-            self, router, query, group=group, principal=principal, k=k,
         )
 
     def lookup_concepts(

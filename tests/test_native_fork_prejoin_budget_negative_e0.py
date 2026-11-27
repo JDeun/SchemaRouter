@@ -20,6 +20,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     build_fixture,
     exhaustive_source_fork_reference,
 )
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 
 @pytest.mark.parametrize(
@@ -98,8 +99,8 @@ def test_indexed_common_root_prefilter_elides_unrelated_arms_before_cap(
         )
 
     for query in ALIASES:
-        observed = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        observed = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert observed.status == expected_status
         assert observed.qualified_fork_count == 1
@@ -115,8 +116,8 @@ def test_indexed_common_root_prefilter_elides_unrelated_arms_before_cap(
     router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith("fork_noise_")
     )
-    restored = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    restored = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert restored.status == "complete"
     assert restored.qualified_fork_count == 1
@@ -138,8 +139,8 @@ def test_more_than_five_genuine_complete_forks_still_abstain_without_leak():
         NativeSchemaPostingIndex.build(router.registry),
     )
     for query in ALIASES:
-        result = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        result = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert result.status == "over_k_unranked"
         assert result.qualified_fork_count == 6
@@ -227,8 +228,8 @@ def test_dense_structural_common_roots_recheck_and_join_in_bounded_shards(
     assert len(status_roots & owner_roots) == noise_root_count + 1
     assert common_roots == set()
     for query in ALIASES:
-        actual = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        actual = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert actual.status == "complete"
         assert actual.qualified_fork_count == 1
@@ -332,8 +333,8 @@ def test_one_root_multiple_identifiers_more_than_32_consumers_is_joined():
         ) for i in range(33)
     )
     for query in ALIASES:
-        result = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        result = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert result.status == "complete"
         assert result.qualified_fork_count == 2
@@ -372,8 +373,8 @@ def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
     # or control the query. Only exact permitted constructed source contracts
     # and observed status/count are inspected.
     for query in ALIASES:
-        result = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        result = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert result.status == "over_k_unranked"
         assert result.qualified_fork_count == 34
@@ -384,11 +385,11 @@ def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
     # The production constant is 64. Tightening it for an E0 negative
     # forces one-target-root recursion to exhaust before all shards.
     monkeypatch.setattr(
-        "schemarouter.native_fork_index.MAX_FORK_SHARD_LOOKUPS", 2,
+        "scripts.research_legacy_native_fork.MAX_FORK_SHARD_LOOKUPS", 2,
     )
     for query in ALIASES:
-        exhausted = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        exhausted = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         assert exhausted.status == "over_k_unranked"
         assert exhausted.qualified_fork_count == 0
@@ -401,8 +402,8 @@ def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
     router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith("fork_extra_status_")
     )
-    restored = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    restored = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert restored.status == "complete"
     assert restored.qualified_fork_count == 1

@@ -1,4 +1,4 @@
-"""#1560 E0: strictly source-attested shared-root field evidence.
+"""Checkout-only #1560 E0: strictly source-attested shared-root field evidence.
 
 This is a bounded, nonexecuting AND over 2–4 already-authorized one-hop
 native G5 results. A common source schema is not a runtime row join.
@@ -9,10 +9,10 @@ from dataclasses import dataclass
 from itertools import product
 from typing import TYPE_CHECKING, Literal
 
-from .authorization import PrincipalContext
-from .errors import PolicyViolationError
-from .field_group_retrieval import NativeDeclaredFieldGroup, _alias_key
-from .native_graph_index import (
+from schemarouter.authorization import PrincipalContext
+from schemarouter.errors import PolicyViolationError
+from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup, _alias_key
+from schemarouter.native_graph_index import (
     MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
     NativeIndexedGraphCandidate,
@@ -21,8 +21,8 @@ from .native_graph_index import (
 )
 
 if TYPE_CHECKING:
-    from .native_graph_index import NativeSchemaGraphIndex
-    from .runtime import SchemaRouter
+    from schemarouter.native_graph_index import NativeSchemaGraphIndex
+    from schemarouter.runtime import SchemaRouter
 
 
 # Max private source-validated subqueries per arm and live-recheck pass.

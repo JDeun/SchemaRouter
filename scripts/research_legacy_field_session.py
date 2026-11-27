@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING, Any
 
 from schemarouter.authorization import PrincipalContext
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
-from scripts.research_legacy_paper_field_retrieval import PaperFieldCoverage, retrieve_paper_field_coverage
+from scripts.research_legacy_paper_field_retrieval import (
+    PaperFieldCoverage,
+    retrieve_paper_field_coverage,
+)
 from scripts.research_legacy_paper_typed_plan import compile_paper_typed_tool_plan
 
 if TYPE_CHECKING:

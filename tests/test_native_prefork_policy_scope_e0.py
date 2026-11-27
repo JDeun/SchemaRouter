@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import AuthorizationPolicy, AuthorizationRule, DataScopeRule, native_fork_index
+from schemarouter import AuthorizationPolicy, AuthorizationRule, DataScopeRule
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -47,8 +48,8 @@ def test_dense_original_source_prefork_enforces_updated_policy_and_scoped_fields
             native_fork_index, "MAX_FORK_PREFORK_TARGETS",
             128 if use_prefork else 0,
         )
-        return graph.lookup_shared_root_forks(
-            router, alias, group=GROUP, principal=ACTOR,
+        return native_fork_index.lookup_native_shared_root_forks(
+            graph, router, alias, group=GROUP, principal=ACTOR,
         )
 
     for alias in ALIASES:
@@ -163,8 +164,8 @@ def test_128_and_129_structural_targets_cannot_override_denied_or_hidden_scope(
             native_fork_index, "MAX_FORK_PREFORK_TARGETS",
             128 if optimization else 0,
         )
-        return index.lookup_shared_root_forks(
-            router, alias, group=GROUP, principal=ACTOR,
+        return native_fork_index.lookup_native_shared_root_forks(
+            index, router, alias, group=GROUP, principal=ACTOR,
         )
 
     for alias in ALIASES:

@@ -20,6 +20,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts import research_legacy_paper_field_retrieval as legacy_field_retrieval
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -146,7 +147,7 @@ def test_shared_root_revoked_during_final_projection_cannot_be_published(monkeyp
     index = _index(router)
     root_is_healthy = True
     fork_proof_finished = False
-    original_lookup = NativeSchemaGraphIndex.lookup_shared_root_forks
+    original_lookup = legacy_field_retrieval.lookup_native_shared_root_forks
     original_view = router._data_scope_endpoint_view
 
     def live_health(tool, _endpoint):
@@ -167,7 +168,7 @@ def test_shared_root_revoked_during_final_projection_cannot_be_published(monkeyp
 
     router._source_availability.predicate = live_health
     monkeypatch.setattr(
-        NativeSchemaGraphIndex, "lookup_shared_root_forks", observe_fork_proof,
+        legacy_field_retrieval, "lookup_native_shared_root_forks", observe_fork_proof,
     )
     monkeypatch.setattr(router, "_data_scope_endpoint_view", revoke_root_after_right_leaf)
 
@@ -186,7 +187,7 @@ def test_first_publication_projection_redacts_private_source_callback_error(
     """An approved lookup is not a license to surface later host exceptions."""
     router = build_fixture(500)
     index = _index(router)
-    original_lookup = NativeSchemaGraphIndex.lookup_shared_root_forks
+    original_lookup = legacy_field_retrieval.lookup_native_shared_root_forks
     fork_proof_finished = False
     private_message = "private-provider-connection-and-tenant-973"
 
@@ -203,7 +204,9 @@ def test_first_publication_projection_redacts_private_source_callback_error(
             raise RuntimeError(private_message)
         return original_view(principal, tool, endpoint)
 
-    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup_shared_root_forks", mark_finished)
+    monkeypatch.setattr(
+        legacy_field_retrieval, "lookup_native_shared_root_forks", mark_finished,
+    )
     monkeypatch.setattr(router, "_data_scope_endpoint_view", fail_after_proof)
     with pytest.raises(PolicyViolationError, match="source eligibility changed") as caught:
         retrieve_paper_field_coverage(

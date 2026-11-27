@@ -129,9 +129,9 @@
     },
     {
       "path": "getting-started/examples.md",
-      "en_blob": "f98d1cb4324f8cafb427ef31bb155ce5daf27618",
-      "ko_blob": "47be83f9badef9d3b8aaa2714c91a5137ea62c34",
-      "notes": "Compared example matrix and original API/provider evidence, and rechecked the 2026-11-27 Native K=3 field-route receipt change in both languages against the source example: 40-tool byte count, complete weather route, no execution grant, and no token inflation. AI contributor review, not independent human certification."
+      "en_blob": "7fe12516bf26de02c8ab4dfba26232d315130caa",
+      "ko_blob": "8c3b2cc99c7e79aa6038736d527a173a09b3781c",
+      "notes": "Compared example matrix and original API/provider evidence, and rechecked the 2026-11-27 Native K=3 field-route receipt change in both languages against the source example: 40-tool byte count, complete weather route, no execution grant, and no token inflation. AI contributor review, not independent human certification. 2026-11-27 AI-assisted paired delta review against examples/context_reduction_demo.py: current structured PaperTypedToolPlan via compile_understood uses fixed K5, unchanged byte-count and non-execution scope. This is not independent human certification."
     },
     {
       "path": "getting-started/ingestion-paths.md",

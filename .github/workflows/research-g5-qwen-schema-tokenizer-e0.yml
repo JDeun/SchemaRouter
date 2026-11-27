@@ -3,6 +3,7 @@ name: Paired G5 Qwen Tokenizer Native Schema E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "scripts/research_g5_paired_qwen_schema_tokenizer_e0.py"
       - "tests/test_research_g5_paired_qwen_schema_tokenizer_e0.py"
       - "research/autoresearch/g5-paired-qwen-schema-tokenizer-e0.md"

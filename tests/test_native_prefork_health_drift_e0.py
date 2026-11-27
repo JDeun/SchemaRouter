@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import native_fork_index
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -62,8 +62,8 @@ def test_dense_prefork_midscan_health_failure_is_sanitized_and_fail_closed(
     with pytest.raises(
         PolicyViolationError, match="G5 fork eligibility changed during lookup",
     ) as rejected:
-        index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        native_fork_index.lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
     assert PRIVATE_CALLBACK_DETAIL not in str(rejected.value)
     assert volatile_calls >= (2 if failure == "revoked_during_scan" else 1)
@@ -92,8 +92,8 @@ def test_dense_prefork_stable_current_health_matches_strict_k5(
 
     router._source_availability.predicate = live_health
     for alias in ALIASES:
-        result = index.lookup_shared_root_forks(
-            router, alias, group=GROUP, principal=ACTOR,
+        result = native_fork_index.lookup_native_shared_root_forks(
+            index, router, alias, group=GROUP, principal=ACTOR,
         )
         assert result.status == "over_k_unranked"
         assert result.qualified_fork_count == extra_status + 1

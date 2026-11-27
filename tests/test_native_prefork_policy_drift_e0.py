@@ -7,11 +7,11 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     DataScopeRule,
-    native_fork_index,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
@@ -75,8 +75,8 @@ def test_current_policy_changes_during_original_fork_query_fail_closed(
 
     router._source_availability.predicate = live_health
     with pytest.raises(PolicyViolationError):
-        graph.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        native_fork_index.lookup_native_shared_root_forks(
+            graph, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
     assert mutations == 1
 
@@ -84,8 +84,8 @@ def test_current_policy_changes_during_original_fork_query_fail_closed(
     router.authorization_policy = original_policy
     router._source_availability.predicate = lambda _tool, _endpoint: True
     for alias in ALIASES:
-        restored = graph.lookup_shared_root_forks(
-            router, alias, group=GROUP, principal=ACTOR,
+        restored = native_fork_index.lookup_native_shared_root_forks(
+            graph, router, alias, group=GROUP, principal=ACTOR,
         )
         assert restored.status == "over_k_unranked"
         assert restored.qualified_fork_count == extra + 1

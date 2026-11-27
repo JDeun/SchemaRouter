@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from schemarouter import native_fork_index
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from scripts import research_legacy_native_fork as native_fork_index
 from scripts.benchmark_native_fork_dense_cpu_e0 import STUDY, benchmark_dense
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
@@ -101,8 +101,8 @@ def test_bounded_source_index_prefork_shards_skip_redundant_overcap_scan(
             return original(self, *args, **kwargs)
 
         with patch.object(NativeSchemaGraphIndex, "_lookup_native_paths", spy):
-            result = index.lookup_shared_root_forks(
-                router, ALIASES[0], group=GROUP, principal=ACTOR,
+            result = native_fork_index.lookup_native_shared_root_forks(
+                index, router, ALIASES[0], group=GROUP, principal=ACTOR,
             )
         return result, count
 
@@ -131,8 +131,8 @@ def test_bounded_source_index_prefork_shards_skip_redundant_overcap_scan(
     assert len(changed.candidates) == 1
     assert changed_calls == sharded_calls
     for alias in ALIASES:
-        assert index.lookup_shared_root_forks(
-            router, alias, group=GROUP, principal=ACTOR,
+        assert native_fork_index.lookup_native_shared_root_forks(
+            index, router, alias, group=GROUP, principal=ACTOR,
         ) == changed
 
 
@@ -151,8 +151,8 @@ def test_prefork_admissibility_upper_bound_falls_back_to_original_path(
         NativeSchemaPostingIndex.build(router.registry),
     )
     monkeypatch.setattr(native_fork_index, "MAX_FORK_SHARD_LOOKUPS", 2)
-    result = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    result = native_fork_index.lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     assert result.status == "complete"
     assert result.qualified_fork_count == 1
@@ -210,8 +210,8 @@ def test_prefork_exact_128_target_limit_and_129_global_probe_preserve_authority(
         with patch.object(
             NativeSchemaGraphIndex, "_lookup_native_paths", counted,
         ):
-            observed = graph.lookup_shared_root_forks(
-                router, alias, group=GROUP, principal=ACTOR,
+            observed = native_fork_index.lookup_native_shared_root_forks(
+                graph, router, alias, group=GROUP, principal=ACTOR,
             )
         assert first_status is not None
         return observed, calls, first_status

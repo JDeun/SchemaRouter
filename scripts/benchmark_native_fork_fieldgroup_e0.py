@@ -32,6 +32,7 @@ from schemarouter.field_group_retrieval import _complete_fields
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 EVIDENCE = "E0_SYNTHETIC_500_5000_NATIVE_FORK_NOT_PUBLISHER_E2"
 ALIASES = ("customer status and owner", "고객 상태와 담당자", "顧客状態と担当者")
@@ -275,8 +276,8 @@ def benchmark(
     if expected != ((ROOT, LEFT, RIGHT),):
         raise AssertionError("original-source exhaustive reference unexpectedly drifted")
     for query in ALIASES:
-        out = index.lookup_shared_root_forks(
-            router, query, group=GROUP, principal=ACTOR,
+        out = lookup_native_shared_root_forks(
+            index, router, query, group=GROUP, principal=ACTOR,
         )
         found = tuple(
             (candidate.root_route_id, *candidate.branch_route_ids)
@@ -294,8 +295,8 @@ def benchmark(
     router._source_availability.predicate = (
         lambda tool, _ep: tool.key != "fork_owner"
     )
-    unavailable = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    unavailable = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     if unavailable.status != "no_proven_hit" or unavailable.candidates:
         raise AssertionError("revoked original consumer was disclosed")
@@ -303,18 +304,18 @@ def benchmark(
 
     times: list[float] = []
     cpu: list[float] = []
-    fixed = index.lookup_shared_root_forks(
-        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    fixed = lookup_native_shared_root_forks(
+        index, router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
     for _ in range(5):
-        assert index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        assert lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR,
         ) == fixed
     for _ in range(iterations):
         start = time.perf_counter_ns()
         cpu_start = time.process_time_ns()
-        observed = index.lookup_shared_root_forks(
-            router, ALIASES[0], group=GROUP, principal=ACTOR,
+        observed = lookup_native_shared_root_forks(
+            index, router, ALIASES[0], group=GROUP, principal=ACTOR,
         )
         cpu.append((time.process_time_ns() - cpu_start) / 1_000_000)
         times.append((time.perf_counter_ns() - start) / 1_000_000)

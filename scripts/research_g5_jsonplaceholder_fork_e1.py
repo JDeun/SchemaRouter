@@ -28,6 +28,7 @@ from scripts.research_g5_jsonplaceholder_live_e1 import (
     build_graph_router,
 )
 from scripts.research_legacy_g5_execution import execute_native_graph_one_hop
+from scripts.research_legacy_native_fork import lookup_native_shared_root_forks
 
 FORK_ALIASES = (
     "post author username and email",
@@ -127,8 +128,8 @@ async def run(client: httpx.AsyncClient) -> dict[str, Any]:
     router, graph, post, user, email = build_fork_router(client)
     # The aliases are explicit host-owned declarations, not inferred language understanding.
     for alias in FORK_ALIASES:
-        result = graph.lookup_shared_root_forks(
-            router, alias, group=FORK_GROUP, principal=ACTOR,
+        result = lookup_native_shared_root_forks(
+            graph, router, alias, group=FORK_GROUP, principal=ACTOR,
         )
         identities = tuple(
             (item.root_route_id, *item.branch_route_ids)

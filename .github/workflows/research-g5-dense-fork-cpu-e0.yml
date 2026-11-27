@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/benchmark_native_fork_dense_cpu_e0.py"
-      - "src/schemarouter/native_fork_index.py"
+      - "scripts/research_legacy_native_fork.py"
       - "tests/test_benchmark_native_fork_dense_cpu_e0.py"
       - "tests/test_native_prefork_policy_scope_e0.py"
       - "tests/test_native_prefork_health_drift_e0.py"

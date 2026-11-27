@@ -3,6 +3,7 @@ name: Original Paper Required Field Coverage E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "scripts/research_legacy_paper_field_retrieval.py"
       - "src/schemarouter/paper_typed_tool_plan.py"
       - "src/schemarouter/__init__.py"

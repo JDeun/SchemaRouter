@@ -3,6 +3,7 @@ name: Original Paper Typed ToolCall Plan E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_native_fork.py"
       - "scripts/research_legacy_posting_rank.py"
       - "scripts/research_legacy_paper_field_retrieval.py"
       - "scripts/research_legacy_paper_typed_plan.py"
