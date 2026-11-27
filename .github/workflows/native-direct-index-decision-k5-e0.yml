@@ -3,6 +3,7 @@ name: Native Direct 500-5000 Index CPU E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_posting_rank.py"
       - "scripts/research_indexed_decision_backend_ranker_e0.py"
       - "scripts/benchmark_native_posting_ranked_k5_e0.py"
       - "tests/test_research_indexed_decision_backend_ranker_e0.py"

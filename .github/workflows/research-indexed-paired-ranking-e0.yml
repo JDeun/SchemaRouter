@@ -3,6 +3,7 @@ name: Native Indexed Paired Top-K5 Research DEV E0
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_posting_rank.py"
       - "scripts/research_indexed_paired_ranking_dev.py"
       - "tests/test_research_indexed_paired_ranking_dev.py"
       - "scripts/research_indexed_decision_backend_ranker_e0.py"

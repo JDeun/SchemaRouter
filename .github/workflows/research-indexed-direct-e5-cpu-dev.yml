@@ -3,6 +3,7 @@ name: Indexed Direct Top-K5 Pinned E5 CPU DEV
 on:
   pull_request:
     paths:
+      - "scripts/research_legacy_posting_rank.py"
       - "scripts/research_indexed_decision_backend_ranker_e0.py"
       - "scripts/research_indexed_e5_overflow_cpu_dev.py"
       - "tests/test_research_indexed_decision_backend_ranker_e0.py"
