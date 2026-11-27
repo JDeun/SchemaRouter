@@ -62,7 +62,7 @@ def _original_public_menu(
         if len(matching) != 1:
             raise ValueError("missing/ambiguous original native route")
         ep = matching[0]
-        available = router.planner.availability_predicate
+        available = router._source_availability.predicate
         if (
             ep.read_only is not True or ep.destructive is True
             or not policy(tool, ep)

@@ -24,15 +24,17 @@ from schemarouter.hooks import ExecutionHooks
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 
 
 def _native_router(*, requires_input: bool = True, on_invoke=None, legacy=False):
     seen = []
-    router = SchemaRouter(_legacy_routing=legacy, authorization_policy=AuthorizationPolicy(
+    policy = AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="complete.read", roles_any=("viewer",),
         ),),
-    ))
+    )
+    router = (legacy_router if legacy else SchemaRouter)(authorization_policy=policy)
     parameters = ([ParameterSpec(
         name="case_id", location="query", required=True,
         json_schema={"type": "string"},

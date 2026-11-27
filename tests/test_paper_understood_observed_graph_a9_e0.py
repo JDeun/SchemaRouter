@@ -41,9 +41,10 @@ async def test_unsupported_understanding_never_invokes_a_graph_tool():
 def _fixture(
     *, hops: int = 2, host_root: bool = False, root_value: object = "contact-7",
     middle_value: object = "case-42", target_value: object = "open", on_step=None,
+    router_factory=SchemaRouter,
 ):
     seen: list[tuple[str, dict]] = []
-    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+    router = router_factory(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
             effect="allow", operation="*.read", roles_any=("reader",),
         ),),
@@ -482,8 +483,9 @@ def test_named_graph_execution_api_is_explicitly_exported():
     assert callable(observe_and_execute_paper_understood_graph)
 
 
-def _ranked_fixture(*, hops: int = 2, n_targets: int = 6, on_step=None):
-    router, _index, seen = _fixture(hops=hops, on_step=on_step)
+def _ranked_fixture(*, hops: int = 2, n_targets: int = 6, on_step=None,
+                    router_factory=SchemaRouter):
+    router, _index, seen = _fixture(hops=hops, on_step=on_step, router_factory=router_factory)
     for i in range(1, n_targets):
         name = f"target_{i}"
         def invoke(_endpoint, arguments, *, target=name):

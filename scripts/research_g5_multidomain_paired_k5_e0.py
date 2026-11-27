@@ -175,7 +175,7 @@ def source_scan_oracle(
                 or not allowed(tool, ep)
             ):
                 continue
-            available = router.planner.availability_predicate
+            available = router._source_availability.predicate
             if available is not None and not available(tool, ep):
                 continue
             scoped = router._data_scope_endpoint_view(ACTOR, tool, ep)
@@ -305,7 +305,7 @@ def analyze_multidomain_source(
     for _label, group, aliases, oracle in cases:
         forbidden = oracle[0][2]
         tool_key = forbidden.rsplit(".", 1)[0]
-        router.planner.availability_predicate = (
+        router._source_availability.predicate = (
             lambda tool, _ep, excluded=tool_key: tool.key != excluded
         )
         lexical, budget = scoped_source_lexical_k5(
@@ -319,7 +319,7 @@ def analyze_multidomain_source(
             or g5.candidates or g5.status != "no_proven_hit"
         ):
             raise ValueError("revoked original source still disclosed")
-        router.planner.availability_predicate = None
+        router._source_availability.predicate = None
 
     both = [r for r in rows if r["shared_complete_cost_eligible"]]
     g5_only = sum(r["g5_source_complete"] and not r["lexical_source_complete"] for r in rows)

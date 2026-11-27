@@ -80,8 +80,8 @@ def authorized_source_contract_budget(
                 or not predicate(tool, endpoint)
             ):
                 continue
-            if router.planner.availability_predicate is not None and not (
-                router.planner.availability_predicate(tool, endpoint)
+            if router._source_availability.predicate is not None and not (
+                router._source_availability.predicate(tool, endpoint)
             ):
                 continue
             visible = router._data_scope_endpoint_view(ACTOR, tool, endpoint)
@@ -176,7 +176,7 @@ def evaluate_fixture(
     router._check_retrieval_authority_witness(witness)
     # Health refusal proves that cached typed source graph doesn't release
     # a stale route if its *original* provider availability changes.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _endpoint: tool.key != "fork_owner"
     )
     for query in ALIASES:
@@ -185,7 +185,7 @@ def evaluate_fixture(
         )
         if denied.candidates or denied.status != "no_proven_hit":
             raise ValueError("G5 source authorization/availability drift disclosed")
-    router.planner.availability_predicate = None
+    router._source_availability.predicate = None
     return {
         "schema_version": SCHEMA_VERSION,
         "evidence_tier": "E0_SYNTHETIC_ORIGINAL_SOURCE_G5_NOT_EXTERNAL",

@@ -109,7 +109,7 @@ def profile(*, registered_routes: int, extra_status: int) -> dict[str, Any]:
         graph, router,
         wanted_status="over_k_unranked", wanted_forks=extra_status + 1,
     )
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: not tool.key.startswith(PREFIX)
     )
     revoked = count_once(

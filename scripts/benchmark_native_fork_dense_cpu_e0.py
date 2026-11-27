@@ -138,7 +138,7 @@ def benchmark_dense(
     # Same native catalog and index, same principal, only currently
     # available health state changes. This cannot grant or disclose
     # partial routes and must never become a new no-fit classifier.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _endpoint: not tool.key.startswith(PREFIX)
     )
     restored = sample(wanted_status="complete", count=1)

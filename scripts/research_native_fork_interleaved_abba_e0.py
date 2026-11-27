@@ -159,7 +159,7 @@ def run_interleaved_abba(
         }
 
     dense = measured("dense")
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _endpoint: not tool.key.startswith(PREFIX)
     )
     revoked = measured("revoked")

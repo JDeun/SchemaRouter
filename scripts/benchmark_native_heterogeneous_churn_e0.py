@@ -169,7 +169,7 @@ def _same_predicate_health_checks(
     def available(tool: Any, _endpoint: Any) -> bool:
         return tool.key not in blocked
 
-    router.planner.availability_predicate = available
+    router._source_availability.predicate = available
     initial_version = router.registry.version
     count = 0
     for case in CASES:
@@ -178,7 +178,7 @@ def _same_predicate_health_checks(
                 blocked.add(case.tool_name)
             else:
                 blocked.discard(case.tool_name)
-            if router.planner.availability_predicate is not available:
+            if router._source_availability.predicate is not available:
                 raise AssertionError("live health predicate identity changed")
             _checked_query(
                 router, case.aliases[0], ACTOR, journal, rebuilt,

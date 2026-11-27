@@ -41,6 +41,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     build_fixture,
 )
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_synthetic_router import legacy_synthetic_router
 
 
 def _catalog() -> NativeConceptCatalog:
@@ -506,7 +507,7 @@ def test_review_opaque_cursor_rejects_revoked_anchor_and_other_principal():
         )
 
     revoked_route = first.routes[-1].route_id
-    router.planner.availability_predicate = lambda tool, endpoint: (
+    router._source_availability.predicate = lambda tool, endpoint: (
         f"{tool.key}.{endpoint.name}" != revoked_route
     )
     with pytest.raises(ValueError, match="cursor"):
@@ -817,7 +818,7 @@ def test_visible_field_review_fails_on_inflight_health_policy_change():
             router.authorization_policy = AuthorizationPolicy(default_effect="deny")
         return True
 
-    router.planner.availability_predicate = revoke_during_review
+    router._source_availability.predicate = revoke_during_review
     with pytest.raises(PolicyViolationError, match="changed|policy|authorization"):
         session.inspect_visible_fields(principal=ACTOR)
 
@@ -848,7 +849,7 @@ def test_visible_field_review_detects_one_shot_mutable_availability_revocation()
                 first_available = False
         return first_available if tool.name == "a" else True
 
-    router.planner.availability_predicate = revoke_previous_route_once
+    router._source_availability.predicate = revoke_previous_route_once
     with pytest.raises(PolicyViolationError, match="eligibility|changed"):
         session.inspect_visible_fields(principal=ACTOR, limit=2)
 
@@ -860,7 +861,7 @@ def test_visible_field_review_suppresses_sensitive_callback_errors():
     def forbidden_diagnostic(_tool, _endpoint):
         raise PolicyViolationError("private SSN field in provider callback")
 
-    router.planner.availability_predicate = forbidden_diagnostic
+    router._source_availability.predicate = forbidden_diagnostic
     with pytest.raises(PolicyViolationError) as caught:
         session.inspect_visible_fields(principal=ACTOR)
     assert "private" not in str(caught.value)
@@ -894,7 +895,7 @@ def test_visible_field_review_callback_cannot_forge_hidden_field_semantics():
             endpoint.output_fields[0].semantic_id = "opaque.b"
         return True
 
-    router.planner.availability_predicate = mutate_callback_view
+    router._source_availability.predicate = mutate_callback_view
     page = session.inspect_visible_fields(principal=ACTOR, limit=64)
     visible = next(route for route in page.routes
                    if route.route_id == "callback_review.read")
@@ -1102,7 +1103,8 @@ def test_prepared_session_reuses_compiled_index_and_exposes_field_metadata(
         "build", classmethod(tracked),
     )
     session = router.prepare_field_routing(catalog=_catalog())
-    before = router.retrieve_authorized(ALIASES[0], principal=ACTOR)
+    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
+        router.retrieve_authorized(ALIASES[0], principal=ACTOR)
     assert all(session.discover(q, principal=ACTOR).status == "complete"
                for q in ALIASES)
     typed = session.compile(ALIASES[1], principal=ACTOR)
@@ -1122,7 +1124,8 @@ def test_prepared_session_reuses_compiled_index_and_exposes_field_metadata(
         (RIGHT, "customer_id", ROOT, "customer_id"),
     }
     assert builds == [router.registry.version]
-    assert router.retrieve_authorized(ALIASES[0], principal=ACTOR) == before
+    with pytest.raises(PolicyViolationError, match="lexical retrieval is unavailable"):
+        router.retrieve_authorized(ALIASES[0], principal=ACTOR)
 
 
 def test_prepared_session_never_calls_provider_executors(monkeypatch):
@@ -1442,7 +1445,7 @@ def test_prepared_session_rejects_unreviewed_catalog_and_root_inputs():
 
 
 def test_prepared_session_does_not_exist_as_a_default_retrieval_mode():
-    router: SchemaRouter = build_fixture(500)
+    router: SchemaRouter = build_fixture(500, router_factory=legacy_synthetic_router)
     before = router.retrieve_authorized(ALIASES[0], principal=ACTOR)
     _ = router.prepare_field_routing(catalog=_catalog())
     after = router.retrieve_authorized(ALIASES[0], principal=ACTOR)

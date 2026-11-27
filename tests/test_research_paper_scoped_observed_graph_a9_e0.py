@@ -11,6 +11,7 @@ from schemarouter.errors import PolicyViolationError
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_router import legacy_router
 
 QUERY = "Please find the case status"
 
@@ -46,7 +47,7 @@ async def test_one_actual_scoped_model_call_executes_native_named_dag(hops):
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture(hops=hops)
+    router, index, seen = _fixture(hops=hops, router_factory=legacy_router)
     view = _view(router)
     disclosed = []
 
@@ -80,7 +81,7 @@ async def test_missing_root_host_input_defers_without_any_tool_call():
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture(host_root=True)
+    router, index, seen = _fixture(host_root=True, router_factory=legacy_router)
     view = _view(router)
     decision, receipt = await run_paper_scoped_named_graph_a9_e0(
         lambda payload: _response(hints={"external_id": "fake-model-value"}),
@@ -108,7 +109,7 @@ async def test_ready_direct_receipt_is_not_offered_as_observed_g5():
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture(hops=1)
+    router, index, seen = _fixture(hops=1, router_factory=legacy_router)
     index = NativeSchemaGraphIndex.build(
         index.field_index, approved_host_roots=frozenset({"target_0.read"}),
     )
@@ -140,7 +141,7 @@ async def test_unknown_model_named_tool_abstains_without_execution():
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture()
+    router, index, seen = _fixture(router_factory=legacy_router)
     decision, receipt = await run_paper_scoped_named_graph_a9_e0(
         lambda payload: _response(target="invented_tool"),
         **_args(_view(router), index),
@@ -155,7 +156,7 @@ async def test_empty_authorized_menu_invokes_neither_model_nor_executor():
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture()
+    router, index, seen = _fixture(router_factory=legacy_router)
     router.authorization_policy = AuthorizationPolicy(default_effect="deny")
     view = _view(router)
 
@@ -175,7 +176,7 @@ async def test_scoped_policy_change_during_model_prevents_source_invocation():
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture()
+    router, index, seen = _fixture(router_factory=legacy_router)
     view = _view(router)
 
     def mutate(payload):
@@ -203,7 +204,7 @@ async def test_scoped_policy_change_during_middle_stops_target_and_receipt():
                 ),),
             )
 
-    router, index, seen = _fixture(on_step=revoke)
+    router, index, seen = _fixture(on_step=revoke, router_factory=legacy_router)
     with pytest.raises(PolicyViolationError):
         await run_paper_scoped_named_graph_a9_e0(
             lambda payload: _response(), **_args(_view(router), index),
@@ -221,7 +222,7 @@ async def test_scoped_a9_explicit_owner_unnamed_graph_executes_pinned_path(hops)
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _ranked_fixture(hops=hops)
+    router, index, seen = _ranked_fixture(hops=hops, router_factory=legacy_router)
     view = _view(router)
     policy = PaperNativeRankPolicy(
         snapshot_id=index.field_index.snapshot_id,
@@ -256,7 +257,7 @@ async def test_scoped_a9_unnamed_graph_requires_host_rank_before_model_call():
         run_paper_scoped_named_graph_a9_e0,
     )
 
-    router, index, seen = _fixture()
+    router, index, seen = _fixture(router_factory=legacy_router)
     def model(_payload):
         pytest.fail("host proof preflight must precede model disclosure")
 

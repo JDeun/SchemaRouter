@@ -77,7 +77,7 @@ def scoped_source_lexical_k5(
                 continue
             if not permitted(tool, ep):
                 continue
-            available = router.planner.availability_predicate
+            available = router._source_availability.predicate
             if available is not None and not available(tool, ep):
                 continue
             scoped = router._data_scope_endpoint_view(ACTOR, tool, ep)
@@ -183,7 +183,7 @@ def compare_source_pair(
 
     # The same original source health revocation must affect BOTH discovery
     # arms: absent original producer/consumer => no provable complete path.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, _ep: tool.key != "fork_owner"
     )
     refused = index.lookup_shared_root_forks(

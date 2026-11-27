@@ -184,7 +184,7 @@ def _scope(router: SchemaRouter, scenario: str) -> None:
             roles_any=("reader",),
         ),) if hide else (),
     )
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         (lambda tool, _ep: tool.key != ROOT.split(".")[0])
         if scenario == "unavailable_root" else None
     )
@@ -345,7 +345,7 @@ def audit_heterogeneous_graph_churn(registered_routes: int) -> dict[str, Any]:
                 return tool.key not in _blocked
 
             _scope(router, "visible")
-            router.planner.availability_predicate = health
+            router._source_availability.predicate = health
             pinned_version = router.registry.version
             for key in ("unrelated_00000", "unrelated_00001"):
                 for blocked_now in (True, False):
@@ -377,13 +377,13 @@ def audit_heterogeneous_graph_churn(registered_routes: int) -> dict[str, Any]:
                         or len(one.candidates) != int(bool(expected[0]))
                         or len(two.candidates) != int(bool(expected[1]))
                         or one.executable_authority or two.executable_authority
-                        or router.planner.availability_predicate is not health
+                        or router._source_availability.predicate is not health
                     ):
                         raise AssertionError("G5 live same-predicate health transition drift")
                     health_checks += 1
             if router.registry.version != pinned_version:
                 raise AssertionError("G5 health-only state unexpectedly changed source")
-            router.planner.availability_predicate = None
+            router._source_availability.predicate = None
     return {
         "evidence_tier": EVIDENCE,
         "independent_e2_qualified": False,

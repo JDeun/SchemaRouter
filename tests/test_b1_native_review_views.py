@@ -141,7 +141,7 @@ def test_indexed_conjunctive_candidates_match_live_authorized_source_scan(
                     or not permitted(tool, endpoint)
                 ):
                     continue
-                availability = router.planner.availability_predicate
+                availability = router._source_availability.predicate
                 if availability is not None and not availability(tool, endpoint):
                     continue
                 visible = router._data_scope_endpoint_view(ACTOR, tool, endpoint)
@@ -161,7 +161,7 @@ def test_indexed_conjunctive_candidates_match_live_authorized_source_scan(
         assert result.candidates == ()
 
     # A live availability change must affect lookup without rebuilding postings.
-    router.planner.availability_predicate = (
+    router._source_availability.predicate = (
         lambda tool, endpoint: tool.key != "fork_status"
     )
     changed = scan()
