@@ -138,7 +138,8 @@ def test_public_execution_negative_gaps_are_explicit_and_owned() -> None:
         lines = path.read_text(encoding="utf-8").splitlines()
         assert isinstance(location["line"], int)
         assert 0 < location["line"] <= len(lines)
-        assert "def " in lines[location["line"] - 1], row["id"]
+        method = row["public_entrypoint"].rsplit(".", 1)[1]
+        assert f"def {method}(" in lines[location["line"] - 1], row["id"]
         test_path = ROOT / row["observed_test_file"]
         assert test_path.is_file()
         tree = ast.parse(test_path.read_text(encoding="utf-8"))

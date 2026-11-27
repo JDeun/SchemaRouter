@@ -78,7 +78,7 @@ def test_owner_methods_are_all_classified_and_synchronized() -> None:
         for entry in declared:
             name = entry["name"]
             assert entry["kind"] in KINDS
-            assert entry["source_line"] >= 1
+            assert entry["source_line"] == actual[name], (row["owner"], name)
             assert (
                 entry["kind"] == "registered-tool-execution"
             ) == (name in EXECUTION_NAMES), (row["owner"], name)
