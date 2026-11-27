@@ -5,11 +5,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from schemarouter.errors import PolicyViolationError
-from schemarouter.models import CapabilityRetrieval, ToolResult
+from schemarouter.models import ToolResult
 from schemarouter.operation_fit import (
     DeclaredOperationFitPolicy,
     validated_declared_operation_policy,
 )
+from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.retrieval_abstention import (
     RetrievalAbstentionPolicy,

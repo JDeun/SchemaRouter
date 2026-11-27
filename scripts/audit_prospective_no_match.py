@@ -15,11 +15,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from schemarouter import CapabilityRetrieval
-
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval  # noqa: E402
 from scripts.research_legacy_planning.retrieval_abstention import (  # noqa: E402
     RetrievalAbstentionPolicy,
     apply_retrieval_abstention,

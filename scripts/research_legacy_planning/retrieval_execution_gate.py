@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any
 
 from schemarouter.errors import PolicyViolationError
 from schemarouter.models import (
-    CapabilityRetrieval,
     ExecutionPlan,
     FallbackRoute,
     ToolCall,
@@ -21,6 +20,7 @@ from schemarouter.operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
 )
+from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
 from scripts.research_legacy_planning.retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,

@@ -15,8 +15,6 @@ from schemarouter.evidence import available_evidence, field_evidence_status, glo
 from schemarouter.execution_state import TypedExecutionState
 from schemarouter.models import (
     CandidateSelectionSource,
-    CapabilityCandidate,
-    CapabilityRetrieval,
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
@@ -40,6 +38,7 @@ from schemarouter.validation import (
     json_schema_types,
     json_schemas_compatible,
 )
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
 from scripts.research_legacy_planning.planning_context import (
     PlanningContext,
     RegistrySnapshot,

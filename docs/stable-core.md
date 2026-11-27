@@ -38,7 +38,7 @@ never infers workflow state, widens visibility, or executes a capability.
 
 ### Candidate contracts preserve executable schema
 
-`CapabilityCandidate` preserves:
+The historical `CapabilityCandidate` (now in checkout-only `scripts.research_legacy_planning.candidate_models`) preserves:
 
 - route/tool/endpoint identity;
 - full effective input and output JSON Schema;

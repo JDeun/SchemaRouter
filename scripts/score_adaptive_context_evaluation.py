@@ -13,12 +13,15 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from schemarouter.models import CapabilityCandidate, CapabilityRetrieval  # noqa: E402
 from scripts.research_legacy_adaptive_context import (  # noqa: E402
     SessionSchemaExposure,
     SuccessfulCapabilityHistory,
     apply_success_prior,
     filter_unexposed_schemas,
+)
+from scripts.research_legacy_planning.candidate_models import (  # noqa: E402
+    CapabilityCandidate,
+    CapabilityRetrieval,
 )
 
 ROOT = Path("benchmarks/adaptive-context-evaluation-v1")

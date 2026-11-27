@@ -7,11 +7,11 @@ import pytest
 from pydantic import ValidationError
 
 from schemarouter import (
-    CapabilityRetrieval,
     EndpointSpec,
     FieldSpec,
     ToolSpec,
 )
+from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
 from scripts.research_legacy_planning.retrieval_abstention import (
     RetrievalAbstentionPolicy,
     apply_retrieval_abstention,

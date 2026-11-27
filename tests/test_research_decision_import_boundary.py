@@ -22,6 +22,8 @@ RETIRED = {
     "QueryAnalyzer",
     "SchemaPlanner",
     "PlanRequest",
+    "CapabilityCandidate",
+    "CapabilityRetrieval",
     "CapabilityRouteCandidate",
     "CapabilityRouteRetrieval",
     "StateAwareCapabilityCandidate",

@@ -16,11 +16,10 @@ from schemarouter._authorization_witness import _policy_contents_digest
 from schemarouter.authorization import PrincipalContext
 from schemarouter.errors import PolicyViolationError
 from schemarouter.models import (
-    CapabilityCandidate,
-    CapabilityRetrieval,
     ParameterSpec,
     StrictModel,
 )
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
 from scripts.research_legacy_planning.requests import PlanRequest
 
 if TYPE_CHECKING:

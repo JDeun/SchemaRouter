@@ -11,7 +11,8 @@ from schemarouter.execution_state import (
     evaluate_preconditions,
     evaluate_state_eligibility,
 )
-from schemarouter.models import CapabilityCandidate, CapabilityRetrieval, StrictModel
+from schemarouter.models import StrictModel
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
 
 
 class StateAwareCapabilityCandidate(StrictModel):

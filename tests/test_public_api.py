@@ -21,7 +21,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "register_reviewed_europepmc_paper_source",
         "AggregatedField",
         "CanonicalEntity",
-        "CapabilityCandidate",
         "CapabilityCompatibility",
         "CapabilityDependencyEdge",
         "CapabilityDependencyGraph",
@@ -48,7 +47,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ExplorerTool",
         "ExplorerUnitNormalization",
         "ExplorerWatchStatus",
-        "CapabilityRetrieval",
         "DeclaredOperationFitPolicy",
         "NativeDeclaredFieldGroup",
         "NativeConceptCatalog",
@@ -602,3 +600,15 @@ def test_retired_score_based_abstention_and_execution_are_not_installed() -> Non
     assert callable(schemarouter.validate_declared_operation_fit)
     assert callable(schemarouter.SchemaRouter.execute)
     assert callable(schemarouter.PaperQueryUnderstanding)
+
+
+def test_retired_full_candidate_dtos_and_projection_are_not_installed() -> None:
+    from schemarouter import models, runtime
+
+    for name in ("CapabilityCandidate", "CapabilityRetrieval"):
+        assert not hasattr(schemarouter, name), name
+        assert not hasattr(models, name), name
+    assert not hasattr(schemarouter.SchemaRouter, "_project_retrieval_data_scope")
+    assert not hasattr(runtime, "_scoped_public_score_components")
+    assert callable(schemarouter.SchemaRouter.prepare_field_routing)
+    assert callable(schemarouter.SchemaRouter.execute)

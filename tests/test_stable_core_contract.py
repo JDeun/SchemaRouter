@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 
 from schemarouter import (
-    CapabilityCandidate,
     ConfiguredSchemaRouter,
     SchemaRouter,
 )
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate
 from scripts.research_legacy_runtime import LegacyConfiguredSchemaRouter, LegacySchemaRouter
 
 

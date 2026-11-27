@@ -42,11 +42,11 @@
 
 ## CapabilityCandidate
 
-::: schemarouter.CapabilityCandidate
+개발 배포 API에서 제거된 과거 Lexical 후보 타입입니다. 소스 체크아웃의 `scripts.research_legacy_planning.candidate_models`에 비교 구현을 보존합니다.
 
 ## CapabilityRetrieval
 
-::: schemarouter.CapabilityRetrieval
+개발 배포 API에서 제거된 과거 Lexical 후보 타입입니다. 소스 체크아웃의 `scripts.research_legacy_planning.candidate_models`에 비교 구현을 보존합니다.
 
 ## FallbackRoute
 

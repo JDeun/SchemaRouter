@@ -1,6 +1,6 @@
 """Phase-timed current authorized retrieval (research DEV; no product changes).
 
-This intentionally instruments the SAME production public API. Timings are
+This instruments the archived lexical comparison API and shared scope checks. Timings are
 wall-clock under Python wrappers, not uninstrumented CPU-cycle measurements.
 No external model, network, action, or live third-party provider is invoked.
 """
@@ -32,6 +32,7 @@ from scripts.research_current_main_multilingual_dev import encoded
 from scripts.research_legacy_planning.planner import SchemaPlanner
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 ROOT = Path(__file__).resolve().parents[1]
 WIDTHS = (24, 56)
@@ -47,7 +48,7 @@ QUERIES = {
 }
 STAGE_METHODS = (
     (SchemaRouter, "_scoped_analysis_registry", "scoped_registry_rebuild"),
-    (SchemaRouter, "_project_retrieval_data_scope", "final_field_projection"),
+    (LegacySchemaRouter, "_project_retrieval_data_scope", "final_field_projection"),
     (SchemaPlanner, "_analyze_sync", "planner_query_analysis"),
     (SchemaPlanner, "_retrieve_from_intent", "planner_retrieval_total"),
     (SchemaPlanner, "_semantic_recall_catalog", "planner_candidate_scoring"),

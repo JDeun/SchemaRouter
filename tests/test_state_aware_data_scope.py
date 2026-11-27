@@ -14,7 +14,7 @@ from schemarouter import (
 from schemarouter.authorization import _principal_execution_context
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.execution_state import ObservedStateField, TypedExecutionState
-from schemarouter.models import CapabilityCandidate
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_state_backfill import (
     legacy_areretrieve_state_aware,

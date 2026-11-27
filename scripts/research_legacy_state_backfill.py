@@ -6,8 +6,9 @@ from pydantic import Field
 
 from schemarouter.capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from schemarouter.execution_state import TypedExecutionState
-from schemarouter.models import CapabilityCandidate, StrictModel
+from schemarouter.models import StrictModel
 from schemarouter.runtime import ConfiguredSchemaRouter, SchemaRouter
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.state_retrieval import (
     StateAwareCapabilityCandidate,

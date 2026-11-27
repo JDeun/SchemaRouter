@@ -1,6 +1,6 @@
 """Nested cost attribution of real authorized typed retrieval on Actions CPU.
 
-All authority and scores come from the actual public SchemaRouter API. Only
+Authority and scores come from the archived lexical API and shared scope checks. Only
 class methods are temporarily instrumented in a single-threaded local study;
 no global production hooks or persistent cache are installed.
 """
@@ -33,6 +33,7 @@ from scripts.research_current_main_multilingual_dev import encoded
 from scripts.research_legacy_planning.planner import SchemaPlanner
 from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
+from scripts.research_legacy_runtime import LegacySchemaRouter
 
 ROOT = Path(__file__).resolve().parents[1]
 MODES = ("scoped", "route_policy_only")
@@ -45,7 +46,7 @@ WIDTH = 24
 STAGES: tuple[tuple[type, str, str], ...] = (
     (SchemaRouter, "_scoped_analysis_registry", "analysis_registry"),
     (SchemaRouter, "_data_scope_endpoint_view", "field_schema_projection"),
-    (SchemaRouter, "_project_retrieval_data_scope", "final_projection"),
+    (LegacySchemaRouter, "_project_retrieval_data_scope", "final_projection"),
     (AuthorizationPolicy, "visible", "route_authorization"),
     (AuthorizationPolicy, "data_scope", "data_scope_decision"),
     (SchemaPlanner, "_analyze_sync", "query_analysis"),

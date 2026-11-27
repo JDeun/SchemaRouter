@@ -42,11 +42,11 @@
 
 ## CapabilityCandidate
 
-::: schemarouter.CapabilityCandidate
+Retired lexical shortlist type. The historical comparison implementation is preserved in `scripts.research_legacy_planning.candidate_models` in a source checkout.
 
 ## CapabilityRetrieval
 
-::: schemarouter.CapabilityRetrieval
+Retired lexical shortlist type. The historical comparison implementation is preserved in `scripts.research_legacy_planning.candidate_models` in a source checkout.
 
 ## FallbackRoute
 

@@ -30,7 +30,7 @@ flowchart TD
 
 ### Candidate contract는 실행 가능한 schema를 보존합니다
 
-`CapabilityCandidate`는 다음을 보존합니다.
+과거 `CapabilityCandidate`(현재 소스 체크아웃의 `scripts.research_legacy_planning.candidate_models`에 보존)는 다음을 보존합니다.
 
 - route/tool/endpoint identity
 - 완전한 effective input/output JSON Schema

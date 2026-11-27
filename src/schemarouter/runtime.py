@@ -12,7 +12,6 @@ import httpx
 from pydantic import TypeAdapter
 
 from ._loop_affinity import SyncLoopRunner
-from ._schema_identity import _tokens
 from ._source_availability import _SourceAvailability
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import (
@@ -76,13 +75,11 @@ from .hooks import ExecutionHooks
 from .ingestion import SourceKind, SourceProbeResult, URLSchemaLoader
 from .inspection import RouterInspection, inspect_router
 from .models import (
-    CapabilityRetrieval,
     EndpointSpec,
     ExecutionPlan,
     FieldSpec,
     PaperPlanRequest,
     ParameterSpec,
-    ScoreComponent,
     ToolCall,
     ToolResult,
     ToolSpec,
@@ -266,55 +263,6 @@ def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
         },
     }
 
-
-def _scoped_public_score_components(
-    components: list[ScoreComponent],
-    *,
-    visible_names: set[str],
-    source_fields: list[FieldSpec],
-    public_tool_identifiers: set[str],
-    public_endpoint_identifiers: set[str],
-    public_operation_names: set[str],
-    public_tool_tokens: set[str],
-    public_parameter_names: set[str],
-) -> list[ScoreComponent]:
-    """Publish only recognized, principal-visible score explanation labels.
-
-    Actual planner scores, ordering, source schema and execution authority
-    remain unchanged. Treat unknown/stale decision-produced score kinds as
-    unreviewed metadata rather than allowing them into scoped traces.
-    """
-    disallowed_names = {
-        label.casefold()
-        for field in source_fields
-        for label in (field.name, *field.aliases)
-        if label.casefold() not in visible_names
-    }
-    allowed_matches = {
-        "preferred_tool": public_tool_identifiers,
-        "preferred_endpoint": public_endpoint_identifiers,
-        "tool_identifier": public_tool_identifiers,
-        "endpoint_identifier": public_operation_names,
-        "operation_family": public_operation_names,
-        "tool_token": public_tool_tokens,
-        "argument_match": public_parameter_names,
-        "field_exact": visible_names,
-        "field_lexical": visible_names,
-        "field_substring": visible_names,
-    }
-    safe: list[ScoreComponent] = []
-    for component in components:
-        # Field qualifiers, argument aliases, and any future unreviewed kinds
-        # may echo source-owned descriptors not authorized for this principal.
-        allowed = allowed_matches.get(component.kind)
-        matched = component.matched
-        if allowed is None or matched is None:
-            continue
-        label = matched.casefold()
-        if label in disallowed_names or label not in allowed:
-            continue
-        safe.append(component)
-    return safe
 
 def _scoped_public_parameter(
     parameter: ParameterSpec,
@@ -747,170 +695,6 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
             )
         return scoped
-
-    def _project_retrieval_data_scope(
-        self,
-        retrieval: CapabilityRetrieval,
-        principal: PrincipalContext | None,
-    ) -> CapabilityRetrieval:
-        policy = self.authorization_policy
-        if policy is None or not policy.data_rules:
-            return retrieval
-        if principal is None:
-            raise PolicyViolationError(
-                "principal context is required when authorization_policy is configured"
-            )
-
-        projected_candidates = []
-        for candidate in retrieval.candidates:
-            tool = self.registry.get(candidate.tool)
-            endpoint = tool.endpoint(candidate.endpoint)
-            scope = policy.data_scope(principal, tool, endpoint)
-            if scope.visible_fields is None:
-                projected_candidates.append(candidate)
-                continue
-
-            visible_fields = [
-                field
-                for field in endpoint.output_fields
-                if field.name in scope.visible_fields
-            ]
-            if endpoint.output_fields and not visible_fields:
-                continue
-
-            denied_markers = _scoped_denied_field_markers(
-                endpoint.output_fields, set(scope.visible_fields),
-            )
-            public_fields = [
-                _scoped_public_output_field(field, denied_markers=denied_markers)
-                for field in visible_fields
-            ]
-            visible_names: set[str] = set()
-            for field in public_fields:
-                visible_names.add(field.name.casefold())
-                if field.semantic_id:
-                    visible_names.add(field.semantic_id.casefold())
-
-            hidden_field_names = {
-                field.name
-                for field in endpoint.output_fields
-                if field.name not in scope.visible_fields
-            }
-            parameters = []
-            for parameter in candidate.parameters:
-                mapped_field = (
-                    parameter.name.split("filter__", 1)[1]
-                    if parameter.name.startswith("filter__")
-                    else parameter.name
-                )
-                if (
-                    mapped_field in hidden_field_names
-                    or _scoped_echoes_denied_label(parameter.name, denied_markers)
-                    or (
-                        parameter.name.startswith("filter__")
-                        and mapped_field not in scope.visible_fields
-                    )
-                ):
-                    continue
-                clone = parameter.model_copy(deep=True)
-                if (
-                    parameter.name == "relationship_types"
-                    and scope.allowed_relationships is not None
-                ):
-                    schema = dict(clone.json_schema)
-                    items = dict(schema.get("items", {}))
-                    items["enum"] = sorted(scope.allowed_relationships)
-                    schema["items"] = items
-                    clone.json_schema = schema
-                if parameter.name == "max_hops" and scope.max_hops is not None:
-                    schema = dict(clone.json_schema)
-                    current_max = schema.get("maximum")
-                    schema["maximum"] = (
-                        scope.max_hops
-                        if current_max is None
-                        else min(int(current_max), scope.max_hops)
-                    )
-                    clone.json_schema = schema
-                parameters.append(clone)
-
-            # Public scoped descriptors cannot inherit unreviewed nested
-            # input metadata even when the output field list is already safe.
-            parameters = [
-                _scoped_public_parameter(
-                    param,
-                    allowed_relationships=scope.allowed_relationships,
-                    max_hops=scope.max_hops,
-                )
-                for param in parameters
-            ]
-            input_schema = _scoped_public_input_schema(parameters)
-
-            matched_fields = [
-                value
-                for value in candidate.matched_fields
-                if value.casefold() in visible_names
-            ]
-            score_components = _scoped_public_score_components(
-                candidate.score_components,
-                visible_names=visible_names,
-                source_fields=endpoint.output_fields,
-                public_tool_identifiers={tool.key.casefold()},
-                public_endpoint_identifiers={
-                    f"{tool.key}.{endpoint.name}".casefold()
-                },
-                public_operation_names={endpoint.name.casefold()},
-                public_tool_tokens={
-                    token.casefold()
-                    for token in _tokens(f"{tool.name} {endpoint.name}")
-                },
-                public_parameter_names={
-                    parameter.name.casefold() for parameter in parameters
-                },
-            )
-            projected_candidates.append(
-                candidate.model_copy(
-                    deep=True,
-                    update={
-                        "tool_description": "",
-                        "endpoint_description": "",
-                        # Candidate source labels originate from the raw
-                        # registered tool, not the principal's scoped view.
-                        "source_type": None,
-                        "license": None,
-                        "provider": None,
-                        "access_mode": None,
-                        "parameters": parameters,
-                        "input_schema": input_schema,
-                        "output_fields": public_fields,
-                        "output_schema": _scoped_public_output_schema(public_fields),
-                        "matched_fields": matched_fields,
-                        "score_components": score_components,
-                    },
-                )
-            )
-
-        # The planner already ranked only policy-allowed, data-visible
-        # endpoint views before applying Top-K. Post-Top-K field projection
-        # must not overwrite that full ranked count with the shortlist size.
-        # If a concurrent scope change makes a previously visible route
-        # disappear here, its pre-Top-K count is no longer trustworthy:
-        # refuse a partial/inconsistent result instead of understating
-        # completeness or leaking a stale authorization count.
-        if (
-            len(projected_candidates) != len(retrieval.candidates)
-            or retrieval.total_ranked < len(projected_candidates)
-        ):
-            raise PolicyViolationError(
-                "authorized retrieval scope changed during projection"
-            )
-        ranked = [
-            candidate.model_copy(update={"rank": index})
-            for index, candidate in enumerate(projected_candidates, start=1)
-        ]
-        return retrieval.model_copy(
-            deep=True,
-            update={"candidates": ranked},
-        )
 
     def _combined_availability_predicate(
         self,

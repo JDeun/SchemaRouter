@@ -1,6 +1,6 @@
 from schemarouter.capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from schemarouter.execution_state import ObservedStateField, TypedExecutionState
-from schemarouter.models import CapabilityCandidate, CapabilityRetrieval
+from scripts.research_legacy_planning.candidate_models import CapabilityCandidate, CapabilityRetrieval
 from scripts.research_legacy_planning.state_retrieval import filter_retrieval_by_state
 
 

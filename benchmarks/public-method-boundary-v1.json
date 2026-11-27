@@ -10,512 +10,512 @@
         {
           "name": "authorization_audit_delivery_status",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 929
+          "source_line": 713
         },
         {
           "name": "aclose",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1213
+          "source_line": 997
         },
         {
           "name": "authorization_policy",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1245
+          "source_line": 1029
         },
         {
           "name": "input_schema",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1254
+          "source_line": 1038
         },
         {
           "name": "output_schema",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1258
+          "source_line": 1042
         },
         {
           "name": "config_schema",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1262
+          "source_line": 1046
         },
         {
           "name": "inspect",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1272
+          "source_line": 1056
         },
         {
           "name": "mark_access_unavailable",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1284
+          "source_line": 1068
         },
         {
           "name": "mark_access_available",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1299
+          "source_line": 1083
         },
         {
           "name": "unavailable_access_paths",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1304
+          "source_line": 1088
         },
         {
           "name": "register_health_probe",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1309
+          "source_line": 1093
         },
         {
           "name": "unregister_health_probe",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1319
+          "source_line": 1103
         },
         {
           "name": "health_snapshots",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1322
+          "source_line": 1106
         },
         {
           "name": "check_health_once",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1325
+          "source_line": 1109
         },
         {
           "name": "start_health_monitor",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1339
+          "source_line": 1123
         },
         {
           "name": "stop_health_monitor",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1352
+          "source_line": 1136
         },
         {
           "name": "register_schema_watch",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1355
+          "source_line": 1139
         },
         {
           "name": "unregister_schema_watch",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1378
+          "source_line": 1162
         },
         {
           "name": "schema_watch_snapshots",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1381
+          "source_line": 1165
         },
         {
           "name": "schema_watch_pending_review",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1384
+          "source_line": 1168
         },
         {
           "name": "aaccept_schema_watch_pending",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1390
+          "source_line": 1174
         },
         {
           "name": "accept_schema_watch_pending",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1401
+          "source_line": 1185
         },
         {
           "name": "areject_schema_watch_pending",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1414
+          "source_line": 1198
         },
         {
           "name": "reject_schema_watch_pending",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1425
+          "source_line": 1209
         },
         {
           "name": "check_schema_watches_once",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1438
+          "source_line": 1222
         },
         {
           "name": "start_schema_watcher",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1449
+          "source_line": 1233
         },
         {
           "name": "stop_schema_watcher",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1456
+          "source_line": 1240
         },
         {
           "name": "with_config",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1459
+          "source_line": 1243
         },
         {
           "name": "from_url",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1466
+          "source_line": 1250
         },
         {
           "name": "add_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1526
+          "source_line": 1310
         },
         {
           "name": "aremove_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1547
+          "source_line": 1331
         },
         {
           "name": "remove_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1572
+          "source_line": 1356
         },
         {
           "name": "add_bound_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1577
+          "source_line": 1361
         },
         {
           "name": "native_schema_watch_snapshots",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1700
+          "source_line": 1484
         },
         {
           "name": "arefresh_native_schema",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1750
+          "source_line": 1534
         },
         {
           "name": "aaccept_native_schema_pending",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1763
+          "source_line": 1547
         },
         {
           "name": "check_native_schema_watches_once",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1774
+          "source_line": 1558
         },
         {
           "name": "start_native_schema_watcher",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1783
+          "source_line": 1567
         },
         {
           "name": "stop_native_schema_watcher",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1794
+          "source_line": 1578
         },
         {
           "name": "add_sqlite_database",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1797
+          "source_line": 1581
         },
         {
           "name": "add_sqlalchemy_database",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1837
+          "source_line": 1621
         },
         {
           "name": "aadd_vector_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1919
+          "source_line": 1703
         },
         {
           "name": "add_vector_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 1976
+          "source_line": 1760
         },
         {
           "name": "aadd_native_vector_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2007
+          "source_line": 1791
         },
         {
           "name": "add_native_vector_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2045
+          "source_line": 1829
         },
         {
           "name": "aadd_graph_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2080
+          "source_line": 1864
         },
         {
           "name": "add_graph_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2137
+          "source_line": 1921
         },
         {
           "name": "aadd_record_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2168
+          "source_line": 1952
         },
         {
           "name": "add_record_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2222
+          "source_line": 2006
         },
         {
           "name": "aadd_native_graph_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2251
+          "source_line": 2035
         },
         {
           "name": "add_native_graph_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2289
+          "source_line": 2073
         },
         {
           "name": "aadd_native_record_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2324
+          "source_line": 2108
         },
         {
           "name": "add_native_record_store",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2360
+          "source_line": 2144
         },
         {
           "name": "amend_capability",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2393
+          "source_line": 2177
         },
         {
           "name": "bind_existing",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2478
+          "source_line": 2262
         },
         {
           "name": "rehydrate_bindings",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2589
+          "source_line": 2373
         },
         {
           "name": "register_adapter",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2690
+          "source_line": 2474
         },
         {
           "name": "adapter_registry",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2699
+          "source_line": 2483
         },
         {
           "name": "provider_profiles",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2703
+          "source_line": 2487
         },
         {
           "name": "provider_profile_registry",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2709
+          "source_line": 2493
         },
         {
           "name": "register_provider_profile",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2714
+          "source_line": 2498
         },
         {
           "name": "resolve_provider",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2727
+          "source_line": 2511
         },
         {
           "name": "discover_provider",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 2740
+          "source_line": 2524
         },
         {
           "name": "approve_provider_candidate",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2760
+          "source_line": 2544
         },
         {
           "name": "load_provider_profile_plugins",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2775
+          "source_line": 2559
         },
         {
           "name": "add_provider",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2788
+          "source_line": 2572
         },
         {
           "name": "load_adapter_plugins",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2811
+          "source_line": 2595
         },
         {
           "name": "add_callable",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2823
+          "source_line": 2607
         },
         {
           "name": "add_langchain_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2866
+          "source_line": 2650
         },
         {
           "name": "add_llamaindex_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2905
+          "source_line": 2689
         },
         {
           "name": "add_http_tool",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2942
+          "source_line": 2726
         },
         {
           "name": "inspect_url",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 2987
+          "source_line": 2771
         },
         {
           "name": "bind_openapi",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3003
+          "source_line": 2787
         },
         {
           "name": "approve_proposal",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3050
+          "source_line": 2834
         },
         {
           "name": "add_mcp_client_factory",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3118
+          "source_line": 2902
         },
         {
           "name": "add_mcp_stdio",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3181
+          "source_line": 2965
         },
         {
           "name": "probe_url",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3233
+          "source_line": 3017
         },
         {
           "name": "add_url",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3275
+          "source_line": 3059
         },
         {
           "name": "arefresh_schema",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3318
+          "source_line": 3102
         },
         {
           "name": "refresh_schema",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3810
+          "source_line": 3594
         },
         {
           "name": "plan",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3856
+          "source_line": 3640
         },
         {
           "name": "aplan",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3869
+          "source_line": 3653
         },
         {
           "name": "plan_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3878
+          "source_line": 3662
         },
         {
           "name": "aplan_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3889
+          "source_line": 3673
         },
         {
           "name": "prepare_field_routing",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3926
+          "source_line": 3710
         },
         {
           "name": "configure_field_routing",
           "kind": "registration-inspection-or-lifecycle",
-          "source_line": 3946
+          "source_line": 3730
         },
         {
           "name": "plan_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3979
+          "source_line": 3763
         },
         {
           "name": "aplan_executable",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 3992
+          "source_line": 3776
         },
         {
           "name": "plan_executable_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4003
+          "source_line": 3787
         },
         {
           "name": "aplan_executable_authorized",
           "kind": "retrieval-or-planning-no-execution",
-          "source_line": 4014
+          "source_line": 3798
         },
         {
           "name": "execute",
           "kind": "registered-tool-execution",
-          "source_line": 4051
+          "source_line": 3835
         },
         {
           "name": "ainvoke",
           "kind": "registered-tool-execution",
-          "source_line": 4060
+          "source_line": 3844
         },
         {
           "name": "invoke",
           "kind": "registered-tool-execution",
-          "source_line": 4071
+          "source_line": 3855
         },
         {
           "name": "abatch",
           "kind": "registered-tool-execution",
-          "source_line": 4079
+          "source_line": 3863
         },
         {
           "name": "batch",
           "kind": "registered-tool-execution",
-          "source_line": 4140
+          "source_line": 3924
         },
         {
           "name": "abatch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 4155
+          "source_line": 3939
         },
         {
           "name": "batch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 4209
+          "source_line": 3993
         },
         {
           "name": "astream",
           "kind": "registered-tool-execution",
-          "source_line": 4224
+          "source_line": 4008
         },
         {
           "name": "stream",
           "kind": "registered-tool-execution",
-          "source_line": 4271
+          "source_line": 4055
         },
         {
           "name": "astream_events",
           "kind": "registered-tool-execution",
-          "source_line": 4279
+          "source_line": 4063
         },
         {
           "name": "run",
           "kind": "registered-tool-execution",
-          "source_line": 5447
+          "source_line": 5231
         },
         {
           "name": "arun",
           "kind": "registered-tool-execution",
-          "source_line": 5455
+          "source_line": 5239
         }
       ]
     },
@@ -526,47 +526,47 @@
         {
           "name": "invoke",
           "kind": "registered-tool-execution",
-          "source_line": 5471
+          "source_line": 5255
         },
         {
           "name": "ainvoke",
           "kind": "registered-tool-execution",
-          "source_line": 5474
+          "source_line": 5258
         },
         {
           "name": "batch",
           "kind": "registered-tool-execution",
-          "source_line": 5477
+          "source_line": 5261
         },
         {
           "name": "abatch",
           "kind": "registered-tool-execution",
-          "source_line": 5489
+          "source_line": 5273
         },
         {
           "name": "batch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 5501
+          "source_line": 5285
         },
         {
           "name": "abatch_as_completed",
           "kind": "registered-tool-execution",
-          "source_line": 5513
+          "source_line": 5297
         },
         {
           "name": "stream",
           "kind": "registered-tool-execution",
-          "source_line": 5525
+          "source_line": 5309
         },
         {
           "name": "astream",
           "kind": "registered-tool-execution",
-          "source_line": 5528
+          "source_line": 5312
         },
         {
           "name": "astream_events",
           "kind": "registered-tool-execution",
-          "source_line": 5531
+          "source_line": 5315
         }
       ]
     },

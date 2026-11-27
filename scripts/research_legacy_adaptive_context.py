@@ -366,7 +366,7 @@ def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weig
     The input retrieval is assumed to have already passed normal visibility,
     authorization and availability filtering. A zero weight is an exact no-op.
     """
-    from schemarouter.models import CapabilityRetrieval
+    from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
 
     if weight < 0:
         raise ValueError("weight must be >= 0")
@@ -410,7 +410,7 @@ def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weig
 
 def filter_unexposed_schemas(retrieval, exposure: SessionSchemaExposure):
     """Return only schemas not already exposed in the current context epoch."""
-    from schemarouter.models import CapabilityRetrieval
+    from scripts.research_legacy_planning.candidate_models import CapabilityRetrieval
 
     candidates = [
         candidate

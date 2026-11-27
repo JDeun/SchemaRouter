@@ -36,8 +36,8 @@ and preserves PyPI Trusted Publishing on the stable `.github/workflows/release.y
 The following are treated as public when they are documented and exported from the top-level
 `schemarouter` package or an explicitly documented integration module:
 
-- typed contracts such as `ToolSpec`, `EndpointSpec`, `PaperPlanRequest`, `CapabilityCandidate`,
-  `CapabilityRetrieval`, `ExecutionPlan`, and `TypedExecutionState`;
+- typed contracts such as `ToolSpec`, `EndpointSpec`, `PaperPlanRequest`, `PaperTypedToolPlan`,
+  `ExecutionPlan`, and `TypedExecutionState`;
 - `SchemaRouter` public registration/planning/execution methods, including
   `add_provider`, `configure_field_routing`, `plan`, `aplan`, and the execution verbs;
 - documented provider-profile, capability-snapshot/publication, portable artifact/migration, and
