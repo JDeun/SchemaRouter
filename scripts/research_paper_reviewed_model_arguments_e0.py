@@ -25,9 +25,9 @@ from schemarouter.paper_understood_direct_plan import (
     PaperUnderstanding,
     compile_paper_understood_direct_plan,
 )
-from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from schemarouter.validation import validate_json_schema_value
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_legacy_paper_graph_plan import compile_paper_understood_graph_plan
 
 
 @dataclass(frozen=True, slots=True)

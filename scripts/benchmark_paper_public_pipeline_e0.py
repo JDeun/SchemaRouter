@@ -1,7 +1,7 @@
 """Reproducible E0 historical mixed-protocol planning profile at 500/5,000 routes.
 
-Measures the prepared-session and source-pinned Graph Rank route all the way
-through public sync Understand and checkout-only offered-ID async APIs. A deterministic
+Measures the prepared-session and source-pinned historical Graph Rank route
+through checkout-only sync Understand and offered-ID async APIs. A deterministic
 local callback stands in for the *model response*, NOT for an LLM timing
 measurement or independent semantic-quality oracle. NO provider/tool execution.
 Existing source-native graph and router indexes are reused, not reimplemented.
@@ -50,8 +50,9 @@ from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import _synthetic_router
 from scripts.research_legacy_offered_query import compile_offered_model_query
+from scripts.research_legacy_paper_graph_plan import compile_research_understood
 
-EVIDENCE_TIER = "E0_SYNTHETIC_MIXED_PUBLIC_AND_HISTORICAL_OFFERED_ID_NOT_INDEPENDENT_E2"
+EVIDENCE_TIER = "E0_SYNTHETIC_HISTORICAL_GRAPH_AND_OFFERED_ID_NOT_INDEPENDENT_E2"
 PLAN_SERIALIZER = TypeAdapter(PaperTypedToolPlan)
 ACTOR = PrincipalContext(subject="paper-public-e0", roles=("reader",))
 LICENSE = "host-reviewed-synthetic"
@@ -155,7 +156,8 @@ def _assert_plan(plan: Any, expected: tuple[str, ...]) -> int:
 def _measure_sync(session: Any, understanding: Any, intents: Any, policy: Any,
                   expected: tuple[str, ...], warmup: int, repeats: int) -> dict[str, Any]:
     def one_call() -> Any:
-        return session.compile_understood(
+        return compile_research_understood(
+            session,
             understanding, principal=ACTOR, intent_registry=intents,
             rank_policy=policy, allow_unnamed_graph_discovery=True,
         )
@@ -299,16 +301,19 @@ def _measure_refresh(
             route_domains={expected[-1]: ("case",)},
             route_priorities={expected[-1]: 90},
         )
-        _assert_plan(session.compile_understood(
+        _assert_plan(compile_research_understood(
+            session,
             hint, principal=ACTOR, intent_registry=intents,
             rank_policy=policy, allow_unnamed_graph_discovery=True,
         ), expected)
-        _assert_plan(rebuilt.compile_understood(
+        _assert_plan(compile_research_understood(
+            rebuilt,
             hint, principal=ACTOR, intent_registry=intents,
             rank_policy=policy, allow_unnamed_graph_discovery=True,
         ), expected)
         try:
-            old.compile_understood(
+            compile_research_understood(
+                old,
                 hint, principal=ACTOR, intent_registry=intents,
                 rank_policy=old_policy, allow_unnamed_graph_discovery=True,
             )
@@ -467,7 +472,8 @@ async def _measure_load(
 
     def sync_call(queued: int) -> dict[str, Any]:
         started = perf_counter_ns()
-        plan = session.compile_understood(
+        plan = compile_research_understood(
+            session,
             hint, principal=ACTOR, intent_registry=intents,
             rank_policy=policy, allow_unnamed_graph_discovery=True,
         )

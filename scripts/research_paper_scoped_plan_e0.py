@@ -16,8 +16,11 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     compile_paper_understood_direct_plan,
 )
-from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
+from scripts.research_legacy_paper_graph_plan import (
+    compile_paper_understood_graph_plan,
+    compile_research_understood,
+)
 from scripts.research_paper_refusal_eval_e0 import Decision, decision_from_plan_status
 from scripts.research_paper_reviewed_model_arguments_e0 import (
     PaperRootArgumentReviewer,
@@ -97,7 +100,8 @@ async def analyze_and_plan_paper_scoped_e0(
         session = view.router.prepare_field_routing(
             catalog=catalog, approved_host_roots=index.approved_host_roots,
         )
-        plan = session.compile_understood(
+        plan = compile_research_understood(
+            session,
             understanding, principal=view._principal,
             intent_registry=intent_registry, host_source_arguments=pinned_host_inputs,
         )

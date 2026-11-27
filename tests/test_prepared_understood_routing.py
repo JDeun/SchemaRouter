@@ -26,6 +26,7 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+from scripts.research_legacy_paper_graph_plan import compile_research_understood
 from scripts.research_legacy_router import legacy_router
 
 CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
@@ -43,7 +44,8 @@ INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
 def test_prepared_session_compiles_structured_understanding_to_one_hop_schema_only():
     router = build_fixture(500)
     session = router.prepare_field_routing(catalog=CATALOG)
-    plan = session.compile_understood(
+    plan = compile_research_understood(
+        session,
         PaperUnderstanding(
             intent_id="crm.owner_lookup", named_tools=("fork_owner",),
             parameter_hints={"customer_id": "MODEL_FORGED_VALUE"},
@@ -72,7 +74,8 @@ def test_understood_direct_host_root_accepts_only_explicit_host_inputs():
     session = router.prepare_field_routing(
         catalog=CATALOG, approved_host_roots=frozenset({RIGHT}),
     )
-    plan = session.compile_understood(
+    plan = compile_research_understood(
+        session,
         PaperUnderstanding(
             intent_id="crm.owner_lookup", named_tools=("fork_owner",),
             parameter_hints={"customer_id": "FORGED"},
@@ -120,7 +123,8 @@ def _two_hop_router() -> SchemaRouter:
 
 def test_understood_named_two_hop_uses_exact_existing_graph_contract():
     router = _two_hop_router()
-    plan = router.prepare_field_routing(catalog=CATALOG).compile_understood(
+    plan = compile_research_understood(
+        router.prepare_field_routing(catalog=CATALOG),
         PaperUnderstanding(intent_id="crm.owner_lookup", named_tools=("leaf",)),
         principal=ACTOR, intent_registry=INTENTS,
     )
@@ -149,7 +153,8 @@ def test_understood_session_honors_live_authorization_and_schema_drift():
             effect="allow", operation="fork_origin.read", roles_any=("reader",),
         ),),
     )
-    denied = session.compile_understood(
+    denied = compile_research_understood(
+        session,
         hints, principal=ACTOR, intent_registry=INTENTS,
     )
     assert denied.status == "no_proven_hit"
@@ -157,7 +162,7 @@ def test_understood_session_honors_live_authorization_and_schema_drift():
 
     router.add_tool(ToolSpec(name="new_tool", endpoints=[EndpointSpec(name="read")]))
     with pytest.raises(PolicyViolationError, match="stale|changed|source"):
-        session.compile_understood(hints, principal=ACTOR, intent_registry=INTENTS)
+        compile_research_understood(session, hints, principal=ACTOR, intent_registry=INTENTS)
 
 
 def test_understood_session_abstains_when_required_output_field_becomes_hidden():
@@ -177,7 +182,8 @@ def test_understood_session_abstains_when_required_output_field_becomes_hidden()
             visible_fields=("audit_note",),
         ),),
     )
-    plan = session.compile_understood(
+    plan = compile_research_understood(
+        session,
         PaperUnderstanding(intent_id="crm.owner_lookup", named_tools=("fork_owner",)),
         principal=ACTOR, intent_registry=INTENTS,
     )
@@ -208,7 +214,8 @@ def test_hidden_output_decoys_do_not_exhaust_named_graph_candidate_budget():
             visible_fields=("audit_note",),
         ),),
     )
-    plan = router.prepare_field_routing(catalog=CATALOG).compile_understood(
+    plan = compile_research_understood(
+        router.prepare_field_routing(catalog=CATALOG),
         PaperUnderstanding(
             intent_id="crm.owner_lookup", named_tools=("leaf", "metadata_noise"),
         ), principal=ACTOR, intent_registry=INTENTS,
@@ -244,7 +251,8 @@ def test_named_graph_availability_errors_never_echo_private_callback_diagnostics
 
     router.planner.availability_predicate = private_availability
     with pytest.raises(PolicyViolationError, match="availability") as exc:
-        router.prepare_field_routing(catalog=CATALOG).compile_understood(
+        compile_research_understood(
+            router.prepare_field_routing(catalog=CATALOG),
             PaperUnderstanding(intent_id="crm.owner_lookup", named_tools=("unrelated",)),
             principal=ACTOR, intent_registry=INTENTS,
         )
@@ -255,7 +263,8 @@ def test_named_graph_availability_errors_never_echo_private_callback_diagnostics
 def test_understood_session_preserves_exact_paper_plan_bounds(bad_k, bad_hops):
     session = build_fixture(500).prepare_field_routing(catalog=CATALOG)
     with pytest.raises(ValueError, match="K5|one or two"):
-        session.compile_understood(
+        compile_research_understood(
+            session,
             PaperUnderstanding(intent_id="crm.owner_lookup"),
             principal=ACTOR, intent_registry=INTENTS,
             k=bad_k, max_hops=bad_hops,
@@ -272,11 +281,13 @@ def test_understood_session_rejects_unreviewed_intent_and_never_executes(monkeyp
     monkeypatch.setattr(router.executor, "execute", forbidden)
     monkeypatch.setattr(router, "execute", forbidden)
     with pytest.raises(ValueError, match="unregistered|unknown"):
-        session.compile_understood(
+        compile_research_understood(
+            session,
             PaperUnderstanding(intent_id="invented.intent"),
             principal=ACTOR, intent_registry=INTENTS,
         )
-    plan = session.compile_understood(
+    plan = compile_research_understood(
+        session,
         PaperUnderstanding(intent_id="crm.owner_lookup", named_tools=("fork_owner",)),
         principal=ACTOR, intent_registry=INTENTS,
     )

@@ -25,6 +25,7 @@ from schemarouter.concept_retrieval import _merged_concept_constraints
 from schemarouter.errors import PolicyViolationError
 from scripts.research_legacy_concept_retrieval import resolve_native_concepts
 from scripts.research_legacy_field_session import research_compile_fields
+from scripts.research_legacy_paper_graph_plan import compile_research_understood
 from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="neutral-test", roles=("reader",))
@@ -175,7 +176,7 @@ def test_neutral_graph_keeps_typed_original_identifier_producers(hops):
         "source_type": None, "license": None,
     }) for c in CATALOG.concepts))
     session = router.prepare_field_routing(catalog=neutral)
-    plan = session.compile_understood(PaperUnderstanding(
+    plan = compile_research_understood(session, PaperUnderstanding(
         intent_id="case.lookup", named_tools=("target_0",),
     ), principal=ACTOR, intent_registry=INTENTS)
     assert plan.status == "requires_observation" and len(plan.bindings) == hops

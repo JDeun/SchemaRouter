@@ -160,7 +160,12 @@ async def test_algorithm1_named_sources_keep_field_union_host_inputs_and_metadat
     monkeypatch.setattr(
         research_legacy_paper_typed_plan, "compile_paper_typed_tool_plan", forbidden,
     )
-    monkeypatch.setattr(module, "compile_paper_understood_graph_plan", forbidden)
+    from scripts import research_legacy_paper_graph_plan
+
+    assert not hasattr(module, "compile_paper_understood_graph_plan")
+    monkeypatch.setattr(
+        research_legacy_paper_graph_plan, "compile_paper_understood_graph_plan", forbidden,
+    )
     from scripts.research_legacy_planning.planner import SchemaPlanner
 
     assert not hasattr(session._router, "planner")

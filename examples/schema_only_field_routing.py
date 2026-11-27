@@ -207,9 +207,9 @@ def main() -> None:
           "ranked_unverified:", ranked.ranked_unverified,
           "executable:", ranked.executable_authority)
 
-    # A second, independently reviewed source schema can establish the
-    # dependency without executing either endpoint. Reprepare after editing
-    # the registry; this session does not approve a parameterized host root.
+    # A second source may have a compatible identifier. Algorithm 1 does
+    # not infer a producer-to-consumer dependency from that compatibility.
+    # Reprepare after editing the registry; no host root is approved here.
     router.add_tool(ToolSpec(
         name="directory_keys", source_type="host-owned", license="internal",
         endpoints=[EndpointSpec(
@@ -231,9 +231,10 @@ def main() -> None:
             intent_id="customer.lookup", named_tools=("directory",),
         ), principal=principal, intent_registry=reviewed_intents,
     )
-    print("one-hop schema-only graph:", graph_plan.status,
+    assert not graph_plan.bindings
+    assert all(call.call.tool != "directory_keys" for call in graph_plan.calls)
+    print("independent named source plan:", graph_plan.status,
           tuple(call.route_id for call in graph_plan.calls))
-    print("typed dependency bindings:", graph_plan.bindings)
 
     # Natural-language Understand(q) through the APPLICATION's own model.
     # This deterministic callback emulates the JSON contract. Swap the
@@ -253,7 +254,6 @@ def main() -> None:
         intent_registry=reviewed_intents,
         model_visible_intent_ids=("customer.lookup",),
         rank_policy=PaperNativeRankPolicy(snapshot_id=graph_session.snapshot_id),
-        allow_unnamed_graph_discovery=True,
     ))
     print("model-assisted schema-only path:", natural_plan.status,
           tuple(call.route_id for call in natural_plan.calls))

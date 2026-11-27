@@ -27,8 +27,9 @@ from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
 )
-from schemarouter.paper_understood_graph_plan import (
+from scripts.research_legacy_paper_graph_plan import (
     compile_paper_understood_graph_plan,
+    compile_research_understood,
 )
 
 ACTOR = PrincipalContext(subject="native-paper", roles=("reader",))
@@ -303,7 +304,7 @@ def test_ambiguous_named_dependency_paths_do_not_form_false_combined_toolcall():
 
 
 def test_source_availability_change_during_compilation_aborts(monkeypatch):
-    import schemarouter.paper_understood_graph_plan as module
+    import scripts.research_legacy_paper_graph_plan as module
 
     router = _router(hops=2)
     index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
@@ -447,7 +448,8 @@ def test_public_prepared_session_uses_owner_rank_for_full_named_graph():
         snapshot_id=session.snapshot_id,
         route_priorities={"target_1.read": 100},
     )
-    result = session.compile_understood(
+    result = compile_research_understood(
+        session,
         PaperUnderstanding(
             intent_id="case.lookup",
             named_tools=("target_0", "target_1"),
@@ -758,8 +760,8 @@ def test_cross_depth_rank_obeys_explicit_single_hop_cap():
 
 
 def test_cross_depth_owner_rank_combined_budget_abstains_without_path_names(monkeypatch):
-    from schemarouter import paper_understood_graph_plan
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
+    from scripts import research_legacy_paper_graph_plan as paper_understood_graph_plan
 
     router = _mixed_depth_router()
     index = NativeSchemaGraphIndex.build(
@@ -791,7 +793,8 @@ def test_public_session_owner_cross_depth_rank_selects_two_hop():
         snapshot_id=session.snapshot_id,
         route_priorities={"target_long.read": 100},
     )
-    plan = session.compile_understood(
+    plan = compile_research_understood(
+        session,
         PaperUnderstanding(
             intent_id="case.lookup",
             named_tools=("target_short", "target_long"),
@@ -929,7 +932,7 @@ def test_unnamed_graph_never_uses_unannotated_or_wrong_domain_targets():
 
 
 def test_unnamed_domain_filter_precedes_graph_scoped_target_budget(monkeypatch):
-    from schemarouter import paper_understood_graph_plan
+    from scripts import research_legacy_paper_graph_plan as paper_understood_graph_plan
     from schemarouter.paper_native_rank import PaperNativeRankPolicy
 
     router = _router(hops=1, n_targets=12)
@@ -1020,7 +1023,8 @@ def test_prepared_session_unnamed_g5_uses_owner_reviewed_intent_domains():
         },
         route_priorities={"target_0.read": 100},
     )
-    plan = session.compile_understood(
+    plan = compile_research_understood(
+        session,
         PaperUnderstanding(intent_id="case.lookup"),
         principal=ACTOR, intent_registry=DOMAIN_INTENTS,
         rank_policy=policy, allow_unnamed_graph_discovery=True,

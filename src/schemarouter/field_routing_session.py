@@ -36,7 +36,6 @@ from .paper_understood_direct_plan import (
     PaperUnderstanding,
     compile_paper_understood_direct_plan,
 )
-from .paper_understood_graph_plan import compile_paper_understood_graph_plan
 from .registry import InMemoryRegistry, SQLiteRegistry
 
 if TYPE_CHECKING:
@@ -547,24 +546,21 @@ class SchemaFieldRoutingSession:
         intent_registry: PaperIntentRegistry,
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         k: int = 5,
-        max_hops: int = 2,
         rank_policy: PaperNativeRankPolicy | None = None,
-        allow_unnamed_graph_discovery: bool = False,
     ) -> PaperTypedToolPlan:
-        """Compile untrusted structured Understand(q) hints to a source-proven plan.
+        """Compile untrusted structured Understand(q) hints to independent source plans.
 
         Only the host-reviewed intent/concept catalog defines field meanings.
         Model parameter hints are never treated as host-supplied arguments.
         No model or provider is invoked, even for a `ready` receipt.
         """
         catalog = self._require_catalog()
-        return compile_paper_understood_graph_plan(
+        return compile_paper_understood_direct_plan(
             self._router, understanding, principal=principal,
             catalog=catalog, intent_registry=intent_registry,
             index=self._index, host_source_arguments=host_source_arguments,
-            k=k, max_hops=max_hops,
+            k=k,
             rank_policy=rank_policy,
-            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )
 
     async def aexecute_direct(
@@ -719,11 +715,9 @@ class SchemaFieldRoutingSession:
         model_visible_tool_keys: tuple[str, ...] = (),
         host_source_arguments: dict[str, dict[str, Any]] | None = None,
         k: int = 5,
-        max_hops: int = 2,
         max_model_input_bytes: int = 32768,
         max_model_output_bytes: int = 4096,
         rank_policy: PaperNativeRankPolicy | None = None,
-        allow_unnamed_graph_discovery: bool = False,
     ) -> PaperTypedToolPlan:
         """Understand a query, then prove its fields against current source contracts.
 
@@ -737,9 +731,8 @@ class SchemaFieldRoutingSession:
             intent_registry=intent_registry,
             model_visible_intent_ids=model_visible_intent_ids,
             model_visible_tool_keys=model_visible_tool_keys,
-            host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+            host_source_arguments=host_source_arguments, k=k,
             max_model_input_bytes=max_model_input_bytes,
             max_model_output_bytes=max_model_output_bytes,
             rank_policy=rank_policy,
-            allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
         )

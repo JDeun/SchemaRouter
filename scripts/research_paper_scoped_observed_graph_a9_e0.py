@@ -14,12 +14,12 @@ from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_native_rank import PaperNativeRankPolicy
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
-from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_legacy_paper_graph_execution import (
     PaperUnderstoodExecutedGraph,
     observe_and_execute_paper_understood_graph,
 )
+from scripts.research_legacy_paper_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_paper_refusal_eval_e0 import Decision, decision_from_plan_status
 from scripts.research_paper_reviewed_model_arguments_e0 import (
     PaperRootArgumentReviewer,

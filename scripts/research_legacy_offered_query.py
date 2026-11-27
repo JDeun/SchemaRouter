@@ -37,6 +37,7 @@ from schemarouter.paper_understood_direct_plan import (
 )
 from scripts.research_legacy_concept_retrieval import MAX_QUERY_BYTES, MAX_QUERY_CHARS
 from scripts.research_legacy_paper_field_retrieval import retrieve_paper_field_coverage
+from scripts.research_legacy_paper_graph_plan import compile_research_understood
 
 if TYPE_CHECKING:
     from schemarouter.field_routing_session import SchemaFieldRoutingSession
@@ -366,7 +367,8 @@ def _prepare_model_query(
 
     def compile_hint(understood: PaperUnderstanding) -> PaperTypedToolPlan:
         try:
-            plan = session.compile_understood(
+            plan = compile_research_understood(
+                session,
                 understood, principal=principal, intent_registry=intent_registry,
                 host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
                 rank_policy=rank_policy,
@@ -429,7 +431,8 @@ def _prepare_model_query(
                 continue
             verify()
             try:
-                proof = session.compile_understood(
+                proof = compile_research_understood(
+                    session,
                     PaperUnderstanding(intent_id=intent_id, named_tools=()),
                     principal=principal, intent_registry=intent_registry,
                     host_source_arguments=host_source_arguments,

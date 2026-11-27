@@ -747,3 +747,18 @@ def test_query_alias_concept_retrieval_is_checkout_only() -> None:
     assert callable(schemarouter.NativeConceptCatalog)
     assert callable(schemarouter.SchemaFieldRoutingSession.compile_understood)
     assert callable(schemarouter.SchemaFieldRoutingSession.acompile_query)
+
+
+def test_historical_graph_planner_and_mode_switches_are_not_installed() -> None:
+    from importlib.util import find_spec
+    from inspect import signature
+
+    from schemarouter.paper_query_understanding import compile_model_query
+
+    assert find_spec("schemarouter.paper_understood_graph_plan") is None
+    for compiler in (schemarouter.SchemaFieldRoutingSession.compile_understood,
+                     schemarouter.SchemaFieldRoutingSession.acompile_query,
+                     compile_model_query):
+        assert {"max_hops", "allow_unnamed_graph_discovery"}.isdisjoint(
+            signature(compiler).parameters,
+        )

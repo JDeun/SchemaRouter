@@ -17,7 +17,7 @@ from schemarouter import (
     PrincipalContext,
     ToolSpec,
 )
-from schemarouter.field_routing_session import SchemaFieldRoutingSession
+from scripts import research_paper_scoped_plan_e0
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     EXPERIMENTAL_FULL_CONDITION,
@@ -173,15 +173,15 @@ async def test_full_agent_cannot_mutate_original_gold():
 
 
 @pytest.mark.asyncio
-async def test_full_paper_arm_really_uses_public_field_session(monkeypatch):
+async def test_full_paper_arm_really_uses_historical_graph_session(monkeypatch):
     calls = []
-    original = SchemaFieldRoutingSession.compile_understood
+    original = research_paper_scoped_plan_e0.compile_research_understood
 
     def observe(session, understanding, **options):
         calls.append(understanding)
         return original(session, understanding, **options)
 
-    monkeypatch.setattr(SchemaFieldRoutingSession, "compile_understood", observe)
+    monkeypatch.setattr(research_paper_scoped_plan_e0, "compile_research_understood", observe)
     await run(answer())
     assert len(calls) == 1
 

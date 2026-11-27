@@ -1,4 +1,4 @@
-"""Original-paper named tool → source-proven 1-/2-hop typed plans (E0).
+"""Checkout-only historical G5 named tool → source-proven 1-/2-hop typed plans (E0).
 
 Only the existing canonical G5 graph may attest dependencies. This module
 does not execute calls, trust a language-model parameter, or grant authority.
@@ -10,13 +10,13 @@ from copy import deepcopy
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
-from ._authorization_witness import _policy_contents_digest
-from .authorization import PrincipalContext
-from .concept_retrieval import NativeConceptCatalog
-from .errors import PolicyViolationError
-from .native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
-from .paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed
-from .paper_typed_tool_plan import (
+from schemarouter._authorization_witness import _policy_contents_digest
+from schemarouter.authorization import PrincipalContext
+from schemarouter.concept_retrieval import NativeConceptCatalog
+from schemarouter.errors import PolicyViolationError
+from schemarouter.native_graph_index import MAX_OWNER_RANKABLE_PATHS, NativeSchemaGraphIndex
+from schemarouter.paper_native_rank import PaperNativeRankPolicy, rank_authorized_paper_graph_mixed
+from schemarouter.paper_typed_tool_plan import (
     PaperFieldRoute,
     PaperPlanBinding,
     PaperPlanCall,
@@ -24,7 +24,7 @@ from .paper_typed_tool_plan import (
     _check_current_call_scopes,
     _compile_one_route,
 )
-from .paper_understood_direct_plan import (
+from schemarouter.paper_understood_direct_plan import (
     PaperIntentRegistry,
     PaperUnderstanding,
     _compile_paper_understood_direct_plan,
@@ -33,7 +33,8 @@ from .paper_understood_direct_plan import (
 )
 
 if TYPE_CHECKING:
-    from .runtime import SchemaRouter
+    from schemarouter.field_routing_session import SchemaFieldRoutingSession
+    from schemarouter.runtime import SchemaRouter
 
 
 def compile_paper_understood_graph_plan(
@@ -137,7 +138,7 @@ def _compile_paper_understood_graph_plan(
         understanding, catalog, intent_registry,
     )
     if _compose_concepts and (len(concepts) > 1 or approved.unresolved_concepts):
-        from .paper_understood_concept_plan import _compile_understood_concept_plan
+        from schemarouter.paper_understood_concept_plan import _compile_understood_concept_plan
 
         return _compile_understood_concept_plan(
             router, understanding, principal=principal, catalog=catalog,
@@ -546,4 +547,26 @@ def _compile_paper_understood_graph_plan(
         registry_version=result.registry_version, requested_k=k,
         calls=first_calls, bindings=first_edges,
         ranked_unverified=result.deterministic_paper_ranked,
+    )
+
+
+def compile_research_understood(
+    session: SchemaFieldRoutingSession,
+    understanding: PaperUnderstanding,
+    *,
+    principal: PrincipalContext,
+    intent_registry: PaperIntentRegistry,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
+    k: int = 5,
+    max_hops: int = 2,
+    rank_policy: PaperNativeRankPolicy | None = None,
+    allow_unnamed_graph_discovery: bool = False,
+) -> PaperTypedToolPlan:
+    """Historical prepared-session graph compiler; no product dispatch."""
+    return compile_paper_understood_graph_plan(
+        session._router, understanding, principal=principal,
+        catalog=session._require_catalog(), intent_registry=intent_registry,
+        index=session._index, host_source_arguments=host_source_arguments,
+        k=k, max_hops=max_hops, rank_policy=rank_policy,
+        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )

@@ -104,7 +104,7 @@ async def test_missing_root_host_input_defers_without_any_tool_call():
 async def test_ready_direct_receipt_is_not_offered_as_observed_g5():
     from schemarouter import NativeSchemaGraphIndex
     from schemarouter.paper_understood_direct_plan import PaperUnderstanding
-    from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
+    from scripts.research_legacy_paper_graph_plan import compile_paper_understood_graph_plan
     from scripts.research_paper_scoped_observed_graph_a9_e0 import (
         run_paper_scoped_named_graph_a9_e0,
     )

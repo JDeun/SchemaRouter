@@ -8,7 +8,6 @@ from time import sleep
 
 import pytest
 
-from schemarouter.field_routing_session import SchemaFieldRoutingSession
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from scripts import benchmark_paper_public_pipeline_e0 as profile_module
 from scripts.benchmark_paper_public_pipeline_e0 import (
@@ -113,10 +112,10 @@ def test_public_algorithm1_refresh_profile_rejects_graph_parity_drift(monkeypatc
 
 
 @pytest.mark.parametrize("concurrency", [1, 4])
-def test_load_profile_calls_real_public_paths_with_bounded_closed_loop(monkeypatch, concurrency):
+def test_load_profile_calls_historical_paths_with_bounded_closed_loop(monkeypatch, concurrency):
     sync_calls = []
     async_calls = []
-    original_sync = SchemaFieldRoutingSession.compile_understood
+    original_sync = profile_module.compile_research_understood
     original_async = profile_module.compile_offered_model_query
 
     def compile_sync(self, *args, **kwargs):
@@ -128,7 +127,7 @@ def test_load_profile_calls_real_public_paths_with_bounded_closed_loop(monkeypat
         async_calls.append(1)
         return await original_async(self, *args, **kwargs)
 
-    monkeypatch.setattr(SchemaFieldRoutingSession, "compile_understood", compile_sync)
+    monkeypatch.setattr(profile_module, "compile_research_understood", compile_sync)
     monkeypatch.setattr(profile_module, "compile_offered_model_query", compile_async)
     report = benchmark_load_profile(100, requests=5, warmup=2, concurrency=concurrency)
     assert len(sync_calls) == len(async_calls) == 7

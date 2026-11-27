@@ -250,7 +250,7 @@ async def test_original_rank_refuses_legacy_offered_id_protocol_before_model_dis
 @pytest.mark.asyncio
 async def test_paper_v1_refuses_dependency_discovery_before_model_disclosure():
     session, policy = _session()
-    with pytest.raises(ValueError, match="paper v1 does not permit graph"):
+    with pytest.raises(TypeError, match="allow_unnamed_graph_discovery"):
         await session.acompile_query(
             "show case status", principal=ACTOR, intent_registry=INTENTS,
             model=lambda _: pytest.fail("model invoked before graph-mode preflight"),

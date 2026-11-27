@@ -98,6 +98,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert not module.startswith("scripts.research_legacy_paper_observed_binding"), path
                 assert not module.startswith("scripts.research_legacy_paper_consumer_execution"), path
                 assert not module.startswith("scripts.research_legacy_paper_graph_execution"), path
+                assert not module.startswith("scripts.research_legacy_paper_graph_plan"), path
                 assert not module.startswith("scripts.research_legacy_g5_rank"), path
                 assert module not in {
                     "planner", "planning_context", "planning_stages", "state_retrieval",
@@ -108,6 +109,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                     "native_deep_paths", "schemarouter.native_deep_paths",
                     "paper_observed_binding", "schemarouter.paper_observed_binding",
                     "paper_consumer_execution", "schemarouter.paper_consumer_execution",
+                    "paper_understood_graph_plan", "schemarouter.paper_understood_graph_plan",
                     "paper_field_retrieval", "schemarouter.paper_field_retrieval",
                     "native_fork_index", "schemarouter.native_fork_index",
                     "concept_graph_retrieval", "schemarouter.concept_graph_retrieval",
@@ -140,6 +142,8 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                                            "scripts.research_legacy_paper_observed_binding",
                                            "scripts.research_legacy_paper_consumer_execution",
                                            "scripts.research_legacy_paper_graph_execution",
+                                           "scripts.research_legacy_paper_graph_plan",
+                                           "schemarouter.paper_understood_graph_plan",
                                            "schemarouter.paper_consumer_execution",
                                            "schemarouter.paper_observed_binding",
                                            "schemarouter.paper_field_retrieval",
@@ -184,6 +188,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.native_deep_paths",
                         "schemarouter.paper_observed_binding",
                         "schemarouter.paper_consumer_execution",
+                        "schemarouter.paper_understood_graph_plan",
                         "schemarouter.paper_field_retrieval",
                         "schemarouter.native_fork_index",
                         "schemarouter.concept_graph_retrieval",
@@ -207,6 +212,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                             "schemarouter.native_deep_paths",
                             "schemarouter.paper_observed_binding",
                             "schemarouter.paper_consumer_execution",
+                            "schemarouter.paper_understood_graph_plan",
                             "schemarouter.paper_field_retrieval",
                             "schemarouter.native_fork_index",
                             "schemarouter.concept_graph_retrieval",

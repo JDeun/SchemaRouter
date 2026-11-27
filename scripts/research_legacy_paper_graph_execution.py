@@ -21,8 +21,8 @@ from schemarouter.paper_typed_tool_plan import (
     _check_current_call_scopes,
 )
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry, PaperUnderstanding
-from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from schemarouter.runs import ExecutionBudget, RunConfig
+from scripts.research_legacy_paper_graph_plan import compile_paper_understood_graph_plan
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

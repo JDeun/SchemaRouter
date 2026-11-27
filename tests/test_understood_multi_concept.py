@@ -23,6 +23,7 @@ from schemarouter import (
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.paper_understood_direct_plan import compile_paper_understood_direct_plan
+from scripts.research_legacy_paper_graph_plan import compile_research_understood
 from scripts.research_legacy_router import legacy_router
 
 ACTOR = PrincipalContext(subject="reader", roles=("reader",))
@@ -123,7 +124,8 @@ def _router():
 
 def _compile(router, understanding, *, session=None, inputs=None):
     session = session or router.prepare_field_routing(catalog=CATALOG)
-    return session.compile_understood(
+    return compile_research_understood(
+        session,
         understanding, principal=ACTOR, intent_registry=INTENTS,
         host_source_arguments=inputs,
     )
@@ -401,7 +403,7 @@ def test_concept_union_above_single_group_capacity_keeps_valid_k5_composition(gr
     session = router.prepare_field_routing(catalog=catalog)
     hints = PaperUnderstanding(intent_id="material.many", unresolved_concepts=unresolved)
     if graph:
-        plan = session.compile_understood(hints, principal=ACTOR, intent_registry=intents)
+        plan = compile_research_understood(session, hints, principal=ACTOR, intent_registry=intents)
     else:
         plan = compile_paper_understood_direct_plan(
             router, hints, principal=ACTOR, catalog=catalog, intent_registry=intents,

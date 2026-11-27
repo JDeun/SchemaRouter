@@ -28,6 +28,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import PolicyViolationError
+from scripts.research_legacy_paper_graph_plan import compile_research_understood
 
 FIXTURE = json.loads(
     (Path(__file__).parent / "fixtures" / "original_paper_cross_source_projection.json").read_text(
@@ -284,7 +285,8 @@ def _discover(session, intents, policy, *, groups, targets=(), named=(),
         "recall_group_ids": groups,
         "target_tool_keys": targets,
     })
-    return session.compile_understood(
+    return compile_research_understood(
+        session,
         PaperUnderstanding(intent_id=intent.intent_id, concept_ids=(CONCEPT,),
                            named_tools=named),
         principal=ACTOR, intent_registry=intents.model_copy(update={"intents": (intent,)}),

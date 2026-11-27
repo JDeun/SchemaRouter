@@ -30,10 +30,10 @@ from schemarouter import (
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.paper_understood_direct_plan import PaperUnderstanding
-from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_legacy_paper_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_legacy_router import legacy_router
 from scripts.research_paper_reviewed_model_arguments_e0 import (
     review_paper_root_model_arguments_e0,

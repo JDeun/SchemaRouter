@@ -40,6 +40,7 @@ jobs:
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
                   "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
                   "native_fork_index", "concept_graph_retrieval", "paper_consumer_execution",
+                  "paper_understood_graph_plan",
               ):
                   assert f"schemarouter/{name}.py" not in names, name
               assert not any("research_legacy" in name for name in names)
@@ -57,6 +58,7 @@ jobs:
                   "retrieval_abstention", "retrieval_execution_gate", "native_graph_execution",
                   "native_deep_paths", "paper_observed_binding", "paper_field_retrieval",
                   "native_fork_index", "concept_graph_retrieval", "paper_consumer_execution",
+                  "paper_understood_graph_plan",
               ):
               assert importlib.util.find_spec(f"schemarouter.{name}") is None, name
           for name in (
@@ -109,9 +111,11 @@ jobs:
           assert not hasattr(schemarouter.NativeSchemaGraphIndex, "lookup_bounded_paths")
           from inspect import signature
           from schemarouter.paper_query_understanding import compile_model_query
-          for compiler in (schemarouter.SchemaFieldRoutingSession.acompile_query,
+          for compiler in (schemarouter.SchemaFieldRoutingSession.compile_understood,
+                           schemarouter.SchemaFieldRoutingSession.acompile_query,
                            compile_model_query):
-              assert "model_visible_concept_ids" not in signature(compiler).parameters
+              assert {"model_visible_concept_ids", "max_hops", "allow_unnamed_graph_discovery"}.isdisjoint(
+                  signature(compiler).parameters)
           for method in (schemarouter.NativeSchemaPostingIndex.lookup,
                          schemarouter.NativeSchemaGraphIndex.lookup,
                          schemarouter.NativeSchemaGraphIndex._lookup_native_paths):

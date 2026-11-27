@@ -327,11 +327,9 @@ async def compile_model_query(
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
-    max_hops: int = 2,
     max_model_input_bytes: int = 32768,
     max_model_output_bytes: int = 4096,
     rank_policy: PaperNativeRankPolicy | None = None,
-    allow_unnamed_graph_discovery: bool = False,
 ) -> PaperTypedToolPlan:
     """Understand independently of the source catalog, then prove current fields."""
     if not callable(model):
@@ -340,11 +338,10 @@ async def compile_model_query(
         session, query, principal=principal, intent_registry=intent_registry,
         model_visible_intent_ids=model_visible_intent_ids,
         model_visible_tool_keys=model_visible_tool_keys,
-        host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+        host_source_arguments=host_source_arguments, k=k,
         max_model_input_bytes=max_model_input_bytes,
         max_model_output_bytes=max_model_output_bytes,
         rank_policy=rank_policy,
-        allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
     )
     return prepared.compile(await prepared.understand(model))
 
@@ -359,11 +356,9 @@ def _prepare_model_query(
     model_visible_tool_keys: tuple[str, ...] = (),
     host_source_arguments: dict[str, dict[str, Any]] | None = None,
     k: int = 5,
-    max_hops: int = 2,
     max_model_input_bytes: int = 32768,
     max_model_output_bytes: int = 4096,
     rank_policy: PaperNativeRankPolicy | None = None,
-    allow_unnamed_graph_discovery: bool = False,
 ) -> _PreparedModelQuery:
     """Prepare schema-independent Understand and its repeatable deterministic compiler."""
     if (
@@ -381,22 +376,8 @@ def _prepare_model_query(
         raise ValueError("host-approved intent registry required")
     if rank_policy is not None and not isinstance(rank_policy, PaperNativeRankPolicy):
         raise ValueError("reviewed paper rank policy required")
-    if (
-        type(allow_unnamed_graph_discovery) is not bool
-        or allow_unnamed_graph_discovery and rank_policy is None
-    ):
-        # This authority comes only from the host call signature. Never
-        # allow an LLM to activate graph-wide target discovery.
-        raise ValueError(
-            "unnamed graph discovery requires host approval and owner Rank"
-        )
-    if (
-        allow_unnamed_graph_discovery and rank_policy is not None
-        and rank_policy.direct_score_mode == "paper_v1"
-    ):
-        raise ValueError("paper v1 does not permit graph dependency discovery")
-    if type(k) is not int or k != 5 or type(max_hops) is not int or max_hops not in (1, 2):
-        raise ValueError("paper query requires K5 and one or two graph hops")
+    if type(k) is not int or k != 5:
+        raise ValueError("paper query requires exact K5")
     if (
         type(max_model_input_bytes) is not int
         or not 1 <= max_model_input_bytes <= 32768
@@ -553,9 +534,8 @@ def _prepare_model_query(
             else:
                 plan = session.compile_understood(
                     understood, principal=principal, intent_registry=intent_registry,
-                    host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+                    host_source_arguments=host_source_arguments, k=k,
                     rank_policy=rank_policy,
-                    allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
                 )
         except (ValueError, TypeError):
             verify()
@@ -602,9 +582,8 @@ def _prepare_model_query(
             scoped = narrow_scope(tuple(groups))
             return scoped.compile_understood(
                 understood, principal=principal, intent_registry=intent_registry,
-                host_source_arguments=host_source_arguments, k=k, max_hops=max_hops,
+                host_source_arguments=host_source_arguments, k=k,
                 rank_policy=rank_policy,
-                allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
             )
 
         scoped_proofs = []
@@ -623,9 +602,8 @@ def _prepare_model_query(
             for scoped, single, single_intent in scoped_proofs:
                 verify()
                 options = dict(
-                    principal=principal, intent_registry=single_intent, k=k, max_hops=max_hops,
+                    principal=principal, intent_registry=single_intent, k=k,
                     rank_policy=rank_policy,
-                    allow_unnamed_graph_discovery=allow_unnamed_graph_discovery,
                 )
                 plan = scoped.compile_understood(single, **options)
                 routes = {call.route_id for call in plan.calls}
