@@ -9,11 +9,11 @@ from schemarouter import (
     ModelAnalysisError,
     ParameterSpec,
     PlanningError,
-    PlanRequest,
     SchemaRouter,
     ToolSpec,
 )
 from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

@@ -7,7 +7,6 @@ from schemarouter import (
     InMemoryRegistry,
     ParameterSpec,
     PlanningError,
-    PlanRequest,
     ServerProjectionSpec,
     ToolSpec,
 )
@@ -17,6 +16,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def registry() -> InMemoryRegistry:

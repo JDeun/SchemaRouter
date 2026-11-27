@@ -9,13 +9,13 @@ from typing import Any
 
 from schemarouter import (
     ExecutionPlan,
-    PlanRequest,
     PolicyViolationError,
     RunConfig,
 )
 from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def _deny() -> None:

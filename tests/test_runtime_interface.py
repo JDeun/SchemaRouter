@@ -17,7 +17,6 @@ from schemarouter import (
     FieldSpec,
     InvocationUnavailableError,
     ParameterSpec,
-    PlanRequest,
     PlanValidationError,
     PostInvocationHookError,
     RetryPolicy,
@@ -35,6 +34,7 @@ from scripts.research_legacy_adaptive_context import (
     apply_success_prior,
     filter_unexposed_schemas,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

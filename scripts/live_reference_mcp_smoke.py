@@ -14,11 +14,11 @@ from compatibility_report import new_report, write_report
 
 from schemarouter import (
     ExecutionPolicy,
-    PlanRequest,
     ProviderAccessMethod,
     ProviderProfile,
     SchemaRouter,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

@@ -10,7 +10,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InvocationUnavailableError,
-    PlanRequest,
     PrincipalContext,
     RunConfig,
     ToolSpec,
@@ -18,6 +17,7 @@ from schemarouter import (
     compare_capability_fields,
 )
 from schemarouter.validation import json_schemas_compatible
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 CASES = (

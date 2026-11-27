@@ -10,13 +10,13 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     ToolSpec,
 )
 from scripts.research_legacy_planning.planner import (
     SchemaPlanner,
     _tokens,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def test_kana_kanji_and_legacy_korean_ascii_tokens():

@@ -7,7 +7,6 @@ import pytest
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
-    PlanRequest,
     SchemaRouter,
     SchemaSourceError,
     ServerProjectionSpec,
@@ -16,6 +15,7 @@ from schemarouter import (
 )
 from schemarouter.adapters import OPTIMADERemoteInvoker
 from schemarouter.adapters.optimade import _bounded_get
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

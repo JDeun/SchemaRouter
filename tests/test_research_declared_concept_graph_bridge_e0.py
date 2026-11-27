@@ -195,7 +195,7 @@ def test_registry_changed_during_graph_lookup_fails_closed() -> None:
             self.version += 1
             return real_registry.tools()
 
-    from schemarouter import PlanRequest
+    from scripts.research_legacy_planning.requests import PlanRequest
     with pytest.raises(PlanningError, match="declared concept source changed"):
         analyzer.analyze(
             PlanRequest(query="탄성계수"), UnstableVisibleRegistry(),

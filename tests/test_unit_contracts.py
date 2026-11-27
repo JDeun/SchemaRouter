@@ -5,7 +5,6 @@ from schemarouter import (
     EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     RegistryExecutor,
     SchemaValidationError,
     ToolCall,
@@ -13,6 +12,7 @@ from schemarouter import (
     UnitNormalizationSpec,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def _quantity_field(

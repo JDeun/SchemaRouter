@@ -22,7 +22,6 @@ from typing import Any
 
 from schemarouter import (
     E5CachedEmbedder,
-    PlanRequest,
 )
 from scripts.research_legacy_decisions import (
     DecisionOption,
@@ -30,6 +29,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_open_meteo_real_openapi_dev import (
     LANGUAGES,
     QUERIES,

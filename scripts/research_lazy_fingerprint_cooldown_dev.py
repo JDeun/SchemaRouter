@@ -24,8 +24,8 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     authored_tasks,
     build_fixture,
 )
-from schemarouter import PlanRequest
 from scripts.research_current_main_multilingual_dev import encoded
+from scripts.research_legacy_planning.requests import PlanRequest
 
 ROOT = Path(__file__).resolve().parents[1]
 WIDTHS = (24, 56)

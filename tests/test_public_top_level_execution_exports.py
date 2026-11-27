@@ -17,7 +17,6 @@ import schemarouter
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RetrievalAbstentionPolicy,
@@ -25,6 +24,7 @@ from schemarouter import (
     SchemaRouter,
     execute_selective_plan,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.selective_invocation import ainvoke_selective
 from scripts.research_legacy_router import legacy_router
 

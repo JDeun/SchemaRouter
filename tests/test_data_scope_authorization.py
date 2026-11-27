@@ -14,7 +14,6 @@ from schemarouter import (
     FieldSpec,
     GraphRelationshipTypeSpec,
     GraphSourceSpec,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RecordFieldSpec,
@@ -41,6 +40,7 @@ from schemarouter.adapters.sqlite_database import SQLiteTableInvoker
 from schemarouter.adapters.vector_store import VectorCollectionInvoker
 from schemarouter.authorization import _current_data_scope
 from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

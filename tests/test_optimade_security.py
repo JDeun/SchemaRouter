@@ -3,7 +3,8 @@ import json
 import httpx
 import pytest
 
-from schemarouter import PlanRequest, SchemaRouter, SchemaSourceError
+from schemarouter import SchemaRouter, SchemaSourceError
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

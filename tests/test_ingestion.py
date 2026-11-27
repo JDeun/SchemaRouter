@@ -6,13 +6,13 @@ import pytest
 from schemarouter import (
     ExecutionError,
     ExecutionPlan,
-    PlanRequest,
     SchemaDriftError,
     SchemaRouter,
     SchemaSourceError,
     ToolCall,
     UnsupportedSchemaSourceError,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

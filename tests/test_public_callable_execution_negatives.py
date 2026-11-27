@@ -20,7 +20,7 @@ from schemarouter import (
 )
 from schemarouter.errors import SchemaDriftError, SchemaRouterError
 from schemarouter.hooks import ExecutionHooks
-from schemarouter.models import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

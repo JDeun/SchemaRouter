@@ -13,13 +13,13 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
-    PlanRequest,
     RunConfig,
     RunEvent,
     SchemaRouter,
     ToolSpec,
 )
 from schemarouter.integrations import OpenTelemetryRunExporter, trace_run_events
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

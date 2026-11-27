@@ -10,7 +10,6 @@ from schemarouter import (
     FieldSpec,
     ParameterSpec,
     PersistedDocumentLimits,
-    PlanRequest,
     RunConfig,
     RunEvent,
     RunTrace,
@@ -25,6 +24,7 @@ from schemarouter import (
     replay_run_events,
 )
 from schemarouter.errors import NonRetryableInvocationError
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

@@ -8,7 +8,6 @@ import schemarouter.runtime as runtime_module
 from schemarouter import (
     EndpointSpec,
     ExecutionPolicy,
-    PlanRequest,
     ToolSpec,
 )
 from schemarouter.adapters.mcp import (
@@ -19,6 +18,7 @@ from schemarouter.adapters.mcp import (
     inspect_mcp_url,
 )
 from schemarouter.errors import SchemaSourceError
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

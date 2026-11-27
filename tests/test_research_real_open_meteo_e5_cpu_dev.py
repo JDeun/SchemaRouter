@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from schemarouter import PlanRequest, PrincipalContext
+from schemarouter import PrincipalContext
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_open_meteo_real_openapi_dev import (
     SOURCE_COMMIT,
     SOURCE_NAMES,

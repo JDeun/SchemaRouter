@@ -22,10 +22,10 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     InMemoryRegistry,
-    PlanRequest,
     PrincipalContext,
 )
 from schemarouter.adapters.openapi import tool_from_openapi
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 ROOT = Path(__file__).resolve().parents[1]

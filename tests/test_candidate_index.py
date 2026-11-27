@@ -9,11 +9,11 @@ from schemarouter import (
     InMemoryRegistry,
     ParameterSpec,
     PlanningError,
-    PlanRequest,
     QueryIntent,
     ToolSpec,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def make_tool(

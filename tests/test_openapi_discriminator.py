@@ -5,7 +5,6 @@ import pytest
 
 from schemarouter import (
     InMemoryRegistry,
-    PlanRequest,
     RegistryExecutor,
     SchemaValidationError,
     ToolCall,
@@ -13,6 +12,7 @@ from schemarouter import (
 from schemarouter.adapters.openapi import OpenAPIRemoteInvoker, tool_from_openapi
 from schemarouter.validation import validate_json_schema_value
 from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

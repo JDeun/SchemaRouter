@@ -15,9 +15,10 @@ from schemarouter.field_group_retrieval import (
     _complete_fields,
     _root_envelope_empty,
 )
-from schemarouter.models import CapabilityRetrieval, EndpointSpec, PlanRequest, ToolSpec
-from scripts.research_legacy_planning.planner import KeywordAnalyzer
+from schemarouter.models import CapabilityRetrieval, EndpointSpec, ToolSpec
 from schemarouter.runtime import SchemaRouter
+from scripts.research_legacy_planning.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def retrieve_authorized_field_group(

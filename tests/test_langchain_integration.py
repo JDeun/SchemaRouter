@@ -8,7 +8,6 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     DataScopeRule,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
@@ -23,6 +22,7 @@ from schemarouter.integrations import (
     to_langchain_tools,
     tool_from_langchain,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

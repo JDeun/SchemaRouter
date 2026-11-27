@@ -10,13 +10,13 @@ from schemarouter import (
     CapabilityFieldContract,
     EndpointSpec,
     FieldSpec,
-    PlanRequest,
     SchemaValidationError,
     ToolSpec,
     UnitNormalizationSpec,
     compare_capability_fields,
 )
 from schemarouter.validation import canonical_field_value_schema, canonical_unit_value_schema
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

@@ -5,9 +5,10 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from schemarouter.models import PaperPlanRequest, PlanRequest, ToolResult
+from schemarouter.models import PaperPlanRequest, ToolResult
 from schemarouter.runs import RunConfig
 from schemarouter.runtime import SchemaRouter
+from scripts.research_legacy_planning.requests import PlanRequest
 
 LangGraphState = Mapping[str, Any]
 LangGraphRequestFactory = Callable[

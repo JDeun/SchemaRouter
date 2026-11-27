@@ -13,7 +13,6 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     ExecutionPolicy,
-    PlanRequest,
     PlanValidationError,
     PolicyViolationError,
     PrincipalContext,
@@ -21,6 +20,7 @@ from schemarouter import (
     SchemaValidationError,
 )
 from schemarouter.errors import SchemaRouterError
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 pytestmark = pytest.mark.mcp_integration

@@ -194,7 +194,6 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ParameterSpec",
         "PlanCoverage",
         "PlanExplanation",
-        "PlanRequest",
         "PaperPlanRequest",
         "PlanValidationError",
         "PlanningError",
@@ -566,3 +565,11 @@ def test_retired_lexical_planner_modules_and_exports_are_not_installed() -> None
 
 def test_lexical_selective_invocation_is_not_public() -> None:
     assert not hasattr(schemarouter, "ainvoke_selective")
+
+
+def test_flat_lexical_request_is_not_installed() -> None:
+    from schemarouter import models
+
+    assert not hasattr(schemarouter, "PlanRequest")
+    assert not hasattr(models, "PlanRequest")
+    assert callable(schemarouter.PaperPlanRequest)

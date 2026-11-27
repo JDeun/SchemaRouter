@@ -10,11 +10,11 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

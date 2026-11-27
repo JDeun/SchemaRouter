@@ -9,10 +9,10 @@ import pytest
 from schemarouter import (
     EndpointSpec,
     InMemoryRegistry,
-    PlanRequest,
     ToolSpec,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def registry(*, declare_alias: bool) -> InMemoryRegistry:

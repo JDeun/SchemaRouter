@@ -26,7 +26,6 @@ from schemarouter.models import (
     EndpointSpec,
     ExecutionPlan,
     PaperPlanRequest,
-    PlanRequest,
     ToolSpec,
 )
 from schemarouter.runs import RunConfig
@@ -41,6 +40,7 @@ from schemarouter.state_retrieval import (
     filter_retrieval_by_state,
 )
 from scripts.research_legacy_planning.planner import QueryAnalyzer, SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.source_availability import _LegacySourceAvailability
 
 if TYPE_CHECKING:

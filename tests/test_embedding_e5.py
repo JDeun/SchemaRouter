@@ -10,7 +10,6 @@ from schemarouter import (
     EndpointSpec,
     InMemoryRegistry,
     PlanningError,
-    PlanRequest,
     ToolSpec,
 )
 from scripts.research_legacy_decision_policy import LegacyDecisionPlanner
@@ -20,6 +19,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def test_e5_prefix_and_repeated_option_embedding_cache() -> None:

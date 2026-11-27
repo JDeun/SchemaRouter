@@ -5,13 +5,13 @@ import pytest
 
 from schemarouter import (
     InMemoryRegistry,
-    PlanRequest,
     RegistryExecutor,
     SchemaRouter,
     SchemaValidationError,
     ToolCall,
 )
 from schemarouter.adapters.openapi import normalize_same_document_refs, tool_from_openapi
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

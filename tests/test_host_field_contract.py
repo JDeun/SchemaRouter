@@ -10,7 +10,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
@@ -21,6 +20,7 @@ from scripts.research_legacy_host_field_contract import (
     RequiredEnumValue,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

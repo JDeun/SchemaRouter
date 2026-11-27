@@ -8,8 +8,8 @@ from time import perf_counter
 import httpx
 from compatibility_report import new_report, write_report
 
-from schemarouter import PlanRequest
 from schemarouter.adapters.optimade import _base_info_attributes, _bounded_get
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 PROVIDER_ID = "materials-project"

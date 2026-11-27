@@ -4,11 +4,11 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     ToolSpec,
 )
 from schemarouter.adapters.mcp import tool_from_mcp
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

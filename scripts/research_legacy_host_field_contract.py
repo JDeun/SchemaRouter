@@ -19,9 +19,9 @@ from schemarouter.models import (
     CapabilityCandidate,
     CapabilityRetrieval,
     ParameterSpec,
-    PlanRequest,
     StrictModel,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 if TYPE_CHECKING:
     from schemarouter.runtime import SchemaRouter

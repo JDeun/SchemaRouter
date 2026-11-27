@@ -6,7 +6,6 @@ from schemarouter import (
     FieldSpec,
     InMemoryRegistry,
     PlanningError,
-    PlanRequest,
     ToolSpec,
 )
 from scripts.research_legacy_decision_policy import DecisionPolicy, LegacyDecisionPlanner
@@ -14,6 +13,7 @@ from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def registry(

@@ -6,7 +6,8 @@ import inspect
 
 import pytest
 
-from schemarouter import PlanRequest, PolicyViolationError, SchemaRouter, schema_tool
+from schemarouter import PolicyViolationError, SchemaRouter, schema_tool
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 from scripts.research_legacy_runtime import LegacySchemaRouter
 

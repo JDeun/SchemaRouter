@@ -14,7 +14,8 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
-from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+from schemarouter import ExecutionPolicy, SchemaRouter
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 from scripts.research_public_heterogeneous_live_e1 import (
     COD_URL,

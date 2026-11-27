@@ -17,7 +17,6 @@ from typing import Any
 
 from schemarouter import (
     AuthorizationPolicy,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
@@ -27,6 +26,7 @@ from scripts.research_bounded_authorized_semantic_diagnostic import (
     scoped_semantic_model_description,
 )
 from scripts.research_legacy_planning.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.requests import PlanRequest
 
 MAX_SOURCE_ENDPOINTS = 500
 MAX_TOOL_DEFINITIONS = 5

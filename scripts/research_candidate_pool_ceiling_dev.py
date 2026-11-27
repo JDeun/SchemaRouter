@@ -24,12 +24,12 @@ from benchmarks.agent_utility_v5_catalog import (
     build_registry,
     build_tasks,
 )
-from schemarouter import PlanRequest
 from scripts.research_current_main_multilingual_dev import (
     encoded,
     select_cases,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 ROOT = Path(__file__).resolve().parents[1]
 POOL_SIZES = (24, 64, 128)

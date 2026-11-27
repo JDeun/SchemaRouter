@@ -14,7 +14,7 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     DENIED_VIEWER,
     build_fixture,
 )
-from schemarouter import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def eager_baseline(router, query: str, role: str, k: int):

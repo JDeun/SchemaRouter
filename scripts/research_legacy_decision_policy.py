@@ -20,7 +20,6 @@ from schemarouter.models import (
     FallbackRoute,
     FieldSelectionExplanation,
     PlanExplanation,
-    PlanRequest,
     QueryIntent,
     ToolCall,
     ToolSpec,
@@ -48,6 +47,7 @@ from scripts.research_legacy_planning.planning_stages import (
     PrimarySelectionResult,
     assemble_execution_plan,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 ContextT = TypeVar("ContextT")
 

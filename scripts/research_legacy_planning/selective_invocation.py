@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from schemarouter.errors import PolicyViolationError
-from schemarouter.models import CapabilityRetrieval, PlanRequest, ToolResult
+from schemarouter.models import CapabilityRetrieval, ToolResult
 from schemarouter.operation_fit import (
     DeclaredOperationFitPolicy,
     validated_declared_operation_policy,
@@ -16,6 +16,7 @@ from schemarouter.retrieval_execution_gate import (
     _validated_abstention_policy,
     execute_selective_plan,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 if TYPE_CHECKING:
     from schemarouter.runs import RunConfig

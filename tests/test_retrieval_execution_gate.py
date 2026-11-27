@@ -14,7 +14,6 @@ from schemarouter import (
     EndpointSpec,
     ExecutionPlan,
     FallbackRoute,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RetrievalAbstentionPolicy,
@@ -23,6 +22,7 @@ from schemarouter import (
     execute_selective_plan,
     validate_selective_execution,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_planning.selective_invocation import ainvoke_selective
 from scripts.research_legacy_router import legacy_router
 

@@ -8,7 +8,7 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 PROVIDER_ID = "tavily"

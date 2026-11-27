@@ -16,12 +16,12 @@ from schemarouter import (
     DataScopeRule,
     ExecutionPlan,
     PaperPlanRequest,
-    PlanRequest,
     PrincipalContext,
     RunConfig,
 )
 from schemarouter.errors import PolicyViolationError
 from schemarouter.hooks import ExecutionHooks
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 class _Model:

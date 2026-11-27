@@ -8,7 +8,7 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
 
 DEFAULT_URL = "https://www.crystallography.net/cod/optimade"
 
@@ -28,15 +28,21 @@ async def run_smoke(url: str) -> dict[str, object]:
     endpoint_names = {endpoint.name for endpoint in tool.endpoints}
     assert "search_structures" in endpoint_names
 
-    plan = router.plan(
-        PlanRequest(
-            query="chemical formula descriptive nelements",
-            preferred_tools=[tool_key],
+    endpoint = tool.endpoint("search_structures")
+    plan = ExecutionPlan(
+        query="chemical formula descriptive nelements",
+        registry_version=router.registry.version,
+        calls=[ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
             arguments={
                 "filter": 'elements HAS ALL "Si","O" AND nelements=2',
                 "page_limit": 1,
             },
-        )
+            fields=["id", "chemical_formula_descriptive", "nelements"],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
+        )],
     )
     assert plan.executable
     assert plan.calls[0].endpoint == "search_structures"

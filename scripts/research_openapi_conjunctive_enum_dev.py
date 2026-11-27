@@ -13,7 +13,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from schemarouter import PlanRequest
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_open_meteo_real_openapi_dev import (
     LANGUAGES,
     QUERIES,

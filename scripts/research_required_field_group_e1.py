@@ -13,7 +13,6 @@ from dataclasses import dataclass
 
 from schemarouter import (
     CapabilityRetrieval,
-    PlanRequest,
     PrincipalContext,
     QueryIntent,
     SchemaRouter,
@@ -24,6 +23,7 @@ from schemarouter.capability_contracts import (
 )
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 from scripts.research_legacy_planning.planner import KeywordAnalyzer
+from scripts.research_legacy_planning.requests import PlanRequest
 
 STRICT_K = 5
 

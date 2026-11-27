@@ -2,12 +2,13 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from schemarouter.models import EndpointSpec, PlanRequest, QueryIntent, ToolSpec
+from schemarouter.models import EndpointSpec, QueryIntent, ToolSpec
 from scripts.research_legacy_planning.planning_context import (
     PlanningContext,
     RegistrySnapshot,
     SnapshotToolRegistry,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def _tool() -> ToolSpec:

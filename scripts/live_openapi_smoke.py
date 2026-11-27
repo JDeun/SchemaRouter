@@ -8,7 +8,7 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
 
 DEFAULT_OPENAPI_URL = "https://api.apis.guru/v2/openapi.yaml"
 
@@ -30,16 +30,19 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert endpoint.read_only is True
     assert tool.metadata["execution_bound"] is True
 
-    plan = router.plan(
-        PlanRequest(
-            query="api directory metrics",
-            preferred_tools=[tool.key],
-            max_calls=32,
-        )
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint_name,
+        fields=["numAPIs"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
     )
-    call = next(candidate for candidate in plan.calls if candidate.endpoint == endpoint_name)
     assert call.executable
-    selected_plan = plan.model_copy(update={"calls": [call]}, deep=True)
+    selected_plan = ExecutionPlan(
+        query="api directory metrics",
+        registry_version=router.registry.version,
+        calls=[call],
+    )
 
     execution_started = perf_counter()
     results = await router.execute(selected_plan)

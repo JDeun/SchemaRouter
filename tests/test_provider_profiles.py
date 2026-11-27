@@ -10,7 +10,6 @@ import schemarouter.provider_profiles as provider_profiles
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
-    PlanRequest,
     ProviderAccessMethod,
     ProviderDiscoveryCandidate,
     ProviderProfile,
@@ -18,6 +17,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.errors import RegistrationError
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

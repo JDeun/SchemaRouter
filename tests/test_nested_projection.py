@@ -4,7 +4,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     PlanValidationError,
     RegistryExecutor,
     SchemaValidationError,
@@ -12,6 +11,7 @@ from schemarouter import (
     ToolSpec,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def nested_tool() -> ToolSpec:

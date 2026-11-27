@@ -18,7 +18,6 @@ from benchmarks.agent_utility_b2_catalog import (  # noqa: E402
     build_registry,
     route_ids,
 )
-from schemarouter import PlanRequest  # noqa: E402
 from scripts.research_legacy_planning.planner import (  # noqa: E402
     SchemaPlanner,
     _Candidate,
@@ -27,6 +26,7 @@ from scripts.research_legacy_planning.planner import (  # noqa: E402
     _semantic_substring_match,
     _tokens,
 )
+from scripts.research_legacy_planning.requests import PlanRequest  # noqa: E402
 
 EXPECTED_SHA256 = "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176"
 EXPECTED_ROWS = 92

@@ -6,7 +6,6 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     RegistryExecutor,
     ToolCall,
     ToolSpec,
@@ -19,6 +18,7 @@ from scripts.research_legacy_decisions import (
     CallableDecisionBackend,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def _qualified_tool(

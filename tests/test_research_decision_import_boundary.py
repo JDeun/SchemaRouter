@@ -21,6 +21,8 @@ RETIRED = {
     "KeywordAnalyzer",
     "QueryAnalyzer",
     "SchemaPlanner",
+    "PlanRequest",
+    "ainvoke_selective",
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "FirstOptionDecisionBackend",
@@ -43,7 +45,7 @@ def test_runtime_does_not_import_research_decision_contracts() -> None:
                 assert module not in {"planner", "planning_context", "planning_stages"}, path
                 assert not module.startswith("schemarouter.planner"), path
                 assert not module.startswith("scripts.research_legacy_planning"), path
-                if module == "schemarouter":
+                if module in {"schemarouter", "schemarouter.models", "models"}:
                     assert RETIRED.isdisjoint(alias.name for alias in node.names), path
             elif isinstance(node, ast.Import):
                 assert not any(
@@ -63,8 +65,11 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
         for path in (ROOT / root).rglob("*.py"):
             if any(part in {".venv", "venv", "build", "dist"} for part in path.parts):
                 continue
-            if path.name == "verify_v018_installed_wheel_alias_regression.py":
-                # Frozen comparator of actual historical installed releases.
+            if path in {
+                ROOT / "scripts/verify_v018_installed_wheel_alias_regression.py",
+                ROOT / "scripts/published_pypi_smoke.py",
+            }:
+                # These exercise actual historical installed releases, not current source.
                 continue
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
             for node in ast.walk(tree):
@@ -75,7 +80,7 @@ def test_checkout_consumers_use_archived_decision_contracts() -> None:
                         "schemarouter.planning_stages",
                     }, path
                     assert not (node.module or "").startswith("schemarouter.analyzers"), path
-                    if node.module == "schemarouter":
+                    if node.module in {"schemarouter", "schemarouter.models"}:
                         assert RETIRED.isdisjoint(alias.name for alias in node.names), path
                 elif isinstance(node, ast.Import):
                     assert all(

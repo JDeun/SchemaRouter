@@ -30,7 +30,6 @@ from schemarouter import (  # noqa: E402
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     ToolSpec,
 )
 from scripts.research_legacy_decision_adapters import (  # noqa: E402
@@ -54,6 +53,7 @@ from scripts.research_legacy_decisions import (  # noqa: E402
 from scripts.research_legacy_model_analyzer import ModelQueryAnalyzer  # noqa: E402
 from scripts.research_legacy_pairwise import PairwiseDecisionBackend  # noqa: E402
 from scripts.research_legacy_planning.planner import SchemaPlanner  # noqa: E402
+from scripts.research_legacy_planning.requests import PlanRequest  # noqa: E402
 
 
 @dataclass(frozen=True)

@@ -21,7 +21,6 @@ from schemarouter import (
     InvocationUnavailableError,
     NonRetryableInvocationError,
     ParameterSpec,
-    PlanRequest,
     PlanValidationError,
     PolicyRule,
     PolicyViolationError,
@@ -34,6 +33,7 @@ from schemarouter import (
     TransientInvocationError,
 )
 from scripts.research_legacy_planning.planner import SchemaPlanner
+from scripts.research_legacy_planning.requests import PlanRequest
 
 
 def make_registry() -> InMemoryRegistry:

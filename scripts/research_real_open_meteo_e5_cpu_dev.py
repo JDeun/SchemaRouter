@@ -23,7 +23,6 @@ from schemarouter import (
     AuthorizationRule,
     E5CachedEmbedder,
     InMemoryRegistry,
-    PlanRequest,
     PrincipalContext,
     SchemaRouter,
 )
@@ -33,6 +32,7 @@ from scripts.research_legacy_decisions import (
     EmbeddingDecisionBackend,
     choose_sync,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 from scripts.research_open_meteo_real_openapi_dev import (
     LANGUAGES,

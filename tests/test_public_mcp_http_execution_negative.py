@@ -17,12 +17,12 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     ExecutionPolicy,
-    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
 )
 from schemarouter.errors import SchemaRouterError
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

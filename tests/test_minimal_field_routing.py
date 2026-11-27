@@ -6,11 +6,11 @@ from schemarouter import (
     FieldSpec,
     InvocationUnavailableError,
     ParameterSpec,
-    PlanRequest,
     ServerProjectionSpec,
     ToolSpec,
 )
 from schemarouter.adapters import OpenAPIRemoteInvoker
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

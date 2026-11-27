@@ -29,10 +29,10 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     build_fixture,
 )
 from research.autoresearch.actions_ranker import rank
-from schemarouter import PlanRequest
 from scripts.research_autoresearch_sandbox import candidate_view
 from scripts.research_current_adapter_field_scope_dev import validate_gold
 from scripts.research_current_main_multilingual_dev import encoded
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_v1_v2_paired_cpu_dev import frozen_genomes
 from scripts.research_v3_width_pareto_cpu_dev import p95
 

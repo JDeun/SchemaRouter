@@ -436,7 +436,7 @@ def _declaring_router():
 
 
 def test_amending_declares_fields_and_keeps_the_capability_executable():
-    from schemarouter import PlanRequest
+    from scripts.research_legacy_planning.requests import PlanRequest
 
     router, key = _bound_router()
     tool = router.registry.get(key)
@@ -514,7 +514,8 @@ def test_a_plan_built_before_the_amendment_is_still_rejected():
     # would be weaker for amended capabilities than for any other. There is no
     # `router.execute(plan)`; a prebuilt call is re-checked with
     # `executor.validate_call`, which is what the execution path itself uses.
-    from schemarouter import PlanRequest, SchemaDriftError
+    from schemarouter import SchemaDriftError
+    from scripts.research_legacy_planning.requests import PlanRequest
 
     router, key = _bound_router()
     stale_plan = router.plan(

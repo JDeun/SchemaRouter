@@ -7,11 +7,11 @@ from pydantic import BaseModel
 
 from schemarouter import (
     ExecutionPlan,
-    PlanRequest,
     ToolCall,
 )
 from schemarouter.errors import PlanValidationError, SchemaValidationError
 from schemarouter.integrations import tool_from_langchain, tool_from_llamaindex
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

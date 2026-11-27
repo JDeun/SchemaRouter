@@ -8,12 +8,12 @@ from schemarouter import (
     InMemoryRegistry,
     ParameterSpec,
     PlanningError,
-    PlanRequest,
     QueryIntent,
     SchemaRouter,
     ToolSpec,
     UnitNormalizationSpec,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

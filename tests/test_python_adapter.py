@@ -2,12 +2,12 @@ import pytest
 from pydantic import BaseModel
 
 from schemarouter import (
-    PlanRequest,
     RegistrationError,
     SchemaValidationError,
     schema_tool,
     tool_from_callable,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

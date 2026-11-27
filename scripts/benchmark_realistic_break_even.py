@@ -29,7 +29,6 @@ from schemarouter import (
     InMemoryRegistry,
     ParameterSpec,
     PlanningError,
-    PlanRequest,
     SchemaRouter,
     ToolSpec,
 )
@@ -38,6 +37,7 @@ if not __package__:
     # Direct historical CLI execution must resolve the source-only research package.
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router  # noqa: E402
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+")

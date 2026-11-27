@@ -8,7 +8,8 @@ from typing import Any
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import ExecutionPlan, PlanRequest, SchemaRouter, ToolCall
+from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
+from scripts.research_legacy_planning.requests import PlanRequest
 from scripts.research_legacy_router import legacy_router
 
 

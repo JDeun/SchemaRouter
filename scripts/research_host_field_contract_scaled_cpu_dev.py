@@ -24,11 +24,11 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     SIZES,
     build_fixture,
 )
-from schemarouter import PlanRequest
 from scripts.research_legacy_host_field_contract import (
     HostFieldContract,
     select_authorized_field_contract,
 )
+from scripts.research_legacy_planning.requests import PlanRequest
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATHS = (
